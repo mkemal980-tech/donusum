@@ -7,6 +7,7 @@ import Header from "@/components/ui/header";
 import ScoreCard from "@/components/ui/score-card";
 import ProgressBar from "@/components/ui/progress-bar";
 import { BenchmarkSection } from "./benchmark-section";
+import { CategoryDashboard } from "./category-dashboard";
 import { 
   ClipboardList, 
   TrendingUp, 
@@ -14,7 +15,8 @@ import {
   ArrowRight,
   BarChart3,
   Lightbulb,
-  Map
+  Map,
+  PieChart
 } from "lucide-react";
 
 interface CategoryScore {
@@ -234,6 +236,25 @@ export default function DashboardClient() {
           className="mb-8"
         >
           <BenchmarkSection />
+        </motion.div>
+
+        {/* Category Analysis Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.65 }}
+          className="mb-8"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+              <PieChart className="text-purple-600" size={20} />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">Kategori Analizi</h2>
+              <p className="text-sm text-gray-500">Seviyelendirme ve GAP Analizi</p>
+            </div>
+          </div>
+          <CategoryDashboard />
         </motion.div>
 
         {/* Quick Actions */}
