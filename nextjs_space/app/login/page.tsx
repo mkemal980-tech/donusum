@@ -23,17 +23,21 @@ export default function LoginPage() {
       const result = await signIn?.("credentials", {
         email,
         password,
-        redirect: false
+        redirect: false,
+        callbackUrl: "/dashboard"
       });
 
       if (result?.error) {
         setError("Invalid email or password");
+        setLoading(false);
+      } else if (result?.ok) {
+        window.location.href = "/dashboard";
       } else {
-        router.replace("/dashboard");
+        setError("An unexpected error occurred");
+        setLoading(false);
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
-    } finally {
       setLoading(false);
     }
   };

@@ -10,40 +10,37 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String
-  firstName     String?
-  lastName      String?
-  organization  String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  surveyResponses   SurveyResponse[]
+  id                String            @id @default(cuid())
+  email             String            @unique
+  password          String
+  firstName         String?
+  lastName          String?
+  organization      String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  assessmentScores  AssessmentScore[]
   uploadedDocuments Document[]
   roadmapItems      RoadmapItem[]
-  assessmentScores  AssessmentScore[]
+  surveyResponses   SurveyResponse[]
 }
 
 model Category {
-  id          String        @id @default(cuid())
-  name        String
-  description String?
-  order       Int           @default(0)
-  createdAt   DateTime      @default(now())
-  
+  id            String        @id @default(cuid())
+  name          String
+  description   String?
+  order         Int           @default(0)
+  createdAt     DateTime      @default(now())
   subCategories SubCategory[]
 }
 
 model SubCategory {
-  id          String      @id @default(cuid())
+  id          String     @id @default(cuid())
   name        String
   description String?
-  order       Int         @default(0)
+  order       Int        @default(0)
   categoryId  String
-  createdAt   DateTime    @default(now())
-  
-  category    Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  category    Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   subLevels   SubLevel[]
 }
 
@@ -54,87 +51,97 @@ model SubLevel {
   order         Int         @default(0)
   subCategoryId String
   createdAt     DateTime    @default(now())
-  
-  subCategory   SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
   questions     Question[]
+  subCategory   SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
 }
 
 model Question {
-  id              String           @id @default(cuid())
-  text            String
-  type            QuestionType     @default(SCALE)
-  options         Json?            
-  weight          Float            @default(1.0)
-  requiresEvidence Boolean         @default(false)
-  order           Int              @default(0)
-  subLevelId      String
-  createdAt       DateTime         @default(now())
-  
-  subLevel        SubLevel         @relation(fields: [subLevelId], references: [id], onDelete: Cascade)
-  responses       SurveyResponse[]
+  id               String           @id @default(cuid())
+  text             String
+  type             QuestionType     @default(SCALE)
+  options          Json?
+  weight           Float            @default(1.0)
+  requiresEvidence Boolean          @default(false)
+  order            Int              @default(0)
+  subLevelId       String
+  createdAt        DateTime         @default(now())
+  subLevel         SubLevel         @relation(fields: [subLevelId], references: [id], onDelete: Cascade)
+  responses        SurveyResponse[]
+}
+
+model SurveyResponse {
+  id         String     @id @default(cuid())
+  value      String
+  score      Float      @default(0)
+  userId     String
+  questionId String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  documents  Document[]
+  question   Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+}
+
+model Document {
+  id               String          @id @default(cuid())
+  fileName         String
+  fileType         String
+  cloudStoragePath String
+  isPublic         Boolean         @default(false)
+  userId           String
+  responseId       String?
+  createdAt        DateTime        @default(now())
+  response         SurveyResponse? @relation(fields: [responseId], references: [id])
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AssessmentScore {
+  id             String   @id @default(cuid())
+  totalScore     Float
+  categoryScores Json
+  assessmentDate DateTime @default(now())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Recommendation {
+  id                String        @id @default(cuid())
+  title             String
+  description       String
+  categoryId        String?
+  costType          CostType      @default(OPEX)
+  timeframe         Timeframe     @default(MEDIUM_TERM)
+  strategicType     StrategicType @default(PROJECT)
+  estimatedImpact   Float         @default(0)
+  minScoreThreshold Float         @default(0)
+  maxScoreThreshold Float         @default(100)
+  order             Int           @default(0)
+  createdAt         DateTime      @default(now())
+  roadmapItems      RoadmapItem[]
+}
+
+model RoadmapItem {
+  id               String         @id @default(cuid())
+  userId           String
+  recommendationId String
+  priority         Int            @default(0)
+  plannedQuarter   Int?
+  plannedYear      Int?
+  status           RoadmapStatus  @default(PLANNED)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recommendationId])
 }
 
 enum QuestionType {
   SCALE
   YES_NO
   MULTIPLE_CHOICE
-}
-
-model SurveyResponse {
-  id          String    @id @default(cuid())
-  value       String    
-  score       Float     @default(0)
-  userId      String
-  questionId  String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  question    Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  documents   Document[]
-  
-  @@unique([userId, questionId])
-}
-
-model Document {
-  id                String          @id @default(cuid())
-  fileName          String
-  fileType          String
-  cloudStoragePath  String
-  isPublic          Boolean         @default(false)
-  userId            String
-  responseId        String?
-  createdAt         DateTime        @default(now())
-  
-  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  response          SurveyResponse? @relation(fields: [responseId], references: [id], onDelete: SetNull)
-}
-
-model AssessmentScore {
-  id            String    @id @default(cuid())
-  totalScore    Float
-  categoryScores Json     
-  assessmentDate DateTime @default(now())
-  userId        String
-  
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model Recommendation {
-  id              String            @id @default(cuid())
-  title           String
-  description     String
-  categoryId      String?           
-  costType        CostType          @default(OPEX)
-  timeframe       Timeframe         @default(MEDIUM_TERM)
-  strategicType   StrategicType     @default(PROJECT)
-  estimatedImpact Float             @default(0)
-  minScoreThreshold Float           @default(0)
-  maxScoreThreshold Float           @default(100)
-  order           Int               @default(0)
-  createdAt       DateTime          @default(now())
-  
-  roadmapItems    RoadmapItem[]
 }
 
 enum CostType {
@@ -152,23 +159,6 @@ enum StrategicType {
   QUICK_WIN
   BIG_BET
   PROJECT
-}
-
-model RoadmapItem {
-  id                String         @id @default(cuid())
-  userId            String
-  recommendationId  String
-  priority          Int            @default(0)
-  plannedQuarter    Int?           
-  plannedYear       Int?           
-  status            RoadmapStatus  @default(PLANNED)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  
-  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  recommendation    Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, recommendationId])
 }
 
 enum RoadmapStatus {
