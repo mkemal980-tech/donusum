@@ -45,14 +45,15 @@ model SubCategory {
 }
 
 model SubLevel {
-  id            String      @id @default(cuid())
-  name          String
-  description   String?
-  order         Int         @default(0)
-  subCategoryId String
-  createdAt     DateTime    @default(now())
-  questions     Question[]
-  subCategory   SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+  id              String           @id @default(cuid())
+  name            String
+  description     String?
+  order           Int              @default(0)
+  subCategoryId   String
+  createdAt       DateTime         @default(now())
+  questions       Question[]
+  recommendations Recommendation[]
+  subCategory     SubCategory      @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
 }
 
 model Question {
@@ -111,6 +112,7 @@ model Recommendation {
   title             String
   description       String
   categoryId        String?
+  subLevelId        String?
   costType          CostType      @default(OPEX)
   timeframe         Timeframe     @default(MEDIUM_TERM)
   strategicType     StrategicType @default(PROJECT)
@@ -120,6 +122,7 @@ model Recommendation {
   order             Int           @default(0)
   createdAt         DateTime      @default(now())
   roadmapItems      RoadmapItem[]
+  subLevel          SubLevel?     @relation(fields: [subLevelId], references: [id], onDelete: SetNull)
 }
 
 model RoadmapItem {

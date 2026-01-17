@@ -6,19 +6,19 @@ import { prisma } from "@/lib/db";
 export async function GET() {
   try {
     const recommendations = await prisma.recommendation.findMany({
+      include: {
+        subLevel: {
+          include: {
+            subCategory: {
+              include: { category: true }
+            }
+          }
+        }
+      },
       orderBy: { order: 'asc' }
     });
     
-    // Get categories to map names
-    const categories = await prisma.category.findMany();
-    const categoryMap = Object.fromEntries(categories.map(c => [c.id, c]));
-    
-    const enrichedRecs = recommendations.map(rec => ({
-      ...rec,
-      category: rec.categoryId ? categoryMap[rec.categoryId] : null
-    }));
-    
-    return NextResponse.json(enrichedRecs);
+    return NextResponse.json(recommendations);
   } catch (error) {
     console.error("Error fetching recommendations:", error);
     return NextResponse.json({ error: "Failed to fetch recommendations" }, { status: 500 });
@@ -28,17 +28,20 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, description, categoryId, costType, timeframe, strategicType, estimatedImpact, order } = body;
+    const { title, description, categoryId, subLevelId, costType, timeframe, strategicType, estimatedImpact, minScoreThreshold, maxScoreThreshold, order } = body;
 
     const recommendation = await prisma.recommendation.create({
       data: {
         title,
         description,
-        categoryId,
+        categoryId: categoryId || null,
+        subLevelId: subLevelId || null,
         costType,
         timeframe,
         strategicType,
         estimatedImpact: estimatedImpact || 1,
+        minScoreThreshold: minScoreThreshold || 0,
+        maxScoreThreshold: maxScoreThreshold || 100,
         order: order || 1
       }
     });
@@ -52,18 +55,21 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, title, description, categoryId, costType, timeframe, strategicType, estimatedImpact, order } = body;
+    const { id, title, description, categoryId, subLevelId, costType, timeframe, strategicType, estimatedImpact, minScoreThreshold, maxScoreThreshold, order } = body;
 
     const recommendation = await prisma.recommendation.update({
       where: { id },
       data: {
         title,
         description,
-        categoryId,
+        categoryId: categoryId || null,
+        subLevelId: subLevelId || null,
         costType,
         timeframe,
         strategicType,
         estimatedImpact,
+        minScoreThreshold: minScoreThreshold || 0,
+        maxScoreThreshold: maxScoreThreshold || 100,
         order
       }
     });

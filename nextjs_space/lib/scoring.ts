@@ -21,22 +21,26 @@ export async function calculateUserScore(userId: string) {
   });
 
   if (responses?.length === 0) {
-    return { totalScore: 0, categoryScores: {} };
+    return { totalScore: 0, categoryScores: {}, subLevelScores: {} };
   }
 
   const categoryScores: Record<string, { score: number; maxScore: number; name: string }> = {};
+  const subLevelScores: Record<string, { score: number; maxScore: number; name: string; categoryName: string }> = {};
   let totalWeightedScore = 0;
   let totalMaxScore = 0;
 
   for (const response of responses ?? []) {
-    const category = response?.question?.subLevel?.subCategory?.category;
-    if (!category) continue;
+    const subLevel = response?.question?.subLevel;
+    const category = subLevel?.subCategory?.category;
+    if (!category || !subLevel) continue;
 
     const categoryId = category.id;
+    const subLevelId = subLevel.id;
     const weight = response?.question?.weight ?? 1;
     const score = (response?.score ?? 0) * weight;
     const maxScore = 5 * weight;
 
+    // Kategori bazlı puanlama
     if (!categoryScores[categoryId]) {
       categoryScores[categoryId] = {
         score: 0,
@@ -44,14 +48,27 @@ export async function calculateUserScore(userId: string) {
         name: category?.name ?? 'Unknown'
       };
     }
-
     categoryScores[categoryId].score += score;
     categoryScores[categoryId].maxScore += maxScore;
+
+    // Alt seviye bazlı puanlama
+    if (!subLevelScores[subLevelId]) {
+      subLevelScores[subLevelId] = {
+        score: 0,
+        maxScore: 0,
+        name: subLevel?.name ?? 'Unknown',
+        categoryName: category?.name ?? 'Unknown'
+      };
+    }
+    subLevelScores[subLevelId].score += score;
+    subLevelScores[subLevelId].maxScore += maxScore;
+
     totalWeightedScore += score;
     totalMaxScore += maxScore;
   }
 
   const normalizedCategoryScores: Record<string, { score: number; percentage: number; name: string }> = {};
+  const normalizedSubLevelScores: Record<string, { score: number; percentage: number; name: string; categoryName: string }> = {};
   
   for (const [catId, data] of Object.entries(categoryScores)) {
     const percentage = data?.maxScore > 0 ? Math.round((data.score / data.maxScore) * 100) : 0;
@@ -62,32 +79,74 @@ export async function calculateUserScore(userId: string) {
     };
   }
 
+  for (const [subLevelId, data] of Object.entries(subLevelScores)) {
+    const percentage = data?.maxScore > 0 ? Math.round((data.score / data.maxScore) * 100) : 0;
+    normalizedSubLevelScores[subLevelId] = {
+      score: Math.round(data?.score ?? 0),
+      percentage,
+      name: data?.name ?? 'Unknown',
+      categoryName: data?.categoryName ?? 'Unknown'
+    };
+  }
+
   const totalPercentage = totalMaxScore > 0 ? Math.round((totalWeightedScore / totalMaxScore) * 100) : 0;
 
   return {
     totalScore: totalPercentage,
-    categoryScores: normalizedCategoryScores
+    categoryScores: normalizedCategoryScores,
+    subLevelScores: normalizedSubLevelScores
   };
 }
 
 export async function getRecommendationsForUser(userId: string) {
-  const { categoryScores } = await calculateUserScore(userId);
+  const { categoryScores, subLevelScores } = await calculateUserScore(userId);
   
+  // Düşük puanlı alt seviyeleri bul (%70 altı)
+  const lowScoringSubLevels = Object.entries(subLevelScores)
+    .filter(([_, data]) => (data?.percentage ?? 0) < 70)
+    .map(([subLevelId, data]) => ({ subLevelId, percentage: data.percentage }));
+
+  // Düşük puanlı kategorileri de bul (eski sistem ile uyumluluk)
   const lowScoringCategories = Object.entries(categoryScores)
     .filter(([_, data]) => (data?.percentage ?? 0) < 70)
     .map(([catId]) => catId);
 
+  const subLevelIds = lowScoringSubLevels.map(s => s.subLevelId);
+  const subLevelPercentages = Object.fromEntries(
+    lowScoringSubLevels.map(s => [s.subLevelId, s.percentage])
+  );
+
+  // Önerileri getir - öncelik: SubLevel > Category > Genel
   const recommendations = await prisma.recommendation.findMany({
     where: {
       OR: [
-        { categoryId: { in: lowScoringCategories } },
-        { categoryId: null }
+        { subLevelId: { in: subLevelIds } },
+        { subLevelId: null, categoryId: { in: lowScoringCategories } },
+        { subLevelId: null, categoryId: null }
       ]
+    },
+    include: {
+      subLevel: {
+        include: {
+          subCategory: {
+            include: { category: true }
+          }
+        }
+      }
     },
     orderBy: [
       { strategicType: 'asc' },
       { estimatedImpact: 'desc' }
     ]
+  });
+
+  // Puan eşiği filtreleme
+  const filteredRecommendations = recommendations.filter(rec => {
+    if (rec.subLevelId && subLevelPercentages[rec.subLevelId] !== undefined) {
+      const userScore = subLevelPercentages[rec.subLevelId];
+      return userScore >= rec.minScoreThreshold && userScore <= rec.maxScoreThreshold;
+    }
+    return true;
   });
 
   const existingRoadmapItems = await prisma.roadmapItem.findMany({
@@ -97,8 +156,11 @@ export async function getRecommendationsForUser(userId: string) {
 
   const existingIds = new Set(existingRoadmapItems?.map(item => item?.recommendationId) ?? []);
 
-  return (recommendations ?? []).map(rec => ({
+  return (filteredRecommendations ?? []).map(rec => ({
     ...rec,
-    isInRoadmap: existingIds.has(rec?.id)
+    isInRoadmap: existingIds.has(rec?.id),
+    subLevelName: rec.subLevel?.name,
+    subCategoryName: rec.subLevel?.subCategory?.name,
+    categoryName: rec.subLevel?.subCategory?.category?.name
   }));
 }

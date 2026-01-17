@@ -3,21 +3,36 @@
 import { useEffect, useState } from "react";
 import { Plus, Edit, Trash2, Save, X, Search } from "lucide-react";
 
+interface SubLevel {
+  id: string;
+  name: string;
+}
+
+interface SubCategory {
+  id: string;
+  name: string;
+  subLevels: SubLevel[];
+}
+
 interface Category {
   id: string;
   name: string;
+  subCategories: SubCategory[];
 }
 
 interface Recommendation {
   id: string;
   title: string;
   description: string;
-  categoryId: string;
-  category?: Category;
+  categoryId: string | null;
+  subLevelId: string | null;
+  subLevel?: { name: string; subCategory?: { name: string; category?: { name: string } } };
   costType: 'CAPEX' | 'OPEX';
   timeframe: 'SHORT_TERM' | 'MEDIUM_TERM' | 'LONG_TERM';
   strategicType: 'QUICK_WIN' | 'PROJECT' | 'BIG_BET';
   estimatedImpact: number;
+  minScoreThreshold: number;
+  maxScoreThreshold: number;
   order: number;
 }
 
@@ -99,9 +114,34 @@ export default function RecommendationsPage() {
       setFormData(rec);
     } else {
       setEditItem(null);
-      setFormData({ order: recommendations.length + 1, estimatedImpact: 5, costType: 'OPEX', timeframe: 'SHORT_TERM', strategicType: 'QUICK_WIN' });
+      setFormData({ 
+        order: recommendations.length + 1, 
+        estimatedImpact: 5, 
+        costType: 'OPEX', 
+        timeframe: 'SHORT_TERM', 
+        strategicType: 'QUICK_WIN',
+        minScoreThreshold: 0,
+        maxScoreThreshold: 70
+      });
     }
     setShowModal(true);
+  };
+
+  // Tüm alt seviyeleri düz liste halinde getir
+  const getAllSubLevels = () => {
+    const subLevels: { id: string; name: string; fullPath: string }[] = [];
+    categories.forEach(cat => {
+      cat.subCategories?.forEach(subCat => {
+        subCat.subLevels?.forEach(subLevel => {
+          subLevels.push({
+            id: subLevel.id,
+            name: subLevel.name,
+            fullPath: `${cat.name} > ${subCat.name} > ${subLevel.name}`
+          });
+        });
+      });
+    });
+    return subLevels;
   };
 
   const filteredRecs = recommendations.filter(rec => {
@@ -162,9 +202,8 @@ export default function RecommendationsPage() {
           <thead className="bg-gray-50">
             <tr>
               <th className="text-left p-4 font-semibold text-gray-700">Başlık</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Kategori</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Maliyet</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Zaman</th>
+              <th className="text-left p-4 font-semibold text-gray-700">Alt Seviye / Kategori</th>
+              <th className="text-left p-4 font-semibold text-gray-700">Puan Aralığı</th>
               <th className="text-left p-4 font-semibold text-gray-700">Tip</th>
               <th className="text-left p-4 font-semibold text-gray-700">Etki</th>
               <th className="text-right p-4 font-semibold text-gray-700">İşlemler</th>
@@ -178,18 +217,22 @@ export default function RecommendationsPage() {
                   <p className="text-sm text-gray-500 truncate max-w-xs">{rec.description}</p>
                 </td>
                 <td className="p-4">
-                  <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">
-                    {rec.category?.name || '-'}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 rounded text-sm ${rec.costType === 'CAPEX' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}`}>
-                    {costTypes.find(t => t.value === rec.costType)?.label}
-                  </span>
+                  {rec.subLevel ? (
+                    <div>
+                      <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-sm block mb-1">
+                        {rec.subLevel.name}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {rec.subLevel.subCategory?.category?.name} &gt; {rec.subLevel.subCategory?.name}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-sm">Genel</span>
+                  )}
                 </td>
                 <td className="p-4">
                   <span className="text-sm text-gray-600">
-                    {timeframes.find(t => t.value === rec.timeframe)?.label}
+                    %{rec.minScoreThreshold || 0} - %{rec.maxScoreThreshold || 100}
                   </span>
                 </td>
                 <td className="p-4">
@@ -247,20 +290,58 @@ export default function RecommendationsPage() {
                   rows={3}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
-                  <select
-                    value={formData.categoryId || ''}
-                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                    className="w-full p-3 border rounded-lg"
-                  >
-                    <option value="">Seçiniz</option>
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
+              
+              {/* Alt Seviye Seçimi */}
+              <div className="p-4 bg-indigo-50 rounded-lg">
+                <label className="block text-sm font-medium text-indigo-800 mb-2">Hedef Alt Seviye (Öneri Hangi Alana Gösterilsin?)</label>
+                <select
+                  value={formData.subLevelId || ''}
+                  onChange={(e) => setFormData({ ...formData, subLevelId: e.target.value || null })}
+                  className="w-full p-3 border rounded-lg bg-white"
+                >
+                  <option value="">Genel Öneri (Tüm kullanıcılara)</option>
+                  {getAllSubLevels().map(sl => (
+                    <option key={sl.id} value={sl.id}>{sl.fullPath}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-indigo-600 mt-2">
+                  Bir alt seviye seçerseniz, bu öneri sadece o alanda düşük puan alan kullanıcılara gösterilir.
+                </p>
+              </div>
+
+              {/* Puan Eşikleri */}
+              <div className="p-4 bg-amber-50 rounded-lg">
+                <label className="block text-sm font-medium text-amber-800 mb-2">Puan Aralığı (Bu öneri hangi puan aralığındaki kullanıcılara gösterilsin?)</label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Minimum Puan (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.minScoreThreshold || 0}
+                      onChange={(e) => setFormData({ ...formData, minScoreThreshold: parseInt(e.target.value) })}
+                      className="w-full p-3 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Maksimum Puan (%)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={formData.maxScoreThreshold || 70}
+                      onChange={(e) => setFormData({ ...formData, maxScoreThreshold: parseInt(e.target.value) })}
+                      className="w-full p-3 border rounded-lg"
+                    />
+                  </div>
                 </div>
+                <p className="text-xs text-amber-600 mt-2">
+                  Örn: %0-30 arası çok düşük puanlılar için temel öneriler, %30-70 arası orta puanlılar için geliştirme önerileri.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Maliyet Tipi</label>
                   <select
@@ -305,15 +386,6 @@ export default function RecommendationsPage() {
                     max="15"
                     value={formData.estimatedImpact || 5}
                     onChange={(e) => setFormData({ ...formData, estimatedImpact: parseInt(e.target.value) })}
-                    className="w-full p-3 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sıra</label>
-                  <input
-                    type="number"
-                    value={formData.order || 1}
-                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
                     className="w-full p-3 border rounded-lg"
                   />
                 </div>
