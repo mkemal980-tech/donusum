@@ -1,0 +1,126 @@
+export const dynamic = "force-dynamic";
+
+import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth-options";
+import { prisma } from "@/lib/db";
+
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = (session.user as any)?.id;
+
+    const roadmapItems = await prisma.roadmapItem.findMany({
+      where: { userId },
+      include: {
+        recommendation: true
+      },
+      orderBy: [
+        { plannedYear: 'asc' },
+        { plannedQuarter: 'asc' },
+        { priority: 'asc' }
+      ]
+    });
+
+    return NextResponse.json(roadmapItems ?? []);
+  } catch (error) {
+    console.error("Error fetching roadmap:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch roadmap" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = (session.user as any)?.id;
+    const body = await request.json();
+    const { recommendationId, plannedQuarter, plannedYear, priority } = body ?? {};
+
+    if (!recommendationId) {
+      return NextResponse.json(
+        { error: "Recommendation ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const roadmapItem = await prisma.roadmapItem.upsert({
+      where: {
+        userId_recommendationId: {
+          userId,
+          recommendationId
+        }
+      },
+      update: {
+        plannedQuarter: plannedQuarter ?? null,
+        plannedYear: plannedYear ?? null,
+        priority: priority ?? 0
+      },
+      create: {
+        userId,
+        recommendationId,
+        plannedQuarter: plannedQuarter ?? null,
+        plannedYear: plannedYear ?? null,
+        priority: priority ?? 0
+      },
+      include: {
+        recommendation: true
+      }
+    });
+
+    return NextResponse.json(roadmapItem);
+  } catch (error) {
+    console.error("Error adding to roadmap:", error);
+    return NextResponse.json(
+      { error: "Failed to add to roadmap" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = (session.user as any)?.id;
+    const { searchParams } = new URL(request.url);
+    const recommendationId = searchParams.get('recommendationId');
+
+    if (!recommendationId) {
+      return NextResponse.json(
+        { error: "Recommendation ID is required" },
+        { status: 400 }
+      );
+    }
+
+    await prisma.roadmapItem.delete({
+      where: {
+        userId_recommendationId: {
+          userId,
+          recommendationId
+        }
+      }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error removing from roadmap:", error);
+    return NextResponse.json(
+      { error: "Failed to remove from roadmap" },
+      { status: 500 }
+    );
+  }
+}
