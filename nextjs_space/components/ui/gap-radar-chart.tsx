@@ -13,6 +13,15 @@ interface GapRadarChartProps {
   title?: string;
 }
 
+// Theme colors
+const THEME_COLORS = {
+  navy: "#1e3a8a",
+  navyLight: "#3b5998",
+  purple: "#a78bfa",
+  purpleLight: "#c4b5fd",
+  purpleDark: "#7c3aed",
+};
+
 export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -59,7 +68,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
         else ctx.lineTo(x, y);
       }
       ctx.closePath();
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      ctx.strokeStyle = "rgba(30, 58, 138, 0.15)";
       ctx.lineWidth = 1;
       ctx.stroke();
     }
@@ -72,7 +81,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       ctx.beginPath();
       ctx.moveTo(centerX, centerY);
       ctx.lineTo(x, y);
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      ctx.strokeStyle = "rgba(30, 58, 138, 0.2)";
       ctx.lineWidth = 1;
       ctx.stroke();
     }
@@ -97,29 +106,29 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       ctx.stroke();
     };
 
-    // Draw target polygon (background)
+    // Draw target polygon (background) - Navy theme
     drawPolygon(
       data.map((d) => d.target),
-      "rgba(147, 112, 219, 0.3)",
-      "rgba(147, 112, 219, 0.8)"
+      "rgba(30, 58, 138, 0.2)",
+      "rgba(30, 58, 138, 0.6)"
     );
 
-    // Draw current score polygon (foreground)
+    // Draw current score polygon (foreground) - Purple theme
     drawPolygon(
       data.map((d) => d.score),
-      "rgba(236, 72, 153, 0.4)",
-      "rgba(236, 72, 153, 0.9)"
+      "rgba(167, 139, 250, 0.4)",
+      "rgba(124, 58, 237, 0.9)"
     );
 
     // Draw labels
-    ctx.font = "12px sans-serif";
-    ctx.fillStyle = "#9ca3af";
+    ctx.font = "12px Inter, system-ui, sans-serif";
+    ctx.fillStyle = "#374151";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
     for (let i = 0; i < data.length; i++) {
       const angle = startAngle + i * angleStep;
-      const labelRadius = maxRadius + 40;
+      const labelRadius = maxRadius + 35;
       const x = centerX + labelRadius * Math.cos(angle);
       const y = centerY + labelRadius * Math.sin(angle);
 
@@ -129,7 +138,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       let currentLine = "";
       
       for (const word of words) {
-        if (currentLine.length + word.length > 15) {
+        if (currentLine.length + word.length > 12) {
           if (currentLine) lines.push(currentLine);
           currentLine = word;
         } else {
@@ -146,32 +155,32 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
 
   if (!mounted) {
     return (
-      <div className="bg-[#1e1e2f] rounded-xl p-6 h-full">
-        <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
-        <div className="h-[320px] flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+      <div className="bg-white rounded-xl shadow-md p-6 h-full border border-gray-100">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
+        <div className="h-[280px] flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-[#a78bfa] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#1e1e2f] rounded-xl p-6 h-full">
-      <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
+    <div className="bg-white rounded-xl shadow-md p-6 h-full border border-gray-100">
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
       
       {/* Legend */}
-      <div className="flex items-center justify-center gap-6 mb-4">
+      <div className="flex items-center justify-center gap-6 mb-2">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-pink-400/60" />
-          <span className="text-sm text-gray-400">Anket</span>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: "rgba(167, 139, 250, 0.6)" }} />
+          <span className="text-sm text-gray-600">Mevcut Durum</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-purple-400/60" />
-          <span className="text-sm text-gray-400">Hedef</span>
+          <div className="w-4 h-4 rounded" style={{ backgroundColor: "rgba(30, 58, 138, 0.4)" }} />
+          <span className="text-sm text-gray-600">Hedef</span>
         </div>
       </div>
       
-      <div className="h-[280px]">
+      <div className="h-[260px]">
         <canvas
           ref={canvasRef}
           className="w-full h-full"

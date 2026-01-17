@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings, FolderTree, HelpCircle, Lightbulb, LayoutDashboard, Factory, BarChart3 } from "lucide-react";
+import { Settings, FolderTree, HelpCircle, Lightbulb, LayoutDashboard, Factory, BarChart3, Scale } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -41,6 +41,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin/benchmarks" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
               <BarChart3 size={20} />
               Benchmark Verileri
+            </Link>
+            <Link href="/admin/sector-weights" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
+              <Scale size={20} />
+              Sektör Ağırlıkları
             </Link>
           </nav>
         </aside>

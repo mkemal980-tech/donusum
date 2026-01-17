@@ -67,6 +67,17 @@ model Benchmark {
   @@unique([sectorId, subSectorId, level, targetId])
 }
 
+model SectorCategoryWeight {
+  id         String   @id @default(cuid())
+  sectorId   String
+  categoryId String
+  weight     Float    @default(1.0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([sectorId, categoryId])
+}
+
 enum BenchmarkLevel {
   OVERALL
   CATEGORY

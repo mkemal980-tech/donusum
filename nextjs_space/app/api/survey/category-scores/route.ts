@@ -12,6 +12,21 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get("categoryId");
 
+    // Get user to find their sector
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { sectorId: true }
+    });
+
+    // Get sector category weights if user has a sector
+    let sectorWeights = new Map<string, number>();
+    if (user?.sectorId) {
+      const weights = await prisma.sectorCategoryWeight.findMany({
+        where: { sectorId: user.sectorId }
+      });
+      weights.forEach(w => sectorWeights.set(w.categoryId, w.weight));
+    }
+
     // Get all categories with their structure
     const categories = await prisma.category.findMany({
       include: {
@@ -50,6 +65,9 @@ export async function GET(request: NextRequest) {
     for (const r of responses) {
       responseMap.set(r.questionId, { score: r.score, weight: r.question.weight });
     }
+
+    // Calculate default equal weight if no sector weights defined
+    const defaultWeight = categories.length > 0 ? 1 / categories.length : 0;
 
     // Calculate scores for each level
     const categoryScores = categories.map(category => {
@@ -108,20 +126,38 @@ export async function GET(request: NextRequest) {
       const catPercentage = catMaxScore > 0 ? (catWeightedScore / catMaxScore) * 100 : 0;
       const catScore = (catPercentage / 100) * 5; // Convert to 1-5 scale
 
+      // Get category weight (sector-specific or default equal weight)
+      const categoryWeight = sectorWeights.size > 0 
+        ? (sectorWeights.get(category.id) ?? 0)
+        : defaultWeight;
+
       return {
         id: category.id,
         name: category.name,
         description: category.description,
         score: Math.round(catScore * 10) / 10,
         percentage: Math.round(catPercentage),
+        weight: categoryWeight,
         subCategories: subCategoryScores
       };
     });
 
-    // Calculate overall score
-    const totalWeighted = categoryScores.reduce((sum, c) => sum + c.percentage, 0);
-    const overallPercentage = categoryScores.length > 0 ? totalWeighted / categoryScores.length : 0;
-    const overallScore = (overallPercentage / 100) * 5;
+    // Calculate overall score using weights
+    // Formula: Overall = sum(category_score * category_weight)
+    let overallScore = 0;
+    let totalWeight = 0;
+
+    for (const cat of categoryScores) {
+      overallScore += cat.score * cat.weight;
+      totalWeight += cat.weight;
+    }
+
+    // Normalize if weights don't sum to 1 (fallback)
+    if (totalWeight > 0 && Math.abs(totalWeight - 1) > 0.01) {
+      overallScore = overallScore / totalWeight;
+    }
+
+    const overallPercentage = (overallScore / 5) * 100;
 
     // If specific category requested, return details
     if (categoryId) {
