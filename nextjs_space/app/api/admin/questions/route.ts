@@ -3,45 +3,25 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const subLevelId = searchParams.get('subLevelId');
-    
-    const where = subLevelId ? { subLevelId } : {};
-    const questions = await prisma.question.findMany({
-      where,
-      include: {
-        subLevel: {
-          include: {
-            subCategory: {
-              include: { category: true }
-            }
-          }
-        }
-      },
-      orderBy: { order: 'asc' }
-    });
-    return NextResponse.json(questions);
-  } catch (error) {
-    console.error("Error fetching questions:", error);
-    return NextResponse.json({ error: "Failed to fetch questions" }, { status: 500 });
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { text, type, requiresEvidence, options, subLevelId, order, weight } = body;
+    const { text, type, options, order, requiresEvidence, subLevelId, subCategoryId, weight } = body;
+
+    // En az biri gerekli: subLevelId veya subCategoryId
+    if (!subLevelId && !subCategoryId) {
+      return NextResponse.json({ error: "subLevelId veya subCategoryId gerekli" }, { status: 400 });
+    }
 
     const question = await prisma.question.create({
-      data: {
-        text,
-        type,
+      data: { 
+        text, 
+        type: type || 'SCALE', 
+        options, 
+        order: order || 1, 
         requiresEvidence: requiresEvidence || false,
-        options: options || undefined,
-        subLevelId,
-        order: order || 1,
+        subLevelId: subLevelId || null,
+        subCategoryId: subCategoryId || null,
         weight: weight || 1.0
       }
     });
@@ -55,19 +35,11 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, text, type, requiresEvidence, options, subLevelId, order, weight } = body;
+    const { id, text, type, options, order, requiresEvidence, weight } = body;
 
     const question = await prisma.question.update({
       where: { id },
-      data: {
-        text,
-        type,
-        requiresEvidence,
-        options: options || undefined,
-        subLevelId,
-        order,
-        weight: weight || 1.0
-      }
+      data: { text, type, options, order, requiresEvidence, weight: weight || 1.0 }
     });
     return NextResponse.json(question);
   } catch (error) {

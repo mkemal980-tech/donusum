@@ -33,7 +33,9 @@ interface SubLevel {
 interface SubCategory {
   id: string;
   name: string;
+  hasSubLevels: boolean;
   subLevels: SubLevel[];
+  questions: Question[]; // Doğrudan sorular (hasSubLevels = false olduğunda)
 }
 
 interface Category {
@@ -91,14 +93,26 @@ export default function SurveyClient() {
 
   const currentCategory = categories?.[currentCategoryIndex];
   const currentSubCategory = currentCategory?.subCategories?.[currentSubCategoryIndex];
-  const currentSubLevel = currentSubCategory?.subLevels?.[currentSubLevelIndex];
-  const currentQuestions = currentSubLevel?.questions ?? [];
+  const hasSubLevels = currentSubCategory?.hasSubLevels ?? true;
+  const currentSubLevel = hasSubLevels ? currentSubCategory?.subLevels?.[currentSubLevelIndex] : null;
+  
+  // Mevcut soruları belirle
+  const currentQuestions = hasSubLevels 
+    ? (currentSubLevel?.questions ?? [])
+    : (currentSubCategory?.questions ?? []);
 
+  // Toplam soru sayısı
   const totalQuestions = categories?.reduce((total, cat) => {
     return total + (cat?.subCategories ?? []).reduce((subTotal, sub) => {
-      return subTotal + (sub?.subLevels ?? []).reduce((levelTotal, level) => {
-        return levelTotal + (level?.questions?.length ?? 0);
-      }, 0);
+      if (sub?.hasSubLevels) {
+        // Alt seviyeler varsa
+        return subTotal + (sub?.subLevels ?? []).reduce((levelTotal, level) => {
+          return levelTotal + (level?.questions?.length ?? 0);
+        }, 0);
+      } else {
+        // Doğrudan sorular
+        return subTotal + (sub?.questions?.length ?? 0);
+      }
     }, 0);
   }, 0) ?? 0;
 
@@ -173,8 +187,15 @@ export default function SurveyClient() {
   };
 
   const canGoNext = () => {
-    if ((currentSubLevelIndex ?? 0) < ((currentSubCategory?.subLevels?.length ?? 1) - 1)) return true;
+    const currentSubCat = currentCategory?.subCategories?.[currentSubCategoryIndex];
+    
+    if (currentSubCat?.hasSubLevels) {
+      // Alt seviyeler varsa
+      if ((currentSubLevelIndex ?? 0) < ((currentSubCat?.subLevels?.length ?? 1) - 1)) return true;
+    }
+    // Sonraki alt kategori var mı?
     if ((currentSubCategoryIndex ?? 0) < ((currentCategory?.subCategories?.length ?? 1) - 1)) return true;
+    // Sonraki kategori var mı?
     if ((currentCategoryIndex ?? 0) < ((categories?.length ?? 1) - 1)) return true;
     return false;
   };
@@ -186,12 +207,25 @@ export default function SurveyClient() {
   };
 
   const goNext = () => {
-    if ((currentSubLevelIndex ?? 0) < ((currentSubCategory?.subLevels?.length ?? 1) - 1)) {
-      setCurrentSubLevelIndex(prev => (prev ?? 0) + 1);
-    } else if ((currentSubCategoryIndex ?? 0) < ((currentCategory?.subCategories?.length ?? 1) - 1)) {
+    const currentSubCat = currentCategory?.subCategories?.[currentSubCategoryIndex];
+    
+    if (currentSubCat?.hasSubLevels) {
+      // Alt seviyeler varsa ve daha fazla alt seviye varsa
+      if ((currentSubLevelIndex ?? 0) < ((currentSubCat?.subLevels?.length ?? 1) - 1)) {
+        setCurrentSubLevelIndex(prev => (prev ?? 0) + 1);
+        return;
+      }
+    }
+    
+    // Sonraki alt kategori
+    if ((currentSubCategoryIndex ?? 0) < ((currentCategory?.subCategories?.length ?? 1) - 1)) {
       setCurrentSubCategoryIndex(prev => (prev ?? 0) + 1);
       setCurrentSubLevelIndex(0);
-    } else if ((currentCategoryIndex ?? 0) < ((categories?.length ?? 1) - 1)) {
+      return;
+    }
+    
+    // Sonraki kategori
+    if ((currentCategoryIndex ?? 0) < ((categories?.length ?? 1) - 1)) {
       setCurrentCategoryIndex(prev => (prev ?? 0) + 1);
       setCurrentSubCategoryIndex(0);
       setCurrentSubLevelIndex(0);
@@ -199,21 +233,42 @@ export default function SurveyClient() {
   };
 
   const goPrev = () => {
-    if ((currentSubLevelIndex ?? 0) > 0) {
+    const currentSubCat = currentCategory?.subCategories?.[currentSubCategoryIndex];
+    
+    // Alt seviyelerde geri git
+    if (currentSubCat?.hasSubLevels && (currentSubLevelIndex ?? 0) > 0) {
       setCurrentSubLevelIndex(prev => (prev ?? 1) - 1);
-    } else if ((currentSubCategoryIndex ?? 0) > 0) {
+      return;
+    }
+    
+    // Önceki alt kategori
+    if ((currentSubCategoryIndex ?? 0) > 0) {
       const newSubCatIndex = (currentSubCategoryIndex ?? 1) - 1;
       setCurrentSubCategoryIndex(newSubCatIndex);
-      const prevSubLevels = currentCategory?.subCategories?.[newSubCatIndex]?.subLevels ?? [];
-      setCurrentSubLevelIndex(Math.max(0, prevSubLevels.length - 1));
-    } else if ((currentCategoryIndex ?? 0) > 0) {
+      const prevSubCat = currentCategory?.subCategories?.[newSubCatIndex];
+      if (prevSubCat?.hasSubLevels) {
+        const prevSubLevels = prevSubCat?.subLevels ?? [];
+        setCurrentSubLevelIndex(Math.max(0, prevSubLevels.length - 1));
+      } else {
+        setCurrentSubLevelIndex(0);
+      }
+      return;
+    }
+    
+    // Önceki kategori
+    if ((currentCategoryIndex ?? 0) > 0) {
       const newCatIndex = (currentCategoryIndex ?? 1) - 1;
       setCurrentCategoryIndex(newCatIndex);
       const prevSubCats = categories?.[newCatIndex]?.subCategories ?? [];
       const lastSubCatIndex = Math.max(0, prevSubCats.length - 1);
       setCurrentSubCategoryIndex(lastSubCatIndex);
-      const prevSubLevels = prevSubCats?.[lastSubCatIndex]?.subLevels ?? [];
-      setCurrentSubLevelIndex(Math.max(0, prevSubLevels.length - 1));
+      const lastSubCat = prevSubCats?.[lastSubCatIndex];
+      if (lastSubCat?.hasSubLevels) {
+        const prevSubLevels = lastSubCat?.subLevels ?? [];
+        setCurrentSubLevelIndex(Math.max(0, prevSubLevels.length - 1));
+      } else {
+        setCurrentSubLevelIndex(0);
+      }
     }
   };
 
@@ -288,10 +343,14 @@ export default function SurveyClient() {
             <Layers size={14} />
             {currentSubCategory?.name ?? 'Sub-category'}
           </span>
-          <ChevronRight size={16} className="text-gray-400" />
-          <span className="flex items-center gap-1 px-3 py-1 bg-gray-200 text-gray-700 rounded-lg">
-            {currentSubLevel?.name ?? 'Level'}
-          </span>
+          {hasSubLevels && currentSubLevel && (
+            <>
+              <ChevronRight size={16} className="text-gray-400" />
+              <span className="flex items-center gap-1 px-3 py-1 bg-gray-200 text-gray-700 rounded-lg">
+                {currentSubLevel?.name ?? 'Level'}
+              </span>
+            </>
+          )}
         </motion.div>
 
         {/* Questions */}
@@ -303,15 +362,22 @@ export default function SurveyClient() {
             exit={{ opacity: 0, x: -20 }}
             className="space-y-6 mb-8"
           >
-            {currentQuestions?.map((question, index) => (
-              <SurveyQuestion
-                key={question?.id}
-                question={question}
-                value={responses?.[question?.id ?? '']}
-                onAnswer={handleAnswer}
-                onUpload={handleUpload}
-              />
-            ))}
+            {currentQuestions?.length === 0 ? (
+              <div className="bg-white rounded-xl shadow-md p-8 text-center">
+                <FileQuestion size={48} className="mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Bu bölümde henüz soru bulunmuyor.</p>
+              </div>
+            ) : (
+              currentQuestions?.map((question) => (
+                <SurveyQuestion
+                  key={question?.id}
+                  question={question}
+                  value={responses?.[question?.id ?? '']}
+                  onAnswer={handleAnswer}
+                  onUpload={handleUpload}
+                />
+              ))
+            )}
           </motion.div>
         </AnimatePresence>
 

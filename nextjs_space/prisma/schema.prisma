@@ -84,24 +84,40 @@ enum BenchmarkLevel {
   SUBCATEGORY
 }
 
+// Yeni Survey modeli - Çoklu anket desteği
+model Survey {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean    @default(true)
+  order       Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  categories  Category[]
+}
+
 model Category {
   id            String        @id @default(cuid())
   name          String
   description   String?
   order         Int           @default(0)
+  surveyId      String?
   createdAt     DateTime      @default(now())
+  survey        Survey?       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   subCategories SubCategory[]
 }
 
 model SubCategory {
-  id          String     @id @default(cuid())
-  name        String
-  description String?
-  order       Int        @default(0)
-  categoryId  String
-  createdAt   DateTime   @default(now())
-  category    Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  subLevels   SubLevel[]
+  id           String     @id @default(cuid())
+  name         String
+  description  String?
+  order        Int        @default(0)
+  categoryId   String
+  hasSubLevels Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subLevels    SubLevel[]
+  questions    Question[] @relation("SubCategoryQuestions")
 }
 
 model SubLevel {
@@ -111,7 +127,7 @@ model SubLevel {
   order           Int              @default(0)
   subCategoryId   String
   createdAt       DateTime         @default(now())
-  questions       Question[]
+  questions       Question[]       @relation("SubLevelQuestions")
   recommendations Recommendation[]
   subCategory     SubCategory      @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
 }
@@ -124,9 +140,11 @@ model Question {
   weight           Float            @default(1.0)
   requiresEvidence Boolean          @default(false)
   order            Int              @default(0)
-  subLevelId       String
+  subLevelId       String?
+  subCategoryId    String?
   createdAt        DateTime         @default(now())
-  subLevel         SubLevel         @relation(fields: [subLevelId], references: [id], onDelete: Cascade)
+  subLevel         SubLevel?        @relation("SubLevelQuestions", fields: [subLevelId], references: [id], onDelete: Cascade)
+  subCategory      SubCategory?     @relation("SubCategoryQuestions", fields: [subCategoryId], references: [id], onDelete: Cascade)
   responses        SurveyResponse[]
 }
 

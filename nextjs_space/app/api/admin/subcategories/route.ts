@@ -3,34 +3,19 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const categoryId = searchParams.get('categoryId');
-    
-    const where = categoryId ? { categoryId } : {};
-    const subCategories = await prisma.subCategory.findMany({
-      where,
-      include: {
-        category: true,
-        subLevels: { include: { questions: true }, orderBy: { order: 'asc' } }
-      },
-      orderBy: { order: 'asc' }
-    });
-    return NextResponse.json(subCategories);
-  } catch (error) {
-    console.error("Error fetching subcategories:", error);
-    return NextResponse.json({ error: "Failed to fetch subcategories" }, { status: 500 });
-  }
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, categoryId, order } = body;
+    const { name, description, order, categoryId, hasSubLevels } = body;
 
     const subCategory = await prisma.subCategory.create({
-      data: { name, categoryId, order: order || 1 }
+      data: { 
+        name, 
+        description, 
+        order: order || 1, 
+        categoryId,
+        hasSubLevels: hasSubLevels ?? true
+      }
     });
     return NextResponse.json(subCategory);
   } catch (error) {
@@ -42,11 +27,11 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, categoryId, order } = body;
+    const { id, name, description, order, hasSubLevels } = body;
 
     const subCategory = await prisma.subCategory.update({
       where: { id },
-      data: { name, categoryId, order }
+      data: { name, description, order, hasSubLevels }
     });
     return NextResponse.json(subCategory);
   } catch (error) {

@@ -14,6 +14,11 @@ export async function calculateUserScore(userId: string) {
                 }
               }
             }
+          },
+          subCategory: {
+            include: {
+              category: true
+            }
           }
         }
       }
@@ -21,24 +26,38 @@ export async function calculateUserScore(userId: string) {
   });
 
   if (responses?.length === 0) {
-    return { totalScore: 0, categoryScores: {}, subLevelScores: {} };
+    return { totalScore: 0, categoryScores: {}, subLevelScores: {}, subCategoryScores: {} };
   }
 
   const categoryScores: Record<string, { score: number; maxScore: number; name: string }> = {};
   const subLevelScores: Record<string, { score: number; maxScore: number; name: string; categoryName: string }> = {};
+  const subCategoryScores: Record<string, { score: number; maxScore: number; name: string; categoryName: string }> = {};
   let totalWeightedScore = 0;
   let totalMaxScore = 0;
 
   for (const response of responses ?? []) {
-    const subLevel = response?.question?.subLevel;
-    const category = subLevel?.subCategory?.category;
-    if (!category || !subLevel) continue;
-
-    const categoryId = category.id;
-    const subLevelId = subLevel.id;
-    const weight = response?.question?.weight ?? 1;
+    const question = response?.question;
+    const weight = question?.weight ?? 1;
     const score = (response?.score ?? 0) * weight;
     const maxScore = 5 * weight;
+
+    let category = null;
+    let subLevel = question?.subLevel;
+    let subCategory = question?.subCategory;
+
+    // Soru subLevel'e bağlıysa
+    if (subLevel) {
+      category = subLevel?.subCategory?.category;
+      subCategory = subLevel?.subCategory;
+    } 
+    // Soru doğrudan subCategory'ye bağlıysa (hasSubLevels = false)
+    else if (subCategory) {
+      category = subCategory?.category;
+    }
+
+    if (!category) continue;
+
+    const categoryId = category.id;
 
     // Kategori bazlı puanlama
     if (!categoryScores[categoryId]) {
@@ -51,17 +70,35 @@ export async function calculateUserScore(userId: string) {
     categoryScores[categoryId].score += score;
     categoryScores[categoryId].maxScore += maxScore;
 
-    // Alt seviye bazlı puanlama
-    if (!subLevelScores[subLevelId]) {
-      subLevelScores[subLevelId] = {
-        score: 0,
-        maxScore: 0,
-        name: subLevel?.name ?? 'Unknown',
-        categoryName: category?.name ?? 'Unknown'
-      };
+    // Alt kategori bazlı puanlama
+    if (subCategory) {
+      const subCategoryId = subCategory.id;
+      if (!subCategoryScores[subCategoryId]) {
+        subCategoryScores[subCategoryId] = {
+          score: 0,
+          maxScore: 0,
+          name: subCategory?.name ?? 'Unknown',
+          categoryName: category?.name ?? 'Unknown'
+        };
+      }
+      subCategoryScores[subCategoryId].score += score;
+      subCategoryScores[subCategoryId].maxScore += maxScore;
     }
-    subLevelScores[subLevelId].score += score;
-    subLevelScores[subLevelId].maxScore += maxScore;
+
+    // Alt seviye bazlı puanlama (sadece subLevel varsa)
+    if (subLevel) {
+      const subLevelId = subLevel.id;
+      if (!subLevelScores[subLevelId]) {
+        subLevelScores[subLevelId] = {
+          score: 0,
+          maxScore: 0,
+          name: subLevel?.name ?? 'Unknown',
+          categoryName: category?.name ?? 'Unknown'
+        };
+      }
+      subLevelScores[subLevelId].score += score;
+      subLevelScores[subLevelId].maxScore += maxScore;
+    }
 
     totalWeightedScore += score;
     totalMaxScore += maxScore;
@@ -69,6 +106,7 @@ export async function calculateUserScore(userId: string) {
 
   const normalizedCategoryScores: Record<string, { score: number; percentage: number; name: string }> = {};
   const normalizedSubLevelScores: Record<string, { score: number; percentage: number; name: string; categoryName: string }> = {};
+  const normalizedSubCategoryScores: Record<string, { score: number; percentage: number; name: string; categoryName: string }> = {};
   
   for (const [catId, data] of Object.entries(categoryScores)) {
     const percentage = data?.maxScore > 0 ? Math.round((data.score / data.maxScore) * 100) : 0;
@@ -89,24 +127,40 @@ export async function calculateUserScore(userId: string) {
     };
   }
 
+  for (const [subCatId, data] of Object.entries(subCategoryScores)) {
+    const percentage = data?.maxScore > 0 ? Math.round((data.score / data.maxScore) * 100) : 0;
+    normalizedSubCategoryScores[subCatId] = {
+      score: Math.round(data?.score ?? 0),
+      percentage,
+      name: data?.name ?? 'Unknown',
+      categoryName: data?.categoryName ?? 'Unknown'
+    };
+  }
+
   const totalPercentage = totalMaxScore > 0 ? Math.round((totalWeightedScore / totalMaxScore) * 100) : 0;
 
   return {
     totalScore: totalPercentage,
     categoryScores: normalizedCategoryScores,
-    subLevelScores: normalizedSubLevelScores
+    subLevelScores: normalizedSubLevelScores,
+    subCategoryScores: normalizedSubCategoryScores
   };
 }
 
 export async function getRecommendationsForUser(userId: string) {
-  const { categoryScores, subLevelScores } = await calculateUserScore(userId);
+  const { categoryScores, subLevelScores, subCategoryScores } = await calculateUserScore(userId);
   
   // Düşük puanlı alt seviyeleri bul (%70 altı)
   const lowScoringSubLevels = Object.entries(subLevelScores)
     .filter(([_, data]) => (data?.percentage ?? 0) < 70)
     .map(([subLevelId, data]) => ({ subLevelId, percentage: data.percentage }));
 
-  // Düşük puanlı kategorileri de bul (eski sistem ile uyumluluk)
+  // Düşük puanlı alt kategorileri de bul (%70 altı)
+  const lowScoringSubCategories = Object.entries(subCategoryScores)
+    .filter(([_, data]) => (data?.percentage ?? 0) < 70)
+    .map(([subCatId, data]) => ({ subCatId, percentage: data.percentage }));
+
+  // Düşük puanlı kategorileri bul
   const lowScoringCategories = Object.entries(categoryScores)
     .filter(([_, data]) => (data?.percentage ?? 0) < 70)
     .map(([catId]) => catId);

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Save, X } from "lucide-react";
+import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Save, X, FileText, Layers } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 interface Question {
   id: string;
@@ -24,7 +25,9 @@ interface SubCategory {
   id: string;
   name: string;
   order: number;
+  hasSubLevels: boolean;
   subLevels: SubLevel[];
+  questions: Question[];
 }
 
 interface Category {
@@ -32,7 +35,14 @@ interface Category {
   name: string;
   description: string;
   order: number;
+  surveyId: string | null;
+  survey?: { id: string; name: string } | null;
   subCategories: SubCategory[];
+}
+
+interface Survey {
+  id: string;
+  name: string;
 }
 
 const questionTypes = [
@@ -42,15 +52,33 @@ const questionTypes = [
 ];
 
 export default function CategoriesPage() {
+  const searchParams = useSearchParams();
+  const surveyIdFromUrl = searchParams.get('surveyId');
+  
   const [categories, setCategories] = useState<Category[]>([]);
+  const [surveys, setSurveys] = useState<Survey[]>([]);
+  const [selectedSurveyId, setSelectedSurveyId] = useState<string>(surveyIdFromUrl || '');
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [showModal, setShowModal] = useState<{ type: string; parentId?: string; editItem?: any } | null>(null);
+  const [showModal, setShowModal] = useState<{ type: string; parentId?: string; editItem?: any; parentData?: any } | null>(null);
   const [formData, setFormData] = useState<any>({});
+
+  const fetchSurveys = async () => {
+    try {
+      const res = await fetch('/api/admin/surveys');
+      const data = await res.json();
+      setSurveys(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch('/api/admin/categories');
+      const url = selectedSurveyId 
+        ? `/api/admin/categories?surveyId=${selectedSurveyId}` 
+        : '/api/admin/categories';
+      const res = await fetch(url);
       const data = await res.json();
       setCategories(data || []);
     } catch (error) {
@@ -60,7 +88,14 @@ export default function CategoriesPage() {
     }
   };
 
-  useEffect(() => { fetchCategories(); }, []);
+  useEffect(() => { 
+    fetchSurveys(); 
+  }, []);
+
+  useEffect(() => { 
+    setLoading(true);
+    fetchCategories(); 
+  }, [selectedSurveyId]);
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
@@ -106,9 +141,8 @@ export default function CategoriesPage() {
     }
   };
 
-  const openModal = (type: string, parentId?: string, editItem?: any) => {
+  const openModal = (type: string, parentId?: string, editItem?: any, parentData?: any) => {
     if (editItem) {
-      // Düzenleme modunda
       let initialData = { ...editItem };
       if (type === 'question' && editItem.type === 'YES_NO' && editItem.options) {
         const yesOpt = editItem.options.find((o: any) => o.value === 'yes');
@@ -121,19 +155,22 @@ export default function CategoriesPage() {
       }
       setFormData(initialData);
     } else {
-      // Yeni öğe modunda
       if (type === 'question') {
         setFormData({ type: 'SCALE', weight: 1, order: 1, yesScore: 5, noScore: 1 });
+      } else if (type === 'subcategory') {
+        setFormData({ order: 1, hasSubLevels: true });
+      } else if (type === 'category') {
+        setFormData({ order: 1, surveyId: selectedSurveyId || null });
       } else {
         setFormData({ order: 1 });
       }
     }
-    setShowModal({ type, parentId, editItem });
+    setShowModal({ type, parentId, editItem, parentData });
   };
 
   const Modal = () => {
     if (!showModal) return null;
-    const { type, parentId, editItem } = showModal;
+    const { type, parentId, editItem, parentData } = showModal;
     const isEdit = !!editItem;
     
     const titles: Record<string, string> = {
@@ -145,11 +182,22 @@ export default function CategoriesPage() {
 
     const handleSubmit = () => {
       let data = { ...formData };
+      if (type === 'category' && !isEdit) {
+        data.surveyId = selectedSurveyId || null;
+      }
       if (type === 'subcategory' && !isEdit) data.categoryId = parentId;
       if (type === 'sublevel' && !isEdit) data.subCategoryId = parentId;
       if (type === 'question') {
-        if (!isEdit) data.subLevelId = parentId;
-        // Çoktan seçmeli şıkları işle
+        if (!isEdit) {
+          // parentData kontrol et - subLevel mi subCategory mi?
+          if (parentData?.isSubCategory) {
+            data.subCategoryId = parentId;
+            data.subLevelId = null;
+          } else {
+            data.subLevelId = parentId;
+            data.subCategoryId = null;
+          }
+        }
         if (data.optionsText) {
           data.options = data.optionsText.split('\n').filter((l: string) => l.trim()).map((line: string) => {
             const [value, label, score] = line.split('|');
@@ -157,7 +205,6 @@ export default function CategoriesPage() {
           });
           delete data.optionsText;
         }
-        // Evet/Hayır puanlarını options'a ekle
         if (data.type === 'YES_NO') {
           data.options = [
             { value: 'yes', label: 'Evet', score: data.yesScore || 5 },
@@ -225,7 +272,6 @@ export default function CategoriesPage() {
                       rows={5}
                       placeholder="dusuk|Düşük|1&#10;orta|Orta|3&#10;yuksek|Yüksek|5"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Format: değer|görünen_metin|puan (1-5 arası)</p>
                   </div>
                 )}
                 {(formData.type === 'SCALE' || !formData.type) && (
@@ -276,6 +322,60 @@ export default function CategoriesPage() {
                     onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
                     className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                   />
+                </div>
+              </>
+            ) : type === 'subcategory' ? (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">İsim</label>
+                  <input
+                    type="text"
+                    value={formData.name || ''}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sıra</label>
+                  <input
+                    type="number"
+                    value={formData.order || 1}
+                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  />
+                </div>
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Layers size={20} className="text-amber-600" />
+                    <label className="font-medium text-amber-800">Alt Seviye Yapısı</label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="hasSubLevels"
+                        checked={formData.hasSubLevels === true}
+                        onChange={() => setFormData({ ...formData, hasSubLevels: true })}
+                        className="w-4 h-4 text-[#1e3a8a]"
+                      />
+                      <span className="text-sm text-gray-700">Alt seviyeler kullan</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="hasSubLevels"
+                        checked={formData.hasSubLevels === false}
+                        onChange={() => setFormData({ ...formData, hasSubLevels: false })}
+                        className="w-4 h-4 text-[#1e3a8a]"
+                      />
+                      <span className="text-sm text-gray-700">Doğrudan sorular ekle</span>
+                    </label>
+                  </div>
+                  <p className="text-xs text-amber-600 mt-2">
+                    {formData.hasSubLevels 
+                      ? '"İzleme", "İnisiyatifler" gibi alt seviyeler oluşturabilirsiniz' 
+                      : 'Soruları doğrudan bu alt kategoriye ekleyebilirsiniz'}
+                  </p>
                 </div>
               </>
             ) : (
@@ -333,6 +433,47 @@ export default function CategoriesPage() {
     );
   };
 
+  // Soru render fonksiyonu
+  const renderQuestion = (question: Question, idx: number, parentId: string, parentData: any) => (
+    <div key={question.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-lg">
+      <div className="flex-1">
+        <p className="text-gray-800">{idx + 1}. {question.text}</p>
+        <div className="flex flex-wrap gap-2 mt-2">
+          <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
+            {questionTypes.find(t => t.value === question.type)?.label}
+          </span>
+          <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
+            Ağırlık: {question.weight || 1}x
+          </span>
+          {question.requiresEvidence && (
+            <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded">Kanıt Gerekli</span>
+          )}
+        </div>
+        {question.options && question.options.length > 0 && question.type !== 'SCALE' && (
+          <div className="mt-2 text-xs text-gray-500">
+            Şıklar: {question.options.map((opt: any) => `${opt.label}(${opt.score}p)`).join(', ')}
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-1 ml-2">
+        <button 
+          onClick={() => openModal('question', parentId, question, parentData)} 
+          className="p-1.5 hover:bg-blue-100 rounded text-blue-600" 
+          title="Düzenle"
+        >
+          <Edit size={16} />
+        </button>
+        <button 
+          onClick={() => handleDelete('question', question.id)} 
+          className="p-1.5 hover:bg-red-100 rounded text-red-600" 
+          title="Sil"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -351,6 +492,29 @@ export default function CategoriesPage() {
         >
           <Plus size={20} /> Yeni Kategori
         </button>
+      </div>
+
+      {/* Anket Seçimi */}
+      <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+        <div className="flex items-center gap-4">
+          <FileText className="text-[#1e3a8a]" size={20} />
+          <label className="font-medium text-gray-700">Anket Seçin:</label>
+          <select
+            value={selectedSurveyId}
+            onChange={(e) => setSelectedSurveyId(e.target.value)}
+            className="flex-1 max-w-md p-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+          >
+            <option value="">Tüm Kategoriler (Anketsiz)</option>
+            {surveys.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+          {selectedSurveyId && (
+            <span className="text-sm text-gray-500">
+              {categories.length} kategori gösteriliyor
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -397,16 +561,33 @@ export default function CategoriesPage() {
                       <div className="flex items-center gap-3 cursor-pointer" onClick={() => toggleExpand(`sub-${subCat.id}`)}>
                         {expanded[`sub-${subCat.id}`] ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                         <span className="font-medium text-purple-800">{subCat.name}</span>
-                        <span className="text-purple-600 text-sm">({subCat.subLevels?.length || 0} alt seviye)</span>
+                        {subCat.hasSubLevels ? (
+                          <span className="text-purple-600 text-sm">({subCat.subLevels?.length || 0} alt seviye)</span>
+                        ) : (
+                          <span className="text-purple-600 text-sm">({subCat.questions?.length || 0} soru)</span>
+                        )}
+                        {!subCat.hasSubLevels && (
+                          <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded">Doğrudan Sorular</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => openModal('sublevel', subCat.id)} 
-                          className="p-1.5 hover:bg-purple-200 rounded text-purple-700" 
-                          title="Alt Seviye Ekle"
-                        >
-                          <Plus size={16} />
-                        </button>
+                        {subCat.hasSubLevels ? (
+                          <button 
+                            onClick={() => openModal('sublevel', subCat.id)} 
+                            className="p-1.5 hover:bg-purple-200 rounded text-purple-700" 
+                            title="Alt Seviye Ekle"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => openModal('question', subCat.id, undefined, { isSubCategory: true })} 
+                            className="p-1.5 hover:bg-purple-200 rounded text-purple-700" 
+                            title="Soru Ekle"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        )}
                         <button 
                           onClick={() => openModal('subcategory', category.id, subCat)} 
                           className="p-1.5 hover:bg-purple-200 rounded text-purple-700" 
@@ -424,93 +605,72 @@ export default function CategoriesPage() {
                       </div>
                     </div>
 
-                    {/* SubLevels */}
+                    {/* SubLevels veya Doğrudan Sorular */}
                     {expanded[`sub-${subCat.id}`] && (
                       <div className="p-3 bg-gray-50 space-y-2">
-                        {subCat.subLevels?.map((subLevel) => (
-                          <div key={subLevel.id} className="border rounded-lg bg-white overflow-hidden">
-                            <div className="flex items-center justify-between p-3 bg-indigo-50">
-                              <div className="flex items-center gap-3 cursor-pointer" onClick={() => toggleExpand(`level-${subLevel.id}`)}>
-                                {expanded[`level-${subLevel.id}`] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                                <span className="font-medium text-indigo-800">{subLevel.name}</span>
-                                <span className="text-indigo-600 text-sm">({subLevel.questions?.length || 0} soru)</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <button 
-                                  onClick={() => openModal('question', subLevel.id)} 
-                                  className="p-1.5 hover:bg-indigo-100 rounded text-indigo-700" 
-                                  title="Soru Ekle"
-                                >
-                                  <Plus size={16} />
-                                </button>
-                                <button 
-                                  onClick={() => openModal('sublevel', subCat.id, subLevel)} 
-                                  className="p-1.5 hover:bg-indigo-100 rounded text-indigo-700" 
-                                  title="Düzenle"
-                                >
-                                  <Edit size={16} />
-                                </button>
-                                <button 
-                                  onClick={() => handleDelete('sublevel', subLevel.id)} 
-                                  className="p-1.5 hover:bg-red-100 rounded text-red-600" 
-                                  title="Sil"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Questions */}
-                            {expanded[`level-${subLevel.id}`] && (
-                              <div className="p-3 space-y-2">
-                                {subLevel.questions?.map((question, idx) => (
-                                  <div key={question.id} className="flex items-start justify-between p-3 bg-gray-50 rounded-lg">
-                                    <div className="flex-1">
-                                      <p className="text-gray-800">{idx + 1}. {question.text}</p>
-                                      <div className="flex flex-wrap gap-2 mt-2">
-                                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                                          {questionTypes.find(t => t.value === question.type)?.label}
-                                        </span>
-                                        <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
-                                          Ağırlık: {question.weight || 1}x
-                                        </span>
-                                        {question.requiresEvidence && (
-                                          <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded">Kanıt Gerekli</span>
-                                        )}
-                                      </div>
-                                      {question.options && question.options.length > 0 && question.type !== 'SCALE' && (
-                                        <div className="mt-2 text-xs text-gray-500">
-                                          Şıklar: {question.options.map((opt: any) => `${opt.label}(${opt.score}p)`).join(', ')}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-1 ml-2">
-                                      <button 
-                                        onClick={() => openModal('question', subLevel.id, question)} 
-                                        className="p-1.5 hover:bg-blue-100 rounded text-blue-600" 
-                                        title="Düzenle"
-                                      >
-                                        <Edit size={16} />
-                                      </button>
-                                      <button 
-                                        onClick={() => handleDelete('question', question.id)} 
-                                        className="p-1.5 hover:bg-red-100 rounded text-red-600" 
-                                        title="Sil"
-                                      >
-                                        <Trash2 size={16} />
-                                      </button>
-                                    </div>
+                        {subCat.hasSubLevels ? (
+                          // Alt Seviyeler ve soruları
+                          <>
+                            {subCat.subLevels?.map((subLevel) => (
+                              <div key={subLevel.id} className="border rounded-lg bg-white overflow-hidden">
+                                <div className="flex items-center justify-between p-3 bg-indigo-50">
+                                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => toggleExpand(`level-${subLevel.id}`)}>
+                                    {expanded[`level-${subLevel.id}`] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                    <span className="font-medium text-indigo-800">{subLevel.name}</span>
+                                    <span className="text-indigo-600 text-sm">({subLevel.questions?.length || 0} soru)</span>
                                   </div>
-                                ))}
-                                {(!subLevel.questions || subLevel.questions.length === 0) && (
-                                  <p className="text-gray-400 text-center py-4">Henüz soru eklenmemiş</p>
+                                  <div className="flex items-center gap-2">
+                                    <button 
+                                      onClick={() => openModal('question', subLevel.id, undefined, { isSubCategory: false })} 
+                                      className="p-1.5 hover:bg-indigo-100 rounded text-indigo-700" 
+                                      title="Soru Ekle"
+                                    >
+                                      <Plus size={16} />
+                                    </button>
+                                    <button 
+                                      onClick={() => openModal('sublevel', subCat.id, subLevel)} 
+                                      className="p-1.5 hover:bg-indigo-100 rounded text-indigo-700" 
+                                      title="Düzenle"
+                                    >
+                                      <Edit size={16} />
+                                    </button>
+                                    <button 
+                                      onClick={() => handleDelete('sublevel', subLevel.id)} 
+                                      className="p-1.5 hover:bg-red-100 rounded text-red-600" 
+                                      title="Sil"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Questions */}
+                                {expanded[`level-${subLevel.id}`] && (
+                                  <div className="p-3 space-y-2">
+                                    {subLevel.questions?.map((question, idx) => 
+                                      renderQuestion(question, idx, subLevel.id, { isSubCategory: false })
+                                    )}
+                                    {(!subLevel.questions || subLevel.questions.length === 0) && (
+                                      <p className="text-gray-400 text-center py-4">Henüz soru eklenmemiş</p>
+                                    )}
+                                  </div>
                                 )}
                               </div>
+                            ))}
+                            {(!subCat.subLevels || subCat.subLevels.length === 0) && (
+                              <p className="text-gray-400 text-center py-4">Henüz alt seviye eklenmemiş</p>
+                            )}
+                          </>
+                        ) : (
+                          // Doğrudan sorular (hasSubLevels = false)
+                          <div className="space-y-2">
+                            {subCat.questions?.map((question, idx) => 
+                              renderQuestion(question, idx, subCat.id, { isSubCategory: true })
+                            )}
+                            {(!subCat.questions || subCat.questions.length === 0) && (
+                              <p className="text-gray-400 text-center py-4">Henüz soru eklenmemiş</p>
                             )}
                           </div>
-                        ))}
-                        {(!subCat.subLevels || subCat.subLevels.length === 0) && (
-                          <p className="text-gray-400 text-center py-4">Henüz alt seviye eklenmemiş</p>
                         )}
                       </div>
                     )}

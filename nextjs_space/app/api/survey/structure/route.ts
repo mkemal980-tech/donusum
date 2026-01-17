@@ -1,16 +1,27 @@
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const surveyId = searchParams.get('surveyId');
+
+    // Anket ID varsa sadece o ankete ait kategorileri getir
+    const whereClause = surveyId ? { surveyId } : {};
+
     const categories = await prisma.category.findMany({
+      where: whereClause,
       orderBy: { order: 'asc' },
       include: {
+        survey: {
+          select: { id: true, name: true }
+        },
         subCategories: {
           orderBy: { order: 'asc' },
           include: {
+            // Alt seviyeler ve onların soruları
             subLevels: {
               orderBy: { order: 'asc' },
               include: {
@@ -18,6 +29,10 @@ export async function GET() {
                   orderBy: { order: 'asc' }
                 }
               }
+            },
+            // Doğrudan alt kategoriye bağlı sorular (hasSubLevels = false)
+            questions: {
+              orderBy: { order: 'asc' }
             }
           }
         }
