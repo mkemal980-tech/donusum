@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/ui/header";
 import ScoreCard from "@/components/ui/score-card";
 import ProgressBar from "@/components/ui/progress-bar";
+import { BenchmarkSection } from "./benchmark-section";
 import { 
   ClipboardList, 
   TrendingUp, 
@@ -225,11 +226,21 @@ export default function DashboardClient() {
           </motion.div>
         </div>
 
-        {/* Quick Actions */}
+        {/* Benchmark Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
+          className="mb-8"
+        >
+          <BenchmarkSection />
+        </motion.div>
+
+        {/* Quick Actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-6"
         >
           <button

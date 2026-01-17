@@ -16,12 +16,61 @@ model User {
   firstName         String?
   lastName          String?
   organization      String?
+  sectorId          String?
+  subSectorId       String?
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   assessmentScores  AssessmentScore[]
   uploadedDocuments Document[]
   roadmapItems      RoadmapItem[]
   surveyResponses   SurveyResponse[]
+  sector            Sector?           @relation(fields: [sectorId], references: [id])
+  subSector         SubSector?        @relation(fields: [subSectorId], references: [id])
+}
+
+model Sector {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  order       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  subSectors  SubSector[]
+  users       User[]
+  benchmarks  Benchmark[]
+}
+
+model SubSector {
+  id         String      @id @default(cuid())
+  name       String
+  sectorId   String
+  order      Int         @default(0)
+  createdAt  DateTime    @default(now())
+  sector     Sector      @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  users      User[]
+  benchmarks Benchmark[]
+
+  @@unique([sectorId, name])
+}
+
+model Benchmark {
+  id            String     @id @default(cuid())
+  sectorId      String
+  subSectorId   String?
+  level         BenchmarkLevel @default(OVERALL)
+  targetId      String?
+  bestScore     Float      @default(0)
+  averageScore  Float      @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  sector        Sector     @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  subSector     SubSector? @relation(fields: [subSectorId], references: [id], onDelete: Cascade)
+
+  @@unique([sectorId, subSectorId, level, targetId])
+}
+
+enum BenchmarkLevel {
+  OVERALL
+  CATEGORY
+  SUBCATEGORY
 }
 
 model Category {

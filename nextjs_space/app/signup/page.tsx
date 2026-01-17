@@ -1,11 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Building, UserPlus, AlertCircle } from "lucide-react";
+import { Mail, Lock, User, Building, UserPlus, AlertCircle, Factory, Layers } from "lucide-react";
+
+interface SubSector {
+  id: string;
+  name: string;
+}
+
+interface Sector {
+  id: string;
+  name: string;
+  subSectors: SubSector[];
+}
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -14,30 +25,60 @@ export default function SignupPage() {
     confirmPassword: "",
     firstName: "",
     lastName: "",
-    organization: ""
+    organization: "",
+    sectorId: "",
+    subSectorId: ""
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sectors, setSectors] = useState<Sector[]>([]);
+  const [loadingSectors, setLoadingSectors] = useState(true);
   const router = useRouter();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const fetchSectors = async () => {
+      try {
+        const res = await fetch("/api/sectors");
+        const data = await res.json();
+        setSectors(data || []);
+      } catch (err) {
+        console.error("Failed to fetch sectors:", err);
+      } finally {
+        setLoadingSectors(false);
+      }
+    };
+    fetchSectors();
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target ?? {};
-    setFormData(prev => ({ ...(prev ?? {}), [name ?? '']: value ?? '' }));
+    setFormData(prev => {
+      const newData = { ...(prev ?? {}), [name ?? '']: value ?? '' };
+      // Reset subSectorId when sector changes
+      if (name === 'sectorId') {
+        newData.subSectorId = '';
+      }
+      return newData;
+    });
   };
+
+  const selectedSector = sectors.find(s => s.id === formData.sectorId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
     if ((formData?.password ?? '') !== (formData?.confirmPassword ?? '')) {
-      setError("Passwords do not match");
+      setError("Şifreler eşleşmiyor");
       return;
     }
 
     if ((formData?.password?.length ?? 0) < 6) {
-      setError("Password must be at least 6 characters");
+      setError("Şifre en az 6 karakter olmalıdır");
       return;
     }
+
+    // Sektör opsiyonel - admin tarafından sektörler oluşturulduktan sonra seçilebilir
 
     setLoading(true);
 
@@ -50,14 +91,16 @@ export default function SignupPage() {
           password: formData?.password,
           firstName: formData?.firstName,
           lastName: formData?.lastName,
-          organization: formData?.organization
+          organization: formData?.organization,
+          sectorId: formData?.sectorId,
+          subSectorId: formData?.subSectorId || null
         })
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data?.error ?? "Signup failed");
+        setError(data?.error ?? "Kayıt başarısız");
         return;
       }
 
@@ -73,7 +116,7 @@ export default function SignupPage() {
         router.push("/login");
       }
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      setError("Bir hata oluştu. Lütfen tekrar deneyin.");
     } finally {
       setLoading(false);
     }
@@ -90,8 +133,8 @@ export default function SignupPage() {
           <div className="w-16 h-16 bg-gradient-to-br from-[#1e3a8a] to-[#a78bfa] rounded-2xl flex items-center justify-center mx-auto mb-4">
             <span className="text-white font-bold text-2xl">T</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-gray-600 mt-2">Start your transformation journey</p>
+          <h1 className="text-2xl font-bold text-gray-900">Hesap Oluştur</h1>
+          <p className="text-gray-600 mt-2">Dönüşüm yolculuğunuza başlayın</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -105,7 +148,7 @@ export default function SignupPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Ad</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                   <input
@@ -114,25 +157,25 @@ export default function SignupPage() {
                     value={formData?.firstName ?? ''}
                     onChange={handleChange}
                     className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent outline-none"
-                    placeholder="John"
+                    placeholder="Adınız"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Soyad</label>
                 <input
                   type="text"
                   name="lastName"
                   value={formData?.lastName ?? ''}
                   onChange={handleChange}
                   className="w-full px-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent outline-none"
-                  placeholder="Doe"
+                  placeholder="Soyadınız"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Organization</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Şirket</label>
               <div className="relative">
                 <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input
@@ -141,13 +184,54 @@ export default function SignupPage() {
                   value={formData?.organization ?? ''}
                   onChange={handleChange}
                   className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent outline-none"
-                  placeholder="Company Name"
+                  placeholder="Şirket Adı"
                 />
               </div>
             </div>
 
+            {sectors.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sektör</label>
+                <div className="relative">
+                  <Factory className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <select
+                    name="sectorId"
+                    value={formData?.sectorId ?? ''}
+                    onChange={handleChange}
+                    disabled={loadingSectors}
+                    className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent outline-none appearance-none bg-white"
+                  >
+                    <option value="">Sektör Seçin (opsiyonel)</option>
+                    {sectors.map(sector => (
+                      <option key={sector.id} value={sector.id}>{sector.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {selectedSector && selectedSector.subSectors.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Alt Sektör</label>
+                <div className="relative">
+                  <Layers className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <select
+                    name="subSectorId"
+                    value={formData?.subSectorId ?? ''}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent outline-none appearance-none bg-white"
+                  >
+                    <option value="">Alt Sektör Seçin (isteğe bağlı)</option>
+                    {selectedSector.subSectors.map(sub => (
+                      <option key={sub.id} value={sub.id}>{sub.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">E-posta</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input
@@ -156,14 +240,14 @@ export default function SignupPage() {
                   value={formData?.email ?? ''}
                   onChange={handleChange}
                   className="w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent outline-none"
-                  placeholder="john@company.com"
+                  placeholder="ornek@sirket.com"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Şifre</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input
@@ -179,7 +263,7 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Şifre Tekrar</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                 <input
@@ -202,16 +286,16 @@ export default function SignupPage() {
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
-                <><UserPlus size={20} /> Create Account</>
+                <><UserPlus size={20} /> Hesap Oluştur</>
               )}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-600">
-              Already have an account?{" "}
+              Zaten hesabınız var mı?{" "}
               <Link href="/login" className="text-[#1e3a8a] font-medium hover:underline">
-                Sign in
+                Giriş Yapın
               </Link>
             </p>
           </div>
