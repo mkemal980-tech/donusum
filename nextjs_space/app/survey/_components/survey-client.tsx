@@ -239,8 +239,8 @@ export default function SurveyClient() {
         <div className="max-w-[1200px] mx-auto px-6 py-8">
           <div className="text-center py-16">
             <FileQuestion size={64} className="mx-auto text-gray-300 mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-700 mb-2">No Survey Available</h2>
-            <p className="text-gray-500">The survey is being prepared. Please check back later.</p>
+            <h2 className="text-2xl font-semibold text-gray-700 mb-2">Anket Mevcut Değil</h2>
+            <p className="text-gray-500">Anket hazırlanıyor. Lütfen daha sonra tekrar kontrol edin.</p>
           </div>
         </div>
       </div>
@@ -259,18 +259,18 @@ export default function SurveyClient() {
           className="bg-white rounded-xl shadow-md p-6 mb-6"
         >
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">Maturity Assessment Survey</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Olgunluk Değerlendirme Anketi</h1>
             <div className="flex items-center gap-2 text-sm">
               {saving && (
                 <span className="text-[#a78bfa] flex items-center gap-1">
                   <div className="w-3 h-3 border-2 border-[#a78bfa] border-t-transparent rounded-full animate-spin" />
-                  Saving...
+                  Kaydediliyor...
                 </span>
               )}
-              <span className="text-gray-500">{answeredQuestions} of {totalQuestions} answered</span>
+              <span className="text-gray-500">{totalQuestions} sorudan {answeredQuestions} tanesi cevaplandı</span>
             </div>
           </div>
-          <ProgressBar value={progressPercentage} label="Overall Progress" color="#1e3a8a" />
+          <ProgressBar value={progressPercentage} label="Genel İlerleme" color="#1e3a8a" />
         </motion.div>
 
         {/* Breadcrumb Navigation */}
@@ -327,7 +327,7 @@ export default function SurveyClient() {
             className="flex items-center gap-2 px-6 py-3 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
             <ChevronLeft size={20} />
-            Previous
+            Önceki
           </button>
 
           <div className="flex items-center gap-2">
@@ -350,7 +350,7 @@ export default function SurveyClient() {
               onClick={goNext}
               className="flex items-center gap-2 px-6 py-3 bg-[#1e3a8a] text-white rounded-lg font-medium hover:bg-[#3b5998] transition-colors shadow-md"
             >
-              Next
+              Sonraki
               <ChevronRight size={20} />
             </button>
           ) : (
@@ -358,7 +358,7 @@ export default function SurveyClient() {
               onClick={handleComplete}
               className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors shadow-md"
             >
-              Complete Survey
+              Anketi Tamamla
               <Check size={20} />
             </button>
           )}

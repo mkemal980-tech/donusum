@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ClipboardList, Lightbulb, Map, User } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Lightbulb, Map, User, Settings } from "lucide-react";
 import { motion } from "framer-motion";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/survey", label: "Survey", icon: ClipboardList },
-  { href: "/recommendations", label: "Recommendations", icon: Lightbulb },
-  { href: "/roadmap", label: "Roadmap", icon: Map },
+  { href: "/dashboard", label: "Ana Sayfa", icon: LayoutDashboard },
+  { href: "/survey", label: "Anket", icon: ClipboardList },
+  { href: "/recommendations", label: "Öneriler", icon: Lightbulb },
+  { href: "/roadmap", label: "Yol Haritası", icon: Map },
+  { href: "/admin", label: "Yönetim", icon: Settings },
 ];
 
 export default function Header() {
@@ -23,13 +24,13 @@ export default function Header() {
             <div className="w-10 h-10 bg-gradient-to-br from-[#1e3a8a] to-[#a78bfa] rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">T</span>
             </div>
-            <span className="font-semibold text-lg text-[#1e3a8a] hidden sm:block">Transformation Platform</span>
+            <span className="font-semibold text-lg text-[#1e3a8a] hidden sm:block">Dönüşüm Platformu</span>
           </Link>
           
           <nav className="flex items-center gap-2">
             {navItems?.map((item) => {
               const Icon = item?.icon;
-              const isActive = pathname === item?.href;
+              const isActive = pathname === item?.href || (item?.href === '/admin' && pathname?.startsWith('/admin'));
               return (
                 <Link key={item?.href} href={item?.href ?? '#'}>
                   <motion.div
@@ -52,7 +53,7 @@ export default function Header() {
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
               <User size={16} />
-              <span>John Doe</span>
+              <span>Kullanıcı</span>
             </div>
           </div>
         </div>

@@ -107,9 +107,9 @@ export default function RoadmapClient() {
         >
           <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
             <Map className="text-[#1e3a8a]" />
-            Transformation Roadmap
+            Dönüşüm Yol Haritası
           </h1>
-          <p className="text-gray-600">Plan and visualize your transformation journey over time</p>
+          <p className="text-gray-600">Dönüşüm yolculuğunuzu planlayın ve görselleştirin</p>
         </motion.div>
 
         {/* Summary Cards */}
@@ -125,7 +125,7 @@ export default function RoadmapClient() {
                 <Calendar className="text-[#1e3a8a]" size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Total Initiatives</p>
+                <p className="text-sm text-gray-500">Toplam İnisiyatif</p>
                 <p className="text-2xl font-bold text-gray-900">{roadmapItems?.length ?? 0}</p>
               </div>
             </div>
@@ -142,7 +142,7 @@ export default function RoadmapClient() {
                 <TrendingUp className="text-green-600" size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Projected Impact</p>
+                <p className="text-sm text-gray-500">Tahmini Etki</p>
                 <p className="text-2xl font-bold text-green-600">+{totalImpact}%</p>
               </div>
             </div>
@@ -159,7 +159,7 @@ export default function RoadmapClient() {
                 <Map className="text-[#a78bfa]" size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Scheduled</p>
+                <p className="text-sm text-gray-500">Planlanmış</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {scheduledItems?.length ?? 0} / {roadmapItems?.length ?? 0}
                 </p>
@@ -177,8 +177,8 @@ export default function RoadmapClient() {
           >
             <Info className="text-[#1e3a8a] mt-0.5 flex-shrink-0" size={20} />
             <div>
-              <p className="font-medium text-[#1e3a8a]">Schedule Your Initiatives</p>
-              <p className="text-sm text-blue-700">Use the dropdown menus to assign unscheduled items to specific quarters. This helps visualize your transformation timeline.</p>
+              <p className="font-medium text-[#1e3a8a]">İnisiyatiflerinizi Planlayın</p>
+              <p className="text-sm text-blue-700">Planlanmamış öğeleri belirli çeyreklere atamak için açılır menüleri kullanın. Bu, dönüşüm zaman çizelgenizi görselleştirmenize yardımcı olur.</p>
             </div>
           </motion.div>
         )}
@@ -204,13 +204,13 @@ export default function RoadmapClient() {
             className="bg-white rounded-xl shadow-md p-16 text-center"
           >
             <Map size={64} className="mx-auto text-gray-300 mb-4" />
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">No Roadmap Items Yet</h2>
-            <p className="text-gray-500 mb-6">Add recommendations to your roadmap from the Recommendations page</p>
+            <h2 className="text-xl font-semibold text-gray-700 mb-2">Henüz Yol Haritası Öğesi Yok</h2>
+            <p className="text-gray-500 mb-6">Öneriler sayfasından yol haritanıza öneri ekleyin</p>
             <a
               href="/recommendations"
               className="inline-flex items-center gap-2 px-6 py-3 bg-[#1e3a8a] text-white rounded-lg font-medium hover:bg-[#3b5998] transition-colors"
             >
-              Browse Recommendations
+              Önerilere Göz At
             </a>
           </motion.div>
         )}

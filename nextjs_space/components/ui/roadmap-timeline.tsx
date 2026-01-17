@@ -25,12 +25,12 @@ interface RoadmapTimelineProps {
 
 const currentYear = 2026;
 const quarters = [
-  { q: 1, year: currentYear, label: "Q1 2026" },
-  { q: 2, year: currentYear, label: "Q2 2026" },
-  { q: 3, year: currentYear, label: "Q3 2026" },
-  { q: 4, year: currentYear, label: "Q4 2026" },
-  { q: 1, year: currentYear + 1, label: "Q1 2027" },
-  { q: 2, year: currentYear + 1, label: "Q2 2027" },
+  { q: 1, year: currentYear, label: "Ç1 2026" },
+  { q: 2, year: currentYear, label: "Ç2 2026" },
+  { q: 3, year: currentYear, label: "Ç3 2026" },
+  { q: 4, year: currentYear, label: "Ç4 2026" },
+  { q: 1, year: currentYear + 1, label: "Ç1 2027" },
+  { q: 2, year: currentYear + 1, label: "Ç2 2027" },
 ];
 
 const strategicColors: Record<string, string> = {
@@ -57,7 +57,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
         <div className="bg-gray-50 rounded-xl p-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
             <Calendar size={20} />
-            Unscheduled Items ({unassignedItems?.length ?? 0})
+            Planlanmamış Öğeler ({unassignedItems?.length ?? 0})
           </h3>
           <div className="grid gap-3">
             {unassignedItems?.map((item) => (
@@ -69,7 +69,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-3 h-3 rounded-full ${strategicColors[item?.recommendation?.strategicType ?? ''] ?? 'bg-gray-400'}`} />
-                  <span className="font-medium text-gray-800">{item?.recommendation?.title ?? 'Untitled'}</span>
+                  <span className="font-medium text-gray-800">{item?.recommendation?.title ?? 'Başlıksız'}</span>
                   <span className="text-sm text-green-600 flex items-center gap-1">
                     <TrendingUp size={14} /> +{item?.recommendation?.estimatedImpact ?? 0}%
                   </span>
@@ -83,7 +83,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                       if (q && y) onUpdateTiming?.(item?.recommendationId, q, y);
                     }}
                   >
-                    <option value="">Assign to quarter...</option>
+                    <option value="">Çeyreğe ata...</option>
                     {quarters?.map((quarter) => (
                       <option key={`${quarter?.q}-${quarter?.year}`} value={`${quarter?.q}-${quarter?.year}`}>
                         {quarter?.label}
@@ -125,7 +125,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                 
                 <div className="bg-white rounded-xl shadow-md p-4 min-h-[60px] border border-gray-100">
                   {(quarterItems?.length ?? 0) === 0 ? (
-                    <p className="text-gray-400 text-sm">No items scheduled</p>
+                    <p className="text-gray-400 text-sm">Planlanmış öğe yok</p>
                   ) : (
                     <div className="space-y-2">
                       {quarterItems?.map((item) => (
@@ -135,7 +135,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                         >
                           <div className="flex items-center gap-3">
                             <div className={`w-3 h-3 rounded-full ${strategicColors[item?.recommendation?.strategicType ?? ''] ?? 'bg-gray-400'}`} />
-                            <span className="font-medium text-gray-800">{item?.recommendation?.title ?? 'Untitled'}</span>
+                            <span className="font-medium text-gray-800">{item?.recommendation?.title ?? 'Başlıksız'}</span>
                             <span className="text-sm text-green-600">+{item?.recommendation?.estimatedImpact ?? 0}%</span>
                           </div>
                           <button
@@ -151,8 +151,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                 </div>
               </motion.div>
             );
-          })}
-        </div>
+          })}        </div>
       </div>
     </div>
   );

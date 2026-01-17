@@ -111,9 +111,9 @@ export default function RecommendationsClient() {
         >
           <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
             <Lightbulb className="text-[#a78bfa]" />
-            Recommendations
+            Öneriler
           </h1>
-          <p className="text-gray-600">AI-powered improvement recommendations based on your assessment results</p>
+          <p className="text-gray-600">Değerlendirme sonuçlarınıza göre hazırlanan iyileştirme önerileri</p>
         </motion.div>
 
         {/* Filters */}
@@ -128,7 +128,7 @@ export default function RecommendationsClient() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Search recommendations..."
+                placeholder="Önerilerde ara..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target?.value ?? '')}
                 className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent outline-none"
@@ -143,10 +143,10 @@ export default function RecommendationsClient() {
                   onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), timeframe: e.target?.value ?? 'all' }))}
                   className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] outline-none bg-white"
                 >
-                  <option value="all">All Timeframes</option>
-                  <option value="SHORT_TERM">Short-term</option>
-                  <option value="MEDIUM_TERM">Medium-term</option>
-                  <option value="LONG_TERM">Long-term</option>
+                  <option value="all">Tüm Zaman Dilimleri</option>
+                  <option value="SHORT_TERM">Kısa Vade</option>
+                  <option value="MEDIUM_TERM">Orta Vade</option>
+                  <option value="LONG_TERM">Uzun Vade</option>
                 </select>
               </div>
 
@@ -157,9 +157,9 @@ export default function RecommendationsClient() {
                   onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), costType: e.target?.value ?? 'all' }))}
                   className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] outline-none bg-white"
                 >
-                  <option value="all">All Cost Types</option>
-                  <option value="CAPEX">CAPEX</option>
-                  <option value="OPEX">OPEX</option>
+                  <option value="all">Tüm Maliyet Tipleri</option>
+                  <option value="CAPEX">CAPEX (Yatırım)</option>
+                  <option value="OPEX">OPEX (İşletme)</option>
                 </select>
               </div>
 
@@ -170,10 +170,10 @@ export default function RecommendationsClient() {
                   onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), strategicType: e.target?.value ?? 'all' }))}
                   className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] outline-none bg-white"
                 >
-                  <option value="all">All Types</option>
-                  <option value="QUICK_WIN">Quick Win</option>
-                  <option value="PROJECT">Project</option>
-                  <option value="BIG_BET">Big Bet</option>
+                  <option value="all">Tüm Tipler</option>
+                  <option value="QUICK_WIN">Hızlı Kazanım</option>
+                  <option value="PROJECT">Proje</option>
+                  <option value="BIG_BET">Büyük Yatırım</option>
                 </select>
               </div>
             </div>
@@ -190,7 +190,7 @@ export default function RecommendationsClient() {
           >
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-green-500" />
-              Quick Wins ({quickWins?.length ?? 0})
+              Hızlı Kazanımlar ({quickWins?.length ?? 0})
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {quickWins?.map((rec, index) => (
@@ -220,7 +220,7 @@ export default function RecommendationsClient() {
           >
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-[#1e3a8a]" />
-              Projects ({projects?.length ?? 0})
+              Projeler ({projects?.length ?? 0})
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects?.map((rec, index) => (
@@ -250,7 +250,7 @@ export default function RecommendationsClient() {
           >
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-purple-500" />
-              Big Bets ({bigBets?.length ?? 0})
+              Büyük Yatırımlar ({bigBets?.length ?? 0})
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {bigBets?.map((rec, index) => (
@@ -277,11 +277,11 @@ export default function RecommendationsClient() {
             className="text-center py-16"
           >
             <Lightbulb size={64} className="mx-auto text-gray-300 mb-4" />
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">No Recommendations Found</h2>
+            <h2 className="text-xl font-semibold text-gray-700 mb-2">Öneri Bulunamadı</h2>
             <p className="text-gray-500">
               {searchTerm || filters?.timeframe !== "all" || filters?.costType !== "all" || filters?.strategicType !== "all"
-                ? "Try adjusting your filters"
-                : "Complete the survey to receive personalized recommendations"}
+                ? "Filtrelerinizi değiştirmeyi deneyin"
+                : "Kişisel öneriler almak için anketi tamamlayın"}
             </p>
           </motion.div>
         )}
