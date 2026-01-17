@@ -539,7 +539,7 @@ export default function CategoriesPage() {
                         onChange={(e) => setFormData({ ...formData, optionsText: e.target.value })}
                         className="w-full p-3 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                         rows={5}
-                        placeholder="dusuk|Düşük|1&#10;orta|Orta|3&#10;yuksek|Yüksek|5"
+                        placeholder={`dusuk|Düşük|1\norta|Orta|3\nyuksek|Yüksek|5`}
                       />
                     </div>
                   )}
