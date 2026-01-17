@@ -168,269 +168,57 @@ export default function CategoriesPage() {
     setShowModal({ type, parentId, editItem, parentData });
   };
 
-  const Modal = () => {
-    if (!showModal) return null;
-    const { type, parentId, editItem, parentData } = showModal;
+  const getModalTitle = () => {
+    if (!showModal) return '';
+    const { type, editItem } = showModal;
     const isEdit = !!editItem;
-    
     const titles: Record<string, string> = {
       category: isEdit ? 'Kategori Düzenle' : 'Yeni Kategori',
       subcategory: isEdit ? 'Alt Kategori Düzenle' : 'Yeni Alt Kategori',
       sublevel: isEdit ? 'Alt Seviye Düzenle' : 'Yeni Alt Seviye',
       question: isEdit ? 'Soru Düzenle' : 'Yeni Soru',
     };
+    return titles[type] || '';
+  };
 
-    const handleSubmit = () => {
-      let data = { ...formData };
-      if (type === 'category' && !isEdit) {
-        data.surveyId = selectedSurveyId || null;
+  const handleModalSubmit = () => {
+    if (!showModal) return;
+    const { type, parentId, editItem, parentData } = showModal;
+    const isEdit = !!editItem;
+    
+    let data = { ...formData };
+    if (type === 'category' && !isEdit) {
+      data.surveyId = selectedSurveyId || null;
+    }
+    if (type === 'subcategory' && !isEdit) data.categoryId = parentId;
+    if (type === 'sublevel' && !isEdit) data.subCategoryId = parentId;
+    if (type === 'question') {
+      if (!isEdit) {
+        if (parentData?.isSubCategory) {
+          data.subCategoryId = parentId;
+          data.subLevelId = null;
+        } else {
+          data.subLevelId = parentId;
+          data.subCategoryId = null;
+        }
       }
-      if (type === 'subcategory' && !isEdit) data.categoryId = parentId;
-      if (type === 'sublevel' && !isEdit) data.subCategoryId = parentId;
-      if (type === 'question') {
-        if (!isEdit) {
-          // parentData kontrol et - subLevel mi subCategory mi?
-          if (parentData?.isSubCategory) {
-            data.subCategoryId = parentId;
-            data.subLevelId = null;
-          } else {
-            data.subLevelId = parentId;
-            data.subCategoryId = null;
-          }
-        }
-        if (data.optionsText) {
-          data.options = data.optionsText.split('\n').filter((l: string) => l.trim()).map((line: string) => {
-            const [value, label, score] = line.split('|');
-            return { value: value?.trim(), label: label?.trim(), score: parseInt(score) || 1 };
-          });
-          delete data.optionsText;
-        }
-        if (data.type === 'YES_NO') {
-          data.options = [
-            { value: 'yes', label: 'Evet', score: data.yesScore || 5 },
-            { value: 'no', label: 'Hayır', score: data.noScore || 1 }
-          ];
-        }
-        delete data.yesScore;
-        delete data.noScore;
+      if (data.optionsText) {
+        data.options = data.optionsText.split('\n').filter((l: string) => l.trim()).map((line: string) => {
+          const [value, label, score] = line.split('|');
+          return { value: value?.trim(), label: label?.trim(), score: parseInt(score) || 1 };
+        });
+        delete data.optionsText;
       }
-      handleSave(type, data);
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-800">{titles[type]}</h2>
-            <button onClick={() => setShowModal(null)} className="text-gray-500 hover:text-gray-700">
-              <X size={24} />
-            </button>
-          </div>
-          
-          <div className="space-y-4">
-            {type === 'question' ? (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Soru Metni</label>
-                  <textarea
-                    value={formData.text || ''}
-                    onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                    rows={3}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Soru Tipi</label>
-                  <select
-                    value={formData.type || 'SCALE'}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                  >
-                    {questionTypes.map(t => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Soru Ağırlığı (Puan Çarpanı)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0.1"
-                    value={formData.weight || 1}
-                    onChange={(e) => setFormData({ ...formData, weight: parseFloat(e.target.value) })}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                  />
-                </div>
-                {formData.type === 'MULTIPLE_CHOICE' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Şıklar (her satırda: değer|etiket|puan)</label>
-                    <textarea
-                      value={formData.optionsText || ''}
-                      onChange={(e) => setFormData({ ...formData, optionsText: e.target.value })}
-                      className="w-full p-3 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                      rows={5}
-                      placeholder="dusuk|Düşük|1&#10;orta|Orta|3&#10;yuksek|Yüksek|5"
-                    />
-                  </div>
-                )}
-                {(formData.type === 'SCALE' || !formData.type) && (
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-700">Ölçek tipi sorular otomatik olarak 1-5 arası puanlanır</p>
-                  </div>
-                )}
-                {formData.type === 'YES_NO' && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Evet Puanı</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="5"
-                        value={formData.yesScore || 5}
-                        onChange={(e) => setFormData({ ...formData, yesScore: parseInt(e.target.value) })}
-                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Hayır Puanı</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="5"
-                        value={formData.noScore || 1}
-                        onChange={(e) => setFormData({ ...formData, noScore: parseInt(e.target.value) })}
-                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.requiresEvidence || false}
-                    onChange={(e) => setFormData({ ...formData, requiresEvidence: e.target.checked })}
-                    className="w-4 h-4 text-[#1e3a8a] rounded"
-                  />
-                  <label className="text-sm text-gray-700">Kanıt belgesi gerekli</label>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sıra</label>
-                  <input
-                    type="number"
-                    value={formData.order || 1}
-                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                  />
-                </div>
-              </>
-            ) : type === 'subcategory' ? (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">İsim</label>
-                  <input
-                    type="text"
-                    value={formData.name || ''}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sıra</label>
-                  <input
-                    type="number"
-                    value={formData.order || 1}
-                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                  />
-                </div>
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Layers size={20} className="text-amber-600" />
-                    <label className="font-medium text-amber-800">Alt Seviye Yapısı</label>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="hasSubLevels"
-                        checked={formData.hasSubLevels === true}
-                        onChange={() => setFormData({ ...formData, hasSubLevels: true })}
-                        className="w-4 h-4 text-[#1e3a8a]"
-                      />
-                      <span className="text-sm text-gray-700">Alt seviyeler kullan</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="hasSubLevels"
-                        checked={formData.hasSubLevels === false}
-                        onChange={() => setFormData({ ...formData, hasSubLevels: false })}
-                        className="w-4 h-4 text-[#1e3a8a]"
-                      />
-                      <span className="text-sm text-gray-700">Doğrudan sorular ekle</span>
-                    </label>
-                  </div>
-                  <p className="text-xs text-amber-600 mt-2">
-                    {formData.hasSubLevels 
-                      ? '"İzleme", "İnisiyatifler" gibi alt seviyeler oluşturabilirsiniz' 
-                      : 'Soruları doğrudan bu alt kategoriye ekleyebilirsiniz'}
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">İsim</label>
-                  <input
-                    type="text"
-                    value={formData.name || ''}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                  />
-                </div>
-                {type === 'category' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
-                    <textarea
-                      value={formData.description || ''}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                      rows={2}
-                    />
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sıra</label>
-                  <input
-                    type="number"
-                    value={formData.order || 1}
-                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                  />
-                </div>
-              </>
-            )}
-          </div>
-          
-          <div className="flex justify-end gap-3 mt-6">
-            <button
-              onClick={() => setShowModal(null)}
-              className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-            >
-              İptal
-            </button>
-            <button
-              onClick={handleSubmit}
-              className="px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998] flex items-center gap-2"
-            >
-              <Save size={18} />
-              {isEdit ? 'Güncelle' : 'Kaydet'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+      if (data.type === 'YES_NO') {
+        data.options = [
+          { value: 'yes', label: 'Evet', score: data.yesScore || 5 },
+          { value: 'no', label: 'Hayır', score: data.noScore || 1 }
+        ];
+      }
+      delete data.yesScore;
+      delete data.noScore;
+    }
+    handleSave(type, data);
   };
 
   // Soru render fonksiyonu
@@ -697,7 +485,221 @@ export default function CategoriesPage() {
         )}
       </div>
 
-      <Modal />
+      {/* Modal - Inline JSX to prevent focus loss */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">{getModalTitle()}</h2>
+              <button onClick={() => setShowModal(null)} className="text-gray-500 hover:text-gray-700">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {showModal.type === 'question' ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Soru Metni</label>
+                    <textarea
+                      value={formData.text || ''}
+                      onChange={(e) => setFormData({ ...formData, text: e.target.value })}
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Soru Tipi</label>
+                    <select
+                      value={formData.type || 'SCALE'}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                    >
+                      {questionTypes.map(t => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Soru Ağırlığı (Puan Çarpanı)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      value={formData.weight || 1}
+                      onChange={(e) => setFormData({ ...formData, weight: parseFloat(e.target.value) })}
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                    />
+                  </div>
+                  {formData.type === 'MULTIPLE_CHOICE' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Şıklar (her satırda: değer|etiket|puan)</label>
+                      <textarea
+                        value={formData.optionsText || ''}
+                        onChange={(e) => setFormData({ ...formData, optionsText: e.target.value })}
+                        className="w-full p-3 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                        rows={5}
+                        placeholder="dusuk|Düşük|1&#10;orta|Orta|3&#10;yuksek|Yüksek|5"
+                      />
+                    </div>
+                  )}
+                  {(formData.type === 'SCALE' || !formData.type) && (
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-700">Ölçek tipi sorular otomatik olarak 1-5 arası puanlanır</p>
+                    </div>
+                  )}
+                  {formData.type === 'YES_NO' && (
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Evet Puanı</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="5"
+                          value={formData.yesScore || 5}
+                          onChange={(e) => setFormData({ ...formData, yesScore: parseInt(e.target.value) })}
+                          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Hayır Puanı</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="5"
+                          value={formData.noScore || 1}
+                          onChange={(e) => setFormData({ ...formData, noScore: parseInt(e.target.value) })}
+                          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.requiresEvidence || false}
+                      onChange={(e) => setFormData({ ...formData, requiresEvidence: e.target.checked })}
+                      className="w-4 h-4 text-[#1e3a8a] rounded"
+                    />
+                    <label className="text-sm text-gray-700">Kanıt belgesi gerekli</label>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sıra</label>
+                    <input
+                      type="number"
+                      value={formData.order || 1}
+                      onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                    />
+                  </div>
+                </>
+              ) : showModal.type === 'subcategory' ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">İsim</label>
+                    <input
+                      type="text"
+                      value={formData.name || ''}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sıra</label>
+                    <input
+                      type="number"
+                      value={formData.order || 1}
+                      onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                    />
+                  </div>
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Layers size={20} className="text-amber-600" />
+                      <span className="font-medium text-amber-800">Alt Seviye Yapısı</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="hasSubLevels"
+                          checked={formData.hasSubLevels === true}
+                          onChange={() => setFormData({ ...formData, hasSubLevels: true })}
+                          className="w-4 h-4 text-[#1e3a8a]"
+                        />
+                        <span className="text-sm text-gray-700">Alt seviyeler kullan</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="hasSubLevels"
+                          checked={formData.hasSubLevels === false}
+                          onChange={() => setFormData({ ...formData, hasSubLevels: false })}
+                          className="w-4 h-4 text-[#1e3a8a]"
+                        />
+                        <span className="text-sm text-gray-700">Doğrudan sorular ekle</span>
+                      </label>
+                    </div>
+                    <p className="text-xs text-amber-600 mt-2">
+                      {formData.hasSubLevels 
+                        ? '"İzleme", "İnisiyatifler" gibi alt seviyeler oluşturabilirsiniz' 
+                        : 'Soruları doğrudan bu alt kategoriye ekleyebilirsiniz'}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">İsim</label>
+                    <input
+                      type="text"
+                      value={formData.name || ''}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                    />
+                  </div>
+                  {showModal.type === 'category' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                      <textarea
+                        value={formData.description || ''}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                        rows={2}
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sıra</label>
+                    <input
+                      type="number"
+                      value={formData.order || 1}
+                      onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setShowModal(null)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                İptal
+              </button>
+              <button
+                onClick={handleModalSubmit}
+                className="px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998] flex items-center gap-2"
+              >
+                <Save size={18} />
+                {showModal.editItem ? 'Güncelle' : 'Kaydet'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
