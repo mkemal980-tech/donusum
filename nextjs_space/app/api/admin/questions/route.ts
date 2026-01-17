@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { text, type, requiresEvidence, options, subLevelId, order } = body;
+    const { text, type, requiresEvidence, options, subLevelId, order, weight } = body;
 
     const question = await prisma.question.create({
       data: {
@@ -41,7 +41,8 @@ export async function POST(request: NextRequest) {
         requiresEvidence: requiresEvidence || false,
         options: options || undefined,
         subLevelId,
-        order: order || 1
+        order: order || 1,
+        weight: weight || 1.0
       }
     });
     return NextResponse.json(question);
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, text, type, requiresEvidence, options, subLevelId, order } = body;
+    const { id, text, type, requiresEvidence, options, subLevelId, order, weight } = body;
 
     const question = await prisma.question.update({
       where: { id },
@@ -64,7 +65,8 @@ export async function PUT(request: NextRequest) {
         requiresEvidence,
         options: options || undefined,
         subLevelId,
-        order
+        order,
+        weight: weight || 1.0
       }
     });
     return NextResponse.json(question);
