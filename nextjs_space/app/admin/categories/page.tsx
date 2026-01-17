@@ -45,10 +45,8 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [editMode, setEditMode] = useState<string | null>(null);
-  const [editData, setEditData] = useState<any>({});
-  const [showModal, setShowModal] = useState<{ type: string; parentId?: string } | null>(null);
-  const [newItem, setNewItem] = useState<any>({});
+  const [showModal, setShowModal] = useState<{ type: string; parentId?: string; editItem?: any } | null>(null);
+  const [formData, setFormData] = useState<any>({});
 
   const fetchCategories = async () => {
     try {
@@ -83,9 +81,8 @@ export default function CategoriesPage() {
         body: JSON.stringify(data)
       });
       fetchCategories();
-      setEditMode(null);
       setShowModal(null);
-      setNewItem({});
+      setFormData({});
     } catch (error) {
       console.error('Error saving:', error);
     }
@@ -109,19 +106,75 @@ export default function CategoriesPage() {
     }
   };
 
-  const Modal = ({ type, parentId }: { type: string; parentId?: string }) => {
+  const openModal = (type: string, parentId?: string, editItem?: any) => {
+    if (editItem) {
+      // Düzenleme modunda
+      let initialData = { ...editItem };
+      if (type === 'question' && editItem.type === 'YES_NO' && editItem.options) {
+        const yesOpt = editItem.options.find((o: any) => o.value === 'yes');
+        const noOpt = editItem.options.find((o: any) => o.value === 'no');
+        initialData.yesScore = yesOpt?.score || 5;
+        initialData.noScore = noOpt?.score || 1;
+      }
+      if (type === 'question' && editItem.type === 'MULTIPLE_CHOICE' && editItem.options) {
+        initialData.optionsText = editItem.options.map((o: any) => `${o.value}|${o.label}|${o.score}`).join('\n');
+      }
+      setFormData(initialData);
+    } else {
+      // Yeni öğe modunda
+      if (type === 'question') {
+        setFormData({ type: 'SCALE', weight: 1, order: 1, yesScore: 5, noScore: 1 });
+      } else {
+        setFormData({ order: 1 });
+      }
+    }
+    setShowModal({ type, parentId, editItem });
+  };
+
+  const Modal = () => {
+    if (!showModal) return null;
+    const { type, parentId, editItem } = showModal;
+    const isEdit = !!editItem;
+    
     const titles: Record<string, string> = {
-      category: 'Yeni Kategori',
-      subcategory: 'Yeni Alt Kategori',
-      sublevel: 'Yeni Alt Seviye',
-      question: 'Yeni Soru',
+      category: isEdit ? 'Kategori Düzenle' : 'Yeni Kategori',
+      subcategory: isEdit ? 'Alt Kategori Düzenle' : 'Yeni Alt Kategori',
+      sublevel: isEdit ? 'Alt Seviye Düzenle' : 'Yeni Alt Seviye',
+      question: isEdit ? 'Soru Düzenle' : 'Yeni Soru',
+    };
+
+    const handleSubmit = () => {
+      let data = { ...formData };
+      if (type === 'subcategory' && !isEdit) data.categoryId = parentId;
+      if (type === 'sublevel' && !isEdit) data.subCategoryId = parentId;
+      if (type === 'question') {
+        if (!isEdit) data.subLevelId = parentId;
+        // Çoktan seçmeli şıkları işle
+        if (data.optionsText) {
+          data.options = data.optionsText.split('\n').filter((l: string) => l.trim()).map((line: string) => {
+            const [value, label, score] = line.split('|');
+            return { value: value?.trim(), label: label?.trim(), score: parseInt(score) || 1 };
+          });
+          delete data.optionsText;
+        }
+        // Evet/Hayır puanlarını options'a ekle
+        if (data.type === 'YES_NO') {
+          data.options = [
+            { value: 'yes', label: 'Evet', score: data.yesScore || 5 },
+            { value: 'no', label: 'Hayır', score: data.noScore || 1 }
+          ];
+        }
+        delete data.yesScore;
+        delete data.noScore;
+      }
+      handleSave(type, data);
     };
 
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">{titles[type]}</h2>
+            <h2 className="text-xl font-bold text-gray-800">{titles[type]}</h2>
             <button onClick={() => setShowModal(null)} className="text-gray-500 hover:text-gray-700">
               <X size={24} />
             </button>
@@ -133,18 +186,18 @@ export default function CategoriesPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Soru Metni</label>
                   <textarea
-                    value={newItem.text || ''}
-                    onChange={(e) => setNewItem({ ...newItem, text: e.target.value })}
-                    className="w-full p-3 border rounded-lg"
+                    value={formData.text || ''}
+                    onChange={(e) => setFormData({ ...formData, text: e.target.value })}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                     rows={3}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Soru Tipi</label>
                   <select
-                    value={newItem.type || 'SCALE'}
-                    onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
-                    className="w-full p-3 border rounded-lg"
+                    value={formData.type || 'SCALE'}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                   >
                     {questionTypes.map(t => (
                       <option key={t.value} value={t.value}>{t.label}</option>
@@ -157,31 +210,30 @@ export default function CategoriesPage() {
                     type="number"
                     step="0.1"
                     min="0.1"
-                    value={newItem.weight || 1}
-                    onChange={(e) => setNewItem({ ...newItem, weight: parseFloat(e.target.value) })}
-                    className="w-full p-3 border rounded-lg"
+                    value={formData.weight || 1}
+                    onChange={(e) => setFormData({ ...formData, weight: parseFloat(e.target.value) })}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Varsayılan: 1.0 - Daha önemli sorular için daha yüksek değer girin</p>
                 </div>
-                {newItem.type === 'MULTIPLE_CHOICE' && (
+                {formData.type === 'MULTIPLE_CHOICE' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Şıklar (her satırda: değer|etiket|puan)</label>
                     <textarea
-                      value={newItem.optionsText || ''}
-                      onChange={(e) => setNewItem({ ...newItem, optionsText: e.target.value })}
-                      className="w-full p-3 border rounded-lg font-mono text-sm"
+                      value={formData.optionsText || ''}
+                      onChange={(e) => setFormData({ ...formData, optionsText: e.target.value })}
+                      className="w-full p-3 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                       rows={5}
                       placeholder="dusuk|Düşük|1&#10;orta|Orta|3&#10;yuksek|Yüksek|5"
                     />
                     <p className="text-xs text-gray-500 mt-1">Format: değer|görünen_metin|puan (1-5 arası)</p>
                   </div>
                 )}
-                {(newItem.type === 'SCALE' || !newItem.type) && (
+                {(formData.type === 'SCALE' || !formData.type) && (
                   <div className="p-3 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-700">Ölçek tipi sorular otomatik olarak 1-5 arası puanlanır</p>
                   </div>
                 )}
-                {newItem.type === 'YES_NO' && (
+                {formData.type === 'YES_NO' && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Evet Puanı</label>
@@ -189,9 +241,9 @@ export default function CategoriesPage() {
                         type="number"
                         min="1"
                         max="5"
-                        value={newItem.yesScore || 5}
-                        onChange={(e) => setNewItem({ ...newItem, yesScore: parseInt(e.target.value) })}
-                        className="w-full p-3 border rounded-lg"
+                        value={formData.yesScore || 5}
+                        onChange={(e) => setFormData({ ...formData, yesScore: parseInt(e.target.value) })}
+                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                       />
                     </div>
                     <div>
@@ -200,9 +252,9 @@ export default function CategoriesPage() {
                         type="number"
                         min="1"
                         max="5"
-                        value={newItem.noScore || 1}
-                        onChange={(e) => setNewItem({ ...newItem, noScore: parseInt(e.target.value) })}
-                        className="w-full p-3 border rounded-lg"
+                        value={formData.noScore || 1}
+                        onChange={(e) => setFormData({ ...formData, noScore: parseInt(e.target.value) })}
+                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                       />
                     </div>
                   </div>
@@ -210,9 +262,9 @@ export default function CategoriesPage() {
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    checked={newItem.requiresEvidence || false}
-                    onChange={(e) => setNewItem({ ...newItem, requiresEvidence: e.target.checked })}
-                    className="w-4 h-4"
+                    checked={formData.requiresEvidence || false}
+                    onChange={(e) => setFormData({ ...formData, requiresEvidence: e.target.checked })}
+                    className="w-4 h-4 text-[#1e3a8a] rounded"
                   />
                   <label className="text-sm text-gray-700">Kanıt belgesi gerekli</label>
                 </div>
@@ -220,9 +272,9 @@ export default function CategoriesPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sıra</label>
                   <input
                     type="number"
-                    value={newItem.order || 1}
-                    onChange={(e) => setNewItem({ ...newItem, order: parseInt(e.target.value) })}
-                    className="w-full p-3 border rounded-lg"
+                    value={formData.order || 1}
+                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                   />
                 </div>
               </>
@@ -232,18 +284,18 @@ export default function CategoriesPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">İsim</label>
                   <input
                     type="text"
-                    value={newItem.name || ''}
-                    onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                    className="w-full p-3 border rounded-lg"
+                    value={formData.name || ''}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                   />
                 </div>
                 {type === 'category' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
                     <textarea
-                      value={newItem.description || ''}
-                      onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-                      className="w-full p-3 border rounded-lg"
+                      value={formData.description || ''}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                       rows={2}
                     />
                   </div>
@@ -252,9 +304,9 @@ export default function CategoriesPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sıra</label>
                   <input
                     type="number"
-                    value={newItem.order || 1}
-                    onChange={(e) => setNewItem({ ...newItem, order: parseInt(e.target.value) })}
-                    className="w-full p-3 border rounded-lg"
+                    value={formData.order || 1}
+                    onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                   />
                 </div>
               </>
@@ -269,35 +321,11 @@ export default function CategoriesPage() {
               İptal
             </button>
             <button
-              onClick={() => {
-                let data = { ...newItem };
-                if (type === 'subcategory') data.categoryId = parentId;
-                if (type === 'sublevel') data.subCategoryId = parentId;
-                if (type === 'question') {
-                  data.subLevelId = parentId;
-                  // Çoktan seçmeli şıkları işle
-                  if (data.optionsText) {
-                    data.options = data.optionsText.split('\n').filter((l: string) => l.trim()).map((line: string) => {
-                      const [value, label, score] = line.split('|');
-                      return { value: value?.trim(), label: label?.trim(), score: parseInt(score) || 1 };
-                    });
-                    delete data.optionsText;
-                  }
-                  // Evet/Hayır puanlarını options'a ekle
-                  if (data.type === 'YES_NO') {
-                    data.options = [
-                      { value: 'yes', label: 'Evet', score: data.yesScore || 5 },
-                      { value: 'no', label: 'Hayır', score: data.noScore || 1 }
-                    ];
-                  }
-                  delete data.yesScore;
-                  delete data.noScore;
-                }
-                handleSave(type, data);
-              }}
-              className="px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-blue-700"
+              onClick={handleSubmit}
+              className="px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998] flex items-center gap-2"
             >
-              Kaydet
+              <Save size={18} />
+              {isEdit ? 'Güncelle' : 'Kaydet'}
             </button>
           </div>
         </div>
@@ -308,7 +336,7 @@ export default function CategoriesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#1e3a8a] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -318,8 +346,8 @@ export default function CategoriesPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Kategoriler & Sorular</h1>
         <button
-          onClick={() => { setShowModal({ type: 'category' }); setNewItem({ order: categories.length + 1 }); }}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-blue-700"
+          onClick={() => openModal('category')}
+          className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998]"
         >
           <Plus size={20} /> Yeni Kategori
         </button>
@@ -336,10 +364,25 @@ export default function CategoriesPage() {
                 <span className="text-white/70 text-sm">({category.subCategories?.length || 0} alt kategori)</span>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => { setShowModal({ type: 'subcategory', parentId: category.id }); setNewItem({ order: (category.subCategories?.length || 0) + 1 }); }} className="p-2 hover:bg-white/20 rounded">
+                <button 
+                  onClick={() => openModal('subcategory', category.id)} 
+                  className="p-2 hover:bg-white/20 rounded" 
+                  title="Alt Kategori Ekle"
+                >
                   <Plus size={18} />
                 </button>
-                <button onClick={() => handleDelete('category', category.id)} className="p-2 hover:bg-red-500 rounded">
+                <button 
+                  onClick={() => openModal('category', undefined, category)} 
+                  className="p-2 hover:bg-white/20 rounded" 
+                  title="Düzenle"
+                >
+                  <Edit size={18} />
+                </button>
+                <button 
+                  onClick={() => handleDelete('category', category.id)} 
+                  className="p-2 hover:bg-red-500 rounded" 
+                  title="Sil"
+                >
                   <Trash2 size={18} />
                 </button>
               </div>
@@ -357,10 +400,25 @@ export default function CategoriesPage() {
                         <span className="text-purple-600 text-sm">({subCat.subLevels?.length || 0} alt seviye)</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button onClick={() => { setShowModal({ type: 'sublevel', parentId: subCat.id }); setNewItem({ order: (subCat.subLevels?.length || 0) + 1 }); }} className="p-1 hover:bg-purple-200 rounded text-purple-700">
+                        <button 
+                          onClick={() => openModal('sublevel', subCat.id)} 
+                          className="p-1.5 hover:bg-purple-200 rounded text-purple-700" 
+                          title="Alt Seviye Ekle"
+                        >
                           <Plus size={16} />
                         </button>
-                        <button onClick={() => handleDelete('subcategory', subCat.id)} className="p-1 hover:bg-red-100 rounded text-red-600">
+                        <button 
+                          onClick={() => openModal('subcategory', category.id, subCat)} 
+                          className="p-1.5 hover:bg-purple-200 rounded text-purple-700" 
+                          title="Düzenle"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete('subcategory', subCat.id)} 
+                          className="p-1.5 hover:bg-red-100 rounded text-red-600" 
+                          title="Sil"
+                        >
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -378,10 +436,25 @@ export default function CategoriesPage() {
                                 <span className="text-indigo-600 text-sm">({subLevel.questions?.length || 0} soru)</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <button onClick={() => { setShowModal({ type: 'question', parentId: subLevel.id }); setNewItem({ order: (subLevel.questions?.length || 0) + 1, type: 'SCALE', weight: 1, yesScore: 5, noScore: 1 }); }} className="p-1 hover:bg-indigo-100 rounded text-indigo-700">
+                                <button 
+                                  onClick={() => openModal('question', subLevel.id)} 
+                                  className="p-1.5 hover:bg-indigo-100 rounded text-indigo-700" 
+                                  title="Soru Ekle"
+                                >
                                   <Plus size={16} />
                                 </button>
-                                <button onClick={() => handleDelete('sublevel', subLevel.id)} className="p-1 hover:bg-red-100 rounded text-red-600">
+                                <button 
+                                  onClick={() => openModal('sublevel', subCat.id, subLevel)} 
+                                  className="p-1.5 hover:bg-indigo-100 rounded text-indigo-700" 
+                                  title="Düzenle"
+                                >
+                                  <Edit size={16} />
+                                </button>
+                                <button 
+                                  onClick={() => handleDelete('sublevel', subLevel.id)} 
+                                  className="p-1.5 hover:bg-red-100 rounded text-red-600" 
+                                  title="Sil"
+                                >
                                   <Trash2 size={16} />
                                 </button>
                               </div>
@@ -411,9 +484,22 @@ export default function CategoriesPage() {
                                         </div>
                                       )}
                                     </div>
-                                    <button onClick={() => handleDelete('question', question.id)} className="p-1 hover:bg-red-100 rounded text-red-600">
-                                      <Trash2 size={16} />
-                                    </button>
+                                    <div className="flex items-center gap-1 ml-2">
+                                      <button 
+                                        onClick={() => openModal('question', subLevel.id, question)} 
+                                        className="p-1.5 hover:bg-blue-100 rounded text-blue-600" 
+                                        title="Düzenle"
+                                      >
+                                        <Edit size={16} />
+                                      </button>
+                                      <button 
+                                        onClick={() => handleDelete('question', question.id)} 
+                                        className="p-1.5 hover:bg-red-100 rounded text-red-600" 
+                                        title="Sil"
+                                      >
+                                        <Trash2 size={16} />
+                                      </button>
+                                    </div>
                                   </div>
                                 ))}
                                 {(!subLevel.questions || subLevel.questions.length === 0) && (
@@ -437,9 +523,21 @@ export default function CategoriesPage() {
             )}
           </div>
         ))}
+
+        {categories.length === 0 && (
+          <div className="bg-white rounded-xl shadow-md p-8 text-center">
+            <p className="text-gray-500">Henüz kategori eklenmemiş</p>
+            <button
+              onClick={() => openModal('category')}
+              className="mt-4 px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998]"
+            >
+              İlk Kategoriyi Ekle
+            </button>
+          </div>
+        )}
       </div>
 
-      {showModal && <Modal type={showModal.type} parentId={showModal.parentId} />}
+      <Modal />
     </div>
   );
 }
