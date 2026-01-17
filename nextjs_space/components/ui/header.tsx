@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
-import { LayoutDashboard, ClipboardList, Lightbulb, Map, LogOut, User } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Lightbulb, Map, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 const navItems = [
@@ -15,7 +14,6 @@ const navItems = [
 
 export default function Header() {
   const pathname = usePathname();
-  const { data: session } = useSession() || {};
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm">
@@ -52,21 +50,10 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-3">
-            {session?.user && (
-              <>
-                <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
-                  <User size={16} />
-                  <span>{session?.user?.name ?? session?.user?.email}</span>
-                </div>
-                <button
-                  onClick={() => signOut?.({ callbackUrl: "/login" })}
-                  className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                >
-                  <LogOut size={18} />
-                  <span className="hidden sm:inline">Logout</span>
-                </button>
-              </>
-            )}
+            <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
+              <User size={16} />
+              <span>John Doe</span>
+            </div>
           </div>
         </div>
       </div>
