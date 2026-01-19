@@ -29,24 +29,26 @@ model User {
 }
 
 model Sector {
-  id          String      @id @default(cuid())
-  name        String      @unique
-  order       Int         @default(0)
-  createdAt   DateTime    @default(now())
-  subSectors  SubSector[]
-  users       User[]
-  benchmarks  Benchmark[]
+  id                 String              @id @default(cuid())
+  name               String              @unique
+  order              Int                 @default(0)
+  createdAt          DateTime            @default(now())
+  subSectors         SubSector[]
+  users              User[]
+  benchmarks         Benchmark[]
+  ironmanBenchmarks  IronmanBenchmark[]
 }
 
 model SubSector {
-  id         String      @id @default(cuid())
-  name       String
-  sectorId   String
-  order      Int         @default(0)
-  createdAt  DateTime    @default(now())
-  sector     Sector      @relation(fields: [sectorId], references: [id], onDelete: Cascade)
-  users      User[]
-  benchmarks Benchmark[]
+  id                String              @id @default(cuid())
+  name              String
+  sectorId          String
+  order             Int                 @default(0)
+  createdAt         DateTime            @default(now())
+  sector            Sector              @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  users             User[]
+  benchmarks        Benchmark[]
+  ironmanBenchmarks IronmanBenchmark[]
 
   @@unique([sectorId, name])
 }
@@ -126,10 +128,34 @@ model SubLevel {
   description     String?
   order           Int              @default(0)
   subCategoryId   String
+  axisType        AxisType         @default(VELOCITY)
   createdAt       DateTime         @default(now())
   questions       Question[]       @relation("SubLevelQuestions")
   recommendations Recommendation[]
   subCategory     SubCategory      @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+}
+
+// Ironman Analiz için Eksen Tipi
+enum AxisType {
+  VELOCITY    // X ekseni - Hız/Aksiyon
+  ENDURANCE   // Y ekseni - Olgunluk/Sürdürülebilirlik
+}
+
+// Ironman Benchmark - Sektör bazlı velocity/endurance değerleri
+model IronmanBenchmark {
+  id                  String     @id @default(cuid())
+  sectorId            String
+  subSectorId         String?
+  velocityAverage     Float      @default(2.5)
+  velocityBest        Float      @default(4.5)
+  enduranceAverage    Float      @default(2.5)
+  enduranceBest       Float      @default(4.5)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  sector              Sector     @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  subSector           SubSector? @relation(fields: [subSectorId], references: [id], onDelete: Cascade)
+
+  @@unique([sectorId, subSectorId])
 }
 
 model Question {

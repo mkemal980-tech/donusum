@@ -19,7 +19,12 @@ export async function GET(request: NextRequest) {
         subCategories: {
           include: {
             subLevels: {
-              include: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                order: true,
+                axisType: true,
                 questions: {
                   orderBy: { order: 'asc' }
                 }

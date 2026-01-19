@@ -27,10 +27,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, subCategoryId, order } = body;
+    const { name, subCategoryId, order, axisType } = body;
 
     const subLevel = await prisma.subLevel.create({
-      data: { name, subCategoryId, order: order || 1 }
+      data: { 
+        name, 
+        subCategoryId, 
+        order: order || 1,
+        axisType: axisType || 'VELOCITY'
+      }
     });
     return NextResponse.json(subLevel);
   } catch (error) {
@@ -42,11 +47,11 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, subCategoryId, order } = body;
+    const { id, name, subCategoryId, order, axisType } = body;
 
     const subLevel = await prisma.subLevel.update({
       where: { id },
-      data: { name, subCategoryId, order }
+      data: { name, subCategoryId, order, axisType }
     });
     return NextResponse.json(subLevel);
   } catch (error) {

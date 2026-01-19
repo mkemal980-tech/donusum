@@ -18,6 +18,7 @@ interface SubLevel {
   id: string;
   name: string;
   order: number;
+  axisType: 'VELOCITY' | 'ENDURANCE';
   questions: Question[];
 }
 
@@ -161,6 +162,8 @@ export default function CategoriesPage() {
         setFormData({ order: 1, hasSubLevels: true });
       } else if (type === 'category') {
         setFormData({ order: 1, surveyId: selectedSurveyId || null });
+      } else if (type === 'sublevel') {
+        setFormData({ order: 1, axisType: 'VELOCITY' });
       } else {
         setFormData({ order: 1 });
       }
