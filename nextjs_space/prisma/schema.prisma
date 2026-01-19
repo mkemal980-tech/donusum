@@ -72,12 +72,14 @@ model Benchmark {
 model SectorCategoryWeight {
   id         String   @id @default(cuid())
   sectorId   String
+  surveyId   String
   categoryId String
   weight     Float    @default(1.0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  survey     Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 
-  @@unique([sectorId, categoryId])
+  @@unique([sectorId, surveyId, categoryId])
 }
 
 enum BenchmarkLevel {
@@ -88,14 +90,15 @@ enum BenchmarkLevel {
 
 // Yeni Survey modeli - Çoklu anket desteği
 model Survey {
-  id          String     @id @default(cuid())
-  name        String
-  description String?
-  isActive    Boolean    @default(true)
-  order       Int        @default(0)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  categories  Category[]
+  id                    String                 @id @default(cuid())
+  name                  String
+  description           String?
+  isActive              Boolean                @default(true)
+  order                 Int                    @default(0)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  categories            Category[]
+  sectorCategoryWeights SectorCategoryWeight[]
 }
 
 model Category {

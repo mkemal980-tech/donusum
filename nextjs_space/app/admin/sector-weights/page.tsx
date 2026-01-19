@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Save, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
+import { Save, AlertCircle, CheckCircle, RefreshCw, FileText } from "lucide-react";
 
 interface Sector {
+  id: string;
+  name: string;
+}
+
+interface Survey {
   id: string;
   name: string;
 }
@@ -11,6 +16,7 @@ interface Sector {
 interface Category {
   id: string;
   name: string;
+  surveyId: string | null;
 }
 
 interface WeightEntry {
@@ -20,23 +26,29 @@ interface WeightEntry {
 
 export default function SectorWeightsPage() {
   const [sectors, setSectors] = useState<Sector[]>([]);
+  const [surveys, setSurveys] = useState<Survey[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedSector, setSelectedSector] = useState<string>("");
+  const [selectedSurvey, setSelectedSurvey] = useState<string>("");
   const [weights, setWeights] = useState<WeightEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [sectorsRes, categoriesRes] = await Promise.all([
+        const [sectorsRes, surveysRes, categoriesRes] = await Promise.all([
           fetch("/api/admin/sectors"),
+          fetch("/api/admin/surveys"),
           fetch("/api/admin/categories"),
         ]);
         const sectorsData = await sectorsRes.json();
+        const surveysData = await surveysRes.json();
         const categoriesData = await categoriesRes.json();
         setSectors(sectorsData || []);
+        setSurveys(surveysData || []);
         setCategories(categoriesData || []);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -47,24 +59,32 @@ export default function SectorWeightsPage() {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (selectedSector && categories.length > 0) {
-      fetchWeightsForSector(selectedSector);
-    }
-  }, [selectedSector, categories]);
+  // Filter categories by selected survey
+  const filteredCategories = selectedSurvey
+    ? categories.filter((cat) => cat.surveyId === selectedSurvey)
+    : [];
 
-  const fetchWeightsForSector = async (sectorId: string) => {
+  // Fetch weights when sector and survey are selected
+  useEffect(() => {
+    if (selectedSector && selectedSurvey && filteredCategories.length > 0) {
+      fetchWeightsForSectorAndSurvey(selectedSector, selectedSurvey);
+    } else {
+      setWeights([]);
+    }
+  }, [selectedSector, selectedSurvey, filteredCategories.length]);
+
+  const fetchWeightsForSectorAndSurvey = async (sectorId: string, surveyId: string) => {
     try {
-      const res = await fetch(`/api/admin/sector-weights?sectorId=${sectorId}`);
+      const res = await fetch(`/api/admin/sector-weights?sectorId=${sectorId}&surveyId=${surveyId}`);
       const data = await res.json();
       
       // Initialize weights - use existing or default to equal distribution
       const existingWeights = new Map<string, number>(
         data.map((w: { categoryId: string; weight: number }) => [w.categoryId, w.weight])
       );
-      const defaultWeight = categories.length > 0 ? 1 / categories.length : 0;
+      const defaultWeight = filteredCategories.length > 0 ? 1 / filteredCategories.length : 0;
       
-      const initialWeights: WeightEntry[] = categories.map((cat) => ({
+      const initialWeights: WeightEntry[] = filteredCategories.map((cat) => ({
         categoryId: cat.id,
         weight: existingWeights.get(cat.id) ?? defaultWeight,
       }));
@@ -85,12 +105,12 @@ export default function SectorWeightsPage() {
   };
 
   const distributeEqually = () => {
-    const equalWeight = categories.length > 0 ? 1 / categories.length : 0;
-    setWeights(categories.map((cat) => ({ categoryId: cat.id, weight: equalWeight })));
+    const equalWeight = filteredCategories.length > 0 ? 1 / filteredCategories.length : 0;
+    setWeights(filteredCategories.map((cat) => ({ categoryId: cat.id, weight: equalWeight })));
   };
 
   const handleSave = async () => {
-    if (!selectedSector) return;
+    if (!selectedSector || !selectedSurvey) return;
 
     setSaving(true);
     setMessage(null);
@@ -99,7 +119,7 @@ export default function SectorWeightsPage() {
       const res = await fetch("/api/admin/sector-weights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sectorId: selectedSector, weights }),
+        body: JSON.stringify({ sectorId: selectedSector, surveyId: selectedSurvey, weights }),
       });
 
       const data = await res.json();
@@ -132,32 +152,74 @@ export default function SectorWeightsPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-800">Sektör Ağırlıklandırması</h1>
         <p className="text-gray-600 mt-1">
-          Her sektör için kategori ağırlıklarını belirleyin. Genel puan bu ağırlıklara göre hesaplanır.
+          Her sektör ve anket için kategori ağırlıklarını belirleyin. Genel puan bu ağırlıklara göre hesaplanır.
         </p>
       </div>
 
-      {/* Sector Selection */}
+      {/* Selection Area */}
       <div className="bg-white rounded-xl shadow-md p-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">Sektör Seçin</label>
-        <select
-          value={selectedSector}
-          onChange={(e) => setSelectedSector(e.target.value)}
-          className="w-full md:w-96 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-        >
-          <option value="">-- Sektör Seçin --</option>
-          {sectors.map((sector) => (
-            <option key={sector.id} value={sector.id}>
-              {sector.name}
-            </option>
-          ))}
-        </select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Survey Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <FileText size={16} className="inline mr-2" />
+              Anket Seçin
+            </label>
+            <select
+              value={selectedSurvey}
+              onChange={(e) => {
+                setSelectedSurvey(e.target.value);
+                setWeights([]);
+                setMessage(null);
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+            >
+              <option value="">-- Anket Seçin --</option>
+              {surveys.map((survey) => (
+                <option key={survey.id} value={survey.id}>
+                  {survey.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sector Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Sektör Seçin</label>
+            <select
+              value={selectedSector}
+              onChange={(e) => {
+                setSelectedSector(e.target.value);
+                setMessage(null);
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+              disabled={!selectedSurvey}
+            >
+              <option value="">-- Sektör Seçin --</option>
+              {sectors.map((sector) => (
+                <option key={sector.id} value={sector.id}>
+                  {sector.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {selectedSurvey && !selectedSector && (
+          <p className="mt-4 text-amber-600 text-sm">Şimdi sektör seçin.</p>
+        )}
       </div>
 
       {/* Weights Configuration */}
-      {selectedSector && categories.length > 0 && (
+      {selectedSector && selectedSurvey && filteredCategories.length > 0 && (
         <div className="bg-white rounded-xl shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-800">Kategori Ağırlıkları</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800">Kategori Ağırlıkları</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                {surveys.find(s => s.id === selectedSurvey)?.name} anketi için
+              </p>
+            </div>
             <button
               onClick={distributeEqually}
               className="flex items-center gap-2 px-4 py-2 text-sm text-[#1e3a8a] hover:bg-blue-50 rounded-lg transition-colors"
@@ -168,7 +230,7 @@ export default function SectorWeightsPage() {
           </div>
 
           <div className="space-y-4">
-            {categories.map((category) => {
+            {filteredCategories.map((category) => {
               const weightEntry = weights.find((w) => w.categoryId === category.id);
               const weightPercent = (weightEntry?.weight || 0) * 100;
 
@@ -260,11 +322,19 @@ export default function SectorWeightsPage() {
         </div>
       )}
 
+      {/* Empty State */}
+      {selectedSector && selectedSurvey && filteredCategories.length === 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
+          <p className="text-amber-700">Bu ankete ait kategori bulunamadı.</p>
+        </div>
+      )}
+
       {/* Info Box */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
         <h3 className="font-semibold text-[#1e3a8a] mb-2">Nasıl Çalışır?</h3>
         <ul className="text-sm text-gray-700 space-y-2">
-          <li>• Her sektör için farklı kategori ağırlıkları tanımlayabilirsiniz.</li>
+          <li>• Önce anketi, sonra sektörü seçin.</li>
+          <li>• Her sektör ve anket kombinasyonu için farklı kategori ağırlıkları tanımlayabilirsiniz.</li>
           <li>• Ağırlıkların toplamı 100% olmalıdır.</li>
           <li>• Eğer bir sektör için ağırlık tanımlanmamışsa, tüm kategoriler eşit ağırlıkla hesaplanır.</li>
           <li>

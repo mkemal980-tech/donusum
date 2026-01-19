@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const userId = TEST_USER_ID;
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get("categoryId");
+    const surveyId = searchParams.get("surveyId");
 
     // Get user to find their sector
     const user = await prisma.user.findUnique({
@@ -18,17 +19,9 @@ export async function GET(request: NextRequest) {
       select: { sectorId: true }
     });
 
-    // Get sector category weights if user has a sector
-    let sectorWeights = new Map<string, number>();
-    if (user?.sectorId) {
-      const weights = await prisma.sectorCategoryWeight.findMany({
-        where: { sectorId: user.sectorId }
-      });
-      weights.forEach(w => sectorWeights.set(w.categoryId, w.weight));
-    }
-
-    // Get all categories with their structure
+    // Get all categories with their structure (optionally filtered by surveyId)
     const categories = await prisma.category.findMany({
+      where: surveyId ? { surveyId } : undefined,
       include: {
         subCategories: {
           include: {
@@ -36,13 +29,32 @@ export async function GET(request: NextRequest) {
               include: {
                 questions: true
               }
-            }
+            },
+            questions: true // For subcategories without sublevels
           },
           orderBy: { order: "asc" }
+        },
+        survey: {
+          select: { id: true, name: true }
         }
       },
       orderBy: { order: "asc" }
     });
+
+    // Determine surveyId from categories if not provided
+    const effectiveSurveyId = surveyId || (categories.length > 0 ? categories[0].surveyId : null);
+
+    // Get sector category weights if user has a sector and surveyId is available
+    let sectorWeights = new Map<string, number>();
+    if (user?.sectorId && effectiveSurveyId) {
+      const weights = await prisma.sectorCategoryWeight.findMany({
+        where: { 
+          sectorId: user.sectorId,
+          surveyId: effectiveSurveyId
+        }
+      });
+      weights.forEach(w => sectorWeights.set(w.categoryId, w.weight));
+    }
 
     // Get user responses
     const responses = await prisma.surveyResponse.findMany({
@@ -54,7 +66,8 @@ export async function GET(request: NextRequest) {
               include: {
                 subCategory: true
               }
-            }
+            },
+            subCategory: true // For questions directly under subcategory
           }
         }
       }
@@ -78,53 +91,82 @@ export async function GET(request: NextRequest) {
         let subCatWeightedScore = 0;
         let subCatMaxScore = 0;
 
-        const subLevelScores = subCat.subLevels.map(subLevel => {
-          let levelWeightedScore = 0;
-          let levelMaxScore = 0;
+        // Check if this subcategory has sublevels
+        const hasSubLevels = subCat.subLevels && subCat.subLevels.length > 0;
 
-          for (const question of subLevel.questions) {
+        let subLevelScores: any[] = [];
+
+        if (hasSubLevels) {
+          // Process sublevels
+          subLevelScores = subCat.subLevels.map(subLevel => {
+            let levelWeightedScore = 0;
+            let levelMaxScore = 0;
+
+            for (const question of subLevel.questions) {
+              const response = responseMap.get(question.id);
+              const weight = question.weight;
+              if (response) {
+                levelWeightedScore += response.score * weight;
+              }
+              levelMaxScore += 5 * weight;
+            }
+
+            subCatWeightedScore += levelWeightedScore;
+            subCatMaxScore += levelMaxScore;
+
+            const levelPercentage = levelMaxScore > 0 ? (levelWeightedScore / levelMaxScore) * 100 : 0;
+            const levelScore = (levelPercentage / 100) * 5;
+
+            return {
+              id: subLevel.id,
+              name: subLevel.name,
+              score: Math.round(levelScore * 10) / 10,
+              percentage: Math.round(levelPercentage),
+              questionCount: subLevel.questions.length,
+              answeredCount: subLevel.questions.filter(q => responseMap.has(q.id)).length
+            };
+          });
+        } else {
+          // Process questions directly under subcategory
+          const directQuestions = (subCat as any).questions || [];
+          for (const question of directQuestions) {
             const response = responseMap.get(question.id);
             const weight = question.weight;
             if (response) {
-              levelWeightedScore += response.score * weight;
+              subCatWeightedScore += response.score * weight;
             }
-            levelMaxScore += 5 * weight;
+            subCatMaxScore += 5 * weight;
           }
-
-          subCatWeightedScore += levelWeightedScore;
-          subCatMaxScore += levelMaxScore;
-
-          const levelPercentage = levelMaxScore > 0 ? (levelWeightedScore / levelMaxScore) * 100 : 0;
-          const levelScore = (levelPercentage / 100) * 5; // Convert to 1-5 scale
-
-          return {
-            id: subLevel.id,
-            name: subLevel.name,
-            score: Math.round(levelScore * 10) / 10,
-            percentage: Math.round(levelPercentage),
-            questionCount: subLevel.questions.length,
-            answeredCount: subLevel.questions.filter(q => responseMap.has(q.id)).length
-          };
-        });
+        }
 
         catWeightedScore += subCatWeightedScore;
         catMaxScore += subCatMaxScore;
 
         const subCatPercentage = subCatMaxScore > 0 ? (subCatWeightedScore / subCatMaxScore) * 100 : 0;
-        const subCatScore = (subCatPercentage / 100) * 5; // Convert to 1-5 scale
+        const subCatScore = (subCatPercentage / 100) * 5;
+
+        const totalQuestions = hasSubLevels 
+          ? subCat.subLevels.reduce((sum, sl) => sum + sl.questions.length, 0)
+          : ((subCat as any).questions?.length || 0);
+        const answeredQuestions = hasSubLevels
+          ? subCat.subLevels.reduce((sum, sl) => sum + sl.questions.filter(q => responseMap.has(q.id)).length, 0)
+          : ((subCat as any).questions?.filter((q: any) => responseMap.has(q.id))?.length || 0);
 
         return {
           id: subCat.id,
           name: subCat.name,
           score: Math.round(subCatScore * 10) / 10,
           percentage: Math.round(subCatPercentage),
-          target: 5, // Default target is maximum
-          subLevels: subLevelScores
+          target: 5,
+          hasSubLevels,
+          subLevels: subLevelScores,
+          questionCount: totalQuestions,
+          answeredCount: answeredQuestions
         };
       });
 
       const catPercentage = catMaxScore > 0 ? (catWeightedScore / catMaxScore) * 100 : 0;
-      const catScore = (catPercentage / 100) * 5; // Convert to 1-5 scale
+      const catScore = (catPercentage / 100) * 5;
 
       // Get category weight (sector-specific or default equal weight)
       const categoryWeight = sectorWeights.size > 0 
@@ -135,6 +177,8 @@ export async function GET(request: NextRequest) {
         id: category.id,
         name: category.name,
         description: category.description,
+        surveyId: category.surveyId,
+        surveyName: category.survey?.name,
         score: Math.round(catScore * 10) / 10,
         percentage: Math.round(catPercentage),
         weight: categoryWeight,
@@ -143,7 +187,6 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate overall score using weights
-    // Formula: Overall = sum(category_score * category_weight)
     let overallScore = 0;
     let totalWeight = 0;
 
@@ -174,6 +217,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       overallScore: Math.round(overallScore * 10) / 10,
       overallPercentage: Math.round(overallPercentage),
+      surveyId: effectiveSurveyId,
       categories: categoryScores
     });
   } catch (error) {

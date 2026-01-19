@@ -8,18 +8,19 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const sectorId = searchParams.get("sectorId");
+    const surveyId = searchParams.get("surveyId");
 
-    if (sectorId) {
-      // Get weights for specific sector
+    if (sectorId && surveyId) {
+      // Get weights for specific sector and survey
       const weights = await prisma.sectorCategoryWeight.findMany({
-        where: { sectorId },
+        where: { sectorId, surveyId },
       });
       return NextResponse.json(weights);
     }
 
-    // Get all weights grouped by sector
+    // Get all weights
     const weights = await prisma.sectorCategoryWeight.findMany({
-      orderBy: { sectorId: "asc" },
+      orderBy: [{ sectorId: "asc" }, { surveyId: "asc" }],
     });
     return NextResponse.json(weights);
   } catch (error) {
@@ -31,11 +32,11 @@ export async function GET(request: NextRequest) {
 // POST - Create or update sector category weights
 export async function POST(request: NextRequest) {
   try {
-    const { sectorId, weights } = await request.json();
+    const { sectorId, surveyId, weights } = await request.json();
 
-    if (!sectorId || !weights || !Array.isArray(weights)) {
+    if (!sectorId || !surveyId || !weights || !Array.isArray(weights)) {
       return NextResponse.json(
-        { error: "Sektör ID ve ağırlıklar gerekli" },
+        { error: "Sektör ID, Anket ID ve ağırlıklar gerekli" },
         { status: 400 }
       );
     }
@@ -49,15 +50,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Delete existing weights for this sector
+    // Delete existing weights for this sector and survey
     await prisma.sectorCategoryWeight.deleteMany({
-      where: { sectorId },
+      where: { sectorId, surveyId },
     });
 
     // Create new weights
     const createdWeights = await prisma.sectorCategoryWeight.createMany({
       data: weights.map((w: any) => ({
         sectorId,
+        surveyId,
         categoryId: w.categoryId,
         weight: w.weight,
       })),
@@ -70,18 +72,19 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE - Remove all weights for a sector
+// DELETE - Remove all weights for a sector and survey
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const sectorId = searchParams.get("sectorId");
+    const surveyId = searchParams.get("surveyId");
 
-    if (!sectorId) {
-      return NextResponse.json({ error: "Sektör ID gerekli" }, { status: 400 });
+    if (!sectorId || !surveyId) {
+      return NextResponse.json({ error: "Sektör ID ve Anket ID gerekli" }, { status: 400 });
     }
 
     await prisma.sectorCategoryWeight.deleteMany({
-      where: { sectorId },
+      where: { sectorId, surveyId },
     });
 
     return NextResponse.json({ success: true });
