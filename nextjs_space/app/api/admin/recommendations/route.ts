@@ -10,7 +10,15 @@ export async function GET() {
         subLevel: {
           include: {
             subCategory: {
-              include: { category: true }
+              include: { 
+                category: {
+                  select: {
+                    id: true,
+                    name: true,
+                    surveyId: true
+                  }
+                }
+              }
             }
           }
         }

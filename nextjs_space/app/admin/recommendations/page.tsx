@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, Save, X, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Save, X, Search, FileText } from "lucide-react";
+
+interface Survey {
+  id: string;
+  name: string;
+}
 
 interface SubLevel {
   id: string;
@@ -17,6 +22,7 @@ interface SubCategory {
 interface Category {
   id: string;
   name: string;
+  surveyId: string | null;
   subCategories: SubCategory[];
 }
 
@@ -26,7 +32,16 @@ interface Recommendation {
   description: string;
   categoryId: string | null;
   subLevelId: string | null;
-  subLevel?: { name: string; subCategory?: { name: string; category?: { name: string } } };
+  subLevel?: { 
+    name: string; 
+    subCategory?: { 
+      name: string; 
+      category?: { 
+        name: string;
+        surveyId?: string;
+      } 
+    } 
+  };
   costType: 'CAPEX' | 'OPEX';
   timeframe: 'SHORT_TERM' | 'MEDIUM_TERM' | 'LONG_TERM';
   strategicType: 'QUICK_WIN' | 'PROJECT' | 'BIG_BET';
@@ -55,23 +70,28 @@ const strategicTypes = [
 
 export default function RecommendationsPage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [surveys, setSurveys] = useState<Survey[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<Recommendation | null>(null);
   const [formData, setFormData] = useState<Partial<Recommendation>>({});
   const [search, setSearch] = useState('');
+  const [filterSurvey, setFilterSurvey] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
 
   const fetchData = async () => {
     try {
-      const [recRes, catRes] = await Promise.all([
+      const [recRes, surveyRes, catRes] = await Promise.all([
         fetch('/api/admin/recommendations'),
+        fetch('/api/admin/surveys'),
         fetch('/api/admin/categories')
       ]);
       const recs = await recRes.json();
+      const survs = await surveyRes.json();
       const cats = await catRes.json();
       setRecommendations(recs || []);
+      setSurveys(survs || []);
       setCategories(cats || []);
     } catch (error) {
       console.error('Error:', error);
@@ -127,16 +147,23 @@ export default function RecommendationsPage() {
     setShowModal(true);
   };
 
-  // Tüm alt seviyeleri düz liste halinde getir
-  const getAllSubLevels = () => {
-    const subLevels: { id: string; name: string; fullPath: string }[] = [];
-    categories.forEach(cat => {
+  // Ankete göre filtrelenmiş kategoriler
+  const filteredCategories = filterSurvey 
+    ? categories.filter(c => c.surveyId === filterSurvey)
+    : categories;
+
+  // Tüm alt seviyeleri düz liste halinde getir (ankete göre filtrelenerek)
+  const getAllSubLevels = (surveyId?: string) => {
+    const subLevels: { id: string; name: string; fullPath: string; surveyId: string | null }[] = [];
+    const catsToUse = surveyId ? categories.filter(c => c.surveyId === surveyId) : categories;
+    catsToUse.forEach(cat => {
       cat.subCategories?.forEach(subCat => {
         subCat.subLevels?.forEach(subLevel => {
           subLevels.push({
             id: subLevel.id,
             name: subLevel.name,
-            fullPath: `${cat.name} > ${subCat.name} > ${subLevel.name}`
+            fullPath: `${cat.name} > ${subCat.name} > ${subLevel.name}`,
+            surveyId: cat.surveyId
           });
         });
       });
@@ -144,11 +171,44 @@ export default function RecommendationsPage() {
     return subLevels;
   };
 
+  // Önerileri filtrele
   const filteredRecs = recommendations.filter(rec => {
-    const matchSearch = rec.title.toLowerCase().includes(search.toLowerCase()) || rec.description.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = rec.title.toLowerCase().includes(search.toLowerCase()) || 
+                        rec.description.toLowerCase().includes(search.toLowerCase());
     const matchCategory = !filterCategory || rec.categoryId === filterCategory;
-    return matchSearch && matchCategory;
+    
+    // Anket filtresi: önerinin subLevel'in kategorisinin surveyId'si eşleşmeli
+    let matchSurvey = true;
+    if (filterSurvey) {
+      if (rec.subLevel?.subCategory?.category?.surveyId) {
+        matchSurvey = rec.subLevel.subCategory.category.surveyId === filterSurvey;
+      } else if (rec.categoryId) {
+        const cat = categories.find(c => c.id === rec.categoryId);
+        matchSurvey = cat?.surveyId === filterSurvey;
+      } else {
+        // Genel öneriler (özel bir ankete bağlı değil)
+        matchSurvey = false;
+      }
+    }
+    
+    return matchSearch && matchCategory && matchSurvey;
   });
+
+  // Anket adını bul
+  const getSurveyName = (rec: Recommendation) => {
+    if (rec.subLevel?.subCategory?.category?.surveyId) {
+      const survey = surveys.find(s => s.id === rec.subLevel?.subCategory?.category?.surveyId);
+      return survey?.name;
+    }
+    if (rec.categoryId) {
+      const cat = categories.find(c => c.id === rec.categoryId);
+      if (cat?.surveyId) {
+        const survey = surveys.find(s => s.id === cat.surveyId);
+        return survey?.name;
+      }
+    }
+    return null;
+  };
 
   if (loading) {
     return (
@@ -172,8 +232,8 @@ export default function RecommendationsPage() {
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-md p-4 mb-6">
-        <div className="flex gap-4">
-          <div className="flex-1 relative">
+        <div className="flex gap-4 flex-wrap">
+          <div className="flex-1 min-w-[200px] relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input
               type="text"
@@ -184,12 +244,25 @@ export default function RecommendationsPage() {
             />
           </div>
           <select
+            value={filterSurvey}
+            onChange={(e) => {
+              setFilterSurvey(e.target.value);
+              setFilterCategory(''); // Anket değişince kategori filtresini sıfırla
+            }}
+            className="px-4 py-2 border rounded-lg min-w-[150px]"
+          >
+            <option value="">Tüm Anketler</option>
+            {surveys.map(survey => (
+              <option key={survey.id} value={survey.id}>{survey.name}</option>
+            ))}
+          </select>
+          <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-4 py-2 border rounded-lg"
+            className="px-4 py-2 border rounded-lg min-w-[150px]"
           >
             <option value="">Tüm Kategoriler</option>
-            {categories.map(cat => (
+            {filteredCategories.map(cat => (
               <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
           </select>
@@ -202,6 +275,7 @@ export default function RecommendationsPage() {
           <thead className="bg-gray-50">
             <tr>
               <th className="text-left p-4 font-semibold text-gray-700">Başlık</th>
+              <th className="text-left p-4 font-semibold text-gray-700">Anket</th>
               <th className="text-left p-4 font-semibold text-gray-700">Alt Seviye / Kategori</th>
               <th className="text-left p-4 font-semibold text-gray-700">Puan Aralığı</th>
               <th className="text-left p-4 font-semibold text-gray-700">Tip</th>
@@ -210,53 +284,68 @@ export default function RecommendationsPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredRecs.map((rec) => (
-              <tr key={rec.id} className="border-t hover:bg-gray-50">
-                <td className="p-4">
-                  <p className="font-medium text-gray-800">{rec.title}</p>
-                  <p className="text-sm text-gray-500 truncate max-w-xs">{rec.description}</p>
-                </td>
-                <td className="p-4">
-                  {rec.subLevel ? (
-                    <div>
-                      <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-sm block mb-1">
-                        {rec.subLevel.name}
+            {filteredRecs.map((rec) => {
+              const surveyName = getSurveyName(rec);
+              return (
+                <tr key={rec.id} className="border-t hover:bg-gray-50">
+                  <td className="p-4">
+                    <p className="font-medium text-gray-800">{rec.title}</p>
+                    <p className="text-sm text-gray-500 truncate max-w-xs">{rec.description}</p>
+                  </td>
+                  <td className="p-4">
+                    {surveyName ? (
+                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs flex items-center gap-1 w-fit">
+                        <FileText size={12} />
+                        {surveyName}
                       </span>
-                      <span className="text-xs text-gray-500">
-                        {rec.subLevel.subCategory?.category?.name} &gt; {rec.subLevel.subCategory?.name}
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-sm">Genel</span>
-                  )}
-                </td>
-                <td className="p-4">
-                  <span className="text-sm text-gray-600">
-                    %{rec.minScoreThreshold || 0} - %{rec.maxScoreThreshold || 100}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 rounded text-sm ${rec.strategicType === 'QUICK_WIN' ? 'bg-green-100 text-green-700' : rec.strategicType === 'PROJECT' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                    {strategicTypes.find(t => t.value === rec.strategicType)?.label}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span className="font-semibold text-gray-700">{rec.estimatedImpact}</span>
-                </td>
-                <td className="p-4 text-right">
-                  <button onClick={() => openModal(rec)} className="p-2 hover:bg-blue-100 rounded text-blue-600">
-                    <Edit size={18} />
-                  </button>
-                  <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-red-100 rounded text-red-600">
-                    <Trash2 size={18} />
-                  </button>
-                </td>
-              </tr>
-            ))}
+                    ) : (
+                      <span className="text-gray-400 text-sm">-</span>
+                    )}
+                  </td>
+                  <td className="p-4">
+                    {rec.subLevel ? (
+                      <div>
+                        <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-sm block mb-1">
+                          {rec.subLevel.name}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {rec.subLevel.subCategory?.category?.name} &gt; {rec.subLevel.subCategory?.name}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-sm">Genel</span>
+                    )}
+                  </td>
+                  <td className="p-4">
+                    <span className="text-sm text-gray-600">
+                      %{rec.minScoreThreshold || 0} - %{rec.maxScoreThreshold || 100}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <span className={`px-2 py-1 rounded text-sm ${rec.strategicType === 'QUICK_WIN' ? 'bg-green-100 text-green-700' : rec.strategicType === 'PROJECT' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                      {strategicTypes.find(t => t.value === rec.strategicType)?.label}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <span className="font-semibold text-gray-700">{rec.estimatedImpact}</span>
+                  </td>
+                  <td className="p-4 text-right">
+                    <button onClick={() => openModal(rec)} className="p-2 hover:bg-blue-100 rounded text-blue-600">
+                      <Edit size={18} />
+                    </button>
+                    <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-red-100 rounded text-red-600">
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         {filteredRecs.length === 0 && (
-          <p className="text-center text-gray-400 py-8">Henüz öneri eklenmemiş</p>
+          <p className="text-center text-gray-400 py-8">
+            {filterSurvey || filterCategory || search ? 'Öneri bulunamadı' : 'Henüz öneri eklenmemiş'}
+          </p>
         )}
       </div>
 
@@ -300,8 +389,12 @@ export default function RecommendationsPage() {
                   className="w-full p-3 border rounded-lg bg-white"
                 >
                   <option value="">Genel Öneri (Tüm kullanıcılara)</option>
-                  {getAllSubLevels().map(sl => (
-                    <option key={sl.id} value={sl.id}>{sl.fullPath}</option>
+                  {surveys.map(survey => (
+                    <optgroup key={survey.id} label={survey.name}>
+                      {getAllSubLevels(survey.id).map(sl => (
+                        <option key={sl.id} value={sl.id}>{sl.fullPath}</option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
                 <p className="text-xs text-indigo-600 mt-2">
