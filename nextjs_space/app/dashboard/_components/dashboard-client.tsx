@@ -8,6 +8,7 @@ import ScoreCard from "@/components/ui/score-card";
 import ProgressBar from "@/components/ui/progress-bar";
 import { BenchmarkSection } from "./benchmark-section";
 import { CategoryDashboard } from "./category-dashboard";
+import { IronmanChart } from "@/components/ui/ironman-chart";
 import { 
   ClipboardList, 
   TrendingUp, 
@@ -236,6 +237,16 @@ export default function DashboardClient() {
           className="mb-8"
         >
           <BenchmarkSection />
+        </motion.div>
+
+        {/* Ironman Analysis Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.62 }}
+          className="mb-8"
+        >
+          <IronmanChart />
         </motion.div>
 
         {/* Category Analysis Section */}
