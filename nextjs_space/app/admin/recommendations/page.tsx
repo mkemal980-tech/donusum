@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, Save, X, Search, FileText } from "lucide-react";
+import { Plus, Edit, Trash2, X, Search, FileText, DollarSign, Target, TrendingUp } from "lucide-react";
 
 interface Survey {
   id: string;
@@ -49,6 +49,11 @@ interface Recommendation {
   minScoreThreshold: number;
   maxScoreThreshold: number;
   order: number;
+  // Bubble Chart için yeni alanlar
+  xPosition: number;
+  yPosition: number;
+  capexLevel: number;
+  opexLevel: number;
 }
 
 const costTypes = [
@@ -63,10 +68,22 @@ const timeframes = [
 ];
 
 const strategicTypes = [
-  { value: 'QUICK_WIN', label: 'Hızlı Kazanım' },
-  { value: 'PROJECT', label: 'Proje' },
-  { value: 'BIG_BET', label: 'Büyük Yatırım' },
+  { value: 'QUICK_WIN', label: 'Hızlı Kazanım', color: 'bg-green-100 text-green-700' },
+  { value: 'PROJECT', label: 'Proje', color: 'bg-yellow-100 text-yellow-700' },
+  { value: 'BIG_BET', label: 'Büyük Yatırım', color: 'bg-red-100 text-red-700' },
 ];
+
+const DollarIndicator = ({ level, max = 5 }: { level: number; max?: number }) => (
+  <div className="flex gap-0.5">
+    {Array.from({ length: max }).map((_, i) => (
+      <DollarSign 
+        key={i} 
+        size={14} 
+        className={i < level ? 'text-green-600' : 'text-gray-300'} 
+      />
+    ))}
+  </div>
+);
 
 export default function RecommendationsPage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -141,7 +158,11 @@ export default function RecommendationsPage() {
         timeframe: 'SHORT_TERM', 
         strategicType: 'QUICK_WIN',
         minScoreThreshold: 0,
-        maxScoreThreshold: 70
+        maxScoreThreshold: 70,
+        xPosition: 5,
+        yPosition: 5,
+        capexLevel: 1,
+        opexLevel: 1
       });
     }
     setShowModal(true);
@@ -177,7 +198,6 @@ export default function RecommendationsPage() {
                         rec.description.toLowerCase().includes(search.toLowerCase());
     const matchCategory = !filterCategory || rec.categoryId === filterCategory;
     
-    // Anket filtresi: önerinin subLevel'in kategorisinin surveyId'si eşleşmeli
     let matchSurvey = true;
     if (filterSurvey) {
       if (rec.subLevel?.subCategory?.category?.surveyId) {
@@ -186,7 +206,6 @@ export default function RecommendationsPage() {
         const cat = categories.find(c => c.id === rec.categoryId);
         matchSurvey = cat?.surveyId === filterSurvey;
       } else {
-        // Genel öneriler (özel bir ankete bağlı değil)
         matchSurvey = false;
       }
     }
@@ -247,7 +266,7 @@ export default function RecommendationsPage() {
             value={filterSurvey}
             onChange={(e) => {
               setFilterSurvey(e.target.value);
-              setFilterCategory(''); // Anket değişince kategori filtresini sıfırla
+              setFilterCategory('');
             }}
             className="px-4 py-2 border rounded-lg min-w-[150px]"
           >
@@ -276,8 +295,9 @@ export default function RecommendationsPage() {
             <tr>
               <th className="text-left p-4 font-semibold text-gray-700">Başlık</th>
               <th className="text-left p-4 font-semibold text-gray-700">Anket</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Alt Seviye / Kategori</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Puan Aralığı</th>
+              <th className="text-left p-4 font-semibold text-gray-700">Konum (X/Y)</th>
+              <th className="text-left p-4 font-semibold text-gray-700">CAPEX</th>
+              <th className="text-left p-4 font-semibold text-gray-700">OPEX/yıl</th>
               <th className="text-left p-4 font-semibold text-gray-700">Tip</th>
               <th className="text-left p-4 font-semibold text-gray-700">Etki</th>
               <th className="text-right p-4 font-semibold text-gray-700">İşlemler</th>
@@ -286,6 +306,7 @@ export default function RecommendationsPage() {
           <tbody>
             {filteredRecs.map((rec) => {
               const surveyName = getSurveyName(rec);
+              const stratType = strategicTypes.find(t => t.value === rec.strategicType);
               return (
                 <tr key={rec.id} className="border-t hover:bg-gray-50">
                   <td className="p-4">
@@ -303,27 +324,19 @@ export default function RecommendationsPage() {
                     )}
                   </td>
                   <td className="p-4">
-                    {rec.subLevel ? (
-                      <div>
-                        <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-sm block mb-1">
-                          {rec.subLevel.name}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {rec.subLevel.subCategory?.category?.name} &gt; {rec.subLevel.subCategory?.name}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-sm">Genel</span>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    <span className="text-sm text-gray-600">
-                      %{rec.minScoreThreshold || 0} - %{rec.maxScoreThreshold || 100}
+                    <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-mono">
+                      ({rec.xPosition || 5}, {rec.yPosition || 5})
                     </span>
                   </td>
                   <td className="p-4">
-                    <span className={`px-2 py-1 rounded text-sm ${rec.strategicType === 'QUICK_WIN' ? 'bg-green-100 text-green-700' : rec.strategicType === 'PROJECT' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
-                      {strategicTypes.find(t => t.value === rec.strategicType)?.label}
+                    <DollarIndicator level={rec.capexLevel || 1} />
+                  </td>
+                  <td className="p-4">
+                    <DollarIndicator level={rec.opexLevel || 1} />
+                  </td>
+                  <td className="p-4">
+                    <span className={`px-2 py-1 rounded text-sm ${stratType?.color}`}>
+                      {stratType?.label}
                     </span>
                   </td>
                   <td className="p-4">
@@ -352,7 +365,7 @@ export default function RecommendationsPage() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">{editItem ? 'Öneri Düzenle' : 'Yeni Öneri'}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">
@@ -361,6 +374,7 @@ export default function RecommendationsPage() {
             </div>
             
             <div className="space-y-4">
+              {/* Temel Bilgiler */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Başlık</label>
                 <input
@@ -404,7 +418,7 @@ export default function RecommendationsPage() {
 
               {/* Puan Eşikleri */}
               <div className="p-4 bg-amber-50 rounded-lg">
-                <label className="block text-sm font-medium text-amber-800 mb-2">Puan Aralığı (Bu öneri hangi puan aralığındaki kullanıcılara gösterilsin?)</label>
+                <label className="block text-sm font-medium text-amber-800 mb-2">Puan Aralığı</label>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Minimum Puan (%)</label>
@@ -429,17 +443,101 @@ export default function RecommendationsPage() {
                     />
                   </div>
                 </div>
-                <p className="text-xs text-amber-600 mt-2">
-                  Örn: %0-30 arası çok düşük puanlılar için temel öneriler, %30-70 arası orta puanlılar için geliştirme önerileri.
-                </p>
               </div>
 
+              {/* Bubble Chart Ayarları */}
+              <div className="p-4 bg-purple-50 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <Target size={18} className="text-purple-700" />
+                  <label className="text-sm font-medium text-purple-800">Bubble Chart Konumu</label>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">X Konumu (1-10): Kaynak → Önem → Aciliyet</label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      step="0.5"
+                      value={formData.xPosition || 5}
+                      onChange={(e) => setFormData({ ...formData, xPosition: parseFloat(e.target.value) })}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>Düşük</span>
+                      <span className="font-semibold text-purple-700">{formData.xPosition || 5}</span>
+                      <span>Yüksek</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Y Konumu (1-10): Öncelik Puanı</label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      step="0.5"
+                      value={formData.yPosition || 5}
+                      onChange={(e) => setFormData({ ...formData, yPosition: parseFloat(e.target.value) })}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>Düşük</span>
+                      <span className="font-semibold text-purple-700">{formData.yPosition || 5}</span>
+                      <span>Yüksek</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 p-2 bg-white rounded border text-center">
+                  <span className="text-xs text-gray-500">Konum: </span>
+                  <span className="font-mono text-sm text-purple-700">({formData.xPosition || 5}, {formData.yPosition || 5})</span>
+                </div>
+              </div>
+
+              {/* Maliyet Seviyeleri */}
+              <div className="p-4 bg-green-50 rounded-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <DollarSign size={18} className="text-green-700" />
+                  <label className="text-sm font-medium text-green-800">Maliyet Seviyeleri</label>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">CAPEX Seviyesi (Yatırım Maliyeti)</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="1"
+                        max="5"
+                        value={formData.capexLevel || 1}
+                        onChange={(e) => setFormData({ ...formData, capexLevel: parseInt(e.target.value) })}
+                        className="flex-1"
+                      />
+                      <DollarIndicator level={formData.capexLevel || 1} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">OPEX Seviyesi (Yıllık İşletme)</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="range"
+                        min="1"
+                        max="5"
+                        value={formData.opexLevel || 1}
+                        onChange={(e) => setFormData({ ...formData, opexLevel: parseInt(e.target.value) })}
+                        className="flex-1"
+                      />
+                      <DollarIndicator level={formData.opexLevel || 1} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Diğer Ayarlar */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Maliyet Tipi</label>
                   <select
                     value={formData.costType || 'OPEX'}
-                    onChange={(e) => setFormData({ ...formData, costType: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, costType: e.target.value as 'CAPEX' | 'OPEX' })}
                     className="w-full p-3 border rounded-lg"
                   >
                     {costTypes.map(t => (
@@ -451,7 +549,7 @@ export default function RecommendationsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Zaman Dilimi</label>
                   <select
                     value={formData.timeframe || 'SHORT_TERM'}
-                    onChange={(e) => setFormData({ ...formData, timeframe: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, timeframe: e.target.value as 'SHORT_TERM' | 'MEDIUM_TERM' | 'LONG_TERM' })}
                     className="w-full p-3 border rounded-lg"
                   >
                     {timeframes.map(t => (
@@ -463,7 +561,7 @@ export default function RecommendationsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stratejik Tip</label>
                   <select
                     value={formData.strategicType || 'QUICK_WIN'}
-                    onChange={(e) => setFormData({ ...formData, strategicType: e.target.value as any })}
+                    onChange={(e) => setFormData({ ...formData, strategicType: e.target.value as 'QUICK_WIN' | 'PROJECT' | 'BIG_BET' })}
                     className="w-full p-3 border rounded-lg"
                   >
                     {strategicTypes.map(t => (

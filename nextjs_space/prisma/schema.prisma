@@ -227,6 +227,11 @@ model Recommendation {
   minScoreThreshold Float         @default(0)
   maxScoreThreshold Float         @default(100)
   order             Int           @default(0)
+  // Bubble Chart için yeni alanlar
+  xPosition         Float         @default(5)   // X ekseni: 1-10 (Kaynak → Önem → Aciliyet)
+  yPosition         Float         @default(5)   // Y ekseni: 1-10 (Öncelik puanı)
+  capexLevel        Int           @default(1)   // CAPEX maliyeti: 1-5 ($ işaretleri)
+  opexLevel         Int           @default(1)   // Yıllık OPEX maliyeti: 1-5 ($ işaretleri)
   createdAt         DateTime      @default(now())
   roadmapItems      RoadmapItem[]
   subLevel          SubLevel?     @relation(fields: [subLevelId], references: [id], onDelete: SetNull)

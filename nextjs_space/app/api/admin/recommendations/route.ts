@@ -36,7 +36,11 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, description, categoryId, subLevelId, costType, timeframe, strategicType, estimatedImpact, minScoreThreshold, maxScoreThreshold, order } = body;
+    const { 
+      title, description, categoryId, subLevelId, costType, timeframe, 
+      strategicType, estimatedImpact, minScoreThreshold, maxScoreThreshold, order,
+      xPosition, yPosition, capexLevel, opexLevel
+    } = body;
 
     const recommendation = await prisma.recommendation.create({
       data: {
@@ -50,7 +54,11 @@ export async function POST(request: NextRequest) {
         estimatedImpact: estimatedImpact || 1,
         minScoreThreshold: minScoreThreshold || 0,
         maxScoreThreshold: maxScoreThreshold || 100,
-        order: order || 1
+        order: order || 1,
+        xPosition: xPosition || 5,
+        yPosition: yPosition || 5,
+        capexLevel: capexLevel || 1,
+        opexLevel: opexLevel || 1
       }
     });
     return NextResponse.json(recommendation);
@@ -63,7 +71,11 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, title, description, categoryId, subLevelId, costType, timeframe, strategicType, estimatedImpact, minScoreThreshold, maxScoreThreshold, order } = body;
+    const { 
+      id, title, description, categoryId, subLevelId, costType, timeframe, 
+      strategicType, estimatedImpact, minScoreThreshold, maxScoreThreshold, order,
+      xPosition, yPosition, capexLevel, opexLevel
+    } = body;
 
     const recommendation = await prisma.recommendation.update({
       where: { id },
@@ -78,7 +90,11 @@ export async function PUT(request: NextRequest) {
         estimatedImpact,
         minScoreThreshold: minScoreThreshold || 0,
         maxScoreThreshold: maxScoreThreshold || 100,
-        order
+        order,
+        xPosition: xPosition || 5,
+        yPosition: yPosition || 5,
+        capexLevel: capexLevel || 1,
+        opexLevel: opexLevel || 1
       }
     });
     return NextResponse.json(recommendation);
