@@ -13,13 +13,13 @@ interface GapRadarChartProps {
   title?: string;
 }
 
-// Theme colors
+// Theme colors - Primary indigo/purple
 const THEME_COLORS = {
-  navy: "#1e3a8a",
-  navyLight: "#3b5998",
-  purple: "#a78bfa",
-  purpleLight: "#c4b5fd",
-  purpleDark: "#7c3aed",
+  primary: "#6366f1",
+  primaryLight: "#818cf8",
+  secondary: "#8b5cf6",
+  secondaryLight: "#a78bfa",
+  dark: "#4f46e5",
 };
 
 export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProps) {
@@ -68,9 +68,15 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
         else ctx.lineTo(x, y);
       }
       ctx.closePath();
-      ctx.strokeStyle = "rgba(30, 58, 138, 0.15)";
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.15)";
       ctx.lineWidth = 1;
       ctx.stroke();
+      
+      // Add subtle fill for inner levels
+      if (level < levels) {
+        ctx.fillStyle = "rgba(99, 102, 241, 0.02)";
+        ctx.fill();
+      }
     }
 
     // Draw axis lines
@@ -81,13 +87,13 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       ctx.beginPath();
       ctx.moveTo(centerX, centerY);
       ctx.lineTo(x, y);
-      ctx.strokeStyle = "rgba(30, 58, 138, 0.2)";
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.2)";
       ctx.lineWidth = 1;
       ctx.stroke();
     }
 
     // Helper to draw polygon
-    const drawPolygon = (values: number[], fillColor: string, strokeColor: string) => {
+    const drawPolygon = (values: number[], fillColor: string, strokeColor: string, lineWidth: number = 2) => {
       ctx.beginPath();
       for (let i = 0; i < data.length; i++) {
         const angle = startAngle + i * angleStep;
@@ -102,27 +108,47 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       ctx.fillStyle = fillColor;
       ctx.fill();
       ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = lineWidth;
       ctx.stroke();
     };
 
-    // Draw target polygon (background) - Navy theme
+    // Draw target polygon (background) - Primary indigo theme
     drawPolygon(
       data.map((d) => d.target),
-      "rgba(30, 58, 138, 0.2)",
-      "rgba(30, 58, 138, 0.6)"
+      "rgba(99, 102, 241, 0.15)",
+      "rgba(79, 70, 229, 0.6)",
+      2
     );
 
-    // Draw current score polygon (foreground) - Purple theme
+    // Draw current score polygon (foreground) - Secondary purple theme
     drawPolygon(
       data.map((d) => d.score),
-      "rgba(167, 139, 250, 0.4)",
-      "rgba(124, 58, 237, 0.9)"
+      "rgba(139, 92, 246, 0.35)",
+      "rgba(124, 58, 237, 1)",
+      3
     );
+
+    // Draw data points
+    for (let i = 0; i < data.length; i++) {
+      const angle = startAngle + i * angleStep;
+      const value = Math.min(data[i].score, 5) / 5;
+      const radius = maxRadius * value;
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      
+      // Draw point
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fillStyle = "#7c3aed";
+      ctx.fill();
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
 
     // Draw labels
     ctx.font = "12px Inter, system-ui, sans-serif";
-    ctx.fillStyle = "#374151";
+    ctx.fillStyle = "#4b5563";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
@@ -155,28 +181,28 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
 
   if (!mounted) {
     return (
-      <div className="bg-white rounded-xl shadow-md p-6 h-full border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
+      <div className="bg-white rounded-2xl shadow-soft p-6 h-full">
+        <h3 className="text-lg font-semibold text-primary-900 mb-4">{title}</h3>
         <div className="h-[280px] flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-[#a78bfa] border-t-transparent rounded-full animate-spin" />
+          <div className="spinner" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6 h-full border border-gray-100">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
+    <div className="bg-white rounded-2xl shadow-soft p-6 h-full">
+      <h3 className="text-lg font-semibold text-primary-900 mb-4">{title}</h3>
       
       {/* Legend */}
       <div className="flex items-center justify-center gap-6 mb-2">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: "rgba(167, 139, 250, 0.6)" }} />
-          <span className="text-sm text-gray-600">Mevcut Durum</span>
+          <div className="w-4 h-4 rounded-lg" style={{ backgroundColor: "rgba(139, 92, 246, 0.6)" }} />
+          <span className="text-sm text-gray-600 font-medium">Mevcut Durum</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded" style={{ backgroundColor: "rgba(30, 58, 138, 0.4)" }} />
-          <span className="text-sm text-gray-600">Hedef</span>
+          <div className="w-4 h-4 rounded-lg" style={{ backgroundColor: "rgba(99, 102, 241, 0.3)" }} />
+          <span className="text-sm text-gray-600 font-medium">Hedef</span>
         </div>
       </div>
       

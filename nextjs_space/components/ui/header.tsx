@@ -24,17 +24,17 @@ export default function Header() {
   const navItems = baseNavItems.filter((item) => item.roles.includes(userRole));
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm">
+    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-primary-100 shadow-soft">
       <div className="max-w-[1200px] mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#1e3a8a] to-[#a78bfa] rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center shadow-primary">
               <span className="text-white font-bold text-lg">T</span>
             </div>
-            <span className="font-semibold text-lg text-[#1e3a8a] hidden sm:block">Dönüşüm Platformu</span>
+            <span className="font-semibold text-lg text-primary-700 hidden sm:block">Dönüşüm Platformu</span>
           </Link>
           
-          <nav className="flex items-center gap-2">
+          <nav className="flex items-center gap-1 bg-primary-50/80 p-1 rounded-xl">
             {navItems?.map((item) => {
               const Icon = item?.icon;
               const isActive = pathname === item?.href || 
@@ -45,10 +45,10 @@ export default function Header() {
                   <motion.div
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200 ${
                       isActive
-                        ? "bg-[#1e3a8a] text-white shadow-md"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-[#1e3a8a]"
+                        ? "bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-primary"
+                        : "text-primary-600 hover:bg-primary-100"
                     }`}
                   >
                     {Icon && <Icon size={18} />}
@@ -60,23 +60,29 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
-              <User size={16} />
-              <span>{userName}</span>
-              {userRole === "ADMIN" && (
-                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Admin</span>
-              )}
-              {userRole === "UNIT_MANAGER" && (
-                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">Birim Yön.</span>
-              )}
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-soft">
+              <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-secondary-400 rounded-lg flex items-center justify-center">
+                <User size={16} className="text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-gray-700">{userName}</span>
+                {userRole === "ADMIN" && (
+                  <span className="text-xs text-primary-500 font-medium">Admin</span>
+                )}
+                {userRole === "UNIT_MANAGER" && (
+                  <span className="text-xs text-secondary-500 font-medium">Birim Yön.</span>
+                )}
+              </div>
             </div>
-            <button
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+              className="p-2.5 text-gray-400 hover:text-error-500 hover:bg-error-50 rounded-xl transition-all duration-200"
               title="Çıkış Yap"
             >
               <LogOut size={18} />
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
