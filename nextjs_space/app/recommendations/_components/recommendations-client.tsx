@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Header from "@/components/ui/header";
 import RecommendationCard from "@/components/ui/recommendation-card";
+import { BubbleChart } from "@/components/ui/bubble-chart";
 import { 
-  Filter, 
   Search,
   Lightbulb,
   Clock,
   DollarSign,
-  Zap
+  Zap,
+  LayoutGrid,
+  ScatterChart
 } from "lucide-react";
 
 interface Recommendation {
@@ -18,9 +20,14 @@ interface Recommendation {
   title: string;
   description: string;
   costType: string;
-  timeframe: string;
-  strategicType: string;
+  timeframe: 'SHORT_TERM' | 'MEDIUM_TERM' | 'LONG_TERM';
+  strategicType: 'QUICK_WIN' | 'PROJECT' | 'BIG_BET';
   estimatedImpact: number;
+  xPosition: number;
+  yPosition: number;
+  capexLevel: number;
+  opexLevel: number;
+  order: number;
   isInRoadmap?: boolean;
 }
 
@@ -28,6 +35,7 @@ export default function RecommendationsClient() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState<'bubble' | 'list'>('bubble');
   const [filters, setFilters] = useState({
     timeframe: "all",
     costType: "all",
@@ -103,17 +111,45 @@ export default function RecommendationsClient() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <main className="max-w-[1200px] mx-auto px-6 py-8">
+      <main className="max-w-[1400px] mx-auto px-6 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
         >
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-            <Lightbulb className="text-[#a78bfa]" />
-            Öneriler
-          </h1>
-          <p className="text-gray-600">Değerlendirme sonuçlarınıza göre hazırlanan iyileştirme önerileri</p>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
+              <Lightbulb className="text-[#a78bfa]" />
+              Öneriler
+            </h1>
+            <p className="text-gray-600">Değerlendirme sonuçlarınıza göre hazırlanan iyileştirme önerileri</p>
+          </div>
+          
+          {/* View Mode Toggle */}
+          <div className="flex bg-white rounded-lg shadow-sm border p-1">
+            <button
+              onClick={() => setViewMode('bubble')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
+                viewMode === 'bubble' 
+                  ? 'bg-[#1e3a8a] text-white' 
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <ScatterChart size={18} />
+              <span className="hidden sm:inline">Bubble Chart</span>
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
+                viewMode === 'list' 
+                  ? 'bg-[#1e3a8a] text-white' 
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <LayoutGrid size={18} />
+              <span className="hidden sm:inline">Liste</span>
+            </button>
+          </div>
         </motion.div>
 
         {/* Filters */}
@@ -180,94 +216,114 @@ export default function RecommendationsClient() {
           </div>
         </motion.div>
 
-        {/* Quick Wins Section */}
-        {(quickWins?.length ?? 0) > 0 && (
-          <motion.section
+        {/* Bubble Chart View */}
+        {viewMode === 'bubble' && (filteredRecommendations?.length ?? 0) > 0 && (
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="mb-10"
+            className="mb-8"
           >
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500" />
-              Hızlı Kazanımlar ({quickWins?.length ?? 0})
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {quickWins?.map((rec, index) => (
-                <motion.div
-                  key={rec?.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                >
-                  <RecommendationCard
-                    recommendation={rec}
-                    onAddToRoadmap={handleAddToRoadmap}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
+            <BubbleChart 
+              recommendations={filteredRecommendations as Recommendation[]} 
+              title="Öneri Önceliklendirme Grafiği"
+            />
+          </motion.div>
         )}
 
-        {/* Projects Section */}
-        {(projects?.length ?? 0) > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mb-10"
-          >
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#1e3a8a]" />
-              Projeler ({projects?.length ?? 0})
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {projects?.map((rec, index) => (
-                <motion.div
-                  key={rec?.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                >
-                  <RecommendationCard
-                    recommendation={rec}
-                    onAddToRoadmap={handleAddToRoadmap}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
-        )}
+        {/* List View */}
+        {viewMode === 'list' && (
+          <>
+            {/* Quick Wins Section */}
+            {(quickWins?.length ?? 0) > 0 && (
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="mb-10"
+              >
+                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  Hızlı Kazanımlar ({quickWins?.length ?? 0})
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {quickWins?.map((rec, index) => (
+                    <motion.div
+                      key={rec?.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 * index }}
+                    >
+                      <RecommendationCard
+                        recommendation={rec}
+                        onAddToRoadmap={handleAddToRoadmap}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.section>
+            )}
 
-        {/* Big Bets Section */}
-        {(bigBets?.length ?? 0) > 0 && (
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="mb-10"
-          >
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-purple-500" />
-              Büyük Yatırımlar ({bigBets?.length ?? 0})
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {bigBets?.map((rec, index) => (
-                <motion.div
-                  key={rec?.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 * index }}
-                >
-                  <RecommendationCard
-                    recommendation={rec}
-                    onAddToRoadmap={handleAddToRoadmap}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
+            {/* Projects Section */}
+            {(projects?.length ?? 0) > 0 && (
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mb-10"
+              >
+                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[#1e3a8a]" />
+                  Projeler ({projects?.length ?? 0})
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {projects?.map((rec, index) => (
+                    <motion.div
+                      key={rec?.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 * index }}
+                    >
+                      <RecommendationCard
+                        recommendation={rec}
+                        onAddToRoadmap={handleAddToRoadmap}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.section>
+            )}
+
+            {/* Big Bets Section */}
+            {(bigBets?.length ?? 0) > 0 && (
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="mb-10"
+              >
+                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-purple-500" />
+                  Büyük Yatırımlar ({bigBets?.length ?? 0})
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {bigBets?.map((rec, index) => (
+                    <motion.div
+                      key={rec?.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 * index }}
+                    >
+                      <RecommendationCard
+                        recommendation={rec}
+                        onAddToRoadmap={handleAddToRoadmap}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.section>
+            )}
+          </>
         )}
 
         {(filteredRecommendations?.length ?? 0) === 0 && (
