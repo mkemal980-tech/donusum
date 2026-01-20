@@ -134,6 +134,12 @@ export default function RecommendationsPage() {
   useEffect(() => { fetchData(); }, []);
 
   const handleSave = async () => {
+    // Validasyon
+    if (!formData.title?.trim()) {
+      alert('Lütfen öneri başlığı girin!');
+      return;
+    }
+    
     try {
       const dataToSave = {
         ...formData,
@@ -141,11 +147,18 @@ export default function RecommendationsPage() {
         subLevelId: modalSubLevelId || null,
       };
       
-      await fetch('/api/admin/recommendations', {
+      const response = await fetch('/api/admin/recommendations', {
         method: formData.id ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataToSave)
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert('Kaydetme hatası: ' + (errorData.error || 'Bilinmeyen hata'));
+        return;
+      }
+      
       fetchData();
       setShowModal(false);
       setEditItem(null);
@@ -153,6 +166,7 @@ export default function RecommendationsPage() {
       resetModalSelections();
     } catch (error) {
       console.error('Error saving:', error);
+      alert('Bağlantı hatası oluştu!');
     }
   };
 
