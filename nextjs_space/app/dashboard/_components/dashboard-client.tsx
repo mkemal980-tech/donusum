@@ -45,12 +45,13 @@ interface Survey {
   isActive: boolean;
 }
 
+// Theme colors - all purple/indigo tones
 const categoryColors = [
-  "#1e3a8a",
+  "#6366f1",
+  "#8b5cf6",
   "#a78bfa",
-  "#7c3aed",
-  "#3b5998",
-  "#c4b5fd"
+  "#4f46e5",
+  "#7c3aed"
 ];
 
 export default function DashboardClient() {
@@ -322,17 +323,17 @@ export default function DashboardClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen">
         <Header />
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-          <div className="w-12 h-12 border-4 border-[#1e3a8a] border-t-transparent rounded-full animate-spin" />
+          <div className="spinner" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <Header />
       
       <main className="max-w-[1200px] mx-auto px-6 py-8" ref={dashboardRef}>
@@ -342,8 +343,8 @@ export default function DashboardClient() {
           className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
         >
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Dönüşüm Panosu</h1>
-            <p className="text-gray-600">Kuruluşunuzun olgunluk değerlendirmesi ilerlemesini ve içgörülerini takip edin</p>
+            <h1 className="text-3xl font-bold text-primary-900 mb-2">Dönüşüm Panosu</h1>
+            <p className="text-gray-500">Kuruluşunuzun olgunluk değerlendirmesi ilerlemesini ve içgörülerini takip edin</p>
           </div>
           
           <div className="flex items-center gap-3">
@@ -353,7 +354,7 @@ export default function DashboardClient() {
                 <select
                   value={selectedSurveyId}
                   onChange={(e) => setSelectedSurveyId(e.target.value)}
-                  className="appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent cursor-pointer"
+                  className="theme-select"
                 >
                   {surveys.map(survey => (
                     <option key={survey.id} value={survey.id}>
@@ -361,7 +362,6 @@ export default function DashboardClient() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
               </div>
             )}
             
@@ -369,17 +369,17 @@ export default function DashboardClient() {
             <button
               onClick={generatePdfReport}
               disabled={generatingPdf}
-              className="flex items-center gap-2 bg-[#1e3a8a] text-white px-4 py-2.5 rounded-lg hover:bg-[#1e3a8a]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-5 py-2.5 rounded-xl hover:shadow-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               {generatingPdf ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm font-medium">Oluşturuluyor...</span>
+                  <span className="text-sm">Oluşturuluyor...</span>
                 </>
               ) : (
                 <>
                   <Download size={18} />
-                  <span className="text-sm font-medium">PDF Rapor</span>
+                  <span className="text-sm">PDF Rapor</span>
                 </>
               )}
             </button>
@@ -391,10 +391,10 @@ export default function DashboardClient() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-6 flex items-center gap-2"
+            className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 mb-6 flex items-center gap-2"
           >
-            <FileText size={18} className="text-[#1e3a8a]" />
-            <span className="text-sm text-[#1e3a8a] font-medium">
+            <FileText size={18} className="text-primary-600" />
+            <span className="text-sm text-primary-700 font-medium">
               Görüntülenen Anket: {surveys.find(s => s.id === selectedSurveyId)?.name ?? 'Seçilmedi'}
             </span>
           </motion.div>
@@ -406,19 +406,19 @@ export default function DashboardClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white rounded-xl shadow-md p-6 card-hover"
+            className="bg-white rounded-2xl shadow-soft p-6 card-hover"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <ClipboardList className="text-[#1e3a8a]" size={24} />
+              <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center">
+                <ClipboardList className="text-primary-500" size={24} />
               </div>
               <div>
                 <p className="text-sm text-gray-500">Anket İlerlemesi</p>
-                <p className="text-2xl font-bold text-gray-900">{completionPercentage}%</p>
+                <p className="text-2xl font-bold text-primary-900">{completionPercentage}%</p>
               </div>
             </div>
             <div className="mt-4">
-              <ProgressBar value={completionPercentage} label="" color="#1e3a8a" />
+              <ProgressBar value={completionPercentage} label="" color="#6366f1" />
               <p className="text-xs text-gray-500 mt-2">{totalQuestions} sorudan {completedQuestions} tanesi tamamlandı</p>
             </div>
           </motion.div>
@@ -427,15 +427,15 @@ export default function DashboardClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white rounded-xl shadow-md p-6 card-hover"
+            className="bg-white rounded-2xl shadow-soft p-6 card-hover"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="text-[#a78bfa]" size={24} />
+              <div className="w-12 h-12 bg-secondary-50 rounded-xl flex items-center justify-center">
+                <TrendingUp className="text-secondary-500" size={24} />
               </div>
               <div>
                 <p className="text-sm text-gray-500">Mevcut Puan</p>
-                <p className="text-2xl font-bold text-gray-900">{scoreData?.totalScore ?? 0}%</p>
+                <p className="text-2xl font-bold text-primary-900">{scoreData?.totalScore ?? 0}%</p>
               </div>
             </div>
           </motion.div>
@@ -444,15 +444,15 @@ export default function DashboardClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white rounded-xl shadow-md p-6 card-hover"
+            className="bg-white rounded-2xl shadow-soft p-6 card-hover"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="text-green-600" size={24} />
+              <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
+                <CheckCircle className="text-primary-600" size={24} />
               </div>
               <div>
                 <p className="text-sm text-gray-500">Değerlendirilen Kategoriler</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-primary-900">
                   {Object.keys(scoreData?.categoryScores ?? {})?.length ?? 0}
                 </p>
               </div>
@@ -466,13 +466,13 @@ export default function DashboardClient() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="bg-white rounded-xl shadow-md p-8 flex flex-col items-center justify-center"
+            className="bg-white rounded-2xl shadow-soft p-8 flex flex-col items-center justify-center"
           >
-            <h3 className="text-lg font-semibold text-gray-700 mb-6">Genel Olgunluk Puanı</h3>
+            <h3 className="text-lg font-semibold text-primary-900 mb-6">Genel Olgunluk Puanı</h3>
             <ScoreCard 
               score={scoreData?.totalScore ?? 0} 
               label="Başlangıç Puanı" 
-              color="#1e3a8a" 
+              color="#6366f1" 
               size="large" 
             />
           </motion.div>
@@ -481,11 +481,11 @@ export default function DashboardClient() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5 }}
-            className="lg:col-span-2 bg-white rounded-xl shadow-md p-6"
+            className="lg:col-span-2 bg-white rounded-2xl shadow-soft p-6"
           >
             <div className="flex items-center gap-2 mb-6">
-              <BarChart3 className="text-[#a78bfa]" size={20} />
-              <h3 className="text-lg font-semibold text-gray-700">Kategorilere Göre Puan Dağılımı</h3>
+              <BarChart3 className="text-secondary-500" size={20} />
+              <h3 className="text-lg font-semibold text-primary-900">Kategorilere Göre Puan Dağılımı</h3>
             </div>
             
             <div className="space-y-5">
@@ -535,11 +535,11 @@ export default function DashboardClient() {
           className="mb-8"
         >
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-              <PieChart className="text-purple-600" size={20} />
+            <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
+              <PieChart className="text-secondary-600" size={20} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-800">Kategori Analizi</h2>
+              <h2 className="text-xl font-bold text-primary-900">Kategori Analizi</h2>
               <p className="text-sm text-gray-500">Seviyelendirme ve GAP Analizi</p>
             </div>
           </div>
@@ -555,11 +555,11 @@ export default function DashboardClient() {
         >
           <button
             onClick={() => router.push("/survey")}
-            className="bg-gradient-to-br from-[#1e3a8a] to-[#3b5998] text-white rounded-xl p-6 text-left hover:shadow-lg transition-shadow"
+            className="bg-gradient-to-br from-primary-500 to-primary-600 text-white rounded-2xl p-6 text-left hover:shadow-primary-lg transition-all duration-200 hover:-translate-y-1"
           >
             <ClipboardList size={32} className="mb-4" />
             <h3 className="text-lg font-semibold mb-2">Ankete Devam Et</h3>
-            <p className="text-sm text-blue-100 mb-4">Olgunluk değerlendirmenizi tamamlayın</p>
+            <p className="text-sm text-white/70 mb-4">Olgunluk değerlendirmenizi tamamlayın</p>
             <span className="inline-flex items-center gap-2 text-sm font-medium">
               Başla <ArrowRight size={16} />
             </span>
@@ -567,11 +567,11 @@ export default function DashboardClient() {
 
           <button
             onClick={() => router.push("/recommendations")}
-            className="bg-gradient-to-br from-[#a78bfa] to-[#7c3aed] text-white rounded-xl p-6 text-left hover:shadow-lg transition-shadow"
+            className="bg-gradient-to-br from-secondary-500 to-secondary-600 text-white rounded-2xl p-6 text-left hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
           >
             <Lightbulb size={32} className="mb-4" />
             <h3 className="text-lg font-semibold mb-2">Önerileri Görüntüle</h3>
-            <p className="text-sm text-purple-100 mb-4">Geliştirme fırsatlarını keşfedin</p>
+            <p className="text-sm text-white/70 mb-4">Geliştirme fırsatlarını keşfedin</p>
             <span className="inline-flex items-center gap-2 text-sm font-medium">
               İncele <ArrowRight size={16} />
             </span>
@@ -579,11 +579,11 @@ export default function DashboardClient() {
 
           <button
             onClick={() => router.push("/roadmap")}
-            className="bg-gradient-to-br from-[#059669] to-[#047857] text-white rounded-xl p-6 text-left hover:shadow-lg transition-shadow"
+            className="bg-gradient-to-br from-primary-600 to-primary-700 text-white rounded-2xl p-6 text-left hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
           >
             <Map size={32} className="mb-4" />
             <h3 className="text-lg font-semibold mb-2">Yol Haritası Oluştur</h3>
-            <p className="text-sm text-green-100 mb-4">Dönüşüm yolculuğunuzu planlayın</p>
+            <p className="text-sm text-white/70 mb-4">Dönüşüm yolculuğunuzu planlayın</p>
             <span className="inline-flex items-center gap-2 text-sm font-medium">
               Planla <ArrowRight size={16} />
             </span>
