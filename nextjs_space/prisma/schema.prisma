@@ -139,16 +139,17 @@ model Category {
 }
 
 model SubCategory {
-  id           String     @id @default(cuid())
-  name         String
-  description  String?
-  order        Int        @default(0)
-  categoryId   String
-  hasSubLevels Boolean    @default(true)
-  createdAt    DateTime   @default(now())
-  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  subLevels    SubLevel[]
-  questions    Question[] @relation("SubCategoryQuestions")
+  id              String           @id @default(cuid())
+  name            String
+  description     String?
+  order           Int              @default(0)
+  categoryId      String
+  hasSubLevels    Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  category        Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subLevels       SubLevel[]
+  questions       Question[]       @relation("SubCategoryQuestions")
+  recommendations Recommendation[]
 }
 
 model SubLevel {
@@ -245,6 +246,7 @@ model Recommendation {
   title             String
   description       String
   categoryId        String?
+  subCategoryId     String?       // Alt kategoriye direkt bağlantı
   subLevelId        String?
   costType          CostType      @default(OPEX)
   timeframe         Timeframe     @default(MEDIUM_TERM)
@@ -260,6 +262,7 @@ model Recommendation {
   opexLevel         Int           @default(1)   // Yıllık OPEX maliyeti: 1-5 ($ işaretleri)
   createdAt         DateTime      @default(now())
   roadmapItems      RoadmapItem[]
+  subCategory       SubCategory?  @relation(fields: [subCategoryId], references: [id], onDelete: SetNull)
   subLevel          SubLevel?     @relation(fields: [subLevelId], references: [id], onDelete: SetNull)
 }
 

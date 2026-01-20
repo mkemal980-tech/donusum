@@ -7,6 +7,17 @@ export async function GET() {
   try {
     const recommendations = await prisma.recommendation.findMany({
       include: {
+        subCategory: {
+          include: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                surveyId: true
+              }
+            }
+          }
+        },
         subLevel: {
           include: {
             subCategory: {
@@ -37,7 +48,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { 
-      title, description, categoryId, subLevelId, costType, timeframe, 
+      title, description, categoryId, subCategoryId, subLevelId, costType, timeframe, 
       strategicType, estimatedImpact, minScoreThreshold, maxScoreThreshold, order,
       xPosition, yPosition, capexLevel, opexLevel
     } = body;
@@ -47,6 +58,7 @@ export async function POST(request: NextRequest) {
         title,
         description,
         categoryId: categoryId || null,
+        subCategoryId: subCategoryId || null,
         subLevelId: subLevelId || null,
         costType,
         timeframe,
@@ -72,7 +84,7 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const { 
-      id, title, description, categoryId, subLevelId, costType, timeframe, 
+      id, title, description, categoryId, subCategoryId, subLevelId, costType, timeframe, 
       strategicType, estimatedImpact, minScoreThreshold, maxScoreThreshold, order,
       xPosition, yPosition, capexLevel, opexLevel
     } = body;
@@ -83,6 +95,7 @@ export async function PUT(request: NextRequest) {
         title,
         description,
         categoryId: categoryId || null,
+        subCategoryId: subCategoryId || null,
         subLevelId: subLevelId || null,
         costType,
         timeframe,

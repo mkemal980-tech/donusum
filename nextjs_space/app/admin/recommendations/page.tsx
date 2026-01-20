@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, X, Search, FileText, DollarSign, Target, TrendingUp } from "lucide-react";
+import { Plus, Edit, Trash2, X, Search, FileText, DollarSign, Target, Layers, FolderTree } from "lucide-react";
 
 interface Survey {
   id: string;
@@ -16,6 +16,7 @@ interface SubLevel {
 interface SubCategory {
   id: string;
   name: string;
+  hasSubLevels: boolean;
   subLevels: SubLevel[];
 }
 
@@ -31,7 +32,15 @@ interface Recommendation {
   title: string;
   description: string;
   categoryId: string | null;
+  subCategoryId: string | null;
   subLevelId: string | null;
+  subCategory?: { 
+    name: string; 
+    category?: { 
+      name: string;
+      surveyId?: string;
+    } 
+  };
   subLevel?: { 
     name: string; 
     subCategory?: { 
@@ -49,7 +58,6 @@ interface Recommendation {
   minScoreThreshold: number;
   maxScoreThreshold: number;
   order: number;
-  // Bubble Chart için yeni alanlar
   xPosition: number;
   yPosition: number;
   capexLevel: number;
@@ -97,6 +105,12 @@ export default function RecommendationsPage() {
   const [filterSurvey, setFilterSurvey] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
 
+  // Modal için ek state'ler
+  const [modalSurveyId, setModalSurveyId] = useState('');
+  const [modalCategoryId, setModalCategoryId] = useState('');
+  const [modalSubCategoryId, setModalSubCategoryId] = useState('');
+  const [modalSubLevelId, setModalSubLevelId] = useState('');
+
   const fetchData = async () => {
     try {
       const [recRes, surveyRes, catRes] = await Promise.all([
@@ -121,15 +135,22 @@ export default function RecommendationsPage() {
 
   const handleSave = async () => {
     try {
+      const dataToSave = {
+        ...formData,
+        subCategoryId: modalSubLevelId ? null : (modalSubCategoryId || null),
+        subLevelId: modalSubLevelId || null,
+      };
+      
       await fetch('/api/admin/recommendations', {
         method: formData.id ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(dataToSave)
       });
       fetchData();
       setShowModal(false);
       setEditItem(null);
       setFormData({});
+      resetModalSelections();
     } catch (error) {
       console.error('Error saving:', error);
     }
@@ -145,10 +166,44 @@ export default function RecommendationsPage() {
     }
   };
 
+  const resetModalSelections = () => {
+    setModalSurveyId('');
+    setModalCategoryId('');
+    setModalSubCategoryId('');
+    setModalSubLevelId('');
+  };
+
   const openModal = (rec?: Recommendation) => {
     if (rec) {
       setEditItem(rec);
       setFormData(rec);
+      
+      // Mevcut seçimleri belirle
+      if (rec.subLevel?.subCategory?.category?.surveyId) {
+        const surveyId = rec.subLevel.subCategory.category.surveyId;
+        setModalSurveyId(surveyId);
+        
+        const cat = categories.find(c => c.surveyId === surveyId && 
+          c.subCategories.some(sc => sc.subLevels.some(sl => sl.id === rec.subLevelId)));
+        if (cat) {
+          setModalCategoryId(cat.id);
+          const subCat = cat.subCategories.find(sc => sc.subLevels.some(sl => sl.id === rec.subLevelId));
+          if (subCat) {
+            setModalSubCategoryId(subCat.id);
+            setModalSubLevelId(rec.subLevelId || '');
+          }
+        }
+      } else if (rec.subCategory?.category?.surveyId) {
+        const surveyId = rec.subCategory.category.surveyId;
+        setModalSurveyId(surveyId);
+        
+        const cat = categories.find(c => c.surveyId === surveyId && 
+          c.subCategories.some(sc => sc.id === rec.subCategoryId));
+        if (cat) {
+          setModalCategoryId(cat.id);
+          setModalSubCategoryId(rec.subCategoryId || '');
+        }
+      }
     } else {
       setEditItem(null);
       setFormData({ 
@@ -164,6 +219,7 @@ export default function RecommendationsPage() {
         capexLevel: 1,
         opexLevel: 1
       });
+      resetModalSelections();
     }
     setShowModal(true);
   };
@@ -173,24 +229,22 @@ export default function RecommendationsPage() {
     ? categories.filter(c => c.surveyId === filterSurvey)
     : categories;
 
-  // Tüm alt seviyeleri düz liste halinde getir (ankete göre filtrelenerek)
-  const getAllSubLevels = (surveyId?: string) => {
-    const subLevels: { id: string; name: string; fullPath: string; surveyId: string | null }[] = [];
-    const catsToUse = surveyId ? categories.filter(c => c.surveyId === surveyId) : categories;
-    catsToUse.forEach(cat => {
-      cat.subCategories?.forEach(subCat => {
-        subCat.subLevels?.forEach(subLevel => {
-          subLevels.push({
-            id: subLevel.id,
-            name: subLevel.name,
-            fullPath: `${cat.name} > ${subCat.name} > ${subLevel.name}`,
-            surveyId: cat.surveyId
-          });
-        });
-      });
-    });
-    return subLevels;
-  };
+  // Modal için filtrelenmiş veriler
+  const modalCategories = modalSurveyId 
+    ? categories.filter(c => c.surveyId === modalSurveyId)
+    : [];
+  
+  const modalSubCategories = modalCategoryId
+    ? modalCategories.find(c => c.id === modalCategoryId)?.subCategories || []
+    : [];
+  
+  const selectedSubCategory = modalSubCategoryId
+    ? modalSubCategories.find(sc => sc.id === modalSubCategoryId)
+    : null;
+  
+  const modalSubLevels = selectedSubCategory?.hasSubLevels
+    ? selectedSubCategory.subLevels || []
+    : [];
 
   // Önerileri filtrele
   const filteredRecs = recommendations.filter(rec => {
@@ -202,6 +256,8 @@ export default function RecommendationsPage() {
     if (filterSurvey) {
       if (rec.subLevel?.subCategory?.category?.surveyId) {
         matchSurvey = rec.subLevel.subCategory.category.surveyId === filterSurvey;
+      } else if (rec.subCategory?.category?.surveyId) {
+        matchSurvey = rec.subCategory.category.surveyId === filterSurvey;
       } else if (rec.categoryId) {
         const cat = categories.find(c => c.id === rec.categoryId);
         matchSurvey = cat?.surveyId === filterSurvey;
@@ -219,6 +275,10 @@ export default function RecommendationsPage() {
       const survey = surveys.find(s => s.id === rec.subLevel?.subCategory?.category?.surveyId);
       return survey?.name;
     }
+    if (rec.subCategory?.category?.surveyId) {
+      const survey = surveys.find(s => s.id === rec.subCategory?.category?.surveyId);
+      return survey?.name;
+    }
     if (rec.categoryId) {
       const cat = categories.find(c => c.id === rec.categoryId);
       if (cat?.surveyId) {
@@ -227,6 +287,17 @@ export default function RecommendationsPage() {
       }
     }
     return null;
+  };
+
+  // Hedef alanı bul
+  const getTargetArea = (rec: Recommendation) => {
+    if (rec.subLevel?.subCategory?.category) {
+      return `${rec.subLevel.subCategory.category.name} > ${rec.subLevel.subCategory.name} > ${rec.subLevel.name}`;
+    }
+    if (rec.subCategory?.category) {
+      return `${rec.subCategory.category.name} > ${rec.subCategory.name}`;
+    }
+    return 'Genel Öneri';
   };
 
   if (loading) {
@@ -243,14 +314,14 @@ export default function RecommendationsPage() {
         <h1 className="text-2xl font-bold text-gray-800">Öneri Yönetimi</h1>
         <button
           onClick={() => openModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-blue-700"
+          className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
         >
           <Plus size={20} /> Yeni Öneri
         </button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+      <div className="bg-white rounded-xl shadow-soft p-4 mb-6">
         <div className="flex gap-4 flex-wrap">
           <div className="flex-1 min-w-[200px] relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -289,23 +360,24 @@ export default function RecommendationsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+      <div className="bg-white rounded-xl shadow-soft overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
               <th className="text-left p-4 font-semibold text-gray-700">Başlık</th>
               <th className="text-left p-4 font-semibold text-gray-700">Anket</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Konum (X/Y)</th>
+              <th className="text-left p-4 font-semibold text-gray-700">Hedef Alan</th>
+              <th className="text-left p-4 font-semibold text-gray-700">Konum</th>
               <th className="text-left p-4 font-semibold text-gray-700">CAPEX</th>
-              <th className="text-left p-4 font-semibold text-gray-700">OPEX/yıl</th>
+              <th className="text-left p-4 font-semibold text-gray-700">OPEX</th>
               <th className="text-left p-4 font-semibold text-gray-700">Tip</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Etki</th>
               <th className="text-right p-4 font-semibold text-gray-700">İşlemler</th>
             </tr>
           </thead>
           <tbody>
             {filteredRecs.map((rec) => {
               const surveyName = getSurveyName(rec);
+              const targetArea = getTargetArea(rec);
               const stratType = strategicTypes.find(t => t.value === rec.strategicType);
               return (
                 <tr key={rec.id} className="border-t hover:bg-gray-50">
@@ -315,13 +387,16 @@ export default function RecommendationsPage() {
                   </td>
                   <td className="p-4">
                     {surveyName ? (
-                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs flex items-center gap-1 w-fit">
+                      <span className="px-2 py-1 bg-primary-100 text-primary-700 rounded text-xs flex items-center gap-1 w-fit">
                         <FileText size={12} />
                         {surveyName}
                       </span>
                     ) : (
                       <span className="text-gray-400 text-sm">-</span>
                     )}
+                  </td>
+                  <td className="p-4">
+                    <span className="text-sm text-gray-600">{targetArea}</span>
                   </td>
                   <td className="p-4">
                     <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-mono">
@@ -338,9 +413,6 @@ export default function RecommendationsPage() {
                     <span className={`px-2 py-1 rounded text-sm ${stratType?.color}`}>
                       {stratType?.label}
                     </span>
-                  </td>
-                  <td className="p-4">
-                    <span className="font-semibold text-gray-700">{rec.estimatedImpact}</span>
                   </td>
                   <td className="p-4 text-right">
                     <button onClick={() => openModal(rec)} className="p-2 hover:bg-blue-100 rounded text-blue-600">
@@ -382,6 +454,7 @@ export default function RecommendationsPage() {
                   value={formData.title || ''}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="w-full p-3 border rounded-lg"
+                  placeholder="Öneri başlığını girin..."
                 />
               </div>
               <div>
@@ -391,34 +464,124 @@ export default function RecommendationsPage() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full p-3 border rounded-lg"
                   rows={3}
+                  placeholder="Öneri açıklamasını girin..."
                 />
               </div>
               
-              {/* Alt Seviye Seçimi */}
+              {/* Hedef Alan Seçimi - Kademeli */}
               <div className="p-4 bg-indigo-50 rounded-lg">
-                <label className="block text-sm font-medium text-indigo-800 mb-2">Hedef Alt Seviye (Öneri Hangi Alana Gösterilsin?)</label>
-                <select
-                  value={formData.subLevelId || ''}
-                  onChange={(e) => setFormData({ ...formData, subLevelId: e.target.value || null })}
-                  className="w-full p-3 border rounded-lg bg-white"
-                >
-                  <option value="">Genel Öneri (Tüm kullanıcılara)</option>
-                  {surveys.map(survey => (
-                    <optgroup key={survey.id} label={survey.name}>
-                      {getAllSubLevels(survey.id).map(sl => (
-                        <option key={sl.id} value={sl.id}>{sl.fullPath}</option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
-                <p className="text-xs text-indigo-600 mt-2">
-                  Bir alt seviye seçerseniz, bu öneri sadece o alanda düşük puan alan kullanıcılara gösterilir.
+                <div className="flex items-center gap-2 mb-3">
+                  <FolderTree size={18} className="text-indigo-700" />
+                  <label className="text-sm font-medium text-indigo-800">Hedef Alan Seçimi</label>
+                </div>
+                <p className="text-xs text-indigo-600 mb-4">
+                  Öneri hangi alana ait olacak? Anket → Kategori → Alt Kategori sırasıyla seçim yapın.
                 </p>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Anket Seçimi */}
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">1. Anket</label>
+                    <select
+                      value={modalSurveyId}
+                      onChange={(e) => {
+                        setModalSurveyId(e.target.value);
+                        setModalCategoryId('');
+                        setModalSubCategoryId('');
+                        setModalSubLevelId('');
+                      }}
+                      className="w-full p-2 border rounded-lg bg-white"
+                    >
+                      <option value="">-- Anket Seçin --</option>
+                      {surveys.map(survey => (
+                        <option key={survey.id} value={survey.id}>{survey.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {/* Kategori Seçimi */}
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">2. Kategori</label>
+                    <select
+                      value={modalCategoryId}
+                      onChange={(e) => {
+                        setModalCategoryId(e.target.value);
+                        setModalSubCategoryId('');
+                        setModalSubLevelId('');
+                      }}
+                      className="w-full p-2 border rounded-lg bg-white"
+                      disabled={!modalSurveyId}
+                    >
+                      <option value="">-- Kategori Seçin --</option>
+                      {modalCategories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {/* Alt Kategori Seçimi */}
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">3. Alt Kategori</label>
+                    <select
+                      value={modalSubCategoryId}
+                      onChange={(e) => {
+                        setModalSubCategoryId(e.target.value);
+                        setModalSubLevelId('');
+                      }}
+                      className="w-full p-2 border rounded-lg bg-white"
+                      disabled={!modalCategoryId}
+                    >
+                      <option value="">-- Alt Kategori Seçin --</option>
+                      {modalSubCategories.map(subCat => (
+                        <option key={subCat.id} value={subCat.id}>
+                          {subCat.name} {!subCat.hasSubLevels && '(Direkt sorular)'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  {/* Alt Seviye Seçimi (sadece hasSubLevels=true ise) */}
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">4. Alt Seviye (Opsiyonel)</label>
+                    <select
+                      value={modalSubLevelId}
+                      onChange={(e) => setModalSubLevelId(e.target.value)}
+                      className="w-full p-2 border rounded-lg bg-white"
+                      disabled={!modalSubCategoryId || !selectedSubCategory?.hasSubLevels}
+                    >
+                      <option value="">
+                        {selectedSubCategory?.hasSubLevels 
+                          ? '-- Alt Seviye Seçin (Opsiyonel) --' 
+                          : '-- Alt Seviye Yok --'}
+                      </option>
+                      {modalSubLevels.map(subLevel => (
+                        <option key={subLevel.id} value={subLevel.id}>{subLevel.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                {/* Seçim Özeti */}
+                {(modalSurveyId || modalCategoryId || modalSubCategoryId) && (
+                  <div className="mt-3 p-2 bg-white rounded border">
+                    <span className="text-xs text-gray-500">Seçilen Hedef: </span>
+                    <span className="text-sm font-medium text-indigo-700">
+                      {!modalSurveyId && 'Genel Öneri'}
+                      {modalSurveyId && surveys.find(s => s.id === modalSurveyId)?.name}
+                      {modalCategoryId && ` > ${modalCategories.find(c => c.id === modalCategoryId)?.name}`}
+                      {modalSubCategoryId && ` > ${modalSubCategories.find(sc => sc.id === modalSubCategoryId)?.name}`}
+                      {modalSubLevelId && ` > ${modalSubLevels.find(sl => sl.id === modalSubLevelId)?.name}`}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Puan Eşikleri */}
               <div className="p-4 bg-amber-50 rounded-lg">
                 <label className="block text-sm font-medium text-amber-800 mb-2">Puan Aralığı</label>
+                <p className="text-xs text-amber-600 mb-3">
+                  Bu öneri, seçilen alanda belirtilen puan aralığında olan kullanıcılara gösterilecek.
+                </p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">Minimum Puan (%)</label>
@@ -581,21 +744,22 @@ export default function RecommendationsPage() {
                   />
                 </div>
               </div>
-            </div>
-            
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-              >
-                İptal
-              </button>
-              <button
-                onClick={handleSave}
-                className="px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-blue-700"
-              >
-                Kaydet
-              </button>
+
+              {/* Kaydet/İptal */}
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                >
+                  İptal
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+                >
+                  Kaydet
+                </button>
+              </div>
             </div>
           </div>
         </div>
