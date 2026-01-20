@@ -202,6 +202,7 @@ model Question {
   subLevel         SubLevel?        @relation("SubLevelQuestions", fields: [subLevelId], references: [id], onDelete: Cascade)
   subCategory      SubCategory?     @relation("SubCategoryQuestions", fields: [subCategoryId], references: [id], onDelete: Cascade)
   responses        SurveyResponse[]
+  recommendations  Recommendation[]
 }
 
 model SurveyResponse {
@@ -248,6 +249,9 @@ model Recommendation {
   categoryId        String?
   subCategoryId     String?       // Alt kategoriye direkt bağlantı
   subLevelId        String?
+  // Soru-Cevap Bazlı Tetikleme
+  questionId        String?       // Bağlı soru
+  triggerOptions    String?       // JSON: Tetikleyici cevaplar (örn: ["yok", "planliyoruz"])
   costType          CostType      @default(OPEX)
   timeframe         Timeframe     @default(MEDIUM_TERM)
   strategicType     StrategicType @default(PROJECT)
@@ -262,6 +266,7 @@ model Recommendation {
   opexLevel         Int           @default(1)   // Yıllık OPEX maliyeti: 1-5 ($ işaretleri)
   createdAt         DateTime      @default(now())
   roadmapItems      RoadmapItem[]
+  question          Question?     @relation(fields: [questionId], references: [id], onDelete: SetNull)
   subCategory       SubCategory?  @relation(fields: [subCategoryId], references: [id], onDelete: SetNull)
   subLevel          SubLevel?     @relation(fields: [subLevelId], references: [id], onDelete: SetNull)
 }

@@ -1,16 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, X, Search, FileText, DollarSign, Target, Layers, FolderTree } from "lucide-react";
+import { Plus, Edit, Trash2, X, Search, FileText, DollarSign, Target, FolderTree, HelpCircle, CheckSquare } from "lucide-react";
 
 interface Survey {
   id: string;
   name: string;
 }
 
+interface Question {
+  id: string;
+  text: string;
+  type: 'SCALE' | 'YES_NO' | 'MULTIPLE_CHOICE';
+  options: string | null;
+}
+
 interface SubLevel {
   id: string;
   name: string;
+  questions: Question[];
 }
 
 interface SubCategory {
@@ -18,6 +26,7 @@ interface SubCategory {
   name: string;
   hasSubLevels: boolean;
   subLevels: SubLevel[];
+  questions: Question[];
 }
 
 interface Category {
@@ -34,6 +43,14 @@ interface Recommendation {
   categoryId: string | null;
   subCategoryId: string | null;
   subLevelId: string | null;
+  questionId: string | null;
+  triggerOptions: string | null;
+  question?: {
+    id: string;
+    text: string;
+    type: string;
+    options: string | null;
+  };
   subCategory?: { 
     name: string; 
     category?: { 
@@ -93,6 +110,44 @@ const DollarIndicator = ({ level, max = 5 }: { level: number; max?: number }) =>
   </div>
 );
 
+// Soru şıklarını parse eden fonksiyon
+const parseQuestionOptions = (question: Question): { value: string; label: string }[] => {
+  if (question.type === 'SCALE') {
+    return [
+      { value: '1', label: '1 - Çok Düşük' },
+      { value: '2', label: '2 - Düşük' },
+      { value: '3', label: '3 - Orta' },
+      { value: '4', label: '4 - İyi' },
+      { value: '5', label: '5 - Çok İyi' },
+    ];
+  }
+  
+  if (question.type === 'YES_NO') {
+    return [
+      { value: 'evet', label: 'Evet' },
+      { value: 'hayir', label: 'Hayır' },
+    ];
+  }
+  
+  if (question.type === 'MULTIPLE_CHOICE' && question.options) {
+    try {
+      // options format: "değer|etiket|puan" per line
+      const lines = question.options.split('\n').filter(line => line.trim());
+      return lines.map(line => {
+        const parts = line.split('|');
+        return {
+          value: parts[0]?.trim() || line,
+          label: parts[1]?.trim() || parts[0]?.trim() || line,
+        };
+      });
+    } catch {
+      return [];
+    }
+  }
+  
+  return [];
+};
+
 export default function RecommendationsPage() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [surveys, setSurveys] = useState<Survey[]>([]);
@@ -110,6 +165,8 @@ export default function RecommendationsPage() {
   const [modalCategoryId, setModalCategoryId] = useState('');
   const [modalSubCategoryId, setModalSubCategoryId] = useState('');
   const [modalSubLevelId, setModalSubLevelId] = useState('');
+  const [modalQuestionId, setModalQuestionId] = useState('');
+  const [selectedTriggerOptions, setSelectedTriggerOptions] = useState<string[]>([]);
 
   const fetchData = async () => {
     try {
@@ -134,9 +191,14 @@ export default function RecommendationsPage() {
   useEffect(() => { fetchData(); }, []);
 
   const handleSave = async () => {
-    // Validasyon
     if (!formData.title?.trim()) {
       alert('Lütfen öneri başlığı girin!');
+      return;
+    }
+    
+    // Soru seçilmişse en az bir şık seçilmeli
+    if (modalQuestionId && selectedTriggerOptions.length === 0) {
+      alert('Lütfen en az bir tetikleyici şık seçin!');
       return;
     }
     
@@ -145,6 +207,8 @@ export default function RecommendationsPage() {
         ...formData,
         subCategoryId: modalSubLevelId ? null : (modalSubCategoryId || null),
         subLevelId: modalSubLevelId || null,
+        questionId: modalQuestionId || null,
+        triggerOptions: modalQuestionId && selectedTriggerOptions.length > 0 ? selectedTriggerOptions : null,
       };
       
       const response = await fetch('/api/admin/recommendations', {
@@ -185,12 +249,27 @@ export default function RecommendationsPage() {
     setModalCategoryId('');
     setModalSubCategoryId('');
     setModalSubLevelId('');
+    setModalQuestionId('');
+    setSelectedTriggerOptions([]);
   };
 
   const openModal = (rec?: Recommendation) => {
     if (rec) {
       setEditItem(rec);
       setFormData(rec);
+      
+      // Soru ve trigger options'ları yükle
+      if (rec.questionId) {
+        setModalQuestionId(rec.questionId);
+        if (rec.triggerOptions) {
+          try {
+            const parsed = JSON.parse(rec.triggerOptions);
+            setSelectedTriggerOptions(Array.isArray(parsed) ? parsed : []);
+          } catch {
+            setSelectedTriggerOptions([]);
+          }
+        }
+      }
       
       // Mevcut seçimleri belirle
       if (rec.subLevel?.subCategory?.category?.surveyId) {
@@ -260,6 +339,22 @@ export default function RecommendationsPage() {
     ? selectedSubCategory.subLevels || []
     : [];
 
+  // Seçilen alana göre soruları getir
+  const getAvailableQuestions = (): Question[] => {
+    if (modalSubLevelId) {
+      const subLevel = modalSubLevels.find(sl => sl.id === modalSubLevelId);
+      return subLevel?.questions || [];
+    }
+    if (modalSubCategoryId && selectedSubCategory && !selectedSubCategory.hasSubLevels) {
+      return selectedSubCategory.questions || [];
+    }
+    return [];
+  };
+
+  const availableQuestions = getAvailableQuestions();
+  const selectedQuestion = modalQuestionId ? availableQuestions.find(q => q.id === modalQuestionId) : null;
+  const questionOptions = selectedQuestion ? parseQuestionOptions(selectedQuestion) : [];
+
   // Önerileri filtrele
   const filteredRecs = recommendations.filter(rec => {
     const matchSearch = rec.title.toLowerCase().includes(search.toLowerCase()) || 
@@ -303,15 +398,20 @@ export default function RecommendationsPage() {
     return null;
   };
 
-  // Hedef alanı bul
-  const getTargetArea = (rec: Recommendation) => {
-    if (rec.subLevel?.subCategory?.category) {
-      return `${rec.subLevel.subCategory.category.name} > ${rec.subLevel.subCategory.name} > ${rec.subLevel.name}`;
+  // Tetikleme durumunu göster
+  const getTriggerInfo = (rec: Recommendation) => {
+    if (rec.questionId && rec.question && rec.triggerOptions) {
+      try {
+        const options = JSON.parse(rec.triggerOptions);
+        return {
+          questionText: rec.question.text.length > 30 ? rec.question.text.substring(0, 30) + '...' : rec.question.text,
+          optionsCount: Array.isArray(options) ? options.length : 0
+        };
+      } catch {
+        return null;
+      }
     }
-    if (rec.subCategory?.category) {
-      return `${rec.subCategory.category.name} > ${rec.subCategory.name}`;
-    }
-    return 'Genel Öneri';
+    return null;
   };
 
   if (loading) {
@@ -380,8 +480,7 @@ export default function RecommendationsPage() {
             <tr>
               <th className="text-left p-4 font-semibold text-gray-700">Başlık</th>
               <th className="text-left p-4 font-semibold text-gray-700">Anket</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Hedef Alan</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Konum</th>
+              <th className="text-left p-4 font-semibold text-gray-700">Tetikleyici</th>
               <th className="text-left p-4 font-semibold text-gray-700">CAPEX</th>
               <th className="text-left p-4 font-semibold text-gray-700">OPEX</th>
               <th className="text-left p-4 font-semibold text-gray-700">Tip</th>
@@ -391,7 +490,7 @@ export default function RecommendationsPage() {
           <tbody>
             {filteredRecs.map((rec) => {
               const surveyName = getSurveyName(rec);
-              const targetArea = getTargetArea(rec);
+              const triggerInfo = getTriggerInfo(rec);
               const stratType = strategicTypes.find(t => t.value === rec.strategicType);
               return (
                 <tr key={rec.id} className="border-t hover:bg-gray-50">
@@ -410,12 +509,19 @@ export default function RecommendationsPage() {
                     )}
                   </td>
                   <td className="p-4">
-                    <span className="text-sm text-gray-600">{targetArea}</span>
-                  </td>
-                  <td className="p-4">
-                    <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-mono">
-                      ({rec.xPosition || 5}, {rec.yPosition || 5})
-                    </span>
+                    {triggerInfo ? (
+                      <div className="flex flex-col gap-1">
+                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs flex items-center gap-1 w-fit">
+                          <HelpCircle size={12} />
+                          Soru Bağlı
+                        </span>
+                        <span className="text-xs text-gray-500">{triggerInfo.optionsCount} şık</span>
+                      </div>
+                    ) : (
+                      <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs">
+                        Puan Aralığı: %{rec.minScoreThreshold}-{rec.maxScoreThreshold}
+                      </span>
+                    )}
                   </td>
                   <td className="p-4">
                     <DollarIndicator level={rec.capexLevel || 1} />
@@ -451,7 +557,7 @@ export default function RecommendationsPage() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">{editItem ? 'Öneri Düzenle' : 'Yeni Öneri'}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">
@@ -461,25 +567,27 @@ export default function RecommendationsPage() {
             
             <div className="space-y-4">
               {/* Temel Bilgiler */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Başlık</label>
-                <input
-                  type="text"
-                  value={formData.title || ''}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className="w-full p-3 border rounded-lg"
-                  placeholder="Öneri başlığını girin..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
-                <textarea
-                  value={formData.description || ''}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full p-3 border rounded-lg"
-                  rows={3}
-                  placeholder="Öneri açıklamasını girin..."
-                />
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Başlık *</label>
+                  <input
+                    type="text"
+                    value={formData.title || ''}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="w-full p-3 border rounded-lg"
+                    placeholder="Öneri başlığını girin..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                  <textarea
+                    value={formData.description || ''}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full p-3 border rounded-lg"
+                    rows={2}
+                    placeholder="Öneri açıklamasını girin..."
+                  />
+                </div>
               </div>
               
               {/* Hedef Alan Seçimi - Kademeli */}
@@ -493,7 +601,6 @@ export default function RecommendationsPage() {
                 </p>
                 
                 <div className="grid grid-cols-2 gap-4">
-                  {/* Anket Seçimi */}
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">1. Anket</label>
                     <select
@@ -503,6 +610,8 @@ export default function RecommendationsPage() {
                         setModalCategoryId('');
                         setModalSubCategoryId('');
                         setModalSubLevelId('');
+                        setModalQuestionId('');
+                        setSelectedTriggerOptions([]);
                       }}
                       className="w-full p-2 border rounded-lg bg-white"
                     >
@@ -513,7 +622,6 @@ export default function RecommendationsPage() {
                     </select>
                   </div>
                   
-                  {/* Kategori Seçimi */}
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">2. Kategori</label>
                     <select
@@ -522,6 +630,8 @@ export default function RecommendationsPage() {
                         setModalCategoryId(e.target.value);
                         setModalSubCategoryId('');
                         setModalSubLevelId('');
+                        setModalQuestionId('');
+                        setSelectedTriggerOptions([]);
                       }}
                       className="w-full p-2 border rounded-lg bg-white"
                       disabled={!modalSurveyId}
@@ -533,7 +643,6 @@ export default function RecommendationsPage() {
                     </select>
                   </div>
                   
-                  {/* Alt Kategori Seçimi */}
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">3. Alt Kategori</label>
                     <select
@@ -541,6 +650,8 @@ export default function RecommendationsPage() {
                       onChange={(e) => {
                         setModalSubCategoryId(e.target.value);
                         setModalSubLevelId('');
+                        setModalQuestionId('');
+                        setSelectedTriggerOptions([]);
                       }}
                       className="w-full p-2 border rounded-lg bg-white"
                       disabled={!modalCategoryId}
@@ -554,12 +665,15 @@ export default function RecommendationsPage() {
                     </select>
                   </div>
                   
-                  {/* Alt Seviye Seçimi (sadece hasSubLevels=true ise) */}
                   <div>
                     <label className="block text-xs text-gray-600 mb-1">4. Alt Seviye (Opsiyonel)</label>
                     <select
                       value={modalSubLevelId}
-                      onChange={(e) => setModalSubLevelId(e.target.value)}
+                      onChange={(e) => {
+                        setModalSubLevelId(e.target.value);
+                        setModalQuestionId('');
+                        setSelectedTriggerOptions([]);
+                      }}
                       className="w-full p-2 border rounded-lg bg-white"
                       disabled={!modalSubCategoryId || !selectedSubCategory?.hasSubLevels}
                     >
@@ -574,53 +688,126 @@ export default function RecommendationsPage() {
                     </select>
                   </div>
                 </div>
+              </div>
+
+              {/* SORU-CEVAP BAZLI TETİKLEME - YENİ */}
+              <div className="p-4 bg-green-50 rounded-lg border-2 border-green-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <CheckSquare size={18} className="text-green-700" />
+                  <label className="text-sm font-medium text-green-800">Şık Bazlı Tetikleme (Yeni!)</label>
+                </div>
+                <p className="text-xs text-green-600 mb-4">
+                  Bir soru seçin ve bu önerinin hangi cevaplarda aktif olacağını belirleyin. 
+                  Kullanıcı seçtiğiniz şıklardan birine cevap verdiğinde bu öneri gösterilecek.
+                </p>
                 
-                {/* Seçim Özeti */}
-                {(modalSurveyId || modalCategoryId || modalSubCategoryId) && (
-                  <div className="mt-3 p-2 bg-white rounded border">
-                    <span className="text-xs text-gray-500">Seçilen Hedef: </span>
-                    <span className="text-sm font-medium text-indigo-700">
-                      {!modalSurveyId && 'Genel Öneri'}
-                      {modalSurveyId && surveys.find(s => s.id === modalSurveyId)?.name}
-                      {modalCategoryId && ` > ${modalCategories.find(c => c.id === modalCategoryId)?.name}`}
-                      {modalSubCategoryId && ` > ${modalSubCategories.find(sc => sc.id === modalSubCategoryId)?.name}`}
-                      {modalSubLevelId && ` > ${modalSubLevels.find(sl => sl.id === modalSubLevelId)?.name}`}
-                    </span>
+                {availableQuestions.length > 0 ? (
+                  <div className="space-y-4">
+                    {/* Soru Seçimi */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Bağlanacak Soru</label>
+                      <select
+                        value={modalQuestionId}
+                        onChange={(e) => {
+                          setModalQuestionId(e.target.value);
+                          setSelectedTriggerOptions([]);
+                        }}
+                        className="w-full p-2 border rounded-lg bg-white"
+                      >
+                        <option value="">-- Soru Seçin (Opsiyonel) --</option>
+                        {availableQuestions.map(q => (
+                          <option key={q.id} value={q.id}>
+                            {q.text.length > 80 ? q.text.substring(0, 80) + '...' : q.text}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Şık Seçimi */}
+                    {selectedQuestion && questionOptions.length > 0 && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-2">
+                          Tetikleyici Şıklar (Hangi cevaplarda bu öneri gösterilsin?)
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {questionOptions.map(opt => (
+                            <label 
+                              key={opt.value} 
+                              className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
+                                selectedTriggerOptions.includes(opt.value) 
+                                  ? 'bg-green-100 border-green-500' 
+                                  : 'bg-white hover:bg-gray-50'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedTriggerOptions.includes(opt.value)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedTriggerOptions([...selectedTriggerOptions, opt.value]);
+                                  } else {
+                                    setSelectedTriggerOptions(selectedTriggerOptions.filter(v => v !== opt.value));
+                                  }
+                                }}
+                                className="w-4 h-4 text-green-600 rounded"
+                              />
+                              <span className="text-sm">{opt.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                        {selectedTriggerOptions.length > 0 && (
+                          <p className="mt-2 text-xs text-green-700 bg-green-100 p-2 rounded">
+                            ✅ Seçili {selectedTriggerOptions.length} şıktan birine cevap verildiğinde bu öneri gösterilecek.
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    <HelpCircle size={24} className="mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">
+                      {modalSubCategoryId 
+                        ? 'Bu alanda henüz soru bulunmuyor. Önce "Kategoriler" sayfasından soru ekleyin.'
+                        : 'Soru seçebilmek için önce yukarıdan alan seçimi yapın.'}
+                    </p>
                   </div>
                 )}
               </div>
 
-              {/* Puan Eşikleri */}
-              <div className="p-4 bg-amber-50 rounded-lg">
-                <label className="block text-sm font-medium text-amber-800 mb-2">Puan Aralığı</label>
-                <p className="text-xs text-amber-600 mb-3">
-                  Bu öneri, seçilen alanda belirtilen puan aralığında olan kullanıcılara gösterilecek.
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">Minimum Puan (%)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={formData.minScoreThreshold || 0}
-                      onChange={(e) => setFormData({ ...formData, minScoreThreshold: parseInt(e.target.value) })}
-                      className="w-full p-3 border rounded-lg"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">Maksimum Puan (%)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={formData.maxScoreThreshold || 70}
-                      onChange={(e) => setFormData({ ...formData, maxScoreThreshold: parseInt(e.target.value) })}
-                      className="w-full p-3 border rounded-lg"
-                    />
+              {/* Puan Aralığı (Soru seçilmediyse) */}
+              {!modalQuestionId && (
+                <div className="p-4 bg-amber-50 rounded-lg">
+                  <label className="block text-sm font-medium text-amber-800 mb-2">Puan Aralığı (Alternatif Yöntem)</label>
+                  <p className="text-xs text-amber-600 mb-3">
+                    Soru seçmediyseniz, bu öneri seçilen alandaki puan aralığına göre gösterilir.
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Minimum Puan (%)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.minScoreThreshold || 0}
+                        onChange={(e) => setFormData({ ...formData, minScoreThreshold: parseInt(e.target.value) })}
+                        className="w-full p-3 border rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">Maksimum Puan (%)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={formData.maxScoreThreshold || 70}
+                        onChange={(e) => setFormData({ ...formData, maxScoreThreshold: parseInt(e.target.value) })}
+                        className="w-full p-3 border rounded-lg"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Bubble Chart Ayarları */}
               <div className="p-4 bg-purple-50 rounded-lg">
@@ -630,7 +817,7 @@ export default function RecommendationsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">X Konumu (1-10): Kaynak → Önem → Aciliyet</label>
+                    <label className="block text-xs text-gray-600 mb-1">X Konumu (1-10)</label>
                     <input
                       type="range"
                       min="1"
@@ -647,7 +834,7 @@ export default function RecommendationsPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Y Konumu (1-10): Öncelik Puanı</label>
+                    <label className="block text-xs text-gray-600 mb-1">Y Konumu (1-10)</label>
                     <input
                       type="range"
                       min="1"
@@ -664,70 +851,40 @@ export default function RecommendationsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-3 p-2 bg-white rounded border text-center">
-                  <span className="text-xs text-gray-500">Konum: </span>
-                  <span className="font-mono text-sm text-purple-700">({formData.xPosition || 5}, {formData.yPosition || 5})</span>
-                </div>
               </div>
 
-              {/* Maliyet Seviyeleri */}
-              <div className="p-4 bg-green-50 rounded-lg">
-                <div className="flex items-center gap-2 mb-3">
-                  <DollarSign size={18} className="text-green-700" />
-                  <label className="text-sm font-medium text-green-800">Maliyet Seviyeleri</label>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">CAPEX Seviyesi (Yatırım Maliyeti)</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="range"
-                        min="1"
-                        max="5"
-                        value={formData.capexLevel || 1}
-                        onChange={(e) => setFormData({ ...formData, capexLevel: parseInt(e.target.value) })}
-                        className="flex-1"
-                      />
-                      <DollarIndicator level={formData.capexLevel || 1} />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">OPEX Seviyesi (Yıllık İşletme)</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="range"
-                        min="1"
-                        max="5"
-                        value={formData.opexLevel || 1}
-                        onChange={(e) => setFormData({ ...formData, opexLevel: parseInt(e.target.value) })}
-                        className="flex-1"
-                      />
-                      <DollarIndicator level={formData.opexLevel || 1} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Diğer Ayarlar */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Maliyet ve Diğer Ayarlar */}
+              <div className="grid grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Maliyet Tipi</label>
-                  <select
-                    value={formData.costType || 'OPEX'}
-                    onChange={(e) => setFormData({ ...formData, costType: e.target.value as 'CAPEX' | 'OPEX' })}
-                    className="w-full p-3 border rounded-lg"
-                  >
-                    {costTypes.map(t => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
+                  <label className="block text-xs text-gray-600 mb-1">CAPEX (1-5)</label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    value={formData.capexLevel || 1}
+                    onChange={(e) => setFormData({ ...formData, capexLevel: parseInt(e.target.value) })}
+                    className="w-full"
+                  />
+                  <DollarIndicator level={formData.capexLevel || 1} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Zaman Dilimi</label>
+                  <label className="block text-xs text-gray-600 mb-1">OPEX (1-5)</label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="5"
+                    value={formData.opexLevel || 1}
+                    onChange={(e) => setFormData({ ...formData, opexLevel: parseInt(e.target.value) })}
+                    className="w-full"
+                  />
+                  <DollarIndicator level={formData.opexLevel || 1} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Zaman Dilimi</label>
                   <select
                     value={formData.timeframe || 'SHORT_TERM'}
                     onChange={(e) => setFormData({ ...formData, timeframe: e.target.value as 'SHORT_TERM' | 'MEDIUM_TERM' | 'LONG_TERM' })}
-                    className="w-full p-3 border rounded-lg"
+                    className="w-full p-2 border rounded-lg"
                   >
                     {timeframes.map(t => (
                       <option key={t.value} value={t.value}>{t.label}</option>
@@ -735,32 +892,21 @@ export default function RecommendationsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stratejik Tip</label>
+                  <label className="block text-xs text-gray-600 mb-1">Stratejik Tip</label>
                   <select
                     value={formData.strategicType || 'QUICK_WIN'}
                     onChange={(e) => setFormData({ ...formData, strategicType: e.target.value as 'QUICK_WIN' | 'PROJECT' | 'BIG_BET' })}
-                    className="w-full p-3 border rounded-lg"
+                    className="w-full p-2 border rounded-lg"
                   >
                     {strategicTypes.map(t => (
                       <option key={t.value} value={t.value}>{t.label}</option>
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tahmini Etki (1-15)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="15"
-                    value={formData.estimatedImpact || 5}
-                    onChange={(e) => setFormData({ ...formData, estimatedImpact: parseInt(e.target.value) })}
-                    className="w-full p-3 border rounded-lg"
-                  />
-                </div>
               </div>
 
               {/* Kaydet/İptal */}
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-3 pt-4 border-t">
                 <button
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2 border rounded-lg hover:bg-gray-50"

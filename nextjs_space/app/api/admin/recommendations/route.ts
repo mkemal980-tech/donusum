@@ -7,6 +7,46 @@ export async function GET() {
   try {
     const recommendations = await prisma.recommendation.findMany({
       include: {
+        question: {
+          select: {
+            id: true,
+            text: true,
+            type: true,
+            options: true,
+            subLevel: {
+              select: {
+                id: true,
+                name: true,
+                subCategory: {
+                  select: {
+                    id: true,
+                    name: true,
+                    category: {
+                      select: {
+                        id: true,
+                        name: true,
+                        surveyId: true
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            subCategory: {
+              select: {
+                id: true,
+                name: true,
+                category: {
+                  select: {
+                    id: true,
+                    name: true,
+                    surveyId: true
+                  }
+                }
+              }
+            }
+          }
+        },
         subCategory: {
           include: {
             category: {
@@ -48,8 +88,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { 
-      title, description, categoryId, subCategoryId, subLevelId, costType, timeframe, 
-      strategicType, estimatedImpact, minScoreThreshold, maxScoreThreshold, order,
+      title, description, categoryId, subCategoryId, subLevelId, 
+      questionId, triggerOptions,
+      costType, timeframe, strategicType, estimatedImpact, 
+      minScoreThreshold, maxScoreThreshold, order,
       xPosition, yPosition, capexLevel, opexLevel
     } = body;
 
@@ -60,6 +102,8 @@ export async function POST(request: NextRequest) {
         categoryId: categoryId || null,
         subCategoryId: subCategoryId || null,
         subLevelId: subLevelId || null,
+        questionId: questionId || null,
+        triggerOptions: triggerOptions ? JSON.stringify(triggerOptions) : null,
         costType,
         timeframe,
         strategicType,
@@ -84,8 +128,10 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const { 
-      id, title, description, categoryId, subCategoryId, subLevelId, costType, timeframe, 
-      strategicType, estimatedImpact, minScoreThreshold, maxScoreThreshold, order,
+      id, title, description, categoryId, subCategoryId, subLevelId, 
+      questionId, triggerOptions,
+      costType, timeframe, strategicType, estimatedImpact, 
+      minScoreThreshold, maxScoreThreshold, order,
       xPosition, yPosition, capexLevel, opexLevel
     } = body;
 
@@ -97,6 +143,8 @@ export async function PUT(request: NextRequest) {
         categoryId: categoryId || null,
         subCategoryId: subCategoryId || null,
         subLevelId: subLevelId || null,
+        questionId: questionId || null,
+        triggerOptions: triggerOptions ? JSON.stringify(triggerOptions) : null,
         costType,
         timeframe,
         strategicType,
