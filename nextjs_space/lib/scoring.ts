@@ -150,42 +150,48 @@ export async function calculateUserScore(userId: string) {
 export async function getRecommendationsForUser(userId: string) {
   const { categoryScores, subLevelScores, subCategoryScores } = await calculateUserScore(userId);
   
-  // Düşük puanlı alt seviyeleri bul (%70 altı)
-  const lowScoringSubLevels = Object.entries(subLevelScores)
-    .filter(([_, data]) => (data?.percentage ?? 0) < 70)
-    .map(([subLevelId, data]) => ({ subLevelId, percentage: data.percentage }));
+  // Kullanıcının tüm anket cevaplarını getir
+  const userResponses = await prisma.surveyResponse.findMany({
+    where: { userId },
+    select: {
+      questionId: true,
+      value: true
+    }
+  });
+  
+  // Cevapları questionId -> value map'ine dönüştür
+  const userAnswerMap = new Map<string, string>();
+  userResponses.forEach(response => {
+    userAnswerMap.set(response.questionId, response.value.toLowerCase().trim());
+  });
 
-  // Düşük puanlı alt kategorileri de bul (%70 altı)
-  const lowScoringSubCategories = Object.entries(subCategoryScores)
-    .filter(([_, data]) => (data?.percentage ?? 0) < 70)
-    .map(([subCatId, data]) => ({ subCatId, percentage: data.percentage }));
-
-  // Düşük puanlı kategorileri bul
-  const lowScoringCategories = Object.entries(categoryScores)
-    .filter(([_, data]) => (data?.percentage ?? 0) < 70)
-    .map(([catId]) => catId);
-
-  const subLevelIds = lowScoringSubLevels.map(s => s.subLevelId);
+  // Puan yüzdelerini hazırla
   const subLevelPercentages = Object.fromEntries(
-    lowScoringSubLevels.map(s => [s.subLevelId, s.percentage])
+    Object.entries(subLevelScores).map(([id, data]) => [id, data?.percentage ?? 0])
+  );
+  const subCategoryPercentages = Object.fromEntries(
+    Object.entries(subCategoryScores).map(([id, data]) => [id, data?.percentage ?? 0])
   );
 
-  // Önerileri getir - öncelik: SubLevel > Category > Genel
+  // Tüm önerileri getir
   const recommendations = await prisma.recommendation.findMany({
-    where: {
-      OR: [
-        { subLevelId: { in: subLevelIds } },
-        { subLevelId: null, categoryId: { in: lowScoringCategories } },
-        { subLevelId: null, categoryId: null }
-      ]
-    },
     include: {
+      question: {
+        select: {
+          id: true,
+          text: true,
+          type: true
+        }
+      },
       subLevel: {
         include: {
           subCategory: {
             include: { category: true }
           }
         }
+      },
+      subCategory: {
+        include: { category: true }
       }
     },
     orderBy: [
@@ -194,15 +200,48 @@ export async function getRecommendationsForUser(userId: string) {
     ]
   });
 
-  // Puan eşiği filtreleme
+  // Önerileri filtrele
   const filteredRecommendations = recommendations.filter(rec => {
-    if (rec.subLevelId && subLevelPercentages[rec.subLevelId] !== undefined) {
+    // 1. SORU-CEVAP BAZLI TETİKLEME (öncelikli)
+    if (rec.questionId && rec.triggerOptions) {
+      const userAnswer = userAnswerMap.get(rec.questionId);
+      
+      // Kullanıcı bu soruya cevap vermemişse öneriyi gösterme
+      if (!userAnswer) return false;
+      
+      // triggerOptions JSON parse et
+      let triggerOpts: string[] = [];
+      try {
+        triggerOpts = JSON.parse(rec.triggerOptions);
+      } catch {
+        return false;
+      }
+      
+      // Kullanıcının cevabı tetikleyici şıklardan biriyse öneriyi göster
+      const normalizedTriggerOpts = triggerOpts.map(opt => opt.toLowerCase().trim());
+      return normalizedTriggerOpts.includes(userAnswer);
+    }
+    
+    // 2. PUAN ARALIĞI BAZLI FİLTRELEME (soru seçilmediyse)
+    // Alt seviye bazlı
+    if (rec.subLevelId) {
       const userScore = subLevelPercentages[rec.subLevelId];
+      if (userScore === undefined) return false;
       return userScore >= rec.minScoreThreshold && userScore <= rec.maxScoreThreshold;
     }
+    
+    // Alt kategori bazlı
+    if (rec.subCategoryId) {
+      const userScore = subCategoryPercentages[rec.subCategoryId];
+      if (userScore === undefined) return false;
+      return userScore >= rec.minScoreThreshold && userScore <= rec.maxScoreThreshold;
+    }
+    
+    // Genel öneri (her zaman göster)
     return true;
   });
 
+  // Roadmap'teki önerileri bul
   const existingRoadmapItems = await prisma.roadmapItem.findMany({
     where: { userId },
     select: { recommendationId: true }
@@ -214,7 +253,10 @@ export async function getRecommendationsForUser(userId: string) {
     ...rec,
     isInRoadmap: existingIds.has(rec?.id),
     subLevelName: rec.subLevel?.name,
-    subCategoryName: rec.subLevel?.subCategory?.name,
-    categoryName: rec.subLevel?.subCategory?.category?.name
+    subCategoryName: rec.subLevel?.subCategory?.name ?? rec.subCategory?.name,
+    categoryName: rec.subLevel?.subCategory?.category?.name ?? rec.subCategory?.category?.name,
+    // Tetikleme bilgisi
+    triggeredByQuestion: !!rec.questionId,
+    triggerQuestionText: rec.question?.text
   }));
 }
