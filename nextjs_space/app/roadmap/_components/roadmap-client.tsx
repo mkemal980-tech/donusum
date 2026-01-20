@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import Header from "@/components/ui/header";
 import RoadmapTimeline from "@/components/ui/roadmap-timeline";
 import { Map, TrendingUp, Calendar, Info } from "lucide-react";
@@ -50,9 +51,11 @@ export default function RoadmapClient() {
 
       if (res.ok) {
         setRoadmapItems(prev => (prev ?? []).filter(item => item?.recommendationId !== recommendationId));
+        toast.success("Öneri yol haritasından kaldırıldı");
       }
     } catch (error) {
       console.error("Error removing from roadmap:", error);
+      toast.error("Öneri kaldırılamadı");
     }
   };
 
@@ -71,9 +74,11 @@ export default function RoadmapClient() {
             item?.recommendationId === recommendationId ? updated : item
           )
         );
+        toast.success(`Ç${quarter} ${year} çeyreğine atandı`);
       }
     } catch (error) {
       console.error("Error updating timing:", error);
+      toast.error("Çeyrek atanamadı");
     }
   };
 

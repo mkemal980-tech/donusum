@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import Header from "@/components/ui/header";
 import SurveyQuestion from "@/components/survey/survey-question";
 import ProgressBar from "@/components/ui/progress-bar";
@@ -126,13 +127,20 @@ export default function SurveyClient() {
     setSaving(true);
 
     try {
-      await fetch("/api/survey/responses", {
+      const res = await fetch("/api/survey/responses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ questionId, value })
       });
+      
+      if (res.ok) {
+        toast.success("Cevap kaydedildi", {
+          duration: 1500,
+        });
+      }
     } catch (error) {
       console.error("Error saving response:", error);
+      toast.error("Cevap kaydedilemedi");
     } finally {
       setSaving(false);
     }
@@ -273,7 +281,13 @@ export default function SurveyClient() {
   };
 
   const handleComplete = () => {
-    router.push("/dashboard");
+    toast.success("🎉 Anket tamamlandı!", {
+      description: "Sonuçlarınız hesaplanıyor...",
+      duration: 2000,
+    });
+    setTimeout(() => {
+      router.push("/dashboard");
+    }, 1000);
   };
 
   if (loading) {

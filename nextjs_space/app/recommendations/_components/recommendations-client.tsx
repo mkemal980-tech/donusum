@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 import Header from "@/components/ui/header";
 import RecommendationCard from "@/components/ui/recommendation-card";
 import { BubbleChart } from "@/components/ui/bubble-chart";
@@ -76,9 +77,13 @@ export default function RecommendationsClient() {
               : rec
           )
         );
+        toast.success("Öneri yol haritasına eklendi", {
+          description: "Yol Haritası sayfasından planlayabilirsiniz"
+        });
       }
     } catch (error) {
       console.error("Error adding to roadmap:", error);
+      toast.error("Öneri eklenemedi");
     }
   };
 

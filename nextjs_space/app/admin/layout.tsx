@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings, FolderTree, HelpCircle, Lightbulb, LayoutDashboard, Factory, BarChart3, Scale, FileText, Activity } from "lucide-react";
+import { Settings, FolderTree, HelpCircle, Lightbulb, LayoutDashboard, Factory, BarChart3, Scale, FileText, Activity, Download } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -53,6 +53,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin/ironman-benchmarks" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
               <Activity size={20} />
               Ironman Benchmark
+            </Link>
+            
+            <div className="border-t my-3" />
+            
+            <Link href="/admin/export" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
+              <Download size={20} />
+              Veri Dışa Aktarma
             </Link>
           </nav>
         </aside>
