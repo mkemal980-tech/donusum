@@ -105,53 +105,63 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
 
       {/* Timeline */}
       <div className="relative">
-        <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#1e3a8a] to-[#a78bfa]" />
+        <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#1e3a8a] to-[#a78bfa]" />
         
-        <div className="space-y-8">
+        <div className="space-y-12">
           {quarters?.map((quarter, index) => {
             const quarterItems = getItemsForQuarter(quarter?.q, quarter?.year);
+            const isLeft = index % 2 === 0;
             return (
               <motion.div
                 key={`${quarter?.q}-${quarter?.year}`}
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: isLeft ? -20 : 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="relative pl-20"
+                className="relative"
               >
-                <div className="absolute left-6 w-5 h-5 rounded-full bg-white border-4 border-[#1e3a8a] z-10" />
-                <div className="absolute left-0 top-0 text-sm font-semibold text-[#1e3a8a] w-16 text-right pr-2">
-                  {quarter?.label}
+                {/* Center circle */}
+                <div className="absolute left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-4 border-[#1e3a8a] z-10" />
+                
+                {/* Label - alternates left/right */}
+                <div className={`absolute top-0 text-sm font-semibold text-[#1e3a8a] ${
+                  isLeft 
+                    ? 'right-1/2 mr-6 text-right' 
+                    : 'left-1/2 ml-6 text-left'
+                }`}>
+                  <span className="whitespace-nowrap">{quarter?.label}</span>
                 </div>
                 
-                <div className="bg-white rounded-xl shadow-md p-4 min-h-[60px] border border-gray-100">
-                  {(quarterItems?.length ?? 0) === 0 ? (
-                    <p className="text-gray-400 text-sm">Planlanmış öğe yok</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {quarterItems?.map((item) => (
-                        <div
-                          key={item?.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${strategicColors[item?.recommendation?.strategicType ?? ''] ?? 'bg-gray-400'}`} />
-                            <span className="font-medium text-gray-800">{item?.recommendation?.title ?? 'Başlıksız'}</span>
-                            <span className="text-sm text-green-600">+{item?.recommendation?.estimatedImpact ?? 0}%</span>
-                          </div>
-                          <button
-                            onClick={() => onRemove?.(item?.recommendationId)}
-                            className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                {/* Content card - below the timeline node */}
+                <div className="mt-8 mx-auto max-w-lg">
+                  {(quarterItems?.length ?? 0) > 0 && (
+                    <div className="bg-white rounded-xl shadow-md p-4 border border-gray-100">
+                      <div className="space-y-2">
+                        {quarterItems?.map((item) => (
+                          <div
+                            key={item?.id}
+                            className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                           >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      ))}
+                            <div className="flex items-center gap-3">
+                              <div className={`w-3 h-3 rounded-full ${strategicColors[item?.recommendation?.strategicType ?? ''] ?? 'bg-gray-400'}`} />
+                              <span className="font-medium text-gray-800">{item?.recommendation?.title ?? 'Başlıksız'}</span>
+                              <span className="text-sm text-green-600">+{item?.recommendation?.estimatedImpact ?? 0}%</span>
+                            </div>
+                            <button
+                              onClick={() => onRemove?.(item?.recommendationId)}
+                              className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
               </motion.div>
             );
-          })}        </div>
+          })}
+        </div>
       </div>
     </div>
   );
