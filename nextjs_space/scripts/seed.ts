@@ -18,6 +18,21 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.user.deleteMany();
 
+  // Create admin user
+  const adminPassword = await bcrypt.hash('admin123', 10);
+  await prisma.user.create({
+    data: {
+      email: 'admin@test.com',
+      password: adminPassword,
+      firstName: 'Admin',
+      lastName: 'User',
+      organization: 'System',
+      role: 'ADMIN'
+    }
+  });
+
+  console.log('Created admin user');
+
   // Create test user
   const hashedPassword = await bcrypt.hash('johndoe123', 10);
   await prisma.user.create({
