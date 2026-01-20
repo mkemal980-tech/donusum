@@ -50,7 +50,11 @@ const categoryColors: Record<string, string> = {
   "Dijital Dönüşüm": "#3b82f6",
 };
 
-export function CategoryDashboard() {
+interface CategoryDashboardProps {
+  surveyId?: string;
+}
+
+export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
   const [data, setData] = useState<CategoryScores | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -58,8 +62,12 @@ export function CategoryDashboard() {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const res = await fetch("/api/survey/category-scores");
+        const url = surveyId 
+          ? `/api/survey/category-scores?surveyId=${surveyId}`
+          : "/api/survey/category-scores";
+        const res = await fetch(url);
         const result = await res.json();
         setData(result);
         if (result.categories?.length > 0) {
@@ -72,7 +80,7 @@ export function CategoryDashboard() {
       }
     };
     fetchData();
-  }, []);
+  }, [surveyId]);
 
   if (loading) {
     return (
