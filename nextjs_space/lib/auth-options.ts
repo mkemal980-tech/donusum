@@ -69,7 +69,9 @@ export const authOptions: NextAuthOptions = {
           name: `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          organization: user.organization
+          organization: user.organization,
+          role: user.role,
+          unitId: user.unitId
         };
       }
     })
@@ -84,6 +86,8 @@ export const authOptions: NextAuthOptions = {
         token.firstName = (user as any).firstName;
         token.lastName = (user as any).lastName;
         token.organization = (user as any).organization;
+        token.role = (user as any).role;
+        token.unitId = (user as any).unitId;
       }
       return token;
     },
@@ -93,6 +97,8 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).firstName = token.firstName;
         (session.user as any).lastName = token.lastName;
         (session.user as any).organization = token.organization;
+        (session.user as any).role = token.role;
+        (session.user as any).unitId = token.unitId;
       }
       return session;
     }

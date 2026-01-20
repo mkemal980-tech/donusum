@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings, FolderTree, HelpCircle, Lightbulb, LayoutDashboard, Factory, BarChart3, Scale, FileText, Activity, Download } from "lucide-react";
+import { Settings, FolderTree, Lightbulb, LayoutDashboard, Factory, BarChart3, Scale, FileText, Activity, Download, Users, Building2 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -26,6 +26,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <LayoutDashboard size={20} />
               Genel Bakış
             </Link>
+            
+            <div className="pt-2 pb-1">
+              <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Kullanıcı Yönetimi</p>
+            </div>
+            <Link href="/admin/users" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
+              <Users size={20} />
+              Kullanıcılar
+            </Link>
+            <Link href="/admin/units" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
+              <Building2 size={20} />
+              Birimler
+            </Link>
+            
+            <div className="pt-2 pb-1">
+              <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Anket Yönetimi</p>
+            </div>
             <Link href="/admin/surveys" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
               <FileText size={20} />
               Anketler
@@ -38,6 +54,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Lightbulb size={20} />
               Öneriler
             </Link>
+            
+            <div className="pt-2 pb-1">
+              <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Sektör & Benchmark</p>
+            </div>
             <Link href="/admin/sectors" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 text-gray-700 font-medium">
               <Factory size={20} />
               Sektörler

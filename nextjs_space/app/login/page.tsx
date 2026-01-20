@@ -28,16 +28,16 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        setError("Geçersiz email veya şifre");
         setLoading(false);
       } else if (result?.ok) {
         window.location.href = "/dashboard";
       } else {
-        setError("An unexpected error occurred");
+        setError("Beklenmeyen bir hata oluştu");
         setLoading(false);
       }
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      setError("Bir hata oluştu. Lütfen tekrar deneyin.");
       setLoading(false);
     }
   };
@@ -53,8 +53,8 @@ export default function LoginPage() {
           <div className="w-16 h-16 bg-gradient-to-br from-[#1e3a8a] to-[#a78bfa] rounded-2xl flex items-center justify-center mx-auto mb-4">
             <span className="text-white font-bold text-2xl">T</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-600 mt-2">Sign in to your transformation platform</p>
+          <h1 className="text-2xl font-bold text-gray-900">Hoş Geldiniz</h1>
+          <p className="text-gray-600 mt-2">Dönüşüm platformuna giriş yapın</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -75,14 +75,19 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target?.value ?? '')}
                   className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent outline-none transition-all"
-                  placeholder="Enter your email"
+                  placeholder="Email adresinizi girin"
                   required
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">Şifre</label>
+                <Link href="/forgot-password" className="text-sm text-[#1e3a8a] hover:underline">
+                  Şifremi Unuttum
+                </Link>
+              </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                 <input
@@ -90,7 +95,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target?.value ?? '')}
                   className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent outline-none transition-all"
-                  placeholder="Enter your password"
+                  placeholder="Şifrenizi girin"
                   required
                 />
               </div>
@@ -104,16 +109,16 @@ export default function LoginPage() {
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
-                <><LogIn size={20} /> Sign In</>
+                <><LogIn size={20} /> Giriş Yap</>
               )}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-600">
-              Don&apos;t have an account?{" "}
+              Hesabınız yok mu?{" "}
               <Link href="/signup" className="text-[#1e3a8a] font-medium hover:underline">
-                Sign up
+                Kayıt Ol
               </Link>
             </p>
           </div>

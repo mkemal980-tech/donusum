@@ -9,23 +9,49 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+// Kullanıcı Rolleri
+enum UserRole {
+  USER          // Sadece anketi yanıtlayabilir
+  UNIT_MANAGER  // Kendi birimindeki kullanıcıları yönetebilir
+  ADMIN         // Tüm sistemi yönetebilir
+}
+
+// Birim Modeli - Lokasyon/Departman yönetimi
+model Unit {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  organization   String?
+  managerId      String?  // Birim Yöneticisi
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  manager        User?    @relation("UnitManager", fields: [managerId], references: [id])
+  users          User[]   @relation("UnitUsers")
+}
+
 model User {
-  id                String            @id @default(cuid())
-  email             String            @unique
-  password          String
-  firstName         String?
-  lastName          String?
-  organization      String?
-  sectorId          String?
-  subSectorId       String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  assessmentScores  AssessmentScore[]
-  uploadedDocuments Document[]
-  roadmapItems      RoadmapItem[]
-  surveyResponses   SurveyResponse[]
-  sector            Sector?           @relation(fields: [sectorId], references: [id])
-  subSector         SubSector?        @relation(fields: [subSectorId], references: [id])
+  id                   String            @id @default(cuid())
+  email                String            @unique
+  password             String
+  firstName            String?
+  lastName             String?
+  organization         String?
+  role                 UserRole          @default(USER)
+  unitId               String?
+  sectorId             String?
+  subSectorId          String?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  assessmentScores     AssessmentScore[]
+  uploadedDocuments    Document[]
+  roadmapItems         RoadmapItem[]
+  surveyResponses      SurveyResponse[]
+  sector               Sector?           @relation(fields: [sectorId], references: [id])
+  subSector            SubSector?        @relation(fields: [subSectorId], references: [id])
+  unit                 Unit?             @relation("UnitUsers", fields: [unitId], references: [id])
+  managedUnits         Unit[]            @relation("UnitManager")
 }
 
 model Sector {
