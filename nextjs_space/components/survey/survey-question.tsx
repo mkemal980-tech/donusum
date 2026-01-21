@@ -64,8 +64,8 @@ export default function SurveyQuestion({
         return (
           <div className="flex flex-col gap-3">
             <div className="flex justify-between text-sm text-gray-500 px-1">
-              <span>Low Maturity</span>
-              <span>High Maturity</span>
+              <span>Düşük Olgunluk</span>
+              <span>Yüksek Olgunluk</span>
             </div>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((num) => (
@@ -99,7 +99,7 @@ export default function SurveyQuestion({
                 }`}
               >
                 {option === "yes" ? <Check className="inline mr-2" size={20} /> : null}
-                {option === "yes" ? "Yes" : "No"}
+                {option === "yes" ? "Evet" : "Hayır"}
               </button>
             ))}
           </div>
@@ -144,7 +144,7 @@ export default function SurveyQuestion({
         <div className="mt-6 pt-6 border-t border-gray-100">
           <p className="text-sm text-gray-600 mb-3 flex items-center gap-2">
             <FileText size={16} className="text-[#a78bfa]" />
-            Evidence document required for this question
+            Bu soru için kanıt belgesi gereklidir
           </p>
           
           {uploadedFile ? (
@@ -170,8 +170,8 @@ export default function SurveyQuestion({
               }`}
             >
               <Upload className="mx-auto text-gray-400 mb-2" size={24} />
-              <p className="text-sm text-gray-500">Drop file here or click to upload</p>
-              <p className="text-xs text-gray-400 mt-1">PDF, images up to 10MB</p>
+              <p className="text-sm text-gray-500">Dosyayı buraya bırakın veya yüklemek için tıklayın</p>
+              <p className="text-xs text-gray-400 mt-1">PDF, 10MB&apos;a kadar görseller</p>
               <input
                 ref={fileInputRef}
                 type="file"
