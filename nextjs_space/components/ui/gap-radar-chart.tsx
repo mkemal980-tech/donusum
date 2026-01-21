@@ -22,8 +22,109 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
     setMounted(true);
   }, []);
 
+  // 2 veya daha az veri noktası için bar chart çiz
+  const drawBarChart = useCallback(() => {
+    if (!canvasRef.current || !containerRef.current || data.length === 0) return;
+
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const container = containerRef.current;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = containerWidth * dpr;
+    canvas.height = containerHeight * dpr;
+    canvas.style.width = `${containerWidth}px`;
+    canvas.style.height = `${containerHeight}px`;
+    ctx.scale(dpr, dpr);
+
+    const width = containerWidth;
+    const height = containerHeight;
+    const padding = { top: 30, bottom: 60, left: 20, right: 20 };
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+    
+    ctx.clearRect(0, 0, width, height);
+
+    const barGroupWidth = chartWidth / data.length;
+    const barWidth = Math.min(40, barGroupWidth * 0.35);
+    const gap = 8;
+
+    // Y ekseni çizgileri
+    for (let i = 0; i <= 5; i++) {
+      const y = padding.top + chartHeight - (chartHeight / 5) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding.left, y);
+      ctx.lineTo(width - padding.right, y);
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.15)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // Y ekseni etiketleri
+      ctx.font = "11px Inter, system-ui, sans-serif";
+      ctx.fillStyle = "#9ca3af";
+      ctx.textAlign = "right";
+      ctx.fillText(i.toString(), padding.left - 8, y + 4);
+    }
+
+    // Her veri noktası için bar çiz
+    data.forEach((item, index) => {
+      const groupX = padding.left + barGroupWidth * index + barGroupWidth / 2;
+      
+      // Hedef bar (arka plan)
+      const targetHeight = (item.target / 5) * chartHeight;
+      const targetX = groupX - barWidth - gap / 2;
+      const targetY = padding.top + chartHeight - targetHeight;
+      
+      ctx.fillStyle = "rgba(99, 102, 241, 0.3)";
+      ctx.beginPath();
+      ctx.roundRect(targetX, targetY, barWidth, targetHeight, 4);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.6)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Mevcut durum bar
+      const scoreHeight = (item.score / 5) * chartHeight;
+      const scoreX = groupX + gap / 2;
+      const scoreY = padding.top + chartHeight - scoreHeight;
+      
+      ctx.fillStyle = "rgba(236, 72, 153, 0.5)";
+      ctx.beginPath();
+      ctx.roundRect(scoreX, scoreY, barWidth, scoreHeight, 4);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(236, 72, 153, 0.9)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Skorları bar üzerine yaz
+      ctx.font = "bold 11px Inter, system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(99, 102, 241, 0.9)";
+      ctx.fillText(item.target.toFixed(1), targetX + barWidth / 2, targetY - 6);
+      ctx.fillStyle = "rgba(236, 72, 153, 1)";
+      ctx.fillText(item.score.toFixed(1), scoreX + barWidth / 2, scoreY - 6);
+      
+      // X ekseni etiketleri
+      ctx.font = "12px Inter, system-ui, sans-serif";
+      ctx.fillStyle = "#374151";
+      ctx.textAlign = "center";
+      
+      // Uzun isimleri kısalt
+      const maxLen = data.length <= 2 ? 20 : 12;
+      let label = item.name;
+      if (label.length > maxLen) {
+        label = label.substring(0, maxLen - 2) + "...";
+      }
+      ctx.fillText(label, groupX, padding.top + chartHeight + 25);
+    });
+  }, [data]);
+
   const drawChart = useCallback(() => {
-    if (!canvasRef.current || !containerRef.current || data.length < 2) return;
+    if (!canvasRef.current || !containerRef.current || data.length < 3) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -213,27 +314,36 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
     }
   }, [data]);
 
+  // Doğru çizim fonksiyonunu seç: 3+ için radar, 1-2 için bar chart
+  const draw = useCallback(() => {
+    if (data.length >= 3) {
+      drawChart();
+    } else if (data.length >= 1) {
+      drawBarChart();
+    }
+  }, [data.length, drawChart, drawBarChart]);
+
   useEffect(() => {
     if (!mounted) return;
     
-    drawChart();
+    draw();
     
     // Redraw on resize
     const handleResize = () => {
-      requestAnimationFrame(drawChart);
+      requestAnimationFrame(draw);
     };
     
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [data, mounted, drawChart]);
+  }, [data, mounted, draw]);
 
   // Re-draw after a short delay to ensure container is sized
   useEffect(() => {
     if (mounted) {
-      const timer = setTimeout(drawChart, 100);
+      const timer = setTimeout(draw, 100);
       return () => clearTimeout(timer);
     }
-  }, [mounted, drawChart]);
+  }, [mounted, draw]);
 
   if (!mounted) {
     return (
@@ -246,30 +356,40 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
     );
   }
 
-  // Show message if not enough data points
-  if (data.length < 2) {
+  // Show message if no data
+  if (data.length < 1) {
     return (
       <div className="bg-white rounded-2xl shadow-soft p-6 h-full border border-gray-100">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
         <div className="h-[300px] flex items-center justify-center text-gray-500">
-          <p>GAP analizi için en az 2 alt kategori gereklidir.</p>
+          <p>GAP analizi için veri bulunamadı.</p>
         </div>
       </div>
     );
   }
 
+  // 1-2 veri noktası için farklı açıklama
+  const isBarChart = data.length < 3;
+
   return (
     <div className="bg-white rounded-2xl shadow-soft p-6 h-full border border-gray-100">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+        {isBarChart && (
+          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
+            3+ alt kategori ile örümcek grafik
+          </span>
+        )}
+      </div>
       
       {/* Legend */}
       <div className="flex items-center justify-center gap-8 mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: "rgba(236, 72, 153, 0.7)" }} />
+          <div className={`w-4 h-4 ${isBarChart ? 'rounded' : 'rounded-full'}`} style={{ backgroundColor: "rgba(236, 72, 153, 0.7)" }} />
           <span className="text-sm text-gray-600 font-medium">Mevcut Durum</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: "rgba(99, 102, 241, 0.5)" }} />
+          <div className={`w-4 h-4 ${isBarChart ? 'rounded' : 'rounded-full'}`} style={{ backgroundColor: "rgba(99, 102, 241, 0.5)" }} />
           <span className="text-sm text-gray-600 font-medium">Hedef</span>
         </div>
       </div>
