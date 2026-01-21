@@ -95,32 +95,48 @@ export async function POST(request: NextRequest) {
       xPosition, yPosition, capexLevel, opexLevel
     } = body;
 
+    // QuestionId varsa geçerli mi kontrol et
+    let validQuestionId = null;
+    if (questionId) {
+      const questionExists = await prisma.question.findUnique({
+        where: { id: questionId }
+      });
+      if (questionExists) {
+        validQuestionId = questionId;
+      }
+    }
+
     const recommendation = await prisma.recommendation.create({
       data: {
-        title,
-        description,
+        title: title || "",
+        description: description || "",
         categoryId: categoryId || null,
         subCategoryId: subCategoryId || null,
         subLevelId: subLevelId || null,
-        questionId: questionId || null,
-        triggerOptions: triggerOptions ? JSON.stringify(triggerOptions) : null,
-        costType,
-        timeframe,
-        strategicType,
+        questionId: validQuestionId,
+        triggerOptions: validQuestionId && triggerOptions && triggerOptions.length > 0 
+          ? JSON.stringify(triggerOptions) 
+          : null,
+        costType: costType || "OPEX",
+        timeframe: timeframe || "SHORT_TERM",
+        strategicType: strategicType || "QUICK_WIN",
         estimatedImpact: estimatedImpact || 1,
-        minScoreThreshold: minScoreThreshold || 0,
-        maxScoreThreshold: maxScoreThreshold || 100,
+        minScoreThreshold: minScoreThreshold ?? 0,
+        maxScoreThreshold: maxScoreThreshold ?? 100,
         order: order || 1,
-        xPosition: xPosition || 5,
-        yPosition: yPosition || 5,
-        capexLevel: capexLevel || 1,
-        opexLevel: opexLevel || 1
+        xPosition: xPosition ?? 5,
+        yPosition: yPosition ?? 5,
+        capexLevel: capexLevel ?? 1,
+        opexLevel: opexLevel ?? 1
       }
     });
     return NextResponse.json(recommendation);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating recommendation:", error);
-    return NextResponse.json({ error: "Failed to create recommendation" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Failed to create recommendation", 
+      details: error?.message || "Unknown error" 
+    }, { status: 500 });
   }
 }
 
@@ -135,33 +151,49 @@ export async function PUT(request: NextRequest) {
       xPosition, yPosition, capexLevel, opexLevel
     } = body;
 
+    // QuestionId varsa geçerli mi kontrol et
+    let validQuestionId = null;
+    if (questionId) {
+      const questionExists = await prisma.question.findUnique({
+        where: { id: questionId }
+      });
+      if (questionExists) {
+        validQuestionId = questionId;
+      }
+    }
+
     const recommendation = await prisma.recommendation.update({
       where: { id },
       data: {
-        title,
-        description,
+        title: title || "",
+        description: description || "",
         categoryId: categoryId || null,
         subCategoryId: subCategoryId || null,
         subLevelId: subLevelId || null,
-        questionId: questionId || null,
-        triggerOptions: triggerOptions ? JSON.stringify(triggerOptions) : null,
-        costType,
-        timeframe,
-        strategicType,
-        estimatedImpact,
-        minScoreThreshold: minScoreThreshold || 0,
-        maxScoreThreshold: maxScoreThreshold || 100,
-        order,
-        xPosition: xPosition || 5,
-        yPosition: yPosition || 5,
-        capexLevel: capexLevel || 1,
-        opexLevel: opexLevel || 1
+        questionId: validQuestionId,
+        triggerOptions: validQuestionId && triggerOptions && triggerOptions.length > 0 
+          ? JSON.stringify(triggerOptions) 
+          : null,
+        costType: costType || "OPEX",
+        timeframe: timeframe || "SHORT_TERM",
+        strategicType: strategicType || "QUICK_WIN",
+        estimatedImpact: estimatedImpact ?? 1,
+        minScoreThreshold: minScoreThreshold ?? 0,
+        maxScoreThreshold: maxScoreThreshold ?? 100,
+        order: order ?? 1,
+        xPosition: xPosition ?? 5,
+        yPosition: yPosition ?? 5,
+        capexLevel: capexLevel ?? 1,
+        opexLevel: opexLevel ?? 1
       }
     });
     return NextResponse.json(recommendation);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating recommendation:", error);
-    return NextResponse.json({ error: "Failed to update recommendation" }, { status: 500 });
+    return NextResponse.json({ 
+      error: "Failed to update recommendation", 
+      details: error?.message || "Unknown error" 
+    }, { status: 500 });
   }
 }
 
