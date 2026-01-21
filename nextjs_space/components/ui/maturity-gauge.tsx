@@ -8,20 +8,21 @@ interface MaturityGaugeProps {
   showOverallLevel?: boolean;
 }
 
+// Mor/Indigo tema renkleri - en koyu'dan en açık'a
 const levels = [
-  { value: 5, label: "Lider", color: "#22c55e" },
-  { value: 4, label: "Olgun", color: "#6366f1" },
-  { value: 3, label: "Gelişen", color: "#8b5cf6" },
-  { value: 2, label: "Farkındalık", color: "#f59e0b" },
-  { value: 1, label: "Başlangıç", color: "#ef4444" },
+  { value: 5, label: "Lider", color: "#4f46e5" },       // indigo-600
+  { value: 4, label: "Olgun", color: "#6366f1" },       // indigo-500
+  { value: 3, label: "Gelişen", color: "#8b5cf6" },     // violet-500
+  { value: 2, label: "Farkındalık", color: "#a78bfa" }, // violet-400
+  { value: 1, label: "Başlangıç", color: "#c4b5fd" },   // violet-300
 ];
 
 export const getScoreLevel = (score: number): { label: string; color: string } => {
-  if (score >= 4.5) return { label: "Lider", color: "#22c55e" };
+  if (score >= 4.5) return { label: "Lider", color: "#4f46e5" };
   if (score >= 3.5) return { label: "Olgun", color: "#6366f1" };
   if (score >= 2.5) return { label: "Gelişen", color: "#8b5cf6" };
-  if (score >= 1.5) return { label: "Farkındalık", color: "#f59e0b" };
-  return { label: "Başlangıç", color: "#ef4444" };
+  if (score >= 1.5) return { label: "Farkındalık", color: "#a78bfa" };
+  return { label: "Başlangıç", color: "#c4b5fd" };
 };
 
 export function MaturityGauge({ score, title = "Seviyelendirme", showOverallLevel = false }: MaturityGaugeProps) {
@@ -63,8 +64,8 @@ export function MaturityGauge({ score, title = "Seviyelendirme", showOverallLeve
         
         {/* Gauge Bar */}
         <div className="relative flex-1 max-w-[50px]">
-          {/* Background track */}
-          <div className="absolute inset-0 bg-gradient-to-t from-error-100 via-secondary-100 to-success-100 rounded-2xl" />
+          {/* Background track - mor/indigo gradient */}
+          <div className="absolute inset-0 rounded-2xl" style={{ background: 'linear-gradient(to top, #ede9fe, #c7d2fe)' }} />
           
           {/* Level lines */}
           <div className="absolute inset-0 flex flex-col justify-between py-1">
@@ -73,14 +74,14 @@ export function MaturityGauge({ score, title = "Seviyelendirme", showOverallLeve
             ))}
           </div>
           
-          {/* Progress bar */}
+          {/* Progress bar - mor/indigo gradient */}
           <motion.div
             initial={{ height: 0 }}
             animate={{ height: `${position}%` }}
             transition={{ duration: 1, ease: "easeOut" }}
             className="absolute bottom-0 left-0 right-0 rounded-2xl"
             style={{ 
-              background: `linear-gradient(to top, #ef4444, #f59e0b, #8b5cf6, #6366f1, #22c55e)`,
+              background: `linear-gradient(to top, #c4b5fd, #a78bfa, #8b5cf6, #6366f1, #4f46e5)`,
               minHeight: score > 0 ? "20px" : "0px"
             }}
           />
