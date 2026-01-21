@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 interface DataPoint {
   name: string;
@@ -13,91 +13,94 @@ interface GapRadarChartProps {
   title?: string;
 }
 
-// Theme colors - Primary indigo/purple
-const THEME_COLORS = {
-  primary: "#6366f1",
-  primaryLight: "#818cf8",
-  secondary: "#8b5cf6",
-  secondaryLight: "#a78bfa",
-  dark: "#4f46e5",
-};
-
 export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (!mounted || !canvasRef.current || data.length === 0) return;
+  const drawChart = useCallback(() => {
+    if (!canvasRef.current || !containerRef.current || data.length < 2) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Get container size
+    const container = containerRef.current;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+
     // High DPI support
     const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    canvas.width = containerWidth * dpr;
+    canvas.height = containerHeight * dpr;
+    canvas.style.width = `${containerWidth}px`;
+    canvas.style.height = `${containerHeight}px`;
     ctx.scale(dpr, dpr);
 
-    const width = rect.width;
-    const height = rect.height;
+    const width = containerWidth;
+    const height = containerHeight;
     const centerX = width / 2;
     const centerY = height / 2;
-    const maxRadius = Math.min(width, height) / 2 - 60;
+    
+    // Calculate max radius based on data count for better label spacing
+    const labelSpace = data.length <= 4 ? 70 : 55;
+    const maxRadius = Math.min(width, height) / 2 - labelSpace;
     const levels = 5;
-    const angleStep = (2 * Math.PI) / data.length;
+    const numPoints = data.length;
+    const angleStep = (2 * Math.PI) / numPoints;
     const startAngle = -Math.PI / 2; // Start from top
 
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
-    // Draw concentric polygons (levels)
+    // Draw concentric polygons (web lines)
     for (let level = 1; level <= levels; level++) {
       const radius = (maxRadius / levels) * level;
       ctx.beginPath();
-      for (let i = 0; i < data.length; i++) {
-        const angle = startAngle + i * angleStep;
+      for (let i = 0; i <= numPoints; i++) {
+        const angle = startAngle + (i % numPoints) * angleStep;
         const x = centerX + radius * Math.cos(angle);
         const y = centerY + radius * Math.sin(angle);
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
-      ctx.closePath();
-      ctx.strokeStyle = "rgba(99, 102, 241, 0.15)";
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.2)";
       ctx.lineWidth = 1;
       ctx.stroke();
-      
-      // Add subtle fill for inner levels
-      if (level < levels) {
-        ctx.fillStyle = "rgba(99, 102, 241, 0.02)";
-        ctx.fill();
-      }
     }
 
-    // Draw axis lines
-    for (let i = 0; i < data.length; i++) {
+    // Draw axis lines from center to each vertex
+    for (let i = 0; i < numPoints; i++) {
       const angle = startAngle + i * angleStep;
       const x = centerX + maxRadius * Math.cos(angle);
       const y = centerY + maxRadius * Math.sin(angle);
       ctx.beginPath();
       ctx.moveTo(centerX, centerY);
       ctx.lineTo(x, y);
-      ctx.strokeStyle = "rgba(99, 102, 241, 0.2)";
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.25)";
       ctx.lineWidth = 1;
       ctx.stroke();
     }
 
-    // Helper to draw polygon
-    const drawPolygon = (values: number[], fillColor: string, strokeColor: string, lineWidth: number = 2) => {
+    // Helper to draw filled polygon
+    const drawPolygon = (
+      values: number[], 
+      fillColor: string, 
+      strokeColor: string, 
+      lineWidth: number = 2
+    ) => {
+      if (values.length < 2) return;
+      
       ctx.beginPath();
-      for (let i = 0; i < data.length; i++) {
-        const angle = startAngle + i * angleStep;
-        const value = Math.min(values[i], 5) / 5; // Normalize to 0-1
+      for (let i = 0; i <= numPoints; i++) {
+        const idx = i % numPoints;
+        const angle = startAngle + idx * angleStep;
+        const value = Math.max(0, Math.min(values[idx] || 0, 5)) / 5; // Normalize to 0-1
         const radius = maxRadius * value;
         const x = centerX + radius * Math.cos(angle);
         const y = centerY + radius * Math.sin(angle);
@@ -112,59 +115,82 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       ctx.stroke();
     };
 
-    // Draw target polygon (background) - Primary indigo theme
+    // Draw target polygon (outer, lighter) - represents benchmark/goal
     drawPolygon(
       data.map((d) => d.target),
-      "rgba(99, 102, 241, 0.15)",
-      "rgba(79, 70, 229, 0.6)",
+      "rgba(99, 102, 241, 0.12)",
+      "rgba(99, 102, 241, 0.5)",
       2
     );
 
-    // Draw current score polygon (foreground) - Secondary purple theme
+    // Draw current score polygon (inner, darker) - represents actual performance
     drawPolygon(
       data.map((d) => d.score),
-      "rgba(139, 92, 246, 0.35)",
-      "rgba(124, 58, 237, 1)",
-      3
+      "rgba(236, 72, 153, 0.3)",
+      "rgba(236, 72, 153, 0.9)",
+      2.5
     );
 
-    // Draw data points
-    for (let i = 0; i < data.length; i++) {
+    // Draw data points for current scores
+    for (let i = 0; i < numPoints; i++) {
       const angle = startAngle + i * angleStep;
-      const value = Math.min(data[i].score, 5) / 5;
+      const value = Math.max(0, Math.min(data[i].score || 0, 5)) / 5;
       const radius = maxRadius * value;
       const x = centerX + radius * Math.cos(angle);
       const y = centerY + radius * Math.sin(angle);
       
-      // Draw point
+      // Draw point with shadow
       ctx.beginPath();
-      ctx.arc(x, y, 6, 0, Math.PI * 2);
-      ctx.fillStyle = "#7c3aed";
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = "#ec4899";
       ctx.fill();
-      ctx.strokeStyle = "white";
+      ctx.strokeStyle = "#fff";
       ctx.lineWidth = 2;
       ctx.stroke();
     }
 
-    // Draw labels
-    ctx.font = "12px Inter, system-ui, sans-serif";
-    ctx.fillStyle = "#4b5563";
+    // Draw labels at vertices
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-
-    for (let i = 0; i < data.length; i++) {
+    
+    for (let i = 0; i < numPoints; i++) {
       const angle = startAngle + i * angleStep;
-      const labelRadius = maxRadius + 35;
-      const x = centerX + labelRadius * Math.cos(angle);
-      const y = centerY + labelRadius * Math.sin(angle);
+      const labelRadius = maxRadius + (data.length <= 4 ? 45 : 35);
+      let x = centerX + labelRadius * Math.cos(angle);
+      let y = centerY + labelRadius * Math.sin(angle);
 
-      // Wrap long labels
+      // Adjust position based on angle for better readability
+      const normalizedAngle = ((angle + Math.PI * 2) % (Math.PI * 2));
+      
+      // Right side labels
+      if (normalizedAngle > Math.PI / 4 && normalizedAngle < 3 * Math.PI / 4) {
+        ctx.textAlign = "center";
+        y += 10;
+      }
+      // Bottom labels
+      else if (normalizedAngle >= 3 * Math.PI / 4 && normalizedAngle <= 5 * Math.PI / 4) {
+        ctx.textAlign = "right";
+        x -= 5;
+      }
+      // Left side labels  
+      else if (normalizedAngle > 5 * Math.PI / 4 && normalizedAngle < 7 * Math.PI / 4) {
+        ctx.textAlign = "center";
+        y -= 5;
+      }
+      // Top labels
+      else {
+        ctx.textAlign = "left";
+        x += 5;
+      }
+
+      // Word wrap for long labels
       const words = data[i].name.split(" ");
       const lines: string[] = [];
       let currentLine = "";
+      const maxChars = data.length <= 3 ? 20 : 14;
       
       for (const word of words) {
-        if (currentLine.length + word.length > 12) {
+        if ((currentLine + " " + word).trim().length > maxChars) {
           if (currentLine) lines.push(currentLine);
           currentLine = word;
         } else {
@@ -173,45 +199,83 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       }
       if (currentLine) lines.push(currentLine);
 
+      // Draw label text
+      ctx.font = "12px Inter, system-ui, -apple-system, sans-serif";
+      ctx.fillStyle = "#374151";
+      
+      const lineHeight = 14;
+      const totalHeight = lines.length * lineHeight;
+      const startY = y - totalHeight / 2 + lineHeight / 2;
+      
       lines.forEach((line, idx) => {
-        ctx.fillText(line, x, y + idx * 14 - ((lines.length - 1) * 7));
+        ctx.fillText(line, x, startY + idx * lineHeight);
       });
     }
-  }, [data, mounted]);
+  }, [data]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
+    drawChart();
+    
+    // Redraw on resize
+    const handleResize = () => {
+      requestAnimationFrame(drawChart);
+    };
+    
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [data, mounted, drawChart]);
+
+  // Re-draw after a short delay to ensure container is sized
+  useEffect(() => {
+    if (mounted) {
+      const timer = setTimeout(drawChart, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [mounted, drawChart]);
 
   if (!mounted) {
     return (
-      <div className="bg-white rounded-2xl shadow-soft p-6 h-full">
-        <h3 className="text-lg font-semibold text-primary-900 mb-4">{title}</h3>
-        <div className="h-[280px] flex items-center justify-center">
-          <div className="spinner" />
+      <div className="bg-white rounded-2xl shadow-soft p-6 h-full border border-gray-100">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
+        <div className="h-[300px] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if not enough data points
+  if (data.length < 2) {
+    return (
+      <div className="bg-white rounded-2xl shadow-soft p-6 h-full border border-gray-100">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
+        <div className="h-[300px] flex items-center justify-center text-gray-500">
+          <p>GAP analizi için en az 2 alt kategori gereklidir.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-soft p-6 h-full">
-      <h3 className="text-lg font-semibold text-primary-900 mb-4">{title}</h3>
+    <div className="bg-white rounded-2xl shadow-soft p-6 h-full border border-gray-100">
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
       
       {/* Legend */}
-      <div className="flex items-center justify-center gap-6 mb-2">
+      <div className="flex items-center justify-center gap-8 mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-lg" style={{ backgroundColor: "rgba(139, 92, 246, 0.6)" }} />
+          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: "rgba(236, 72, 153, 0.7)" }} />
           <span className="text-sm text-gray-600 font-medium">Mevcut Durum</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-lg" style={{ backgroundColor: "rgba(99, 102, 241, 0.3)" }} />
+          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: "rgba(99, 102, 241, 0.5)" }} />
           <span className="text-sm text-gray-600 font-medium">Hedef</span>
         </div>
       </div>
       
-      <div className="h-[260px]">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full"
-          style={{ width: "100%", height: "100%" }}
-        />
+      <div ref={containerRef} className="h-[300px] w-full">
+        <canvas ref={canvasRef} />
       </div>
     </div>
   );
