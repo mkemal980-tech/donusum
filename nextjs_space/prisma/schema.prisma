@@ -213,6 +213,7 @@ model Question {
   weight           Float            @default(1.0)
   requiresEvidence Boolean          @default(false)
   order            Int              @default(0)
+  axisType         AxisType         @default(VELOCITY)  // Ironman için: VELOCITY (Hız) veya ENDURANCE (Olgunluk)
   subLevelId       String?
   subCategoryId    String?
   createdAt        DateTime         @default(now())

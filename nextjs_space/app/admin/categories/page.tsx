@@ -12,6 +12,7 @@ interface Question {
   options: any[];
   order: number;
   weight: number;
+  axisType: 'VELOCITY' | 'ENDURANCE';  // Ironman için: Hız veya Olgunluk
 }
 
 interface SubLevel {
@@ -540,6 +541,38 @@ export default function CategoriesPage() {
                       onChange={(e) => setFormData({ ...formData, weight: parseFloat(e.target.value) })}
                       className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ironman Ekseni (Hız / Olgunluk)
+                    </label>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, axisType: 'VELOCITY' })}
+                        className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+                          (!formData.axisType || formData.axisType === 'VELOCITY')
+                            ? 'bg-orange-500 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        ⚡ Hız (Velocity)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, axisType: 'ENDURANCE' })}
+                        className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+                          formData.axisType === 'ENDURANCE'
+                            ? 'bg-blue-500 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                      >
+                        🏃 Olgunluk (Endurance)
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Bu soru Ironman analizinde hangi havuza eklenecek?
+                    </p>
                   </div>
                   {formData.type === 'MULTIPLE_CHOICE' && (
                     <div>

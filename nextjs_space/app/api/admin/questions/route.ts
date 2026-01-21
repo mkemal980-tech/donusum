@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { text, type, options, order, requiresEvidence, subLevelId, subCategoryId, weight } = body;
+    const { text, type, options, order, requiresEvidence, subLevelId, subCategoryId, weight, axisType } = body;
 
     // En az biri gerekli: subLevelId veya subCategoryId
     if (!subLevelId && !subCategoryId) {
@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
         requiresEvidence: requiresEvidence || false,
         subLevelId: subLevelId || null,
         subCategoryId: subCategoryId || null,
-        weight: weight || 1.0
+        weight: weight || 1.0,
+        axisType: axisType || 'VELOCITY'  // Ironman için eksen tipi
       }
     });
     return NextResponse.json(question);
@@ -35,11 +36,19 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, text, type, options, order, requiresEvidence, weight } = body;
+    const { id, text, type, options, order, requiresEvidence, weight, axisType } = body;
 
     const question = await prisma.question.update({
       where: { id },
-      data: { text, type, options, order, requiresEvidence, weight: weight || 1.0 }
+      data: { 
+        text, 
+        type, 
+        options, 
+        order, 
+        requiresEvidence, 
+        weight: weight || 1.0,
+        axisType: axisType || 'VELOCITY'  // Ironman için eksen tipi
+      }
     });
     return NextResponse.json(question);
   } catch (error) {

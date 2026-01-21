@@ -11,7 +11,21 @@ interface IronmanData {
     quadrantInfo: {
       title: string;
       description: string;
+      color?: string;
     };
+    velocityQuestionCount?: number;
+    enduranceQuestionCount?: number;
+    totalResponses?: number;
+  };
+  imbalance?: {
+    isImbalanced: boolean;
+    difference: number;
+    warning: {
+      type: string;
+      title: string;
+      message: string;
+      recommendation: string;
+    } | null;
   };
   benchmark: {
     velocityAverage: number;
@@ -289,14 +303,34 @@ export function IronmanChart() {
               <div className="bg-blue-50 p-4 rounded-lg">
                 <p className="text-sm text-blue-600 font-medium">Velocity (Hız)</p>
                 <p className="text-3xl font-bold text-blue-800">{data.user.velocity.toFixed(1)}</p>
-                <p className="text-xs text-blue-500 mt-1">1-5 ölçeği</p>
+                <p className="text-xs text-blue-500 mt-1">
+                  {data.user.velocityQuestionCount || 0} soru • 1-5 ölçeği
+                </p>
               </div>
               <div className="bg-green-50 p-4 rounded-lg">
                 <p className="text-sm text-green-600 font-medium">Endurance (Olgunluk)</p>
                 <p className="text-3xl font-bold text-green-800">{data.user.endurance.toFixed(1)}</p>
-                <p className="text-xs text-green-500 mt-1">1-5 ölçeği</p>
+                <p className="text-xs text-green-500 mt-1">
+                  {data.user.enduranceQuestionCount || 0} soru • 1-5 ölçeği
+                </p>
               </div>
             </div>
+
+            {/* Dengesizlik Uyarısı */}
+            {data.imbalance?.isImbalanced && data.imbalance.warning && (
+              <div className="p-4 rounded-lg bg-amber-50 border-2 border-amber-400">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">⚠️</span>
+                  <div>
+                    <h5 className="font-bold text-amber-800">{data.imbalance.warning.title}</h5>
+                    <p className="text-sm text-amber-700 mt-1">{data.imbalance.warning.message}</p>
+                    <p className="text-xs text-amber-600 mt-2 italic">
+                      💡 {data.imbalance.warning.recommendation}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Benchmark Comparison */}
             {data.benchmark && (
