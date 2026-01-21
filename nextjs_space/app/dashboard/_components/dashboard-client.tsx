@@ -55,6 +55,31 @@ const categoryColors = [
   "#7c3aed"
 ];
 
+/**
+ * Yüzdeye göre olgunluk seviyesi hesaplama
+ * %0-19: Başlangıç
+ * %20-39: Farkındalık
+ * %40-59: Gelişen
+ * %60-79: Olgun
+ * %80-100: Lider
+ */
+const getMaturityLevelFromPercentage = (percentage: number) => {
+  if (percentage >= 80) return { label: 'Lider', color: '#4f46e5' };
+  if (percentage >= 60) return { label: 'Olgun', color: '#6366f1' };
+  if (percentage >= 40) return { label: 'Gelişen', color: '#8b5cf6' };
+  if (percentage >= 20) return { label: 'Farkındalık', color: '#a78bfa' };
+  return { label: 'Başlangıç', color: '#c4b5fd' };
+};
+
+/**
+ * 1-5 puana göre olgunluk seviyesi hesaplama
+ * Puan -> Yüzde dönüşümü: (puan - 1) / 4 * 100
+ */
+const getMaturityLevelFromScore = (score: number) => {
+  const percentage = ((score - 1) / 4) * 100;
+  return getMaturityLevelFromPercentage(percentage);
+};
+
 export default function DashboardClient() {
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
@@ -156,16 +181,10 @@ export default function DashboardClient() {
         categoryData = await categoryScoresRes.json();
       }
 
-      // Maturity level hesapla
-      const overallScore = categoryData?.overallScore ?? (scoreData?.totalScore ?? 0) / 20;
-      const getMaturityLevel = (score: number) => {
-        if (score >= 4.5) return { label: 'Lider', color: '#22c55e' };
-        if (score >= 3.5) return { label: 'Olgun', color: '#3b82f6' };
-        if (score >= 2.5) return { label: 'Gelişen', color: '#a78bfa' };
-        if (score >= 1.5) return { label: 'Farkındalık', color: '#f59e0b' };
-        return { label: 'Başlangıç', color: '#ef4444' };
-      };
-      const maturity = getMaturityLevel(overallScore);
+      // Maturity level hesapla - 1-5 puan kullan
+      const overallScore = categoryData?.overallScore ?? 1;
+      const overallPercentage = categoryData?.overallPercentage ?? scoreData?.totalScore ?? 0;
+      const maturity = getMaturityLevelFromPercentage(overallPercentage);
 
       // Seçilen anket adı
       const surveyName = surveys.find(s => s.id === selectedSurveyId)?.name ?? 'Değerlendirme';
@@ -263,8 +282,8 @@ export default function DashboardClient() {
                     <td><strong>${cat.score?.toFixed(2) ?? '-'}</strong></td>
                     <td>5.00</td>
                     <td>
-                      <span class="level-badge" style="background: ${getMaturityLevel(cat.score ?? 0).color}20; color: ${getMaturityLevel(cat.score ?? 0).color};">
-                        ${getMaturityLevel(cat.score ?? 0).label}
+                      <span class="level-badge" style="background: ${getMaturityLevelFromScore(cat.score ?? 1).color}20; color: ${getMaturityLevelFromScore(cat.score ?? 1).color};">
+                        ${getMaturityLevelFromScore(cat.score ?? 1).label}
                       </span>
                     </td>
                   </tr>
@@ -274,8 +293,8 @@ export default function DashboardClient() {
                       <td>${sub.score?.toFixed(2) ?? '-'}</td>
                       <td>5.00</td>
                       <td>
-                        <span class="level-badge" style="background: ${getMaturityLevel(sub.score ?? 0).color}20; color: ${getMaturityLevel(sub.score ?? 0).color};">
-                          ${getMaturityLevel(sub.score ?? 0).label}
+                        <span class="level-badge" style="background: ${getMaturityLevelFromScore(sub.score ?? 1).color}20; color: ${getMaturityLevelFromScore(sub.score ?? 1).color};">
+                          ${getMaturityLevelFromScore(sub.score ?? 1).label}
                         </span>
                       </td>
                     </tr>
@@ -472,8 +491,8 @@ export default function DashboardClient() {
             <h3 className="text-lg font-semibold text-primary-900 mb-6">Genel Olgunluk Puanı</h3>
             <ScoreCard 
               score={scoreData?.totalScore ?? 0} 
-              label="Başlangıç Puanı" 
-              color="#6366f1" 
+              label={getMaturityLevelFromPercentage(scoreData?.totalScore ?? 0).label} 
+              color={getMaturityLevelFromPercentage(scoreData?.totalScore ?? 0).color} 
               size="large" 
             />
           </motion.div>
