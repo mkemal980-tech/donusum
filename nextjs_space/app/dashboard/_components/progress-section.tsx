@@ -138,7 +138,7 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
       {/* Chart */}
       <ProgressBenchmarkChart
         title="Benchmark"
-        overall={data.overall}
+        overall={{ ...data.overall, name: "Genel" }}
         categories={chartCategories}
       />
     </div>

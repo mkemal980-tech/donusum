@@ -13,8 +13,14 @@ import {
   DollarSign,
   Zap,
   LayoutGrid,
-  ScatterChart
+  ScatterChart,
+  CheckCircle2,
+  Play,
+  Circle,
+  BarChart3
 } from "lucide-react";
+
+type CompletionStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
 interface Recommendation {
   id: string;
@@ -30,13 +36,22 @@ interface Recommendation {
   opexLevel: number;
   order: number;
   isInRoadmap?: boolean;
+  completionStatus?: CompletionStatus;
+}
+
+interface CompletionRecord {
+  id: string;
+  recommendationId: string;
+  status: CompletionStatus;
 }
 
 export default function RecommendationsClient() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [completions, setCompletions] = useState<Record<string, CompletionStatus>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState<'bubble' | 'list'>('bubble');
+  const [statusFilter, setStatusFilter] = useState<'all' | CompletionStatus>('all');
   const [filters, setFilters] = useState({
     timeframe: "all",
     costType: "all",
@@ -52,13 +67,31 @@ export default function RecommendationsClient() {
       }
     } catch (error) {
       console.error("Error fetching recommendations:", error);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchCompletions = async () => {
+    try {
+      const res = await fetch("/api/recommendations/completion");
+      if (res.ok) {
+        const data: CompletionRecord[] = await res.json();
+        const completionMap: Record<string, CompletionStatus> = {};
+        data.forEach(c => {
+          completionMap[c.recommendationId] = c.status;
+        });
+        setCompletions(completionMap);
+      }
+    } catch (error) {
+      console.error("Error fetching completions:", error);
     }
   };
 
   useEffect(() => {
-    fetchRecommendations();
+    const loadData = async () => {
+      await Promise.all([fetchRecommendations(), fetchCompletions()]);
+      setLoading(false);
+    };
+    loadData();
   }, []);
 
   const handleAddToRoadmap = async (recommendationId: string) => {
@@ -87,15 +120,58 @@ export default function RecommendationsClient() {
     }
   };
 
-  const filteredRecommendations = (recommendations ?? []).filter(rec => {
+  const handleStatusChange = async (recommendationId: string, status: CompletionStatus) => {
+    try {
+      const res = await fetch("/api/recommendations/completion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recommendationId, status })
+      });
+
+      if (res.ok) {
+        setCompletions(prev => ({
+          ...prev,
+          [recommendationId]: status
+        }));
+        
+        const statusLabels: Record<CompletionStatus, string> = {
+          NOT_STARTED: "Başlanmadı",
+          IN_PROGRESS: "Devam Ediyor",
+          COMPLETED: "Tamamlandı"
+        };
+        
+        toast.success(`Durum güncellendi: ${statusLabels[status]}`);
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+      toast.error("Durum güncellenemedi");
+    }
+  };
+
+  // Merge completions with recommendations
+  const recommendationsWithStatus = (recommendations ?? []).map(rec => ({
+    ...rec,
+    completionStatus: completions[rec.id] || 'NOT_STARTED'
+  }));
+
+  const filteredRecommendations = recommendationsWithStatus.filter(rec => {
     const matchesSearch = (rec?.title ?? '').toLowerCase().includes((searchTerm ?? '').toLowerCase()) ||
                           (rec?.description ?? '').toLowerCase().includes((searchTerm ?? '').toLowerCase());
     const matchesTimeframe = filters?.timeframe === "all" || rec?.timeframe === filters?.timeframe;
     const matchesCost = filters?.costType === "all" || rec?.costType === filters?.costType;
     const matchesStrategic = filters?.strategicType === "all" || rec?.strategicType === filters?.strategicType;
+    const matchesStatus = statusFilter === "all" || rec?.completionStatus === statusFilter;
     
-    return matchesSearch && matchesTimeframe && matchesCost && matchesStrategic;
+    return matchesSearch && matchesTimeframe && matchesCost && matchesStrategic && matchesStatus;
   });
+
+  // Stats
+  const stats = {
+    total: recommendationsWithStatus.length,
+    notStarted: recommendationsWithStatus.filter(r => r.completionStatus === 'NOT_STARTED').length,
+    inProgress: recommendationsWithStatus.filter(r => r.completionStatus === 'IN_PROGRESS').length,
+    completed: recommendationsWithStatus.filter(r => r.completionStatus === 'COMPLETED').length
+  };
 
   const quickWins = filteredRecommendations?.filter(r => r?.strategicType === "QUICK_WIN") ?? [];
   const projects = filteredRecommendations?.filter(r => r?.strategicType === "PROJECT") ?? [];
@@ -106,7 +182,7 @@ export default function RecommendationsClient() {
       <div className="min-h-screen bg-gray-50">
         <Header />
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-          <div className="w-12 h-12 border-4 border-[#1e3a8a] border-t-transparent rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-[#6366f1] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -136,7 +212,7 @@ export default function RecommendationsClient() {
               onClick={() => setViewMode('bubble')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
                 viewMode === 'bubble' 
-                  ? 'bg-[#1e3a8a] text-white' 
+                  ? 'bg-[#6366f1] text-white' 
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
@@ -147,13 +223,89 @@ export default function RecommendationsClient() {
               onClick={() => setViewMode('list')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
                 viewMode === 'list' 
-                  ? 'bg-[#1e3a8a] text-white' 
+                  ? 'bg-[#6366f1] text-white' 
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
             >
               <LayoutGrid size={18} />
               <span className="hidden sm:inline">Liste</span>
             </button>
+          </div>
+        </motion.div>
+
+        {/* Stats Cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"
+        >
+          <div 
+            onClick={() => setStatusFilter('all')}
+            className={`bg-white rounded-xl p-4 shadow-sm border cursor-pointer transition-all hover:shadow-md ${
+              statusFilter === 'all' ? 'ring-2 ring-[#6366f1] border-[#6366f1]' : ''
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <BarChart3 size={20} className="text-gray-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-sm text-gray-500">Toplam Öneri</p>
+              </div>
+            </div>
+          </div>
+          
+          <div 
+            onClick={() => setStatusFilter('NOT_STARTED')}
+            className={`bg-white rounded-xl p-4 shadow-sm border cursor-pointer transition-all hover:shadow-md ${
+              statusFilter === 'NOT_STARTED' ? 'ring-2 ring-gray-400 border-gray-400' : ''
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <Circle size={20} className="text-gray-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-600">{stats.notStarted}</p>
+                <p className="text-sm text-gray-500">Başlanmadı</p>
+              </div>
+            </div>
+          </div>
+          
+          <div 
+            onClick={() => setStatusFilter('IN_PROGRESS')}
+            className={`bg-white rounded-xl p-4 shadow-sm border cursor-pointer transition-all hover:shadow-md ${
+              statusFilter === 'IN_PROGRESS' ? 'ring-2 ring-amber-400 border-amber-400' : ''
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-100 rounded-lg">
+                <Play size={20} className="text-amber-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-amber-600">{stats.inProgress}</p>
+                <p className="text-sm text-gray-500">Devam Ediyor</p>
+              </div>
+            </div>
+          </div>
+          
+          <div 
+            onClick={() => setStatusFilter('COMPLETED')}
+            className={`bg-white rounded-xl p-4 shadow-sm border cursor-pointer transition-all hover:shadow-md ${
+              statusFilter === 'COMPLETED' ? 'ring-2 ring-green-400 border-green-400' : ''
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircle2 size={20} className="text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
+                <p className="text-sm text-gray-500">Tamamlandı</p>
+              </div>
+            </div>
           </div>
         </motion.div>
 
@@ -172,7 +324,7 @@ export default function RecommendationsClient() {
                 placeholder="Önerilerde ara..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target?.value ?? '')}
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent outline-none"
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#6366f1] focus:border-transparent outline-none"
               />
             </div>
             
@@ -182,7 +334,7 @@ export default function RecommendationsClient() {
                 <select
                   value={filters?.timeframe ?? 'all'}
                   onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), timeframe: e.target?.value ?? 'all' }))}
-                  className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] outline-none bg-white"
+                  className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#6366f1] outline-none bg-white"
                 >
                   <option value="all">Tüm Zaman Dilimleri</option>
                   <option value="SHORT_TERM">Kısa Vade</option>
@@ -196,7 +348,7 @@ export default function RecommendationsClient() {
                 <select
                   value={filters?.costType ?? 'all'}
                   onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), costType: e.target?.value ?? 'all' }))}
-                  className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] outline-none bg-white"
+                  className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#6366f1] outline-none bg-white"
                 >
                   <option value="all">Tüm Maliyet Tipleri</option>
                   <option value="CAPEX">CAPEX (Yatırım)</option>
@@ -209,7 +361,7 @@ export default function RecommendationsClient() {
                 <select
                   value={filters?.strategicType ?? 'all'}
                   onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), strategicType: e.target?.value ?? 'all' }))}
-                  className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] outline-none bg-white"
+                  className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#6366f1] outline-none bg-white"
                 >
                   <option value="all">Tüm Tipler</option>
                   <option value="QUICK_WIN">Hızlı Kazanım</option>
@@ -262,6 +414,7 @@ export default function RecommendationsClient() {
                       <RecommendationCard
                         recommendation={rec}
                         onAddToRoadmap={handleAddToRoadmap}
+                        onStatusChange={handleStatusChange}
                       />
                     </motion.div>
                   ))}
@@ -278,7 +431,7 @@ export default function RecommendationsClient() {
                 className="mb-10"
               >
                 <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#1e3a8a]" />
+                  <div className="w-3 h-3 rounded-full bg-[#6366f1]" />
                   Projeler ({projects?.length ?? 0})
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -292,6 +445,7 @@ export default function RecommendationsClient() {
                       <RecommendationCard
                         recommendation={rec}
                         onAddToRoadmap={handleAddToRoadmap}
+                        onStatusChange={handleStatusChange}
                       />
                     </motion.div>
                   ))}
@@ -322,6 +476,7 @@ export default function RecommendationsClient() {
                       <RecommendationCard
                         recommendation={rec}
                         onAddToRoadmap={handleAddToRoadmap}
+                        onStatusChange={handleStatusChange}
                       />
                     </motion.div>
                   ))}
@@ -340,7 +495,7 @@ export default function RecommendationsClient() {
             <Lightbulb size={64} className="mx-auto text-gray-300 mb-4" />
             <h2 className="text-xl font-semibold text-gray-700 mb-2">Öneri Bulunamadı</h2>
             <p className="text-gray-500">
-              {searchTerm || filters?.timeframe !== "all" || filters?.costType !== "all" || filters?.strategicType !== "all"
+              {searchTerm || filters?.timeframe !== "all" || filters?.costType !== "all" || filters?.strategicType !== "all" || statusFilter !== "all"
                 ? "Filtrelerinizi değiştirmeyi deneyin"
                 : "Kişisel öneriler almak için anketi tamamlayın"}
             </p>
