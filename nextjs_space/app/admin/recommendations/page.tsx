@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, X, Search, FileText, DollarSign, Target, FolderTree, HelpCircle, CheckSquare } from "lucide-react";
+import { Plus, Edit, Trash2, X, Search, FileText, DollarSign, Target, FolderTree, HelpCircle, CheckSquare, TrendingUp } from "lucide-react";
 
 interface Survey {
   id: string;
@@ -45,6 +45,7 @@ interface Recommendation {
   subLevelId: string | null;
   questionId: string | null;
   triggerOptions: string | null;
+  points: number;  // Gelişim skoru için puan
   question?: {
     id: string;
     text: string;
@@ -302,6 +303,7 @@ export default function RecommendationsPage() {
       setFormData({ 
         order: recommendations.length + 1, 
         estimatedImpact: 5, 
+        points: 0.5,  // Varsayılan gelişim puanı
         costType: 'OPEX', 
         timeframe: 'SHORT_TERM', 
         strategicType: 'QUICK_WIN',
@@ -808,6 +810,37 @@ export default function RecommendationsPage() {
                   </div>
                 </div>
               )}
+
+              {/* Gelişim Skoru Puanı */}
+              <div className="p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <TrendingUp size={18} className="text-blue-700" />
+                  <label className="text-sm font-medium text-blue-800">Gelişim Skoru Puanı</label>
+                </div>
+                <p className="text-xs text-blue-600 mb-4">
+                  Bu öneri tamamlandığında kullanıcının gelişim skoruna eklenecek puan (0-2 arası önerilir).
+                  Devam ediyor durumunda %50'si, tamamlandığında %100'ü eklenir.
+                </p>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="range"
+                    min="0"
+                    max="2"
+                    step="0.1"
+                    value={formData.points || 0.5}
+                    onChange={(e) => setFormData({ ...formData, points: parseFloat(e.target.value) })}
+                    className="flex-1"
+                  />
+                  <div className="w-20 text-center">
+                    <span className="text-2xl font-bold text-blue-700">{(formData.points || 0.5).toFixed(1)}</span>
+                    <p className="text-xs text-gray-500">puan</p>
+                  </div>
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>0 (Düşük etki)</span>
+                  <span>2 (Yüksek etki)</span>
+                </div>
+              </div>
 
               {/* Bubble Chart Ayarları */}
               <div className="p-4 bg-purple-50 rounded-lg">

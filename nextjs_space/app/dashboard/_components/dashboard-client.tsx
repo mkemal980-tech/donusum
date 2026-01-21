@@ -7,6 +7,7 @@ import Header from "@/components/ui/header";
 import ScoreCard from "@/components/ui/score-card";
 import ProgressBar from "@/components/ui/progress-bar";
 import { BenchmarkSection } from "./benchmark-section";
+import { ProgressSection } from "./progress-section";
 import { CategoryDashboard } from "./category-dashboard";
 import { IronmanChart } from "@/components/ui/ironman-chart";
 import { 
@@ -515,6 +516,16 @@ export default function DashboardClient() {
           className="mb-8"
         >
           <BenchmarkSection />
+        </motion.div>
+
+        {/* Progress Benchmark Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.61 }}
+          className="mb-8"
+        >
+          <ProgressSection surveyId={selectedSurveyId} />
         </motion.div>
 
         {/* Ironman Analysis Section */}

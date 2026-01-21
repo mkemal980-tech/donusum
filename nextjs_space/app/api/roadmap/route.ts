@@ -90,6 +90,57 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Status güncelleme için PUT
+export async function PUT(request: NextRequest) {
+  try {
+    const userId = await getUserId();
+    const body = await request.json();
+    const { recommendationId, status, plannedQuarter, plannedYear, priority } = body ?? {};
+
+    if (!recommendationId) {
+      return NextResponse.json(
+        { error: "Recommendation ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Geçerli status değerleri
+    const validStatuses = ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'PLANNED', 'CANCELLED'];
+    if (status && !validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: "Invalid status value" },
+        { status: 400 }
+      );
+    }
+
+    const roadmapItem = await prisma.roadmapItem.update({
+      where: {
+        userId_recommendationId: {
+          userId,
+          recommendationId
+        }
+      },
+      data: {
+        ...(status && { status }),
+        ...(plannedQuarter !== undefined && { plannedQuarter }),
+        ...(plannedYear !== undefined && { plannedYear }),
+        ...(priority !== undefined && { priority })
+      },
+      include: {
+        recommendation: true
+      }
+    });
+
+    return NextResponse.json(roadmapItem);
+  } catch (error) {
+    console.error("Error updating roadmap item:", error);
+    return NextResponse.json(
+      { error: "Failed to update roadmap item" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   try {
     const userId = await getUserId();

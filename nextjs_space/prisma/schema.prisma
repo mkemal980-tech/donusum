@@ -252,6 +252,8 @@ model Recommendation {
   // Soru-Cevap Bazlı Tetikleme
   questionId        String?       // Bağlı soru
   triggerOptions    String?       // JSON: Tetikleyici cevaplar (örn: ["yok", "planliyoruz"])
+  // Gelişim Skoru için Puan
+  points            Float         @default(0.5)  // Öneri tamamlandığında eklenecek puan (0-5 arası)
   costType          CostType      @default(OPEX)
   timeframe         Timeframe     @default(MEDIUM_TERM)
   strategicType     StrategicType @default(PROJECT)
@@ -278,7 +280,7 @@ model RoadmapItem {
   priority         Int            @default(0)
   plannedQuarter   Int?
   plannedYear      Int?
-  status           RoadmapStatus  @default(PLANNED)
+  status           RoadmapStatus  @default(NOT_STARTED)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
@@ -311,8 +313,9 @@ enum StrategicType {
 }
 
 enum RoadmapStatus {
-  PLANNED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
+  NOT_STARTED   // Başlanmadı - Skora katkı: 0
+  IN_PROGRESS   // Devam Ediyor - Skora katkı: %50
+  COMPLETED     // Tamamlandı - Skora katkı: %100
+  PLANNED       // Planlandı (eski durum)
+  CANCELLED     // İptal
 }
