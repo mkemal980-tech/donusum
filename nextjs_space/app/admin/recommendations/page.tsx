@@ -40,6 +40,7 @@ interface Recommendation {
   id: string;
   title: string;
   description: string;
+  videoUrl: string | null;  // Nasıl Yapılır video linki
   categoryId: string | null;
   subCategoryId: string | null;
   subLevelId: string | null;
@@ -589,6 +590,21 @@ export default function RecommendationsPage() {
                     rows={2}
                     placeholder="Öneri açıklamasını girin..."
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    🎬 Nasıl Yapılır Öğrenin - Video Linki
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.videoUrl || ''}
+                    onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                    className="w-full p-3 border rounded-lg"
+                    placeholder="YouTube veya Vimeo linki girin... (örn: https://www.youtube.com/watch?v=...)"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    YouTube, Vimeo veya başka bir video platformunun linkini girebilirsiniz.
+                  </p>
                 </div>
               </div>
               

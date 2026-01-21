@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { 
-      title, description, categoryId, subCategoryId, subLevelId, 
+      title, description, videoUrl, categoryId, subCategoryId, subLevelId, 
       questionId, triggerOptions, points,
       costType, timeframe, strategicType, estimatedImpact, 
       minScoreThreshold, maxScoreThreshold, order,
@@ -110,6 +110,7 @@ export async function POST(request: NextRequest) {
       data: {
         title: title || "",
         description: description || "",
+        videoUrl: videoUrl || null,
         categoryId: categoryId || null,
         subCategoryId: subCategoryId || null,
         subLevelId: subLevelId || null,
@@ -145,7 +146,7 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const { 
-      id, title, description, categoryId, subCategoryId, subLevelId, 
+      id, title, description, videoUrl, categoryId, subCategoryId, subLevelId, 
       questionId, triggerOptions, points,
       costType, timeframe, strategicType, estimatedImpact, 
       minScoreThreshold, maxScoreThreshold, order,
@@ -168,6 +169,7 @@ export async function PUT(request: NextRequest) {
       data: {
         title: title || "",
         description: description || "",
+        videoUrl: videoUrl || null,
         categoryId: categoryId || null,
         subCategoryId: subCategoryId || null,
         subLevelId: subLevelId || null,

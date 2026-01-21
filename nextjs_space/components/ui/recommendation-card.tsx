@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, DollarSign, Target, Plus, Check, TrendingUp, Play, CheckCircle2, Circle, MoreHorizontal } from "lucide-react";
+import { Clock, DollarSign, Target, Plus, Check, TrendingUp, Play, CheckCircle2, Circle, MoreHorizontal, Video, ExternalLink } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 type CompletionStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
@@ -11,6 +11,7 @@ interface RecommendationCardProps {
     id: string;
     title: string;
     description: string;
+    videoUrl?: string | null;
     costType: string;
     timeframe: string;
     strategicType: string;
@@ -164,6 +165,20 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
           <span>Puan artışı</span>
         </div>
       </div>
+
+      {/* Nasıl Yapılır Öğrenin - Video Linki */}
+      {rec?.videoUrl && (
+        <a
+          href={rec.videoUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 w-full py-2.5 mb-3 rounded-lg font-medium bg-gradient-to-r from-red-500 to-pink-500 text-white hover:from-red-600 hover:to-pink-600 transition-all shadow-sm hover:shadow-md"
+        >
+          <Video size={18} />
+          <span>Nasıl Yapılır Öğrenin!</span>
+          <ExternalLink size={14} />
+        </a>
+      )}
       
       <button
         onClick={() => onAddToRoadmap?.(rec?.id)}

@@ -263,6 +263,7 @@ model Recommendation {
   id                String        @id @default(cuid())
   title             String
   description       String
+  videoUrl          String?       // Vimeo veya YouTube video linki - "Nasıl Yapılır Öğrenin"
   categoryId        String?
   subCategoryId     String?       // Alt kategoriye direkt bağlantı
   subLevelId        String?

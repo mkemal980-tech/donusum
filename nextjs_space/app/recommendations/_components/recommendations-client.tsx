@@ -26,6 +26,7 @@ interface Recommendation {
   id: string;
   title: string;
   description: string;
+  videoUrl?: string | null;
   costType: string;
   timeframe: 'SHORT_TERM' | 'MEDIUM_TERM' | 'LONG_TERM';
   strategicType: 'QUICK_WIN' | 'PROJECT' | 'BIG_BET';
