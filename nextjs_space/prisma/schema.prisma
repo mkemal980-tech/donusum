@@ -53,6 +53,7 @@ model User {
   unit                 Unit?             @relation("UnitUsers", fields: [unitId], references: [id])
   managedUnits         Unit[]            @relation("UnitManager")
   recommendationCompletions UserRecommendationCompletion[]
+  surveyAssignments    UserSurveyAssignment[]
 }
 
 model Sector {
@@ -126,6 +127,21 @@ model Survey {
   updatedAt             DateTime               @updatedAt
   categories            Category[]
   sectorCategoryWeights SectorCategoryWeight[]
+  userAssignments       UserSurveyAssignment[]
+}
+
+// Kullanıcı-Anket Atama Modeli
+model UserSurveyAssignment {
+  id         String   @id @default(cuid())
+  userId     String
+  surveyId   String
+  assignedAt DateTime @default(now())
+  assignedBy String?  // Admin ID
+  isActive   Boolean  @default(true)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  survey     Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, surveyId])
 }
 
 model Category {

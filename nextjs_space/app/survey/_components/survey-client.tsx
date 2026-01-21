@@ -13,7 +13,9 @@ import {
   Check, 
   FolderOpen,
   Layers,
-  FileQuestion
+  FileQuestion,
+  FileText,
+  AlertCircle
 } from "lucide-react";
 
 interface Question {
@@ -51,22 +53,58 @@ interface Response {
   value: string;
 }
 
+interface Survey {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+}
+
 export default function SurveyClient() {
+  const [surveys, setSurveys] = useState<Survey[]>([]);
+  const [selectedSurveyId, setSelectedSurveyId] = useState<string>("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [responses, setResponses] = useState<Record<string, string>>({});
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
   const [currentSubCategoryIndex, setCurrentSubCategoryIndex] = useState(0);
   const [currentSubLevelIndex, setCurrentSubLevelIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingStructure, setLoadingStructure] = useState(false);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
 
+  // Atanan anketleri getir
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAssignedSurveys = async () => {
       try {
+        const res = await fetch("/api/survey/assigned");
+        if (res.ok) {
+          const data = await res.json();
+          setSurveys(data ?? []);
+          if (data.length > 0 && !selectedSurveyId) {
+            setSelectedSurveyId(data[0].id);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching assigned surveys:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAssignedSurveys();
+  }, []);
+
+  // Seçilen ankete göre yapıyı getir
+  useEffect(() => {
+    if (!selectedSurveyId) return;
+    
+    const fetchData = async () => {
+      setLoadingStructure(true);
+      try {
+        const surveyParam = `?surveyId=${selectedSurveyId}`;
         const [structureRes, responsesRes] = await Promise.all([
-          fetch("/api/survey/structure"),
-          fetch("/api/survey/responses")
+          fetch(`/api/survey/structure${surveyParam}`),
+          fetch(`/api/survey/responses${surveyParam}`)
         ]);
 
         if (structureRes.ok) {
@@ -82,15 +120,20 @@ export default function SurveyClient() {
           });
           setResponses(responseMap);
         }
+
+        // Reset navigation
+        setCurrentCategoryIndex(0);
+        setCurrentSubCategoryIndex(0);
+        setCurrentSubLevelIndex(0);
       } catch (error) {
         console.error("Error fetching survey data:", error);
       } finally {
-        setLoading(false);
+        setLoadingStructure(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [selectedSurveyId]);
 
   const currentCategory = categories?.[currentCategoryIndex];
   const currentSubCategory = currentCategory?.subCategories?.[currentSubCategoryIndex];
@@ -106,12 +149,10 @@ export default function SurveyClient() {
   const totalQuestions = categories?.reduce((total, cat) => {
     return total + (cat?.subCategories ?? []).reduce((subTotal, sub) => {
       if (sub?.hasSubLevels) {
-        // Alt seviyeler varsa
         return subTotal + (sub?.subLevels ?? []).reduce((levelTotal, level) => {
           return levelTotal + (level?.questions?.length ?? 0);
         }, 0);
       } else {
-        // Doğrudan sorular
         return subTotal + (sub?.questions?.length ?? 0);
       }
     }, 0);
@@ -176,8 +217,6 @@ export default function SurveyClient() {
         headers: uploadHeaders
       });
 
-      const responseId = responses?.[questionId] ? undefined : undefined;
-
       await fetch("/api/upload/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -185,8 +224,7 @@ export default function SurveyClient() {
           cloudStoragePath,
           isPublic: false,
           fileName: file.name,
-          fileType: file.type,
-          responseId
+          fileType: file.type
         })
       });
     } catch (error) {
@@ -198,12 +236,9 @@ export default function SurveyClient() {
     const currentSubCat = currentCategory?.subCategories?.[currentSubCategoryIndex];
     
     if (currentSubCat?.hasSubLevels) {
-      // Alt seviyeler varsa
       if ((currentSubLevelIndex ?? 0) < ((currentSubCat?.subLevels?.length ?? 1) - 1)) return true;
     }
-    // Sonraki alt kategori var mı?
     if ((currentSubCategoryIndex ?? 0) < ((currentCategory?.subCategories?.length ?? 1) - 1)) return true;
-    // Sonraki kategori var mı?
     if ((currentCategoryIndex ?? 0) < ((categories?.length ?? 1) - 1)) return true;
     return false;
   };
@@ -218,21 +253,18 @@ export default function SurveyClient() {
     const currentSubCat = currentCategory?.subCategories?.[currentSubCategoryIndex];
     
     if (currentSubCat?.hasSubLevels) {
-      // Alt seviyeler varsa ve daha fazla alt seviye varsa
       if ((currentSubLevelIndex ?? 0) < ((currentSubCat?.subLevels?.length ?? 1) - 1)) {
         setCurrentSubLevelIndex(prev => (prev ?? 0) + 1);
         return;
       }
     }
     
-    // Sonraki alt kategori
     if ((currentSubCategoryIndex ?? 0) < ((currentCategory?.subCategories?.length ?? 1) - 1)) {
       setCurrentSubCategoryIndex(prev => (prev ?? 0) + 1);
       setCurrentSubLevelIndex(0);
       return;
     }
     
-    // Sonraki kategori
     if ((currentCategoryIndex ?? 0) < ((categories?.length ?? 1) - 1)) {
       setCurrentCategoryIndex(prev => (prev ?? 0) + 1);
       setCurrentSubCategoryIndex(0);
@@ -243,13 +275,11 @@ export default function SurveyClient() {
   const goPrev = () => {
     const currentSubCat = currentCategory?.subCategories?.[currentSubCategoryIndex];
     
-    // Alt seviyelerde geri git
     if (currentSubCat?.hasSubLevels && (currentSubLevelIndex ?? 0) > 0) {
       setCurrentSubLevelIndex(prev => (prev ?? 1) - 1);
       return;
     }
     
-    // Önceki alt kategori
     if ((currentSubCategoryIndex ?? 0) > 0) {
       const newSubCatIndex = (currentSubCategoryIndex ?? 1) - 1;
       setCurrentSubCategoryIndex(newSubCatIndex);
@@ -263,7 +293,6 @@ export default function SurveyClient() {
       return;
     }
     
-    // Önceki kategori
     if ((currentCategoryIndex ?? 0) > 0) {
       const newCatIndex = (currentCategoryIndex ?? 1) - 1;
       setCurrentCategoryIndex(newCatIndex);
@@ -290,6 +319,8 @@ export default function SurveyClient() {
     }, 1000);
   };
 
+  const selectedSurvey = surveys.find(s => s.id === selectedSurveyId);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -301,15 +332,26 @@ export default function SurveyClient() {
     );
   }
 
-  if ((categories?.length ?? 0) === 0) {
+  // Hiç anket atanmamışsa
+  if (surveys.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="max-w-[1200px] mx-auto px-6 py-8">
-          <div className="text-center py-16">
-            <FileQuestion size={64} className="mx-auto text-gray-300 mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-700 mb-2">Anket Mevcut Değil</h2>
-            <p className="text-gray-500">Anket hazırlanıyor. Lütfen daha sonra tekrar kontrol edin.</p>
+        <div className="max-w-[800px] mx-auto px-6 py-16">
+          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+            <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle size={40} className="text-yellow-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Henüz Anket Atanmadı</h2>
+            <p className="text-gray-600 mb-6">
+              Hesabınıza henüz bir anket atanmamış. Lütfen sistem yöneticinizle iletişime geçin.
+            </p>
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="px-6 py-3 bg-[#1e3a8a] text-white rounded-lg font-medium hover:bg-[#3b5998] transition-colors"
+            >
+              Ana Sayfaya Dön
+            </button>
           </div>
         </div>
       </div>
@@ -321,6 +363,33 @@ export default function SurveyClient() {
       <Header />
       
       <main className="max-w-[1200px] mx-auto px-6 py-8">
+        {/* Anket Seçici (Birden fazla anket varsa) */}
+        {surveys.length > 1 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-xl shadow-md p-4 mb-6"
+          >
+            <div className="flex items-center gap-4">
+              <FileText size={24} className="text-[#1e3a8a]" />
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Anket Seçin</label>
+                <select
+                  value={selectedSurveyId}
+                  onChange={(e) => setSelectedSurveyId(e.target.value)}
+                  className="w-full md:w-auto px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                >
+                  {surveys.map((survey) => (
+                    <option key={survey.id} value={survey.id}>
+                      {survey.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Progress Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -328,7 +397,14 @@ export default function SurveyClient() {
           className="bg-white rounded-xl shadow-md p-6 mb-6"
         >
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">Olgunluk Değerlendirme Anketi</h1>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {selectedSurvey?.name || "Olgunluk Değerlendirme Anketi"}
+              </h1>
+              {selectedSurvey?.description && (
+                <p className="text-sm text-gray-500 mt-1">{selectedSurvey.description}</p>
+              )}
+            </div>
             <div className="flex items-center gap-2 text-sm">
               {saving && (
                 <span className="text-[#a78bfa] flex items-center gap-1">
@@ -342,107 +418,121 @@ export default function SurveyClient() {
           <ProgressBar value={progressPercentage} label="Genel İlerleme" color="#1e3a8a" />
         </motion.div>
 
-        {/* Breadcrumb Navigation */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex items-center gap-2 text-sm mb-6 flex-wrap"
-        >
-          <span className="flex items-center gap-1 px-3 py-1 bg-[#1e3a8a] text-white rounded-lg">
-            <FolderOpen size={14} />
-            {currentCategory?.name ?? 'Category'}
-          </span>
-          <ChevronRight size={16} className="text-gray-400" />
-          <span className="flex items-center gap-1 px-3 py-1 bg-[#a78bfa] text-white rounded-lg">
-            <Layers size={14} />
-            {currentSubCategory?.name ?? 'Sub-category'}
-          </span>
-          {hasSubLevels && currentSubLevel && (
-            <>
-              <ChevronRight size={16} className="text-gray-400" />
-              <span className="flex items-center gap-1 px-3 py-1 bg-gray-200 text-gray-700 rounded-lg">
-                {currentSubLevel?.name ?? 'Level'}
-              </span>
-            </>
-          )}
-        </motion.div>
-
-        {/* Questions */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${currentCategoryIndex}-${currentSubCategoryIndex}-${currentSubLevelIndex}`}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-6 mb-8"
-          >
-            {currentQuestions?.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-md p-8 text-center">
-                <FileQuestion size={48} className="mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">Bu bölümde henüz soru bulunmuyor.</p>
-              </div>
-            ) : (
-              currentQuestions?.map((question) => (
-                <SurveyQuestion
-                  key={question?.id}
-                  question={question}
-                  value={responses?.[question?.id ?? '']}
-                  onAnswer={handleAnswer}
-                  onUpload={handleUpload}
-                />
-              ))
-            )}
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Navigation */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex items-center justify-between"
-        >
-          <button
-            onClick={goPrev}
-            disabled={!canGoPrev()}
-            className="flex items-center gap-2 px-6 py-3 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-          >
-            <ChevronLeft size={20} />
-            Önceki
-          </button>
-
-          <div className="flex items-center gap-2">
-            {categories?.map((_, index) => (
-              <div
-                key={index}
-                className={`w-3 h-3 rounded-full transition-colors ${
-                  index === currentCategoryIndex
-                    ? "bg-[#1e3a8a]"
-                    : index < (currentCategoryIndex ?? 0)
-                    ? "bg-[#a78bfa]"
-                    : "bg-gray-200"
-                }`}
-              />
-            ))}
+        {loadingStructure ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-12 h-12 border-4 border-[#1e3a8a] border-t-transparent rounded-full animate-spin" />
           </div>
+        ) : categories.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-md p-8 text-center">
+            <FileQuestion size={64} className="mx-auto text-gray-300 mb-4" />
+            <h2 className="text-xl font-semibold text-gray-700 mb-2">Anket Henüz Hazırlanmamış</h2>
+            <p className="text-gray-500">Bu ankete henüz soru eklenmemiş. Lütfen daha sonra tekrar kontrol edin.</p>
+          </div>
+        ) : (
+          <>
+            {/* Breadcrumb Navigation */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center gap-2 text-sm mb-6 flex-wrap"
+            >
+              <span className="flex items-center gap-1 px-3 py-1 bg-[#1e3a8a] text-white rounded-lg">
+                <FolderOpen size={14} />
+                {currentCategory?.name ?? 'Category'}
+              </span>
+              <ChevronRight size={16} className="text-gray-400" />
+              <span className="flex items-center gap-1 px-3 py-1 bg-[#a78bfa] text-white rounded-lg">
+                <Layers size={14} />
+                {currentSubCategory?.name ?? 'Sub-category'}
+              </span>
+              {hasSubLevels && currentSubLevel && (
+                <>
+                  <ChevronRight size={16} className="text-gray-400" />
+                  <span className="flex items-center gap-1 px-3 py-1 bg-gray-200 text-gray-700 rounded-lg">
+                    {currentSubLevel?.name ?? 'Level'}
+                  </span>
+                </>
+              )}
+            </motion.div>
 
-          {canGoNext() ? (
-            <button
-              onClick={goNext}
-              className="flex items-center gap-2 px-6 py-3 bg-[#1e3a8a] text-white rounded-lg font-medium hover:bg-[#3b5998] transition-colors shadow-md"
+            {/* Questions */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${selectedSurveyId}-${currentCategoryIndex}-${currentSubCategoryIndex}-${currentSubLevelIndex}`}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6 mb-8"
+              >
+                {currentQuestions?.length === 0 ? (
+                  <div className="bg-white rounded-xl shadow-md p-8 text-center">
+                    <FileQuestion size={48} className="mx-auto text-gray-300 mb-4" />
+                    <p className="text-gray-500">Bu bölümde henüz soru bulunmuyor.</p>
+                  </div>
+                ) : (
+                  currentQuestions?.map((question) => (
+                    <SurveyQuestion
+                      key={question?.id}
+                      question={question}
+                      value={responses?.[question?.id ?? '']}
+                      onAnswer={handleAnswer}
+                      onUpload={handleUpload}
+                    />
+                  ))
+                )}
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Navigation */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center justify-between"
             >
-              Sonraki
-              <ChevronRight size={20} />
-            </button>
-          ) : (
-            <button
-              onClick={handleComplete}
-              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors shadow-md"
-            >
-              Anketi Tamamla
-              <Check size={20} />
-            </button>
-          )}
-        </motion.div>
+              <button
+                onClick={goPrev}
+                disabled={!canGoPrev()}
+                className="flex items-center gap-2 px-6 py-3 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+              >
+                <ChevronLeft size={20} />
+                Önceki
+              </button>
+
+              <div className="flex items-center gap-2">
+                {categories?.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-3 h-3 rounded-full transition-colors ${
+                      index === currentCategoryIndex
+                        ? "bg-[#1e3a8a]"
+                        : index < (currentCategoryIndex ?? 0)
+                        ? "bg-[#a78bfa]"
+                        : "bg-gray-200"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {canGoNext() ? (
+                <button
+                  onClick={goNext}
+                  className="flex items-center gap-2 px-6 py-3 bg-[#1e3a8a] text-white rounded-lg font-medium hover:bg-[#3b5998] transition-colors shadow-md"
+                >
+                  Sonraki
+                  <ChevronRight size={20} />
+                </button>
+              ) : (
+                <button
+                  onClick={handleComplete}
+                  className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors shadow-md"
+                >
+                  Anketi Tamamla
+                  <Check size={20} />
+                </button>
+              )}
+            </motion.div>
+          </>
+        )}
       </main>
     </div>
   );

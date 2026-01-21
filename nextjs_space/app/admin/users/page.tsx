@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Plus, Edit, Trash2, X, Save, Search, Filter, Shield, User, Building2 } from "lucide-react";
+import { Users, Plus, Edit, Trash2, X, Save, Search, Filter, Shield, User, Building2, FileText, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface Unit {
@@ -13,6 +13,20 @@ interface Sector {
   id: string;
   name: string;
   subSectors: { id: string; name: string }[];
+}
+
+interface Survey {
+  id: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+}
+
+interface SurveyAssignment {
+  id: string;
+  surveyId: string;
+  survey: { id: string; name: string };
+  assignedAt: string;
 }
 
 interface UserType {
@@ -50,8 +64,12 @@ export default function UsersPage() {
   const [users, setUsers] = useState<UserType[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [sectors, setSectors] = useState<Sector[]>([]);
+  const [surveys, setSurveys] = useState<Survey[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
+  const [userAssignments, setUserAssignments] = useState<SurveyAssignment[]>([]);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -69,15 +87,17 @@ export default function UsersPage() {
 
   const fetchData = async () => {
     try {
-      const [usersRes, unitsRes, sectorsRes] = await Promise.all([
+      const [usersRes, unitsRes, sectorsRes, surveysRes] = await Promise.all([
         fetch("/api/admin/users"),
         fetch("/api/admin/units"),
         fetch("/api/admin/sectors"),
+        fetch("/api/admin/surveys"),
       ]);
 
       if (usersRes.ok) setUsers(await usersRes.json());
       if (unitsRes.ok) setUnits(await unitsRes.json());
       if (sectorsRes.ok) setSectors(await sectorsRes.json());
+      if (surveysRes.ok) setSurveys(await surveysRes.json());
     } catch (error) {
       console.error("Veri çekme hatası:", error);
     } finally {
@@ -88,6 +108,19 @@ export default function UsersPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Kullanıcının anket atamalarını getir
+  const fetchUserAssignments = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/admin/survey-assignments?userId=${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setUserAssignments(data);
+      }
+    } catch (error) {
+      console.error("Atama getirme hatası:", error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,6 +190,55 @@ export default function UsersPage() {
     setShowModal(true);
   };
 
+  const openAssignModal = async (user: UserType) => {
+    setSelectedUser(user);
+    await fetchUserAssignments(user.id);
+    setShowAssignModal(true);
+  };
+
+  const handleAssignSurvey = async (surveyId: string) => {
+    if (!selectedUser) return;
+    
+    try {
+      const res = await fetch("/api/admin/survey-assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: selectedUser.id, surveyId }),
+      });
+      
+      if (res.ok) {
+        toast.success("Anket atandı");
+        await fetchUserAssignments(selectedUser.id);
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Atama hatası");
+      }
+    } catch (error) {
+      toast.error("Bağlantı hatası");
+    }
+  };
+
+  const handleRemoveAssignment = async (surveyId: string) => {
+    if (!selectedUser) return;
+    
+    if (!confirm("Bu anket atamasını kaldırmak istediğinizden emin misiniz?")) return;
+    
+    try {
+      const res = await fetch(`/api/admin/survey-assignments?userId=${selectedUser.id}&surveyId=${surveyId}`, {
+        method: "DELETE",
+      });
+      
+      if (res.ok) {
+        toast.success("Atama kaldırıldı");
+        await fetchUserAssignments(selectedUser.id);
+      } else {
+        toast.error("Kaldırma hatası");
+      }
+    } catch (error) {
+      toast.error("Bağlantı hatası");
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       email: "",
@@ -181,6 +263,11 @@ export default function UsersPage() {
   });
 
   const selectedSector = sectors.find((s) => s.id === formData.sectorId);
+  
+  // Kullanıcıya atanmamış anketler
+  const unassignedSurveys = surveys.filter(
+    s => s.isActive && !userAssignments.some(a => a.surveyId === s.id)
+  );
 
   if (loading) {
     return (
@@ -332,14 +419,23 @@ export default function UsersPage() {
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2">
                     <button
+                      onClick={() => openAssignModal(user)}
+                      className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      title="Anket Ata"
+                    >
+                      <FileText size={16} />
+                    </button>
+                    <button
                       onClick={() => openEditModal(user)}
                       className="p-2 text-gray-400 hover:text-[#1e3a8a] hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Düzenle"
                     >
                       <Edit size={16} />
                     </button>
                     <button
                       onClick={() => handleDelete(user.id)}
                       className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Sil"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -357,7 +453,7 @@ export default function UsersPage() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* User Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -508,6 +604,121 @@ export default function UsersPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Survey Assignment Modal */}
+      {showAssignModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Anket Atama</h2>
+                <p className="text-sm text-gray-500">
+                  {selectedUser.firstName} {selectedUser.lastName} ({selectedUser.email})
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAssignModal(false);
+                  setSelectedUser(null);
+                  setUserAssignments([]);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-6">
+              {/* Atanmış Anketler */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <Check size={16} className="text-green-600" />
+                  Atanmış Anketler ({userAssignments.length})
+                </h3>
+                {userAssignments.length > 0 ? (
+                  <div className="space-y-2">
+                    {userAssignments.map((assignment) => (
+                      <div
+                        key={assignment.id}
+                        className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <FileText size={18} className="text-green-600" />
+                          <div>
+                            <p className="font-medium text-gray-900">{assignment.survey.name}</p>
+                            <p className="text-xs text-gray-500">
+                              Atandı: {new Date(assignment.assignedAt).toLocaleDateString('tr-TR')}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveAssignment(assignment.surveyId)}
+                          className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors"
+                          title="Atamayı Kaldır"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">Henüz anket atanmamış</p>
+                )}
+              </div>
+
+              {/* Atanabilecek Anketler */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  <Plus size={16} className="text-blue-600" />
+                  Atanabilecek Anketler ({unassignedSurveys.length})
+                </h3>
+                {unassignedSurveys.length > 0 ? (
+                  <div className="space-y-2">
+                    {unassignedSurveys.map((survey) => (
+                      <div
+                        key={survey.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <FileText size={18} className="text-gray-400" />
+                          <div>
+                            <p className="font-medium text-gray-900">{survey.name}</p>
+                            {survey.description && (
+                              <p className="text-xs text-gray-500">{survey.description}</p>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleAssignSurvey(survey.id)}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-[#1e3a8a] text-white text-sm rounded-lg hover:bg-[#3b5998] transition-colors"
+                        >
+                          <Plus size={14} />
+                          Ata
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 italic">Tüm anketler zaten atanmış</p>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 border-t bg-gray-50">
+              <button
+                onClick={() => {
+                  setShowAssignModal(false);
+                  setSelectedUser(null);
+                  setUserAssignments([]);
+                }}
+                className="w-full px-4 py-2 border rounded-lg hover:bg-white transition-colors"
+              >
+                Kapat
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -66,11 +66,11 @@ export default function DashboardClient() {
   const router = useRouter();
   const dashboardRef = useRef<HTMLDivElement>(null);
 
-  // Fetch surveys list
+  // Fetch assigned surveys for this user
   useEffect(() => {
     const fetchSurveys = async () => {
       try {
-        const res = await fetch("/api/admin/surveys");
+        const res = await fetch("/api/survey/assigned");
         if (res.ok) {
           const data = await res.json();
           const activeSurveys = (data ?? []).filter((s: Survey) => s.isActive);
