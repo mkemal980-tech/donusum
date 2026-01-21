@@ -6,6 +6,29 @@ export const dynamic = "force-dynamic";
 // Test user ID for development
 const TEST_USER_ID = "cmkhjzaa70000x50t7n7fsjxo";
 
+/**
+ * Yeni Puanlama Sistemi:
+ * 
+ * 1. Puan Yüzdesi = (Alınan Puan / Maksimum Puan) × 100
+ * 
+ * 2. Seviyelendirme (Yüzdeye Göre):
+ *    - %0-19: Seviye 1 (Başlangıç)
+ *    - %20-39: Seviye 2 (Farkındalık)
+ *    - %40-59: Seviye 3 (Gelişen)
+ *    - %60-79: Seviye 4 (Olgun)
+ *    - %80-100: Seviye 5 (Lider)
+ * 
+ * 3. Puan Hesaplama (1-5 Ölçeği):
+ *    Puan = (Yüzde / 100) × 4 + 1
+ *    - %0 başarı → 1.0 puan
+ *    - %100 başarı → 5.0 puan
+ */
+
+// Yüzdeden 1-5 puana dönüştürme
+function percentageToScore(percentage: number): number {
+  return (percentage / 100) * 4 + 1;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const userId = TEST_USER_ID;
@@ -74,7 +97,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Create response map
-    const responseMap = new Map<string, { score: number; weight: number }>();
+    const responseMap = new Map<string, { score: number; weight: number }>(); 
     for (const r of responses) {
       responseMap.set(r.questionId, { score: r.score, weight: r.question.weight });
     }
@@ -84,11 +107,11 @@ export async function GET(request: NextRequest) {
 
     // Calculate scores for each level
     const categoryScores = categories.map(category => {
-      let catWeightedScore = 0;
+      let catTotalScore = 0;
       let catMaxScore = 0;
 
       const subCategoryScores = category.subCategories.map(subCat => {
-        let subCatWeightedScore = 0;
+        let subCatTotalScore = 0;
         let subCatMaxScore = 0;
 
         // Check if this subcategory has sublevels
@@ -99,30 +122,35 @@ export async function GET(request: NextRequest) {
         if (hasSubLevels) {
           // Process sublevels
           subLevelScores = subCat.subLevels.map(subLevel => {
-            let levelWeightedScore = 0;
+            let levelTotalScore = 0;
             let levelMaxScore = 0;
+            const questionCount = subLevel.questions.length;
 
             for (const question of subLevel.questions) {
               const response = responseMap.get(question.id);
               const weight = question.weight;
+              const maxQuestionScore = 5 * weight; // Her soru için max puan = 5 * ağırlık
+              
               if (response) {
-                levelWeightedScore += response.score * weight;
+                levelTotalScore += response.score * weight;
               }
-              levelMaxScore += 5 * weight;
+              levelMaxScore += maxQuestionScore;
             }
 
-            subCatWeightedScore += levelWeightedScore;
+            subCatTotalScore += levelTotalScore;
             subCatMaxScore += levelMaxScore;
 
-            const levelPercentage = levelMaxScore > 0 ? (levelWeightedScore / levelMaxScore) * 100 : 0;
-            const levelScore = (levelPercentage / 100) * 5;
+            // Yüzde hesaplama
+            const levelPercentage = levelMaxScore > 0 ? (levelTotalScore / levelMaxScore) * 100 : 0;
+            // Yeni formül: Puan = (Yüzde / 100) × 4 + 1
+            const levelScore = percentageToScore(levelPercentage);
 
             return {
               id: subLevel.id,
               name: subLevel.name,
               score: Math.round(levelScore * 10) / 10,
               percentage: Math.round(levelPercentage),
-              questionCount: subLevel.questions.length,
+              questionCount: questionCount,
               answeredCount: subLevel.questions.filter(q => responseMap.has(q.id)).length
             };
           });
@@ -132,18 +160,22 @@ export async function GET(request: NextRequest) {
           for (const question of directQuestions) {
             const response = responseMap.get(question.id);
             const weight = question.weight;
+            const maxQuestionScore = 5 * weight;
+            
             if (response) {
-              subCatWeightedScore += response.score * weight;
+              subCatTotalScore += response.score * weight;
             }
-            subCatMaxScore += 5 * weight;
+            subCatMaxScore += maxQuestionScore;
           }
         }
 
-        catWeightedScore += subCatWeightedScore;
+        catTotalScore += subCatTotalScore;
         catMaxScore += subCatMaxScore;
 
-        const subCatPercentage = subCatMaxScore > 0 ? (subCatWeightedScore / subCatMaxScore) * 100 : 0;
-        const subCatScore = (subCatPercentage / 100) * 5;
+        // Yüzde hesaplama
+        const subCatPercentage = subCatMaxScore > 0 ? (subCatTotalScore / subCatMaxScore) * 100 : 0;
+        // Yeni formül: Puan = (Yüzde / 100) × 4 + 1
+        const subCatScore = percentageToScore(subCatPercentage);
 
         const totalQuestions = hasSubLevels 
           ? subCat.subLevels.reduce((sum, sl) => sum + sl.questions.length, 0)
@@ -165,8 +197,10 @@ export async function GET(request: NextRequest) {
         };
       });
 
-      const catPercentage = catMaxScore > 0 ? (catWeightedScore / catMaxScore) * 100 : 0;
-      const catScore = (catPercentage / 100) * 5;
+      // Yüzde hesaplama
+      const catPercentage = catMaxScore > 0 ? (catTotalScore / catMaxScore) * 100 : 0;
+      // Yeni formül: Puan = (Yüzde / 100) × 4 + 1
+      const catScore = percentageToScore(catPercentage);
 
       // Get category weight (sector-specific or default equal weight)
       const categoryWeight = sectorWeights.size > 0 
@@ -187,20 +221,23 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate overall score using weights
-    let overallScore = 0;
+    // Önce ağırlıklı yüzdeleri hesapla, sonra puana dönüştür
+    let overallWeightedPercentage = 0;
     let totalWeight = 0;
 
     for (const cat of categoryScores) {
-      overallScore += cat.score * cat.weight;
+      overallWeightedPercentage += cat.percentage * cat.weight;
       totalWeight += cat.weight;
     }
 
     // Normalize if weights don't sum to 1 (fallback)
     if (totalWeight > 0 && Math.abs(totalWeight - 1) > 0.01) {
-      overallScore = overallScore / totalWeight;
+      overallWeightedPercentage = overallWeightedPercentage / totalWeight;
     }
 
-    const overallPercentage = (overallScore / 5) * 100;
+    // Genel puan: ağırlıklı yüzdeyi puana dönüştür
+    const overallScore = percentageToScore(overallWeightedPercentage);
+    const overallPercentage = overallWeightedPercentage;
 
     // If specific category requested, return details
     if (categoryId) {

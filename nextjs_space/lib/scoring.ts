@@ -1,5 +1,28 @@
 import { prisma } from "./db";
 
+/**
+ * Yeni Puanlama Sistemi:
+ * 
+ * 1. Puan Yüzdesi = (Alınan Puan / Maksimum Puan) × 100
+ * 
+ * 2. Seviyelendirme (Yüzdeye Göre):
+ *    - %0-19: Seviye 1 (Başlangıç)
+ *    - %20-39: Seviye 2 (Farkındalık)
+ *    - %40-59: Seviye 3 (Gelişen)
+ *    - %60-79: Seviye 4 (Olgun)
+ *    - %80-100: Seviye 5 (Lider)
+ * 
+ * 3. Puan Hesaplama (1-5 Ölçeği):
+ *    Puan = (Yüzde / 100) × 4 + 1
+ *    - %0 başarı → 1.0 puan
+ *    - %100 başarı → 5.0 puan
+ */
+
+// Yüzdeden 1-5 puana dönüştürme
+function percentageToScore(percentage: number): number {
+  return (percentage / 100) * 4 + 1;
+}
+
 export async function calculateUserScore(userId: string) {
   const responses = await prisma.surveyResponse.findMany({
     where: { userId },
@@ -26,7 +49,7 @@ export async function calculateUserScore(userId: string) {
   });
 
   if (responses?.length === 0) {
-    return { totalScore: 0, categoryScores: {}, subLevelScores: {}, subCategoryScores: {} };
+    return { totalScore: 0, totalScoreOn5: 1, categoryScores: {}, subLevelScores: {}, subCategoryScores: {} };
   }
 
   const categoryScores: Record<string, { score: number; maxScore: number; name: string }> = {};
@@ -104,14 +127,16 @@ export async function calculateUserScore(userId: string) {
     totalMaxScore += maxScore;
   }
 
-  const normalizedCategoryScores: Record<string, { score: number; percentage: number; name: string }> = {};
-  const normalizedSubLevelScores: Record<string, { score: number; percentage: number; name: string; categoryName: string }> = {};
-  const normalizedSubCategoryScores: Record<string, { score: number; percentage: number; name: string; categoryName: string }> = {};
+  const normalizedCategoryScores: Record<string, { score: number; scoreOn5: number; percentage: number; name: string }> = {};
+  const normalizedSubLevelScores: Record<string, { score: number; scoreOn5: number; percentage: number; name: string; categoryName: string }> = {};
+  const normalizedSubCategoryScores: Record<string, { score: number; scoreOn5: number; percentage: number; name: string; categoryName: string }> = {};
   
   for (const [catId, data] of Object.entries(categoryScores)) {
     const percentage = data?.maxScore > 0 ? Math.round((data.score / data.maxScore) * 100) : 0;
+    const scoreOn5 = percentageToScore(percentage);
     normalizedCategoryScores[catId] = {
       score: Math.round(data?.score ?? 0),
+      scoreOn5: Math.round(scoreOn5 * 10) / 10,
       percentage,
       name: data?.name ?? 'Unknown'
     };
@@ -119,8 +144,10 @@ export async function calculateUserScore(userId: string) {
 
   for (const [subLevelId, data] of Object.entries(subLevelScores)) {
     const percentage = data?.maxScore > 0 ? Math.round((data.score / data.maxScore) * 100) : 0;
+    const scoreOn5 = percentageToScore(percentage);
     normalizedSubLevelScores[subLevelId] = {
       score: Math.round(data?.score ?? 0),
+      scoreOn5: Math.round(scoreOn5 * 10) / 10,
       percentage,
       name: data?.name ?? 'Unknown',
       categoryName: data?.categoryName ?? 'Unknown'
@@ -129,8 +156,10 @@ export async function calculateUserScore(userId: string) {
 
   for (const [subCatId, data] of Object.entries(subCategoryScores)) {
     const percentage = data?.maxScore > 0 ? Math.round((data.score / data.maxScore) * 100) : 0;
+    const scoreOn5 = percentageToScore(percentage);
     normalizedSubCategoryScores[subCatId] = {
       score: Math.round(data?.score ?? 0),
+      scoreOn5: Math.round(scoreOn5 * 10) / 10,
       percentage,
       name: data?.name ?? 'Unknown',
       categoryName: data?.categoryName ?? 'Unknown'
@@ -138,9 +167,11 @@ export async function calculateUserScore(userId: string) {
   }
 
   const totalPercentage = totalMaxScore > 0 ? Math.round((totalWeightedScore / totalMaxScore) * 100) : 0;
+  const totalScoreOn5 = percentageToScore(totalPercentage);
 
   return {
     totalScore: totalPercentage,
+    totalScoreOn5: Math.round(totalScoreOn5 * 10) / 10,
     categoryScores: normalizedCategoryScores,
     subLevelScores: normalizedSubLevelScores,
     subCategoryScores: normalizedSubCategoryScores

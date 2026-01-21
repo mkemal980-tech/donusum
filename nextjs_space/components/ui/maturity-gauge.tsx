@@ -10,23 +10,50 @@ interface MaturityGaugeProps {
 
 // Mor/Indigo tema renkleri - en koyu'dan en açık'a
 const levels = [
-  { value: 5, label: "Lider", color: "#4f46e5" },       // indigo-600
-  { value: 4, label: "Olgun", color: "#6366f1" },       // indigo-500
-  { value: 3, label: "Gelişen", color: "#8b5cf6" },     // violet-500
-  { value: 2, label: "Farkındalık", color: "#a78bfa" }, // violet-400
-  { value: 1, label: "Başlangıç", color: "#c4b5fd" },   // violet-300
+  { value: 5, label: "Lider", color: "#4f46e5", minPercent: 80 },       // indigo-600
+  { value: 4, label: "Olgun", color: "#6366f1", minPercent: 60 },       // indigo-500
+  { value: 3, label: "Gelişen", color: "#8b5cf6", minPercent: 40 },     // violet-500
+  { value: 2, label: "Farkındalık", color: "#a78bfa", minPercent: 20 }, // violet-400
+  { value: 1, label: "Başlangıç", color: "#c4b5fd", minPercent: 0 },   // violet-300
 ];
 
+/**
+ * Yeni Puanlama Sistemi:
+ * - Puan = (Yüzde / 100) × 4 + 1
+ * - %0 → 1.0 puan
+ * - %100 → 5.0 puan
+ * 
+ * Seviye Eşikleri (yüzdeye göre):
+ * - %0-19: Başlangıç (1.0 - 1.76)
+ * - %20-39: Farkındalık (1.8 - 2.56)
+ * - %40-59: Gelişen (2.6 - 3.36)
+ * - %60-79: Olgun (3.4 - 4.16)
+ * - %80-100: Lider (4.2 - 5.0)
+ */
 export const getScoreLevel = (score: number): { label: string; color: string } => {
-  if (score >= 4.5) return { label: "Lider", color: "#4f46e5" };
-  if (score >= 3.5) return { label: "Olgun", color: "#6366f1" };
-  if (score >= 2.5) return { label: "Gelişen", color: "#8b5cf6" };
-  if (score >= 1.5) return { label: "Farkındalık", color: "#a78bfa" };
+  // Puan → Yüzde dönüşümü: yüzde = (puan - 1) / 4 * 100
+  const percentage = ((score - 1) / 4) * 100;
+  
+  if (percentage >= 80) return { label: "Lider", color: "#4f46e5" };
+  if (percentage >= 60) return { label: "Olgun", color: "#6366f1" };
+  if (percentage >= 40) return { label: "Gelişen", color: "#8b5cf6" };
+  if (percentage >= 20) return { label: "Farkındalık", color: "#a78bfa" };
   return { label: "Başlangıç", color: "#c4b5fd" };
+};
+
+// Yüzdeden puana dönüştürme yardımcı fonksiyonu
+export const percentageToScore = (percentage: number): number => {
+  return (percentage / 100) * 4 + 1;
+};
+
+// Puandan yüzdeye dönüştürme yardımcı fonksiyonu
+export const scoreToPercentage = (score: number): number => {
+  return ((score - 1) / 4) * 100;
 };
 
 export function MaturityGauge({ score, title = "Seviyelendirme", showOverallLevel = false }: MaturityGaugeProps) {
   // Calculate position (0 = bottom, 100 = top)
+  // Yeni formül: puan 1'den 5'e → position 0'dan 100'e
   const position = Math.max(0, Math.min(100, ((score - 1) / 4) * 100));
   const currentLevel = getScoreLevel(score);
   
@@ -82,7 +109,7 @@ export function MaturityGauge({ score, title = "Seviyelendirme", showOverallLeve
             className="absolute bottom-0 left-0 right-0 rounded-2xl"
             style={{ 
               background: `linear-gradient(to top, #c4b5fd, #a78bfa, #8b5cf6, #6366f1, #4f46e5)`,
-              minHeight: score > 0 ? "20px" : "0px"
+              minHeight: score > 1 ? "20px" : "0px"
             }}
           />
           
