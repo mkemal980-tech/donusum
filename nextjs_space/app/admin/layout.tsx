@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings, FolderTree, Lightbulb, LayoutDashboard, Factory, BarChart3, Scale, FileText, Activity, Download, Users, Building2 } from "lucide-react";
+import { Settings, FolderTree, Lightbulb, LayoutDashboard, Factory, BarChart3, Scale, FileText, Activity, Download, Users, Building2, UserCheck } from "lucide-react";
 
 const navItems = [
   { href: "/admin", label: "Genel Bakış", icon: LayoutDashboard, section: null },
   { href: "/admin/users", label: "Kullanıcılar", icon: Users, section: "Kullanıcı Yönetimi" },
   { href: "/admin/units", label: "Birimler", icon: Building2, section: "Kullanıcı Yönetimi" },
   { href: "/admin/surveys", label: "Anketler", icon: FileText, section: "Anket Yönetimi" },
+  { href: "/admin/survey-assignments", label: "Anket Atamaları", icon: UserCheck, section: "Anket Yönetimi" },
   { href: "/admin/categories", label: "Kategoriler & Sorular", icon: FolderTree, section: "Anket Yönetimi" },
   { href: "/admin/recommendations", label: "Öneriler", icon: Lightbulb, section: "Anket Yönetimi" },
   { href: "/admin/sectors", label: "Sektörler", icon: Factory, section: "Sektör & Benchmark" },
