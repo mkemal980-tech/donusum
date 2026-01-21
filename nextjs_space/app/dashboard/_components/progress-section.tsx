@@ -52,13 +52,13 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
 
   if (loading) {
     return (
-      <div className="bg-slate-900 rounded-2xl shadow-xl p-6">
+      <div className="bg-gradient-to-br from-primary-900 via-primary-800 to-indigo-900 rounded-2xl shadow-xl p-6">
         <div className="flex items-center gap-3 mb-4">
-          <Target className="text-blue-400" size={24} />
+          <Target className="text-violet-400" size={24} />
           <h3 className="text-lg font-semibold text-white">Benchmark</h3>
         </div>
         <div className="flex items-center justify-center h-48">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -66,12 +66,12 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
 
   if (!data) {
     return (
-      <div className="bg-slate-900 rounded-2xl shadow-xl p-6">
+      <div className="bg-gradient-to-br from-primary-900 via-primary-800 to-indigo-900 rounded-2xl shadow-xl p-6">
         <div className="flex items-center gap-3 mb-4">
-          <Target className="text-blue-400" size={24} />
+          <Target className="text-violet-400" size={24} />
           <h3 className="text-lg font-semibold text-white">Benchmark</h3>
         </div>
-        <div className="text-center py-8 text-gray-400">
+        <div className="text-center py-8 text-primary-300">
           Veri yüklenemedi
         </div>
       </div>
@@ -99,13 +99,13 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
     <div className="space-y-4">
       {/* Info Box */}
       {hasDelta && (
-        <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/30 rounded-xl p-4 flex items-start gap-3">
-          <TrendingUp className="text-green-500 mt-0.5 flex-shrink-0" size={20} />
+        <div className="bg-gradient-to-r from-emerald-500/10 to-primary-500/10 border border-emerald-500/30 rounded-xl p-4 flex items-start gap-3">
+          <TrendingUp className="text-emerald-500 mt-0.5 flex-shrink-0" size={20} />
           <div>
-            <p className="font-medium text-green-700">Gelişim Kaydedildi!</p>
-            <p className="text-sm text-green-600">
+            <p className="font-medium text-emerald-700">Gelişim Kaydedildi!</p>
+            <p className="text-sm text-emerald-600">
               Önerileri tamamlayarak skorunuzu <span className="font-bold">+{data.overall.delta.toFixed(2)}</span> puan artırdınız.
-              <Link href="/roadmap" className="underline ml-1">Yol haritasına git →</Link>
+              <Link href="/roadmap" className="underline ml-1 hover:text-primary-600">Yol haritasına git →</Link>
             </p>
           </div>
         </div>
@@ -117,8 +117,8 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
           onClick={() => setViewMode('subcategory')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             viewMode === 'subcategory'
-              ? 'bg-blue-500 text-white'
-              : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+              ? 'bg-primary-600 text-white'
+              : 'bg-primary-100 text-primary-700 hover:bg-primary-200'
           }`}
         >
           Alt Kategoriler
@@ -127,8 +127,8 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
           onClick={() => setViewMode('category')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             viewMode === 'category'
-              ? 'bg-blue-500 text-white'
-              : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+              ? 'bg-primary-600 text-white'
+              : 'bg-primary-100 text-primary-700 hover:bg-primary-200'
           }`}
         >
           Kategoriler
