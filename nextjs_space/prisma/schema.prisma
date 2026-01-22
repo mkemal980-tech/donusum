@@ -59,6 +59,7 @@ model User {
 model Sector {
   id                 String              @id @default(cuid())
   name               String              @unique
+  naicsCode          String?             // NAICS sektör kodu (örn: 11, 21, 22, ...)
   order              Int                 @default(0)
   createdAt          DateTime            @default(now())
   subSectors         SubSector[]

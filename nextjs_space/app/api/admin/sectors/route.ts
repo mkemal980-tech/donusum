@@ -25,7 +25,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, order } = await request.json();
+    const { name, naicsCode, order } = await request.json();
     
     if (!name) {
       return NextResponse.json({ error: "Sektör adı gerekli" }, { status: 400 });
@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
     const sector = await prisma.sector.create({
       data: {
         name,
+        naicsCode: naicsCode || null,
         order: order || 0
       },
       include: {
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { id, name, order } = await request.json();
+    const { id, name, naicsCode, order } = await request.json();
     
     if (!id || !name) {
       return NextResponse.json({ error: "ID ve sektör adı gerekli" }, { status: 400 });
@@ -63,7 +64,8 @@ export async function PUT(request: NextRequest) {
       where: { id },
       data: {
         name,
-        order: order || 0
+        naicsCode: naicsCode || null,
+        order: order !== undefined ? order : undefined
       },
       include: {
         subSectors: true

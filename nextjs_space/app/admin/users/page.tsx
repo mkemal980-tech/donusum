@@ -12,6 +12,7 @@ interface Unit {
 interface Sector {
   id: string;
   name: string;
+  naicsCode: string | null;
   subSectors: { id: string; name: string }[];
 }
 
@@ -553,39 +554,39 @@ export default function UsersPage() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sektör</label>
-                  <select
-                    value={formData.sectorId}
-                    onChange={(e) => setFormData({ ...formData, sectorId: e.target.value, subSectorId: "" })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                  >
-                    <option value="">Seçiniz</option>
-                    {sectors.map((sector) => (
-                      <option key={sector.id} value={sector.id}>
-                        {sector.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sektör (NAICS)</label>
+                <select
+                  value={formData.sectorId}
+                  onChange={(e) => setFormData({ ...formData, sectorId: e.target.value, subSectorId: "" })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                >
+                  <option value="">Sektör Seçiniz</option>
+                  {sectors.map((sector) => (
+                    <option key={sector.id} value={sector.id}>
+                      {sector.naicsCode ? `[${sector.naicsCode}] ` : ''}{sector.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {formData.sectorId && selectedSector?.subSectors && selectedSector.subSectors.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Alt Sektör</label>
                   <select
                     value={formData.subSectorId}
                     onChange={(e) => setFormData({ ...formData, subSectorId: e.target.value })}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                    disabled={!formData.sectorId}
                   >
-                    <option value="">Seçiniz</option>
-                    {selectedSector?.subSectors.map((sub) => (
+                    <option value="">Alt Sektör Seçiniz</option>
+                    {selectedSector.subSectors.map((sub) => (
                       <option key={sub.id} value={sub.id}>
                         {sub.name}
                       </option>
                     ))}
                   </select>
                 </div>
-              </div>
+              )}
 
               <div className="flex justify-end gap-3 pt-4">
                 <button

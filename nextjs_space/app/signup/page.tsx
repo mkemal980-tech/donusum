@@ -16,6 +16,7 @@ interface SubSector {
 interface Sector {
   id: string;
   name: string;
+  naicsCode: string | null;
   subSectors: SubSector[];
 }
 
@@ -256,7 +257,9 @@ export default function SignupPage() {
                     >
                       <option value="">Sektör seçin (opsiyonel)</option>
                       {sectors.map(sector => (
-                        <option key={sector.id} value={sector.id}>{sector.name}</option>
+                        <option key={sector.id} value={sector.id}>
+                          {sector.naicsCode ? `[${sector.naicsCode}] ` : ''}{sector.name}
+                        </option>
                       ))}
                     </select>
                   </div>

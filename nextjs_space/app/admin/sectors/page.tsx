@@ -12,6 +12,7 @@ interface SubSector {
 interface Sector {
   id: string;
   name: string;
+  naicsCode: string | null;
   order: number;
   subSectors: SubSector[];
   _count?: { users: number };
@@ -25,10 +26,12 @@ export default function SectorsPage() {
   // New sector form
   const [showNewSector, setShowNewSector] = useState(false);
   const [newSectorName, setNewSectorName] = useState("");
+  const [newSectorNaicsCode, setNewSectorNaicsCode] = useState("");
   
   // Edit sector
   const [editingSector, setEditingSector] = useState<string | null>(null);
   const [editSectorName, setEditSectorName] = useState("");
+  const [editSectorNaicsCode, setEditSectorNaicsCode] = useState("");
   
   // New subsector form
   const [showNewSubSector, setShowNewSubSector] = useState<string | null>(null);
@@ -60,10 +63,15 @@ export default function SectorsPage() {
       const res = await fetch("/api/admin/sectors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newSectorName, order: sectors.length })
+        body: JSON.stringify({ 
+          name: newSectorName, 
+          naicsCode: newSectorNaicsCode || null,
+          order: sectors.length 
+        })
       });
       if (res.ok) {
         setNewSectorName("");
+        setNewSectorNaicsCode("");
         setShowNewSector(false);
         fetchSectors();
       }
@@ -78,10 +86,11 @@ export default function SectorsPage() {
       const res = await fetch("/api/admin/sectors", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, name: editSectorName })
+        body: JSON.stringify({ id, name: editSectorName, naicsCode: editSectorNaicsCode || null })
       });
       if (res.ok) {
         setEditingSector(null);
+        setEditSectorNaicsCode("");
         fetchSectors();
       }
     } catch (error) {
@@ -178,6 +187,13 @@ export default function SectorsPage() {
           <div className="flex items-center gap-3">
             <input
               type="text"
+              value={newSectorNaicsCode}
+              onChange={(e) => setNewSectorNaicsCode(e.target.value)}
+              placeholder="NAICS Kodu (örn: 11)"
+              className="w-28 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-center font-mono"
+            />
+            <input
+              type="text"
               value={newSectorName}
               onChange={(e) => setNewSectorName(e.target.value)}
               placeholder="Sektör adı..."
@@ -191,7 +207,7 @@ export default function SectorsPage() {
               <Save size={20} />
             </button>
             <button
-              onClick={() => { setShowNewSector(false); setNewSectorName(""); }}
+              onClick={() => { setShowNewSector(false); setNewSectorName(""); setNewSectorNaicsCode(""); }}
               className="p-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
             >
               <X size={20} />
@@ -214,6 +230,13 @@ export default function SectorsPage() {
                   <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="text"
+                      value={editSectorNaicsCode}
+                      onChange={(e) => setEditSectorNaicsCode(e.target.value)}
+                      placeholder="NAICS"
+                      className="w-20 px-2 py-1 border rounded focus:ring-2 focus:ring-blue-500 outline-none text-center font-mono text-sm"
+                    />
+                    <input
+                      type="text"
                       value={editSectorName}
                       onChange={(e) => setEditSectorName(e.target.value)}
                       className="px-2 py-1 border rounded focus:ring-2 focus:ring-blue-500 outline-none"
@@ -222,12 +245,19 @@ export default function SectorsPage() {
                     <button onClick={() => handleUpdateSector(sector.id)} className="p-1 text-green-600 hover:bg-green-50 rounded">
                       <Save size={18} />
                     </button>
-                    <button onClick={() => setEditingSector(null)} className="p-1 text-gray-600 hover:bg-gray-100 rounded">
+                    <button onClick={() => { setEditingSector(null); setEditSectorNaicsCode(""); }} className="p-1 text-gray-600 hover:bg-gray-100 rounded">
                       <X size={18} />
                     </button>
                   </div>
                 ) : (
-                  <span className="font-medium text-gray-800">{sector.name}</span>
+                  <div className="flex items-center gap-2">
+                    {sector.naicsCode && (
+                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-mono rounded">
+                        {sector.naicsCode}
+                      </span>
+                    )}
+                    <span className="font-medium text-gray-800">{sector.name}</span>
+                  </div>
                 )}
               </div>
               <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -235,7 +265,7 @@ export default function SectorsPage() {
                   {sector.subSectors.length} alt sektör | {sector._count?.users || 0} kullanıcı
                 </span>
                 <button
-                  onClick={() => { setEditingSector(sector.id); setEditSectorName(sector.name); }}
+                  onClick={() => { setEditingSector(sector.id); setEditSectorName(sector.name); setEditSectorNaicsCode(sector.naicsCode || ""); }}
                   className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
                 >
                   <Edit2 size={18} />
