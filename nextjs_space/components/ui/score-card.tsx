@@ -11,9 +11,12 @@ interface ScoreCardProps {
   size?: "small" | "large";
 }
 
-export default function ScoreCard({ score, label, color = "#1e3a8a", size = "large" }: ScoreCardProps) {
+export default function ScoreCard({ score, label, color, size = "large" }: ScoreCardProps) {
   const [displayScore, setDisplayScore] = useState(0);
   const { ref, inView } = useInView({ triggerOnce: true });
+
+  // Default color uses CSS variable for theme support
+  const strokeColor = color || "var(--primary)";
 
   useEffect(() => {
     if (inView) {
@@ -53,19 +56,21 @@ export default function ScoreCard({ score, label, color = "#1e3a8a", size = "lar
           height={radius * 2 + strokeWidth * 2}
           className="transform -rotate-90"
         >
+          {/* Background circle */}
           <circle
             cx={radius + strokeWidth}
             cy={radius + strokeWidth}
             r={radius}
-            stroke="#e5e7eb"
+            className="stroke-gray-200 dark:stroke-dark-border"
             strokeWidth={strokeWidth}
             fill="none"
           />
+          {/* Progress circle */}
           <motion.circle
             cx={radius + strokeWidth}
             cy={radius + strokeWidth}
             r={radius}
-            stroke={color}
+            stroke={strokeColor}
             strokeWidth={strokeWidth}
             fill="none"
             strokeLinecap="round"
@@ -73,15 +78,20 @@ export default function ScoreCard({ score, label, color = "#1e3a8a", size = "lar
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset: circumference - progress }}
             transition={{ duration: 1.5, ease: "easeOut" }}
+            className="dark:drop-shadow-[0_0_8px_var(--primary)]"
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className={`font-bold ${size === "large" ? "text-4xl" : "text-xl"}`} style={{ color }}>
+          <span 
+            className={`font-bold ${size === "large" ? "text-4xl" : "text-xl"} text-primary-600 dark:text-cyan-400`}
+          >
             {displayScore}%
           </span>
         </div>
       </div>
-      <p className={`mt-3 font-medium text-gray-700 ${size === "large" ? "text-lg" : "text-sm"}`}>{label ?? ''}</p>
+      <p className={`mt-3 font-medium text-gray-700 dark:text-gray-200 ${size === "large" ? "text-lg" : "text-sm"}`}>
+        {label ?? ''}
+      </p>
     </motion.div>
   );
 }

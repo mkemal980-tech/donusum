@@ -10,62 +10,76 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Primary Purple/Indigo palette
+        // Primary Blue/Cyan palette
         primary: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-          DEFAULT: '#6366f1',
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+          DEFAULT: '#3b82f6',
           foreground: '#ffffff',
         },
-        // Secondary Purple palette
+        // Secondary Cyan/Teal palette
         secondary: {
-          50: '#faf5ff',
-          100: '#f3e8ff',
-          200: '#e9d5ff',
-          300: '#d8b4fe',
-          400: '#c084fc',
-          500: '#a855f7',
-          600: '#9333ea',
-          700: '#7c3aed',
-          800: '#6b21a8',
-          900: '#581c87',
-          DEFAULT: '#8b5cf6',
+          50: '#ecfeff',
+          100: '#cffafe',
+          200: '#a5f3fc',
+          300: '#67e8f9',
+          400: '#22d3ee',
+          500: '#06b6d4',
+          600: '#0891b2',
+          700: '#0e7490',
+          800: '#155e75',
+          900: '#164e63',
+          DEFAULT: '#06b6d4',
+          foreground: '#ffffff',
+        },
+        // Accent Green/Emerald
+        accent: {
+          50: '#ecfdf5',
+          100: '#d1fae5',
+          200: '#a7f3d0',
+          300: '#6ee7b7',
+          400: '#34d399',
+          500: '#10b981',
+          600: '#059669',
+          700: '#047857',
+          800: '#065f46',
+          900: '#064e3b',
+          DEFAULT: '#10b981',
           foreground: '#ffffff',
         },
         // Background colors
         background: {
-          DEFAULT: '#e8e6f3',
-          light: '#f1f0f7',
-          dark: '#ddd9ed',
+          DEFAULT: 'var(--bg-main)',
+          secondary: 'var(--bg-secondary)',
+          card: 'var(--bg-card)',
+          sidebar: 'var(--bg-sidebar)',
         },
         // Card colors
         card: {
-          DEFAULT: '#ffffff',
-          dark: '#5b5fc7',
-          darker: '#4338ca',
-          foreground: '#1e1b4b',
+          DEFAULT: 'var(--bg-card)',
+          foreground: 'var(--text-primary)',
         },
         // Text colors
         foreground: {
-          DEFAULT: '#1e1b4b',
-          muted: '#6b7280',
-          light: '#9ca3af',
+          DEFAULT: 'var(--text-primary)',
+          secondary: 'var(--text-secondary)',
+          muted: 'var(--text-muted)',
         },
         // Status colors
         success: {
           50: '#f0fdf4',
           100: '#dcfce7',
-          500: '#22c55e',
-          600: '#16a34a',
-          DEFAULT: '#22c55e',
+          500: '#10b981',
+          600: '#059669',
+          DEFAULT: '#10b981',
         },
         warning: {
           50: '#fffbeb',
@@ -90,41 +104,36 @@ const config: Config = {
         },
         // Border colors
         border: {
-          DEFAULT: '#e5e7eb',
-          light: '#f3f4f6',
-          primary: '#c7d2fe',
+          DEFAULT: 'var(--border-light)',
+          primary: 'var(--border-primary)',
         },
-        // Muted backgrounds
+        // Muted
         muted: {
-          DEFAULT: '#f3f4f6',
-          foreground: '#6b7280',
-        },
-        // Accent
-        accent: {
-          DEFAULT: '#f3f4f6',
-          foreground: '#1e1b4b',
-        },
-        // Destructive
-        destructive: {
-          DEFAULT: '#ef4444',
-          foreground: '#ffffff',
+          DEFAULT: 'var(--bg-secondary)',
+          foreground: 'var(--text-muted)',
         },
         // Popover
         popover: {
-          DEFAULT: '#ffffff',
-          foreground: '#1e1b4b',
+          DEFAULT: 'var(--bg-card)',
+          foreground: 'var(--text-primary)',
         },
         // Input
-        input: '#e5e7eb',
+        input: 'var(--border-light)',
         // Ring
-        ring: '#6366f1',
+        ring: 'var(--primary)',
         // Chart colors
         chart: {
-          '1': '#6366f1',
-          '2': '#8b5cf6',
-          '3': '#a78bfa',
-          '4': '#c4b5fd',
-          '5': '#ddd6fe',
+          '1': 'var(--chart-1)',
+          '2': 'var(--chart-2)',
+          '3': 'var(--chart-3)',
+          '4': 'var(--chart-4)',
+          '5': 'var(--chart-5)',
+        },
+        // Dark mode specific
+        dark: {
+          bg: '#0a1628',
+          card: '#162033',
+          border: '#1e3a5f',
         },
       },
       borderRadius: {
@@ -136,22 +145,24 @@ const config: Config = {
         '3xl': '2rem',
       },
       boxShadow: {
-        'soft': '0 4px 20px rgba(99, 102, 241, 0.1)',
-        'soft-lg': '0 8px 30px rgba(99, 102, 241, 0.15)',
-        'soft-xl': '0 12px 40px rgba(99, 102, 241, 0.2)',
-        'primary': '0 4px 15px rgba(99, 102, 241, 0.4)',
-        'primary-lg': '0 8px 25px rgba(99, 102, 241, 0.5)',
-        'card': '0 4px 20px rgba(99, 102, 241, 0.1)',
-        'card-hover': '0 8px 30px rgba(99, 102, 241, 0.2)',
+        'soft': 'var(--shadow-card)',
+        'soft-lg': '0 8px 30px rgba(59, 130, 246, 0.15)',
+        'soft-xl': '0 12px 40px rgba(59, 130, 246, 0.2)',
+        'primary': '0 4px 15px rgba(59, 130, 246, 0.4)',
+        'primary-lg': '0 8px 25px rgba(59, 130, 246, 0.5)',
+        'card': 'var(--shadow-card)',
+        'card-hover': '0 8px 30px rgba(59, 130, 246, 0.2)',
+        'glow': '0 0 20px rgba(59, 130, 246, 0.3)',
+        'glow-cyan': '0 0 20px rgba(34, 211, 238, 0.3)',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'gradient-primary': 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-        'gradient-secondary': 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-        'gradient-card': 'linear-gradient(135deg, #5b5fc7 0%, #4338ca 100%)',
-        'gradient-dark': 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
-        'gradient-bg': 'linear-gradient(135deg, #e8e6f3 0%, #ddd9ed 50%, #e8e6f3 100%)',
+        'gradient-primary': 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
+        'gradient-secondary': 'linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%)',
+        'gradient-accent': 'linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)',
+        'gradient-dark': 'linear-gradient(180deg, #0a1628 0%, #111d32 100%)',
+        'gradient-card-dark': 'linear-gradient(135deg, #162033 0%, #111d32 100%)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -181,6 +192,10 @@ const config: Config = {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.7' },
         },
+        'glow': {
+          '0%, 100%': { boxShadow: '0 0 5px var(--primary)' },
+          '50%': { boxShadow: '0 0 20px var(--primary), 0 0 30px var(--primary)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -189,6 +204,7 @@ const config: Config = {
         'slide-in': 'slide-in 0.3s ease-out',
         'scale-in': 'scale-in 0.2s ease-out',
         'pulse-soft': 'pulse-soft 2s ease-in-out infinite',
+        'glow': 'glow 2s ease-in-out infinite',
       },
     },
   },

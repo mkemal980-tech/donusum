@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useTheme } from "next-themes";
 
 interface DataPoint {
   name: string;
@@ -17,6 +18,21 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  // Theme-aware colors
+  const colors = {
+    primary: isDark ? '#22d3ee' : '#3b82f6',
+    primaryLight: isDark ? 'rgba(34, 211, 238, 0.2)' : 'rgba(59, 130, 246, 0.15)',
+    secondary: isDark ? '#818cf8' : '#06b6d4',
+    secondaryLight: isDark ? 'rgba(129, 140, 248, 0.3)' : 'rgba(6, 182, 212, 0.3)',
+    accent: isDark ? '#f472b6' : '#ec4899',
+    accentLight: isDark ? 'rgba(244, 114, 182, 0.3)' : 'rgba(236, 72, 153, 0.3)',
+    grid: isDark ? 'rgba(34, 211, 238, 0.15)' : 'rgba(59, 130, 246, 0.2)',
+    text: isDark ? '#e2e8f0' : '#374151',
+    textMuted: isDark ? '#94a3b8' : '#9ca3af',
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -59,13 +75,13 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       ctx.beginPath();
       ctx.moveTo(padding.left, y);
       ctx.lineTo(width - padding.right, y);
-      ctx.strokeStyle = "rgba(99, 102, 241, 0.15)";
+      ctx.strokeStyle = colors.grid;
       ctx.lineWidth = 1;
       ctx.stroke();
       
       // Y ekseni etiketleri
       ctx.font = "11px Inter, system-ui, sans-serif";
-      ctx.fillStyle = "#9ca3af";
+      ctx.fillStyle = colors.textMuted;
       ctx.textAlign = "right";
       ctx.fillText(i.toString(), padding.left - 8, y + 4);
     }
@@ -79,11 +95,11 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       const targetX = groupX - barWidth - gap / 2;
       const targetY = padding.top + chartHeight - targetHeight;
       
-      ctx.fillStyle = "rgba(99, 102, 241, 0.3)";
+      ctx.fillStyle = colors.primaryLight;
       ctx.beginPath();
       ctx.roundRect(targetX, targetY, barWidth, targetHeight, 4);
       ctx.fill();
-      ctx.strokeStyle = "rgba(99, 102, 241, 0.6)";
+      ctx.strokeStyle = colors.primary;
       ctx.lineWidth = 2;
       ctx.stroke();
       
@@ -92,25 +108,25 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       const scoreX = groupX + gap / 2;
       const scoreY = padding.top + chartHeight - scoreHeight;
       
-      ctx.fillStyle = "rgba(236, 72, 153, 0.5)";
+      ctx.fillStyle = colors.accentLight;
       ctx.beginPath();
       ctx.roundRect(scoreX, scoreY, barWidth, scoreHeight, 4);
       ctx.fill();
-      ctx.strokeStyle = "rgba(236, 72, 153, 0.9)";
+      ctx.strokeStyle = colors.accent;
       ctx.lineWidth = 2;
       ctx.stroke();
       
       // Skorları bar üzerine yaz
       ctx.font = "bold 11px Inter, system-ui, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(99, 102, 241, 0.9)";
+      ctx.fillStyle = colors.primary;
       ctx.fillText(item.target.toFixed(1), targetX + barWidth / 2, targetY - 6);
-      ctx.fillStyle = "rgba(236, 72, 153, 1)";
+      ctx.fillStyle = colors.accent;
       ctx.fillText(item.score.toFixed(1), scoreX + barWidth / 2, scoreY - 6);
       
       // X ekseni etiketleri
       ctx.font = "12px Inter, system-ui, sans-serif";
-      ctx.fillStyle = "#374151";
+      ctx.fillStyle = colors.text;
       ctx.textAlign = "center";
       
       // Uzun isimleri kısalt
@@ -121,7 +137,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       }
       ctx.fillText(label, groupX, padding.top + chartHeight + 25);
     });
-  }, [data]);
+  }, [data, colors]);
 
   const drawChart = useCallback(() => {
     if (!canvasRef.current || !containerRef.current || data.length < 3) return;
@@ -170,7 +186,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
-      ctx.strokeStyle = "rgba(99, 102, 241, 0.2)";
+      ctx.strokeStyle = colors.grid;
       ctx.lineWidth = 1;
       ctx.stroke();
     }
@@ -183,7 +199,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       ctx.beginPath();
       ctx.moveTo(centerX, centerY);
       ctx.lineTo(x, y);
-      ctx.strokeStyle = "rgba(99, 102, 241, 0.25)";
+      ctx.strokeStyle = colors.grid;
       ctx.lineWidth = 1;
       ctx.stroke();
     }
@@ -219,16 +235,16 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
     // Draw target polygon (outer, lighter) - represents benchmark/goal
     drawPolygon(
       data.map((d) => d.target),
-      "rgba(99, 102, 241, 0.12)",
-      "rgba(99, 102, 241, 0.5)",
+      colors.primaryLight,
+      colors.primary,
       2
     );
 
     // Draw current score polygon (inner, darker) - represents actual performance
     drawPolygon(
       data.map((d) => d.score),
-      "rgba(236, 72, 153, 0.3)",
-      "rgba(236, 72, 153, 0.9)",
+      colors.accentLight,
+      colors.accent,
       2.5
     );
 
@@ -243,9 +259,9 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       // Draw point with shadow
       ctx.beginPath();
       ctx.arc(x, y, 5, 0, Math.PI * 2);
-      ctx.fillStyle = "#ec4899";
+      ctx.fillStyle = colors.accent;
       ctx.fill();
-      ctx.strokeStyle = "#fff";
+      ctx.strokeStyle = isDark ? "#162033" : "#fff";
       ctx.lineWidth = 2;
       ctx.stroke();
     }
@@ -302,7 +318,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
 
       // Draw label text
       ctx.font = "12px Inter, system-ui, -apple-system, sans-serif";
-      ctx.fillStyle = "#374151";
+      ctx.fillStyle = colors.text;
       
       const lineHeight = 14;
       const totalHeight = lines.length * lineHeight;
@@ -312,7 +328,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
         ctx.fillText(line, x, startY + idx * lineHeight);
       });
     }
-  }, [data]);
+  }, [data, colors, isDark]);
 
   // Doğru çizim fonksiyonunu seç: 3+ için radar, 1-2 için bar chart
   const draw = useCallback(() => {
@@ -335,7 +351,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
     
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [data, mounted, draw]);
+  }, [data, mounted, draw, theme]);
 
   // Re-draw after a short delay to ensure container is sized
   useEffect(() => {
@@ -347,10 +363,10 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
 
   if (!mounted) {
     return (
-      <div className="bg-white rounded-2xl shadow-soft p-6 h-full border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
+      <div className="bg-white dark:bg-dark-card rounded-2xl shadow-soft dark:shadow-glow-cyan/10 p-6 h-full border border-gray-100 dark:border-dark-border transition-colors duration-300">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{title}</h3>
         <div className="h-[300px] flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
+          <div className="spinner" />
         </div>
       </div>
     );
@@ -359,9 +375,9 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
   // Show message if no data
   if (data.length < 1) {
     return (
-      <div className="bg-white rounded-2xl shadow-soft p-6 h-full border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
-        <div className="h-[300px] flex items-center justify-center text-gray-500">
+      <div className="bg-white dark:bg-dark-card rounded-2xl shadow-soft dark:shadow-glow-cyan/10 p-6 h-full border border-gray-100 dark:border-dark-border transition-colors duration-300">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{title}</h3>
+        <div className="h-[300px] flex items-center justify-center text-gray-500 dark:text-gray-400">
           <p>GAP analizi için veri bulunamadı.</p>
         </div>
       </div>
@@ -372,11 +388,11 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
   const isBarChart = data.length < 3;
 
   return (
-    <div className="bg-white rounded-2xl shadow-soft p-6 h-full border border-gray-100">
+    <div className="bg-white dark:bg-dark-card rounded-2xl shadow-soft dark:shadow-glow-cyan/10 p-6 h-full border border-gray-100 dark:border-dark-border transition-colors duration-300">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{title}</h3>
         {isBarChart && (
-          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
+          <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-dark-border px-2 py-1 rounded">
             3+ alt kategori ile örümcek grafik
           </span>
         )}
@@ -385,12 +401,18 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       {/* Legend */}
       <div className="flex items-center justify-center gap-8 mb-4">
         <div className="flex items-center gap-2">
-          <div className={`w-4 h-4 ${isBarChart ? 'rounded' : 'rounded-full'}`} style={{ backgroundColor: "rgba(236, 72, 153, 0.7)" }} />
-          <span className="text-sm text-gray-600 font-medium">Mevcut Durum</span>
+          <div 
+            className={`w-4 h-4 ${isBarChart ? 'rounded' : 'rounded-full'}`} 
+            style={{ backgroundColor: colors.accent }} 
+          />
+          <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">Mevcut Durum</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className={`w-4 h-4 ${isBarChart ? 'rounded' : 'rounded-full'}`} style={{ backgroundColor: "rgba(99, 102, 241, 0.5)" }} />
-          <span className="text-sm text-gray-600 font-medium">Hedef</span>
+          <div 
+            className={`w-4 h-4 ${isBarChart ? 'rounded' : 'rounded-full'}`} 
+            style={{ backgroundColor: colors.primary }} 
+          />
+          <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">Hedef</span>
         </div>
       </div>
       
