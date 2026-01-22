@@ -39,7 +39,9 @@ export default function IronmanBenchmarksPage() {
     velocityBest: 4.5,
     enduranceAverage: 2.5,
     enduranceBest: 4.5,
+    applyToAllSubSectors: false,
   });
+  const [saving, setSaving] = useState(false);
 
   const fetchSectors = async () => {
     try {
@@ -78,6 +80,7 @@ export default function IronmanBenchmarksPage() {
         velocityBest: benchmark.velocityBest,
         enduranceAverage: benchmark.enduranceAverage,
         enduranceBest: benchmark.enduranceBest,
+        applyToAllSubSectors: false,
       });
     } else {
       setEditItem(null);
@@ -88,16 +91,23 @@ export default function IronmanBenchmarksPage() {
         velocityBest: 4.5,
         enduranceAverage: 2.5,
         enduranceBest: 4.5,
+        applyToAllSubSectors: false,
       });
     }
     setShowModal(true);
   };
 
   const handleSave = async () => {
+    setSaving(true);
     try {
       const payload = {
-        ...formData,
-        subSectorId: formData.subSectorId || null,
+        sectorId: formData.sectorId,
+        subSectorId: formData.applyToAllSubSectors ? null : (formData.subSectorId || null),
+        velocityAverage: formData.velocityAverage,
+        velocityBest: formData.velocityBest,
+        enduranceAverage: formData.enduranceAverage,
+        enduranceBest: formData.enduranceBest,
+        applyToAllSubSectors: formData.applyToAllSubSectors,
         id: editItem?.id,
       };
 
@@ -108,6 +118,10 @@ export default function IronmanBenchmarksPage() {
       });
 
       if (res.ok) {
+        const result = await res.json();
+        if (result.createdCount) {
+          alert(`✅ ${result.createdCount} alt sektör için benchmark oluşturuldu!`);
+        }
         fetchBenchmarks();
         setShowModal(false);
       } else {
@@ -116,6 +130,8 @@ export default function IronmanBenchmarksPage() {
       }
     } catch (error) {
       console.error('Error saving:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -301,22 +317,49 @@ export default function IronmanBenchmarksPage() {
                 </select>
               </div>
 
+              {/* Tüm Alt Sektörlere Uygula Checkbox */}
+              {formData.sectorId && selectedSector?.subSectors && selectedSector.subSectors.length > 0 && !editItem && (
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.applyToAllSubSectors}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        applyToAllSubSectors: e.target.checked,
+                        subSectorId: e.target.checked ? '' : formData.subSectorId
+                      })}
+                      className="w-5 h-5 mt-0.5 text-amber-600 border-amber-300 rounded focus:ring-amber-500"
+                    />
+                    <div>
+                      <span className="font-semibold text-amber-800">Tüm alt sektörlere ayrı ayrı uygula</span>
+                      <p className="text-xs text-amber-600 mt-1">
+                        İşaretlerseniz, seçilen sektörün tüm alt sektörlerine ({selectedSector.subSectors.length} adet) 
+                        aynı benchmark değerleri ile ayrı kayıtlar oluşturulur.
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
+
               {/* Alt Sektör Seçimi */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Alt Sektör (Opsiyonel)</label>
-                <select
-                  value={formData.subSectorId}
-                  onChange={(e) => setFormData({ ...formData, subSectorId: e.target.value })}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
-                  disabled={!!editItem || !formData.sectorId}
-                >
-                  <option value="">Tüm alt sektörler için</option>
-                  {selectedSector?.subSectors?.map((sub) => (
-                    <option key={sub.id} value={sub.id}>{sub.name}</option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">Boş bırakırsanız tüm alt sektörler için geçerli olur</p>
-              </div>
+              {!formData.applyToAllSubSectors && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Alt Sektör (Opsiyonel)</label>
+                  <select
+                    value={formData.subSectorId}
+                    onChange={(e) => setFormData({ ...formData, subSectorId: e.target.value })}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                    disabled={!!editItem || !formData.sectorId}
+                  >
+                    <option value="">Tüm alt sektörler için (genel)</option>
+                    {selectedSector?.subSectors?.map((sub) => (
+                      <option key={sub.id} value={sub.id}>{sub.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">Boş bırakırsanız sektör geneli için tek kayıt oluşturulur</p>
+                </div>
+              )}
 
               {/* Velocity Değerleri */}
               <div className="p-4 bg-blue-50 rounded-lg">
@@ -390,11 +433,20 @@ export default function IronmanBenchmarksPage() {
               </button>
               <button
                 onClick={handleSave}
-                disabled={!formData.sectorId}
+                disabled={!formData.sectorId || saving}
                 className="px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
-                <Save size={18} />
-                {editItem ? 'Güncelle' : 'Kaydet'}
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Kaydediliyor...
+                  </>
+                ) : (
+                  <>
+                    <Save size={18} />
+                    {editItem ? 'Güncelle' : formData.applyToAllSubSectors ? `${selectedSector?.subSectors?.length || 0} Alt Sektöre Kaydet` : 'Kaydet'}
+                  </>
+                )}
               </button>
             </div>
           </div>

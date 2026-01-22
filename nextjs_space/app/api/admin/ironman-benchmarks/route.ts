@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
-    const { sectorId, subSectorId, velocityAverage, velocityBest, enduranceAverage, enduranceBest } = data;
+    const { sectorId, subSectorId, velocityAverage, velocityBest, enduranceAverage, enduranceBest, applyToAllSubSectors } = data;
 
     if (!sectorId) {
       return NextResponse.json({ error: 'Sektör seçimi zorunludur' }, { status: 400 });
@@ -48,6 +48,48 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Tüm alt sektörlere uygula
+    if (applyToAllSubSectors) {
+      const subSectors = await prisma.subSector.findMany({
+        where: { sectorId },
+        select: { id: true },
+      });
+
+      if (subSectors.length === 0) {
+        return NextResponse.json({ error: 'Bu sektörde alt sektör bulunamadı' }, { status: 400 });
+      }
+
+      let createdCount = 0;
+      for (const sub of subSectors) {
+        await prisma.ironmanBenchmark.upsert({
+          where: {
+            sectorId_subSectorId: {
+              sectorId,
+              subSectorId: sub.id,
+            },
+          },
+          update: {
+            velocityAverage,
+            velocityBest,
+            enduranceAverage,
+            enduranceBest,
+          },
+          create: {
+            sectorId,
+            subSectorId: sub.id,
+            velocityAverage,
+            velocityBest,
+            enduranceAverage,
+            enduranceBest,
+          },
+        });
+        createdCount++;
+      }
+
+      return NextResponse.json({ success: true, createdCount });
+    }
+
+    // Tek benchmark oluştur
     const benchmark = await prisma.ironmanBenchmark.upsert({
       where: {
         sectorId_subSectorId: {
