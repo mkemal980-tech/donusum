@@ -23,7 +23,23 @@ function percentageToScore(percentage: number): number {
   return (percentage / 100) * 4 + 1;
 }
 
-export async function calculateUserScore(userId: string) {
+export async function calculateUserScore(userId: string, surveyId?: string) {
+  // Önce tüm kategorileri getir (ankete göre filtrelenebilir)
+  const allCategories = await prisma.category.findMany({
+    where: surveyId ? { surveyId } : undefined,
+    include: {
+      subCategories: {
+        include: {
+          subLevels: {
+            include: { questions: true }
+          },
+          questions: true
+        }
+      }
+    },
+    orderBy: { order: 'asc' }
+  });
+
   const responses = await prisma.surveyResponse.findMany({
     where: { userId },
     include: {
@@ -48,13 +64,67 @@ export async function calculateUserScore(userId: string) {
     }
   });
 
-  if (responses?.length === 0) {
-    return { totalScore: 0, totalScoreOn5: 1, categoryScores: {}, subLevelScores: {}, subCategoryScores: {} };
-  }
-
+  // Kategorileri başlangıç değerleriyle hazırla (tümü %0)
   const categoryScores: Record<string, { score: number; maxScore: number; name: string }> = {};
   const subLevelScores: Record<string, { score: number; maxScore: number; name: string; categoryName: string }> = {};
   const subCategoryScores: Record<string, { score: number; maxScore: number; name: string; categoryName: string }> = {};
+
+  // Tüm kategorileri ve alt yapıları varsayılan değerlerle ekle
+  for (const category of allCategories) {
+    let catMaxScore = 0;
+    
+    for (const subCat of category.subCategories) {
+      let subCatMaxScore = 0;
+      
+      // Alt seviyeler varsa
+      if (subCat.subLevels && subCat.subLevels.length > 0) {
+        for (const subLevel of subCat.subLevels) {
+          const levelMaxScore = subLevel.questions.reduce((sum, q) => sum + (5 * q.weight), 0);
+          subCatMaxScore += levelMaxScore;
+          
+          subLevelScores[subLevel.id] = {
+            score: 0,
+            maxScore: levelMaxScore,
+            name: subLevel.name,
+            categoryName: category.name
+          };
+        }
+      } else {
+        // Doğrudan sorular
+        const questions = (subCat as any).questions || [];
+        subCatMaxScore = questions.reduce((sum: number, q: any) => sum + (5 * q.weight), 0);
+      }
+      
+      catMaxScore += subCatMaxScore;
+      
+      subCategoryScores[subCat.id] = {
+        score: 0,
+        maxScore: subCatMaxScore,
+        name: subCat.name,
+        categoryName: category.name
+      };
+    }
+    
+    categoryScores[category.id] = {
+      score: 0,
+      maxScore: catMaxScore,
+      name: category.name
+    };
+  }
+
+  if (responses?.length === 0) {
+    // Hiç cevap yoksa tüm kategorileri %0 olarak döndür
+    const normalizedCategoryScores: Record<string, { score: number; scoreOn5: number; percentage: number; name: string }> = {};
+    for (const [catId, data] of Object.entries(categoryScores)) {
+      normalizedCategoryScores[catId] = {
+        score: 0,
+        scoreOn5: 1,
+        percentage: 0,
+        name: data.name
+      };
+    }
+    return { totalScore: 0, totalScoreOn5: 1, categoryScores: normalizedCategoryScores, subLevelScores: {}, subCategoryScores: {} };
+  }
   let totalWeightedScore = 0;
   let totalMaxScore = 0;
 
