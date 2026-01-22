@@ -81,6 +81,14 @@ const getMaturityLevelFromScore = (score: number) => {
   return getMaturityLevelFromPercentage(percentage);
 };
 
+interface CategoryStats {
+  id: string;
+  name: string;
+  answeredQuestions: number;
+  totalQuestions: number;
+  recommendationCount: number;
+}
+
 export default function DashboardClient() {
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
@@ -89,6 +97,7 @@ export default function DashboardClient() {
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>("");
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
   const router = useRouter();
   const dashboardRef = useRef<HTMLDivElement>(null);
 
@@ -121,40 +130,90 @@ export default function DashboardClient() {
       try {
         const surveyParam = selectedSurveyId ? `?surveyId=${selectedSurveyId}` : '';
         
-        const [scoreRes, responsesRes, structureRes] = await Promise.all([
+        const [scoreRes, responsesRes, structureRes, recommendationsRes] = await Promise.all([
           fetch(`/api/survey/score${surveyParam}`),
           fetch(`/api/survey/responses${surveyParam}`),
-          fetch(`/api/survey/structure${surveyParam}`)
+          fetch(`/api/survey/structure${surveyParam}`),
+          fetch(`/api/recommendations${surveyParam}`)
         ]);
+
+        let userResponses: SurveyResponse[] = [];
+        if (responsesRes.ok) {
+          const resp = await responsesRes.json();
+          userResponses = resp ?? [];
+          setResponses(userResponses);
+        }
 
         if (scoreRes.ok) {
           const score = await scoreRes.json();
           setScoreData(score);
         }
 
-        if (responsesRes.ok) {
-          const resp = await responsesRes.json();
-          setResponses(resp ?? []);
+        // Öneri verilerini al
+        let recommendations: any[] = [];
+        if (recommendationsRes.ok) {
+          const recData = await recommendationsRes.json();
+          recommendations = recData ?? [];
         }
 
         if (structureRes.ok) {
           const structure = await structureRes.json();
           let count = 0;
+          const stats: CategoryStats[] = [];
+          
+          // Kullanıcının cevapladığı question ID'leri
+          const answeredQuestionIds = new Set(userResponses.map((r: SurveyResponse) => r.questionId));
+          
           // Düzeltilmiş soru sayısı hesabı - hasSubLevels kontrolü
           (structure ?? []).forEach((cat: any) => {
+            let catTotalQuestions = 0;
+            let catAnsweredQuestions = 0;
+            const catQuestionIds: string[] = [];
+            
             (cat?.subCategories ?? []).forEach((sub: any) => {
               if (sub?.hasSubLevels === false) {
                 // Sorular doğrudan alt kategoride
-                count += (sub?.questions?.length ?? 0);
+                const questions = sub?.questions ?? [];
+                catTotalQuestions += questions.length;
+                questions.forEach((q: any) => {
+                  catQuestionIds.push(q.id);
+                  if (answeredQuestionIds.has(q.id)) {
+                    catAnsweredQuestions++;
+                  }
+                });
+                count += questions.length;
               } else {
                 // Sorular alt seviyelerde
                 (sub?.subLevels ?? []).forEach((level: any) => {
-                  count += (level?.questions?.length ?? 0);
+                  const questions = level?.questions ?? [];
+                  catTotalQuestions += questions.length;
+                  questions.forEach((q: any) => {
+                    catQuestionIds.push(q.id);
+                    if (answeredQuestionIds.has(q.id)) {
+                      catAnsweredQuestions++;
+                    }
+                  });
+                  count += questions.length;
                 });
               }
             });
+            
+            // Kategori için öneri sayısını hesapla
+            const catRecommendationCount = recommendations.filter((rec: any) => 
+              rec.categoryId === cat.id
+            ).length;
+            
+            stats.push({
+              id: cat.id,
+              name: cat.name,
+              answeredQuestions: catAnsweredQuestions,
+              totalQuestions: catTotalQuestions,
+              recommendationCount: catRecommendationCount
+            });
           });
+          
           setTotalQuestions(count);
+          setCategoryStats(stats);
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -467,16 +526,49 @@ export default function DashboardClient() {
             transition={{ delay: 0.3 }}
             className="bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 border border-[var(--border-light)] hover:shadow-xl transition-all duration-300"
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-[var(--accent)]/10 rounded-xl flex items-center justify-center">
                 <CheckCircle className="text-[var(--accent)]" size={24} />
               </div>
               <div>
                 <p className="text-sm text-[var(--text-secondary)]">Değerlendirilen Kategoriler</p>
                 <p className="text-2xl font-bold text-[var(--text-primary)]">
-                  {Object.keys(scoreData?.categoryScores ?? {})?.length ?? 0}
+                  {categoryStats.length}
                 </p>
               </div>
+            </div>
+            
+            {/* Kategori Detayları */}
+            <div className="space-y-3 mt-4 pt-4 border-t border-[var(--border-light)]">
+              {categoryStats.map((cat, index) => (
+                <div key={cat.id} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-2 h-2 rounded-full" 
+                      style={{ backgroundColor: categoryColors[index % categoryColors.length] }}
+                    />
+                    <span className="text-[var(--text-primary)] font-medium truncate max-w-[100px]" title={cat.name}>
+                      {cat.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="text-[var(--text-secondary)]">
+                      <span className="font-semibold text-[var(--primary)]">{cat.answeredQuestions}</span>/{cat.totalQuestions}
+                    </span>
+                    <span className="text-[var(--text-muted)]">|</span>
+                    <span className="flex items-center gap-1">
+                      <Lightbulb size={12} className="text-amber-500" />
+                      <span className="font-semibold text-amber-600 dark:text-amber-400">{cat.recommendationCount}</span>
+                    </span>
+                  </div>
+                </div>
+              ))}
+              
+              {categoryStats.length === 0 && (
+                <p className="text-xs text-[var(--text-muted)] text-center py-2">
+                  Henüz kategori verisi yok
+                </p>
+              )}
             </div>
           </motion.div>
         </div>
