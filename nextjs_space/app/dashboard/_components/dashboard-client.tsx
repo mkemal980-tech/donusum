@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/ui/header";
 import ScoreCard from "@/components/ui/score-card";
 import ProgressBar from "@/components/ui/progress-bar";
+import { MaturityLevelBar } from "@/components/ui/maturity-level-bar";
 import { BenchmarkSection } from "./benchmark-section";
 import { ProgressSection } from "./progress-section";
 import { CategoryDashboard } from "./category-dashboard";
@@ -482,33 +483,49 @@ export default function DashboardClient() {
 
         {/* Main Score Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Genel Olgunluk Puanı + Seviyelendirme */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-8 flex flex-col items-center justify-center border border-[var(--border-light)]"
+            className="lg:col-span-2 bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-8 border border-[var(--border-light)]"
           >
-            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Genel Olgunluk Puanı</h3>
-            <ScoreCard 
-              score={scoreData?.totalScore ?? 0} 
-              label={getMaturityLevelFromPercentage(scoreData?.totalScore ?? 0).label} 
-              color={getMaturityLevelFromPercentage(scoreData?.totalScore ?? 0).color} 
-              size="large" 
-            />
+            <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 h-full">
+              {/* Score Card */}
+              <div className="flex flex-col items-center">
+                <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Genel Olgunluk Puanı</h3>
+                <ScoreCard 
+                  score={scoreData?.totalScore ?? 0} 
+                  label={getMaturityLevelFromPercentage(scoreData?.totalScore ?? 0).label} 
+                  color={getMaturityLevelFromPercentage(scoreData?.totalScore ?? 0).color} 
+                  size="large" 
+                />
+              </div>
+              
+              {/* Divider */}
+              <div className="hidden md:block w-px h-64 bg-[var(--border-light)]" />
+              <div className="md:hidden w-48 h-px bg-[var(--border-light)]" />
+              
+              {/* Maturity Level Bar */}
+              <MaturityLevelBar 
+                score={scoreData?.totalScore ?? 0} 
+                isPercentage={true} 
+              />
+            </div>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5 }}
-            className="lg:col-span-2 bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 border border-[var(--border-light)]"
+            className="lg:col-span-1 bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 border border-[var(--border-light)]"
           >
             <div className="flex items-center gap-2 mb-6">
               <BarChart3 className="text-[var(--secondary)]" size={20} />
-              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Kategorilere Göre Puan Dağılımı</h3>
+              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Kategori Puanları</h3>
             </div>
             
-            <div className="space-y-5">
+            <div className="space-y-4">
               {Object.entries(scoreData?.categoryScores ?? {})?.map(([id, data], index) => (
                 <ProgressBar
                   key={id}
