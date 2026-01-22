@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DollarSign, ChevronDown, ChevronUp, Clock, Target, TrendingUp } from "lucide-react";
+import { useTheme } from "next-themes";
 
 interface Recommendation {
   id: string;
@@ -41,7 +42,7 @@ const DollarIndicator = ({ level, size = 12 }: { level: number; size?: number })
       <DollarSign 
         key={i} 
         size={size} 
-        className={i < level ? 'text-green-600' : 'text-gray-300'} 
+        className={i < level ? 'text-green-600 dark:text-green-400' : 'text-gray-300 dark:text-gray-600'} 
       />
     ))}
   </div>
@@ -53,9 +54,17 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Sort recommendations by order
   const sortedRecs = [...recommendations].sort((a, b) => a.order - b.order);
+
+  const isDark = mounted && theme === 'dark';
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -80,12 +89,19 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
     const chartWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
 
+    // Theme-aware colors
+    const bgColor = isDark ? '#0f172a' : '#f8fafc';
+    const gridColor = isDark ? '#1e293b' : '#e2e8f0';
+    const axisColor = isDark ? '#94a3b8' : '#64748b';
+    const labelColor = isDark ? '#94a3b8' : '#64748b';
+    const titleColor = isDark ? '#cbd5e1' : '#475569';
+
     // Clear canvas
-    ctx.fillStyle = '#f8fafc';
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, width, height);
 
     // Draw grid
-    ctx.strokeStyle = '#e2e8f0';
+    ctx.strokeStyle = gridColor;
     ctx.lineWidth = 1;
     for (let i = 0; i <= 10; i++) {
       const x = padding.left + (i / 10) * chartWidth;
@@ -105,7 +121,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
     }
 
     // Draw axes
-    ctx.strokeStyle = '#64748b';
+    ctx.strokeStyle = axisColor;
     ctx.lineWidth = 2;
     
     // X axis
@@ -121,7 +137,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
     ctx.stroke();
 
     // Axis labels
-    ctx.fillStyle = '#64748b';
+    ctx.fillStyle = labelColor;
     ctx.font = '11px system-ui';
     ctx.textAlign = 'center';
     
@@ -139,7 +155,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
     }
 
     // Axis titles
-    ctx.fillStyle = '#475569';
+    ctx.fillStyle = titleColor;
     ctx.font = '12px system-ui';
     ctx.textAlign = 'center';
     
@@ -181,7 +197,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
       ctx.fillText((index + 1).toString(), x, y);
     });
 
-  }, [recommendations, selectedId, hoveredId, sortedRecs]);
+  }, [recommendations, selectedId, hoveredId, sortedRecs, isDark]);
 
   // Handle canvas click
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -252,15 +268,15 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6">
-      <h3 className="text-lg font-bold text-gray-800 mb-4">{title}</h3>
+    <div className="bg-[var(--bg-card)] rounded-xl shadow-lg border border-[var(--border-light)] p-6">
+      <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4">{title}</h3>
       
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Chart */}
         <div className="flex-1">
           <div 
             ref={containerRef} 
-            className="relative w-full bg-slate-50 rounded-lg border"
+            className="relative w-full bg-[var(--bg-main)] rounded-lg border border-[var(--border-light)]"
             style={{ height: '400px' }}
           >
             <canvas
@@ -280,17 +296,17 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
                   className="w-4 h-4 rounded-full" 
                   style={{ backgroundColor: value.bg, border: `2px solid ${value.border}` }}
                 />
-                <span className="text-sm text-gray-600">{value.label}</span>
+                <span className="text-sm text-[var(--text-secondary)]">{value.label}</span>
               </div>
             ))}
             <div className="flex items-center gap-2 ml-4">
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-gray-300" />
-                <span className="text-xs text-gray-500">Küçük Etki</span>
+                <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600" />
+                <span className="text-xs text-[var(--text-muted)]">Küçük Etki</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-5 h-5 rounded-full bg-gray-300" />
-                <span className="text-xs text-gray-500">Büyük Etki</span>
+                <div className="w-5 h-5 rounded-full bg-gray-300 dark:bg-gray-600" />
+                <span className="text-xs text-[var(--text-muted)]">Büyük Etki</span>
               </div>
             </div>
           </div>
@@ -298,7 +314,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
 
         {/* Recommendations List */}
         <div className="w-full lg:w-80 max-h-[500px] overflow-y-auto">
-          <div className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <div className="text-sm font-semibold text-[var(--text-secondary)] mb-3 flex items-center gap-2">
             <span>#</span>
             <span className="flex-1">Öneriler</span>
             <span className="w-16 text-center">CAPEX</span>
@@ -316,8 +332,8 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
                   key={rec.id}
                   initial={false}
                   animate={{ 
-                    backgroundColor: isSelected ? '#f0f9ff' : '#ffffff',
-                    borderColor: isSelected ? colors.border : '#e5e7eb'
+                    backgroundColor: isSelected ? (isDark ? '#1e293b' : '#f0f9ff') : (isDark ? '#0f172a' : '#ffffff'),
+                    borderColor: isSelected ? colors.border : (isDark ? '#334155' : '#e5e7eb')
                   }}
                   className="border rounded-lg overflow-hidden"
                 >
@@ -328,7 +344,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
                     }}
                     onMouseEnter={() => setHoveredId(rec.id)}
                     onMouseLeave={() => setHoveredId(null)}
-                    className="w-full p-3 flex items-center gap-2 text-left hover:bg-gray-50 transition-colors"
+                    className="w-full p-3 flex items-center gap-2 text-left hover:bg-[var(--bg-hover)] transition-colors"
                   >
                     <span 
                       className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
@@ -336,7 +352,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
                     >
                       {index + 1}
                     </span>
-                    <span className="flex-1 text-sm font-medium text-gray-800 truncate">
+                    <span className="flex-1 text-sm font-medium text-[var(--text-primary)] truncate">
                       {rec.title}
                     </span>
                     <span className="w-16">
@@ -346,9 +362,9 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
                       <DollarIndicator level={rec.opexLevel} size={10} />
                     </span>
                     {isExpanded ? (
-                      <ChevronUp size={16} className="text-gray-400" />
+                      <ChevronUp size={16} className="text-[var(--text-muted)]" />
                     ) : (
-                      <ChevronDown size={16} className="text-gray-400" />
+                      <ChevronDown size={16} className="text-[var(--text-muted)]" />
                     )}
                   </button>
                   
@@ -359,10 +375,10 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="border-t bg-gray-50"
+                        className="border-t border-[var(--border-light)] bg-[var(--bg-hover)]"
                       >
                         <div className="p-3 space-y-3">
-                          <p className="text-sm text-gray-600">{rec.description}</p>
+                          <p className="text-sm text-[var(--text-secondary)]">{rec.description}</p>
                           
                           <div className="flex flex-wrap gap-2">
                             <span 
@@ -371,17 +387,17 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
                             >
                               {colors.label}
                             </span>
-                            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium flex items-center gap-1">
+                            <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 rounded text-xs font-medium flex items-center gap-1">
                               <Clock size={12} />
                               {timeframeLabels[rec.timeframe]}
                             </span>
-                            <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium flex items-center gap-1">
+                            <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded text-xs font-medium flex items-center gap-1">
                               <TrendingUp size={12} />
                               Etki: {rec.estimatedImpact}
                             </span>
                           </div>
                           
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <div className="flex items-center gap-4 text-xs text-[var(--text-muted)]">
                             <span className="flex items-center gap-1">
                               <Target size={12} />
                               Konum: ({rec.xPosition}, {rec.yPosition})

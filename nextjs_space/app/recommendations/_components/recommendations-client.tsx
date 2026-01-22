@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
 import Header from "@/components/ui/header";
 import RecommendationCard from "@/components/ui/recommendation-card";
 import { BubbleChart } from "@/components/ui/bubble-chart";
@@ -17,7 +18,9 @@ import {
   CheckCircle2,
   Play,
   Circle,
-  BarChart3
+  BarChart3,
+  Sun,
+  Moon
 } from "lucide-react";
 
 type CompletionStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
@@ -47,6 +50,8 @@ interface CompletionRecord {
 }
 
 export default function RecommendationsClient() {
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [completions, setCompletions] = useState<Record<string, CompletionStatus>>({});
   const [loading, setLoading] = useState(true);
@@ -58,6 +63,10 @@ export default function RecommendationsClient() {
     costType: "all",
     strategicType: "all"
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fetchRecommendations = async () => {
     try {
@@ -180,17 +189,17 @@ export default function RecommendationsClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[var(--bg-main)]">
         <Header />
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-          <div className="w-12 h-12 border-4 border-[#6366f1] border-t-transparent rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--bg-main)]">
       <Header />
       
       <main className="max-w-[1400px] mx-auto px-6 py-8">
@@ -200,37 +209,54 @@ export default function RecommendationsClient() {
           className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
         >
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-              <Lightbulb className="text-[#a78bfa]" />
+            <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2 flex items-center gap-3">
+              <Lightbulb className="text-[var(--accent)]" />
               Öneriler
             </h1>
-            <p className="text-gray-600">Değerlendirme sonuçlarınıza göre hazırlanan iyileştirme önerileri</p>
+            <p className="text-[var(--text-secondary)]">Değerlendirme sonuçlarınıza göre hazırlanan iyileştirme önerileri</p>
           </div>
           
-          {/* View Mode Toggle */}
-          <div className="flex bg-white rounded-lg shadow-sm border p-1">
-            <button
-              onClick={() => setViewMode('bubble')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
-                viewMode === 'bubble' 
-                  ? 'bg-[#6366f1] text-white' 
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <ScatterChart size={18} />
-              <span className="hidden sm:inline">Bubble Chart</span>
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
-                viewMode === 'list' 
-                  ? 'bg-[#6366f1] text-white' 
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <LayoutGrid size={18} />
-              <span className="hidden sm:inline">Liste</span>
-            </button>
+          <div className="flex items-center gap-3">
+            {/* Theme Toggle */}
+            {mounted && (
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-light)] hover:bg-[var(--bg-hover)] transition-colors"
+                title={theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}
+              >
+                {theme === 'dark' ? (
+                  <Sun size={20} className="text-yellow-400" />
+                ) : (
+                  <Moon size={20} className="text-[var(--text-secondary)]" />
+                )}
+              </button>
+            )}
+            
+            {/* View Mode Toggle */}
+            <div className="flex bg-[var(--bg-card)] rounded-lg shadow-sm border border-[var(--border-light)] p-1">
+              <button
+                onClick={() => setViewMode('bubble')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
+                  viewMode === 'bubble' 
+                    ? 'bg-[var(--primary)] text-white' 
+                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                }`}
+              >
+                <ScatterChart size={18} />
+                <span className="hidden sm:inline">Bubble Chart</span>
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
+                  viewMode === 'list' 
+                    ? 'bg-[var(--primary)] text-white' 
+                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                }`}
+              >
+                <LayoutGrid size={18} />
+                <span className="hidden sm:inline">Liste</span>
+              </button>
+            </div>
           </div>
         </motion.div>
 
@@ -243,68 +269,68 @@ export default function RecommendationsClient() {
         >
           <div 
             onClick={() => setStatusFilter('all')}
-            className={`bg-white rounded-xl p-4 shadow-sm border cursor-pointer transition-all hover:shadow-md ${
-              statusFilter === 'all' ? 'ring-2 ring-[#6366f1] border-[#6366f1]' : ''
+            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-light)] cursor-pointer transition-all hover:shadow-md ${
+              statusFilter === 'all' ? 'ring-2 ring-[var(--primary)] border-[var(--primary)]' : ''
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <BarChart3 size={20} className="text-gray-600" />
+              <div className="p-2 bg-[var(--bg-hover)] rounded-lg">
+                <BarChart3 size={20} className="text-[var(--primary)]" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-                <p className="text-sm text-gray-500">Toplam Öneri</p>
+                <p className="text-2xl font-bold text-[var(--text-primary)]">{stats.total}</p>
+                <p className="text-sm text-[var(--text-muted)]">Toplam Öneri</p>
               </div>
             </div>
           </div>
           
           <div 
             onClick={() => setStatusFilter('NOT_STARTED')}
-            className={`bg-white rounded-xl p-4 shadow-sm border cursor-pointer transition-all hover:shadow-md ${
-              statusFilter === 'NOT_STARTED' ? 'ring-2 ring-gray-400 border-gray-400' : ''
+            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-light)] cursor-pointer transition-all hover:shadow-md ${
+              statusFilter === 'NOT_STARTED' ? 'ring-2 ring-gray-400 dark:ring-gray-500' : ''
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <Circle size={20} className="text-gray-500" />
+              <div className="p-2 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
+                <Circle size={20} className="text-gray-500 dark:text-gray-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-600">{stats.notStarted}</p>
-                <p className="text-sm text-gray-500">Başlanmadı</p>
+                <p className="text-2xl font-bold text-gray-600 dark:text-gray-300">{stats.notStarted}</p>
+                <p className="text-sm text-[var(--text-muted)]">Başlanmadı</p>
               </div>
             </div>
           </div>
           
           <div 
             onClick={() => setStatusFilter('IN_PROGRESS')}
-            className={`bg-white rounded-xl p-4 shadow-sm border cursor-pointer transition-all hover:shadow-md ${
-              statusFilter === 'IN_PROGRESS' ? 'ring-2 ring-amber-400 border-amber-400' : ''
+            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-light)] cursor-pointer transition-all hover:shadow-md ${
+              statusFilter === 'IN_PROGRESS' ? 'ring-2 ring-amber-400' : ''
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-100 rounded-lg">
-                <Play size={20} className="text-amber-600" />
+              <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                <Play size={20} className="text-amber-600 dark:text-amber-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-amber-600">{stats.inProgress}</p>
-                <p className="text-sm text-gray-500">Devam Ediyor</p>
+                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.inProgress}</p>
+                <p className="text-sm text-[var(--text-muted)]">Devam Ediyor</p>
               </div>
             </div>
           </div>
           
           <div 
             onClick={() => setStatusFilter('COMPLETED')}
-            className={`bg-white rounded-xl p-4 shadow-sm border cursor-pointer transition-all hover:shadow-md ${
-              statusFilter === 'COMPLETED' ? 'ring-2 ring-green-400 border-green-400' : ''
+            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-light)] cursor-pointer transition-all hover:shadow-md ${
+              statusFilter === 'COMPLETED' ? 'ring-2 ring-green-400' : ''
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircle2 size={20} className="text-green-600" />
+              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <CheckCircle2 size={20} className="text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
-                <p className="text-sm text-gray-500">Tamamlandı</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.completed}</p>
+                <p className="text-sm text-[var(--text-muted)]">Tamamlandı</p>
               </div>
             </div>
           </div>
@@ -315,27 +341,27 @@ export default function RecommendationsClient() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-xl shadow-md p-6 mb-8"
+          className="bg-[var(--bg-card)] rounded-xl shadow-md border border-[var(--border-light)] p-6 mb-8"
         >
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={20} />
               <input
                 type="text"
                 placeholder="Önerilerde ara..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target?.value ?? '')}
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#6366f1] focus:border-transparent outline-none"
+                className="w-full pl-12 pr-4 py-3 bg-[var(--bg-main)] border border-[var(--border-light)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
               />
             </div>
             
             <div className="flex gap-3 flex-wrap">
               <div className="flex items-center gap-2">
-                <Clock size={18} className="text-gray-400" />
+                <Clock size={18} className="text-[var(--text-muted)]" />
                 <select
                   value={filters?.timeframe ?? 'all'}
                   onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), timeframe: e.target?.value ?? 'all' }))}
-                  className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#6366f1] outline-none bg-white"
+                  className="px-4 py-3 bg-[var(--bg-main)] border border-[var(--border-light)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] outline-none text-[var(--text-primary)]"
                 >
                   <option value="all">Tüm Zaman Dilimleri</option>
                   <option value="SHORT_TERM">Kısa Vade</option>
@@ -345,11 +371,11 @@ export default function RecommendationsClient() {
               </div>
 
               <div className="flex items-center gap-2">
-                <DollarSign size={18} className="text-gray-400" />
+                <DollarSign size={18} className="text-[var(--text-muted)]" />
                 <select
                   value={filters?.costType ?? 'all'}
                   onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), costType: e.target?.value ?? 'all' }))}
-                  className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#6366f1] outline-none bg-white"
+                  className="px-4 py-3 bg-[var(--bg-main)] border border-[var(--border-light)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] outline-none text-[var(--text-primary)]"
                 >
                   <option value="all">Tüm Maliyet Tipleri</option>
                   <option value="CAPEX">CAPEX (Yatırım)</option>
@@ -358,11 +384,11 @@ export default function RecommendationsClient() {
               </div>
 
               <div className="flex items-center gap-2">
-                <Zap size={18} className="text-gray-400" />
+                <Zap size={18} className="text-[var(--text-muted)]" />
                 <select
                   value={filters?.strategicType ?? 'all'}
                   onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), strategicType: e.target?.value ?? 'all' }))}
-                  className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#6366f1] outline-none bg-white"
+                  className="px-4 py-3 bg-[var(--bg-main)] border border-[var(--border-light)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] outline-none text-[var(--text-primary)]"
                 >
                   <option value="all">Tüm Tipler</option>
                   <option value="QUICK_WIN">Hızlı Kazanım</option>
@@ -400,7 +426,7 @@ export default function RecommendationsClient() {
                 transition={{ delay: 0.2 }}
                 className="mb-10"
               >
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-green-500" />
                   Hızlı Kazanımlar ({quickWins?.length ?? 0})
                 </h2>
@@ -431,8 +457,8 @@ export default function RecommendationsClient() {
                 transition={{ delay: 0.3 }}
                 className="mb-10"
               >
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#6366f1]" />
+                <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[var(--primary)]" />
                   Projeler ({projects?.length ?? 0})
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -462,8 +488,8 @@ export default function RecommendationsClient() {
                 transition={{ delay: 0.4 }}
                 className="mb-10"
               >
-                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-purple-500" />
+                <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent)]" />
                   Büyük Yatırımlar ({bigBets?.length ?? 0})
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -493,9 +519,9 @@ export default function RecommendationsClient() {
             animate={{ opacity: 1 }}
             className="text-center py-16"
           >
-            <Lightbulb size={64} className="mx-auto text-gray-300 mb-4" />
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">Öneri Bulunamadı</h2>
-            <p className="text-gray-500">
+            <Lightbulb size={64} className="mx-auto text-[var(--text-muted)] mb-4" />
+            <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Öneri Bulunamadı</h2>
+            <p className="text-[var(--text-secondary)]">
               {searchTerm || filters?.timeframe !== "all" || filters?.costType !== "all" || filters?.strategicType !== "all" || statusFilter !== "all"
                 ? "Filtrelerinizi değiştirmeyi deneyin"
                 : "Kişisel öneriler almak için anketi tamamlayın"}

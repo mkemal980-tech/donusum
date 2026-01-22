@@ -30,9 +30,9 @@ const timeframeLabels: Record<string, string> = {
 };
 
 const strategicColors: Record<string, string> = {
-  QUICK_WIN: "bg-green-100 text-green-700",
-  BIG_BET: "bg-purple-100 text-purple-700",
-  PROJECT: "bg-blue-100 text-blue-700"
+  QUICK_WIN: "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400",
+  BIG_BET: "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400",
+  PROJECT: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400"
 };
 
 const strategicLabels: Record<string, string> = {
@@ -44,20 +44,20 @@ const strategicLabels: Record<string, string> = {
 const statusConfig: Record<CompletionStatus, { label: string; color: string; bgColor: string; icon: React.ElementType }> = {
   NOT_STARTED: { 
     label: "Başlanmadı", 
-    color: "text-gray-500", 
-    bgColor: "bg-gray-100",
+    color: "text-gray-500 dark:text-gray-400", 
+    bgColor: "bg-gray-100 dark:bg-gray-700/50",
     icon: Circle 
   },
   IN_PROGRESS: { 
     label: "Devam Ediyor", 
-    color: "text-amber-600", 
-    bgColor: "bg-amber-100",
+    color: "text-amber-600 dark:text-amber-400", 
+    bgColor: "bg-amber-100 dark:bg-amber-900/40",
     icon: Play 
   },
   COMPLETED: { 
     label: "Tamamlandı", 
-    color: "text-green-600", 
-    bgColor: "bg-green-100",
+    color: "text-green-600 dark:text-green-400", 
+    bgColor: "bg-green-100 dark:bg-green-900/40",
     icon: CheckCircle2 
   }
 };
@@ -92,17 +92,17 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
-      className={`bg-white rounded-xl shadow-md p-6 card-hover border-2 transition-colors ${
+      className={`bg-[var(--bg-card)] rounded-xl shadow-md p-6 card-hover border-2 transition-colors ${
         currentStatus === 'COMPLETED' 
-          ? 'border-green-200 bg-green-50/30' 
+          ? 'border-green-300 dark:border-green-700 bg-green-50/30 dark:bg-green-900/20' 
           : currentStatus === 'IN_PROGRESS' 
-            ? 'border-amber-200 bg-amber-50/30' 
-            : 'border-gray-100'
+            ? 'border-amber-300 dark:border-amber-700 bg-amber-50/30 dark:bg-amber-900/20' 
+            : 'border-[var(--border-light)]'
       }`}
     >
       {/* Header with Strategic Type and Status */}
       <div className="flex justify-between items-start mb-3">
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${strategicColors[rec?.strategicType ?? ''] ?? 'bg-gray-100 text-gray-700'}`}>
+        <span className={`px-3 py-1 rounded-full text-xs font-medium ${strategicColors[rec?.strategicType ?? ''] ?? 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300'}`}>
           {strategicLabels[rec?.strategicType ?? ''] ?? rec?.strategicType ?? 'Bilinmiyor'}
         </span>
         
@@ -118,7 +118,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
           </button>
           
           {showStatusMenu && (
-            <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border z-50 min-w-[160px]">
+            <div className="absolute right-0 top-full mt-1 bg-[var(--bg-card)] rounded-lg shadow-lg border border-[var(--border-light)] z-50 min-w-[160px]">
               {(Object.keys(statusConfig) as CompletionStatus[]).map((status) => {
                 const config = statusConfig[status];
                 const Icon = config.icon;
@@ -126,8 +126,8 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
                   <button
                     key={status}
                     onClick={() => handleStatusClick(status)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${
-                      currentStatus === status ? 'bg-gray-50 font-medium' : ''
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-[var(--bg-hover)] transition-colors ${
+                      currentStatus === status ? 'bg-[var(--bg-hover)] font-medium' : ''
                     } ${config.color}`}
                   >
                     <Icon size={16} />
@@ -141,27 +141,27 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
         </div>
       </div>
 
-      <h3 className={`text-lg font-semibold mb-3 ${currentStatus === 'COMPLETED' ? 'text-green-800' : 'text-gray-900'}`}>
+      <h3 className={`text-lg font-semibold mb-3 ${currentStatus === 'COMPLETED' ? 'text-green-700 dark:text-green-400' : 'text-[var(--text-primary)]'}`}>
         {rec?.title ?? 'Başlıksız'}
       </h3>
       
-      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{rec?.description ?? ''}</p>
+      <p className="text-[var(--text-secondary)] text-sm mb-4 line-clamp-2">{rec?.description ?? ''}</p>
       
       <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Clock size={14} className="text-[#a78bfa]" />
+        <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+          <Clock size={14} className="text-[var(--accent)]" />
           <span>{timeframeLabels[rec?.timeframe ?? ''] ?? rec?.timeframe ?? 'Belirsiz'}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <DollarSign size={14} className="text-[#1e3a8a]" />
+        <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+          <DollarSign size={14} className="text-[var(--primary)]" />
           <span>{rec?.costType ?? 'Belirsiz'}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <TrendingUp size={14} className="text-green-500" />
+        <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+          <TrendingUp size={14} className="text-green-500 dark:text-green-400" />
           <span>+{rec?.estimatedImpact ?? 0}% etki</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Target size={14} className="text-orange-500" />
+        <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+          <Target size={14} className="text-orange-500 dark:text-orange-400" />
           <span>Puan artışı</span>
         </div>
       </div>
@@ -185,8 +185,8 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
         disabled={rec?.isInRoadmap}
         className={`w-full py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
           rec?.isInRoadmap
-            ? "bg-green-100 text-green-700 cursor-default"
-            : "bg-[#1e3a8a] text-white hover:bg-[#3b5998]"
+            ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 cursor-default"
+            : "bg-[var(--primary)] text-white hover:opacity-90"
         }`}
       >
         {rec?.isInRoadmap ? (
