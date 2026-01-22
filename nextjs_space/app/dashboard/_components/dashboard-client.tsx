@@ -343,17 +343,17 @@ export default function DashboardClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-[var(--bg-main)]">
         <Header />
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-          <div className="spinner" />
+          <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[var(--bg-main)]">
       <Header />
       
       <main className="max-w-[1200px] mx-auto px-6 py-8" ref={dashboardRef}>
@@ -363,8 +363,8 @@ export default function DashboardClient() {
           className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
         >
           <div>
-            <h1 className="text-3xl font-bold text-primary-900 mb-2">Dönüşüm Panosu</h1>
-            <p className="text-gray-500">Kuruluşunuzun olgunluk değerlendirmesi ilerlemesini ve içgörülerini takip edin</p>
+            <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Dönüşüm Panosu</h1>
+            <p className="text-[var(--text-secondary)]">Kuruluşunuzun olgunluk değerlendirmesi ilerlemesini ve içgörülerini takip edin</p>
           </div>
           
           <div className="flex items-center gap-3">
@@ -374,7 +374,7 @@ export default function DashboardClient() {
                 <select
                   value={selectedSurveyId}
                   onChange={(e) => setSelectedSurveyId(e.target.value)}
-                  className="theme-select"
+                  className="px-4 py-2.5 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
                 >
                   {surveys.map(survey => (
                     <option key={survey.id} value={survey.id}>
@@ -389,11 +389,11 @@ export default function DashboardClient() {
             <button
               onClick={generatePdfReport}
               disabled={generatingPdf}
-              className="flex items-center gap-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white px-5 py-2.5 rounded-xl hover:shadow-primary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              className="flex items-center gap-2 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-dark)] text-white dark:text-[var(--bg-main)] px-5 py-2.5 rounded-xl hover:shadow-lg dark:shadow-[0_4px_20px_rgba(34,211,238,0.3)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               {generatingPdf ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white dark:border-[var(--bg-main)] border-t-transparent rounded-full animate-spin" />
                   <span className="text-sm">Oluşturuluyor...</span>
                 </>
               ) : (
@@ -411,10 +411,10 @@ export default function DashboardClient() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-3 mb-6 flex items-center gap-2"
+            className="bg-[var(--primary)]/10 border border-[var(--primary)]/30 rounded-xl px-4 py-3 mb-6 flex items-center gap-2"
           >
-            <FileText size={18} className="text-primary-600" />
-            <span className="text-sm text-primary-700 font-medium">
+            <FileText size={18} className="text-[var(--primary)]" />
+            <span className="text-sm text-[var(--primary)] font-medium">
               Görüntülenen Anket: {surveys.find(s => s.id === selectedSurveyId)?.name ?? 'Seçilmedi'}
             </span>
           </motion.div>
@@ -426,20 +426,20 @@ export default function DashboardClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white rounded-2xl shadow-soft p-6 card-hover"
+            className="bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 border border-[var(--border-light)] hover:shadow-xl transition-all duration-300"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center">
-                <ClipboardList className="text-primary-500" size={24} />
+              <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-xl flex items-center justify-center">
+                <ClipboardList className="text-[var(--primary)]" size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Anket İlerlemesi</p>
-                <p className="text-2xl font-bold text-primary-900">{completionPercentage}%</p>
+                <p className="text-sm text-[var(--text-secondary)]">Anket İlerlemesi</p>
+                <p className="text-2xl font-bold text-[var(--text-primary)]">{completionPercentage}%</p>
               </div>
             </div>
             <div className="mt-4">
-              <ProgressBar value={completionPercentage} label="" color="#6366f1" />
-              <p className="text-xs text-gray-500 mt-2">{totalQuestions} sorudan {completedQuestions} tanesi tamamlandı</p>
+              <ProgressBar value={completionPercentage} label="" color="var(--primary)" />
+              <p className="text-xs text-[var(--text-muted)] mt-2">{totalQuestions} sorudan {completedQuestions} tanesi tamamlandı</p>
             </div>
           </motion.div>
 
@@ -447,15 +447,15 @@ export default function DashboardClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white rounded-2xl shadow-soft p-6 card-hover"
+            className="bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 border border-[var(--border-light)] hover:shadow-xl transition-all duration-300"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-secondary-50 rounded-xl flex items-center justify-center">
-                <TrendingUp className="text-secondary-500" size={24} />
+              <div className="w-12 h-12 bg-[var(--secondary)]/10 rounded-xl flex items-center justify-center">
+                <TrendingUp className="text-[var(--secondary)]" size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Mevcut Puan</p>
-                <p className="text-2xl font-bold text-primary-900">{scoreData?.totalScore ?? 0}%</p>
+                <p className="text-sm text-[var(--text-secondary)]">Mevcut Puan</p>
+                <p className="text-2xl font-bold text-[var(--text-primary)]">{scoreData?.totalScore ?? 0}%</p>
               </div>
             </div>
           </motion.div>
@@ -464,15 +464,15 @@ export default function DashboardClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white rounded-2xl shadow-soft p-6 card-hover"
+            className="bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 border border-[var(--border-light)] hover:shadow-xl transition-all duration-300"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center">
-                <CheckCircle className="text-primary-600" size={24} />
+              <div className="w-12 h-12 bg-[var(--accent)]/10 rounded-xl flex items-center justify-center">
+                <CheckCircle className="text-[var(--accent)]" size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Değerlendirilen Kategoriler</p>
-                <p className="text-2xl font-bold text-primary-900">
+                <p className="text-sm text-[var(--text-secondary)]">Değerlendirilen Kategoriler</p>
+                <p className="text-2xl font-bold text-[var(--text-primary)]">
                   {Object.keys(scoreData?.categoryScores ?? {})?.length ?? 0}
                 </p>
               </div>
@@ -486,9 +486,9 @@ export default function DashboardClient() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="bg-white rounded-2xl shadow-soft p-8 flex flex-col items-center justify-center"
+            className="bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-8 flex flex-col items-center justify-center border border-[var(--border-light)]"
           >
-            <h3 className="text-lg font-semibold text-primary-900 mb-6">Genel Olgunluk Puanı</h3>
+            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Genel Olgunluk Puanı</h3>
             <ScoreCard 
               score={scoreData?.totalScore ?? 0} 
               label={getMaturityLevelFromPercentage(scoreData?.totalScore ?? 0).label} 
@@ -501,11 +501,11 @@ export default function DashboardClient() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5 }}
-            className="lg:col-span-2 bg-white rounded-2xl shadow-soft p-6"
+            className="lg:col-span-2 bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 border border-[var(--border-light)]"
           >
             <div className="flex items-center gap-2 mb-6">
-              <BarChart3 className="text-secondary-500" size={20} />
-              <h3 className="text-lg font-semibold text-primary-900">Kategorilere Göre Puan Dağılımı</h3>
+              <BarChart3 className="text-[var(--secondary)]" size={20} />
+              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Kategorilere Göre Puan Dağılımı</h3>
             </div>
             
             <div className="space-y-5">
@@ -519,7 +519,7 @@ export default function DashboardClient() {
               ))}
               
               {Object.keys(scoreData?.categoryScores ?? {})?.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-[var(--text-muted)]">
                   <p>Puan dağılımınızı görmek için anketi tamamlayın</p>
                 </div>
               )}
@@ -565,12 +565,12 @@ export default function DashboardClient() {
           className="mb-8"
         >
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-secondary-100 rounded-xl flex items-center justify-center">
-              <PieChart className="text-secondary-600" size={20} />
+            <div className="w-10 h-10 bg-[var(--secondary)]/10 rounded-xl flex items-center justify-center">
+              <PieChart className="text-[var(--secondary)]" size={20} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-primary-900">Kategori Analizi</h2>
-              <p className="text-sm text-gray-500">Seviyelendirme ve GAP Analizi</p>
+              <h2 className="text-xl font-bold text-[var(--text-primary)]">Kategori Analizi</h2>
+              <p className="text-sm text-[var(--text-secondary)]">Seviyelendirme ve GAP Analizi</p>
             </div>
           </div>
           <CategoryDashboard surveyId={selectedSurveyId} />
@@ -585,11 +585,11 @@ export default function DashboardClient() {
         >
           <button
             onClick={() => router.push("/survey")}
-            className="bg-gradient-to-br from-primary-500 to-primary-600 text-white rounded-2xl p-6 text-left hover:shadow-primary-lg transition-all duration-200 hover:-translate-y-1"
+            className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white dark:text-[var(--bg-main)] rounded-2xl p-6 text-left hover:shadow-xl dark:shadow-[0_8px_30px_rgba(34,211,238,0.3)] transition-all duration-200 hover:-translate-y-1"
           >
             <ClipboardList size={32} className="mb-4" />
             <h3 className="text-lg font-semibold mb-2">Ankete Devam Et</h3>
-            <p className="text-sm text-white/70 mb-4">Olgunluk değerlendirmenizi tamamlayın</p>
+            <p className="text-sm opacity-80 mb-4">Olgunluk değerlendirmenizi tamamlayın</p>
             <span className="inline-flex items-center gap-2 text-sm font-medium">
               Başla <ArrowRight size={16} />
             </span>
@@ -597,11 +597,11 @@ export default function DashboardClient() {
 
           <button
             onClick={() => router.push("/recommendations")}
-            className="bg-gradient-to-br from-secondary-500 to-secondary-600 text-white rounded-2xl p-6 text-left hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+            className="bg-gradient-to-br from-[var(--secondary)] to-[var(--secondary-dark)] text-white dark:text-[var(--bg-main)] rounded-2xl p-6 text-left hover:shadow-xl dark:shadow-[0_8px_30px_rgba(129,140,248,0.3)] transition-all duration-200 hover:-translate-y-1"
           >
             <Lightbulb size={32} className="mb-4" />
             <h3 className="text-lg font-semibold mb-2">Önerileri Görüntüle</h3>
-            <p className="text-sm text-white/70 mb-4">Geliştirme fırsatlarını keşfedin</p>
+            <p className="text-sm opacity-80 mb-4">Geliştirme fırsatlarını keşfedin</p>
             <span className="inline-flex items-center gap-2 text-sm font-medium">
               İncele <ArrowRight size={16} />
             </span>
@@ -609,11 +609,11 @@ export default function DashboardClient() {
 
           <button
             onClick={() => router.push("/roadmap")}
-            className="bg-gradient-to-br from-primary-600 to-primary-700 text-white rounded-2xl p-6 text-left hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+            className="bg-gradient-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white dark:text-[var(--bg-main)] rounded-2xl p-6 text-left hover:shadow-xl dark:shadow-[0_8px_30px_rgba(52,211,153,0.3)] transition-all duration-200 hover:-translate-y-1"
           >
             <Map size={32} className="mb-4" />
             <h3 className="text-lg font-semibold mb-2">Yol Haritası Oluştur</h3>
-            <p className="text-sm text-white/70 mb-4">Dönüşüm yolculuğunuzu planlayın</p>
+            <p className="text-sm opacity-80 mb-4">Dönüşüm yolculuğunuzu planlayın</p>
             <span className="inline-flex items-center gap-2 text-sm font-medium">
               Planla <ArrowRight size={16} />
             </span>

@@ -9,18 +9,18 @@ interface ProgressBarProps {
   color?: string;
 }
 
-export default function ProgressBar({ value, label, color = "#1e3a8a" }: ProgressBarProps) {
+export default function ProgressBar({ value, label, color = "var(--primary)" }: ProgressBarProps) {
   const { ref, inView } = useInView({ triggerOnce: true });
 
   return (
     <div ref={ref} className="w-full">
       <div className="flex justify-between mb-2">
-        <span className="text-sm font-medium text-gray-700">{label ?? ''}</span>
+        <span className="text-sm font-medium text-[var(--text-primary)]">{label ?? ''}</span>
         <span className="text-sm font-semibold" style={{ color }}>{value ?? 0}%</span>
       </div>
-      <div className="progress-bar">
+      <div className="h-3 rounded-full overflow-hidden bg-[var(--border-light)]">
         <motion.div
-          className="progress-bar-fill"
+          className="h-full rounded-full"
           style={{ backgroundColor: color }}
           initial={{ width: 0 }}
           animate={{ width: inView ? `${value ?? 0}%` : 0 }}
