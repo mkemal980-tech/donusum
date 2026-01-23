@@ -34,20 +34,20 @@ export function ProgressBenchmarkChart({
     return (
       <div 
         key={item.name} 
-        className={`flex items-center gap-4 py-3 ${isOverall ? 'border-b-2 border-primary-200/30 pb-4 mb-2' : 'border-b border-primary-100/20'}`}
+        className={`flex items-center gap-4 py-3 ${isOverall ? 'border-b-2 border-[var(--border)] pb-4 mb-2' : 'border-b border-[var(--border)]'}`}
       >
-        <div className={`w-44 text-sm ${isOverall ? 'font-bold text-white' : 'text-primary-200'}`}>
+        <div className={`w-44 text-sm ${isOverall ? 'font-bold text-[var(--foreground)]' : 'text-[var(--foreground)]'}`}>
           {item.name}
         </div>
         <div className="flex-1 relative h-10">
           {/* Background track */}
           <div className="absolute inset-y-0 left-0 right-0 flex items-center">
-            <div className="w-full h-2 bg-primary-800/50 rounded-full relative">
+            <div className="w-full h-2 bg-[var(--muted)] rounded-full relative">
               {/* Grid lines */}
               {[1, 2, 3, 4].map((n) => (
                 <div
                   key={n}
-                  className="absolute top-1/2 -translate-y-1/2 w-px h-4 bg-primary-600/40"
+                  className="absolute top-1/2 -translate-y-1/2 w-px h-4 bg-[var(--border)]"
                   style={{ left: `${(n / maxScore) * 100}%` }}
                 />
               ))}
@@ -59,7 +59,7 @@ export function ProgressBenchmarkChart({
             initial={{ width: 0 }}
             animate={{ width: `${surveyPercent}%` }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="absolute top-1/2 -translate-y-1/2 h-5 bg-gradient-to-r from-violet-500 to-violet-600 rounded-l-full flex items-center justify-end pr-1"
+            className="absolute top-1/2 -translate-y-1/2 h-5 bg-gradient-to-r from-fuchsia-500 to-violet-500 rounded-l-full flex items-center justify-end pr-1"
             style={{ minWidth: item.surveyScore > 0 ? '30px' : '0' }}
           >
             <span className="text-[10px] font-bold text-white drop-shadow">
@@ -73,7 +73,7 @@ export function ProgressBenchmarkChart({
               initial={{ width: 0 }}
               animate={{ width: `${progressPercent - surveyPercent}%` }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="absolute top-1/2 -translate-y-1/2 h-5 bg-gradient-to-r from-indigo-400 to-indigo-500 rounded-r-full flex items-center justify-end pr-1"
+              className="absolute top-1/2 -translate-y-1/2 h-5 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-r-full flex items-center justify-end pr-1"
               style={{ left: `${surveyPercent}%`, minWidth: '24px' }}
             >
               <span className="text-[10px] font-bold text-white drop-shadow">
@@ -90,7 +90,7 @@ export function ProgressBenchmarkChart({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
             className={`text-sm font-bold ${
-              hasProgress ? 'text-emerald-400' : 'text-primary-400'
+              hasProgress ? 'text-emerald-500 dark:text-emerald-400' : 'text-[var(--muted-foreground)]'
             }`}
           >
             {hasProgress ? `+${item.delta.toFixed(2)}` : '+0.00'}
@@ -101,7 +101,7 @@ export function ProgressBenchmarkChart({
   };
 
   return (
-    <div className="bg-gradient-to-br from-primary-900 via-primary-800 to-indigo-900 rounded-2xl shadow-xl p-6 text-white">
+    <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-xl p-6 text-[var(--foreground)]">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -112,11 +112,11 @@ export function ProgressBenchmarkChart({
         {/* Overall Summary */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-violet-500 flex items-center justify-center text-sm font-bold shadow-lg">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-500 flex items-center justify-center text-sm font-bold text-white shadow-lg">
               {overall.surveyScore.toFixed(2)}
             </div>
-            <TrendingUp size={20} className="text-primary-400" />
-            <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold shadow-lg">
+            <TrendingUp size={20} className="text-[var(--muted-foreground)]" />
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-sm font-bold text-white shadow-lg">
               {overall.progressScore.toFixed(2)}
             </div>
           </div>
@@ -129,9 +129,9 @@ export function ProgressBenchmarkChart({
       </div>
 
       {/* Scale */}
-      <div className="flex items-center gap-4 mt-6 pt-4 border-t border-primary-700/50">
+      <div className="flex items-center gap-4 mt-6 pt-4 border-t border-[var(--border)]">
         <div className="w-44" />
-        <div className="flex-1 flex justify-between text-xs text-primary-400 px-2">
+        <div className="flex-1 flex justify-between text-xs text-[var(--muted-foreground)] px-2">
           <span>1</span>
           <span>2</span>
           <span>3</span>
@@ -142,14 +142,14 @@ export function ProgressBenchmarkChart({
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-center gap-8 mt-4 pt-4 border-t border-primary-700/50">
+      <div className="flex items-center justify-center gap-8 mt-4 pt-4 border-t border-[var(--border)]">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-violet-500" />
-          <span className="text-sm text-primary-200">Anket</span>
+          <div className="w-4 h-4 rounded bg-gradient-to-r from-fuchsia-500 to-violet-500" />
+          <span className="text-sm text-[var(--muted-foreground)]">Anket</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-indigo-500" />
-          <span className="text-sm text-primary-200">Gelişim</span>
+          <div className="w-4 h-4 rounded bg-gradient-to-r from-cyan-400 to-blue-500" />
+          <span className="text-sm text-[var(--muted-foreground)]">Gelişim</span>
         </div>
       </div>
     </div>
