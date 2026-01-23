@@ -55,55 +55,73 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   --shadow-card: 0 4px 20px rgba(59, 130, 246, 0.1);
+  
+  /* Alias variables for component compatibility */
+  --card: var(--bg-card);
+  --foreground: var(--text-primary);
+  --border: var(--border-light);
+  --muted-foreground: var(--text-muted);
 }
 
 .dark {
-  /* ===== DARK MODE (Template 2 - Dark Dashboard) ===== */
+  /* ===== DARK MODE - Template Exact Match ===== */
   
-  /* Primary Colors - Cyan/Blue Theme */
+  /* Primary Colors - Cyan Theme (From Template) */
   --primary: #22d3ee;
-  --primary-light: #67e8f9;
+  --primary-light: #5eead4;
   --primary-dark: #06b6d4;
   --primary-darker: #0891b2;
   
-  /* Secondary Colors */
-  --secondary: #818cf8;
-  --secondary-light: #a5b4fc;
-  --secondary-dark: #6366f1;
+  /* Secondary Colors - Light Blue */
+  --secondary: #38bdf8;
+  --secondary-light: #7dd3fc;
+  --secondary-dark: #0ea5e9;
   
-  /* Accent Colors */
-  --accent: #34d399;
-  --accent-light: #6ee7b7;
-  --accent-dark: #10b981;
+  /* Accent Colors - Teal */
+  --accent: #2dd4bf;
+  --accent-light: #5eead4;
+  --accent-dark: #14b8a6;
   
-  /* Background Colors */
-  --bg-main: #0a1628;
-  --bg-secondary: #111d32;
-  --bg-card: #162033;
-  --bg-sidebar: #0d1526;
+  /* Background Colors - Dark Navy (Exact from template) */
+  --bg-main: #0f1729;
+  --bg-secondary: #131d2e;
+  --bg-card: #1a2332;
+  --bg-card-hover: #1f2937;
+  --bg-sidebar: #0c1220;
   
   /* Text Colors */
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
   --text-muted: #64748b;
   --text-light: #ffffff;
+  --text-cyan: #22d3ee;
   
   /* Border Colors */
-  --border-light: #1e3a5f;
-  --border-primary: #0e7490;
+  --border-light: #2a3a4f;
+  --border-primary: #22d3ee;
+  --border-card: rgba(34, 211, 238, 0.15);
   
-  /* Chart Colors */
+  /* Chart Colors - Cyan/Teal Gradient Theme */
   --chart-1: #22d3ee;
-  --chart-2: #818cf8;
-  --chart-3: #34d399;
-  --chart-4: #fbbf24;
-  --chart-5: #f472b6;
+  --chart-2: #38bdf8;
+  --chart-3: #2dd4bf;
+  --chart-4: #5eead4;
+  --chart-5: #67e8f9;
+  --chart-gradient-start: #22d3ee;
+  --chart-gradient-end: rgba(34, 211, 238, 0.1);
   
-  /* Shadows */
+  /* Shadows - Cyan Glow */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
-  --shadow-card: 0 4px 20px rgba(34, 211, 238, 0.1);
+  --shadow-card: 0 4px 20px rgba(34, 211, 238, 0.08);
+  --shadow-glow: 0 0 20px rgba(34, 211, 238, 0.3);
+  
+  /* Alias variables for component compatibility */
+  --card: var(--bg-card);
+  --foreground: var(--text-primary);
+  --border: var(--border-light);
+  --muted-foreground: var(--text-muted);
 }
 
 [data-hydration-error] {

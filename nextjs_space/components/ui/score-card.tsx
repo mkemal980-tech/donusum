@@ -83,13 +83,13 @@ export default function ScoreCard({ score, label, color, size = "large" }: Score
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
           <span 
-            className={`font-bold ${size === "large" ? "text-4xl" : "text-xl"} text-primary-600 dark:text-cyan-400`}
+            className={`font-bold ${size === "large" ? "text-4xl" : "text-xl"} text-[var(--primary)]`}
           >
             {displayScore}%
           </span>
         </div>
       </div>
-      <p className={`mt-3 font-medium text-gray-700 dark:text-gray-200 ${size === "large" ? "text-lg" : "text-sm"}`}>
+      <p className={`mt-3 font-medium text-[var(--text-secondary)] ${size === "large" ? "text-lg" : "text-sm"}`}>
         {label ?? ''}
       </p>
     </motion.div>

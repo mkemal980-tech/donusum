@@ -40,14 +40,14 @@ interface CategoryScores {
   categories: Category[];
 }
 
-// Theme colors - all categories use purple/indigo tones
+// Theme colors - Cyan/Teal tones (matching template)
 const getCategoryColor = (index: number): string => {
   const colors = [
-    "#6366f1", // primary indigo
-    "#8b5cf6", // secondary purple
-    "#a78bfa", // purple light
-    "#4f46e5", // indigo dark
-    "#7c3aed", // violet
+    "#22d3ee", // cyan primary
+    "#38bdf8", // light blue
+    "#2dd4bf", // teal
+    "#5eead4", // cyan light
+    "#67e8f9", // cyan lightest
   ];
   return colors[index % colors.length];
 };

@@ -8,11 +8,11 @@ interface MaturityLevelBarProps {
 }
 
 const levels = [
-  { label: "Lider", value: 5, minPercent: 80, color: "#4f46e5" },
-  { label: "Olgun", value: 4, minPercent: 60, color: "#6366f1" },
-  { label: "Gelişen", value: 3, minPercent: 40, color: "#8b5cf6" },
-  { label: "Farkındalık", value: 2, minPercent: 20, color: "#a78bfa" },
-  { label: "Başlangıç", value: 1, minPercent: 0, color: "#c4b5fd" },
+  { label: "Lider", value: 5, minPercent: 80, color: "#22d3ee" },
+  { label: "Olgun", value: 4, minPercent: 60, color: "#2dd4bf" },
+  { label: "Gelişen", value: 3, minPercent: 40, color: "#38bdf8" },
+  { label: "Farkındalık", value: 2, minPercent: 20, color: "#5eead4" },
+  { label: "Başlangıç", value: 1, minPercent: 0, color: "#67e8f9" },
 ];
 
 export function MaturityLevelBar({ score, isPercentage = true }: MaturityLevelBarProps) {
@@ -73,7 +73,7 @@ export function MaturityLevelBar({ score, isPercentage = true }: MaturityLevelBa
           <div 
             className="absolute inset-x-0 bottom-0 rounded-full"
             style={{
-              background: "linear-gradient(to top, #c4b5fd, #a78bfa, #8b5cf6, #6366f1, #4f46e5)",
+              background: "linear-gradient(to top, #67e8f9, #5eead4, #38bdf8, #2dd4bf, #22d3ee)",
               height: "100%",
               opacity: 0.3
             }}
@@ -86,7 +86,7 @@ export function MaturityLevelBar({ score, isPercentage = true }: MaturityLevelBa
             transition={{ duration: 1, ease: "easeOut" }}
             className="absolute inset-x-0 bottom-0 rounded-full"
             style={{
-              background: "linear-gradient(to top, #c4b5fd, #a78bfa, #8b5cf6, #6366f1, #4f46e5)",
+              background: "linear-gradient(to top, #67e8f9, #5eead4, #38bdf8, #2dd4bf, #22d3ee)",
             }}
           />
           

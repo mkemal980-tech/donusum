@@ -47,13 +47,13 @@ interface Survey {
   isActive: boolean;
 }
 
-// Theme colors - all purple/indigo tones
+// Theme colors - Cyan/Teal tones (matching template)
 const categoryColors = [
-  "#6366f1",
-  "#8b5cf6",
-  "#a78bfa",
-  "#4f46e5",
-  "#7c3aed"
+  "#22d3ee",
+  "#38bdf8",
+  "#2dd4bf",
+  "#5eead4",
+  "#67e8f9"
 ];
 
 /**
@@ -65,11 +65,11 @@ const categoryColors = [
  * %80-100: Lider
  */
 const getMaturityLevelFromPercentage = (percentage: number) => {
-  if (percentage >= 80) return { label: 'Lider', color: '#4f46e5' };
-  if (percentage >= 60) return { label: 'Olgun', color: '#6366f1' };
-  if (percentage >= 40) return { label: 'Gelişen', color: '#8b5cf6' };
-  if (percentage >= 20) return { label: 'Farkındalık', color: '#a78bfa' };
-  return { label: 'Başlangıç', color: '#c4b5fd' };
+  if (percentage >= 80) return { label: 'Lider', color: '#22d3ee' };
+  if (percentage >= 60) return { label: 'Olgun', color: '#2dd4bf' };
+  if (percentage >= 40) return { label: 'Gelişen', color: '#38bdf8' };
+  if (percentage >= 20) return { label: 'Farkındalık', color: '#5eead4' };
+  return { label: 'Başlangıç', color: '#67e8f9' };
 };
 
 /**

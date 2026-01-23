@@ -8,13 +8,13 @@ interface MaturityGaugeProps {
   showOverallLevel?: boolean;
 }
 
-// Tema uyumlu renkler
+// Template-matching cyan/teal colors
 const levels = [
-  { value: 5, label: "Lider", lightColor: "#2563eb", darkColor: "#22d3ee", minPercent: 80 },
-  { value: 4, label: "Olgun", lightColor: "#3b82f6", darkColor: "#38bdf8", minPercent: 60 },
-  { value: 3, label: "Gelişen", lightColor: "#06b6d4", darkColor: "#818cf8", minPercent: 40 },
-  { value: 2, label: "Farkındalık", lightColor: "#10b981", darkColor: "#a78bfa", minPercent: 20 },
-  { value: 1, label: "Başlangıç", lightColor: "#6ee7b7", darkColor: "#c4b5fd", minPercent: 0 },
+  { value: 5, label: "Lider", lightColor: "#0891b2", darkColor: "#22d3ee", minPercent: 80 },
+  { value: 4, label: "Olgun", lightColor: "#0d9488", darkColor: "#2dd4bf", minPercent: 60 },
+  { value: 3, label: "Gelişen", lightColor: "#0ea5e9", darkColor: "#38bdf8", minPercent: 40 },
+  { value: 2, label: "Farkındalık", lightColor: "#14b8a6", darkColor: "#5eead4", minPercent: 20 },
+  { value: 1, label: "Başlangıç", lightColor: "#06b6d4", darkColor: "#67e8f9", minPercent: 0 },
 ];
 
 /**
@@ -26,11 +26,11 @@ const levels = [
 export const getScoreLevel = (score: number): { label: string; color: string; darkColor: string } => {
   const percentage = ((score - 1) / 4) * 100;
   
-  if (percentage >= 80) return { label: "Lider", color: "#2563eb", darkColor: "#22d3ee" };
-  if (percentage >= 60) return { label: "Olgun", color: "#3b82f6", darkColor: "#38bdf8" };
-  if (percentage >= 40) return { label: "Gelişen", color: "#06b6d4", darkColor: "#818cf8" };
-  if (percentage >= 20) return { label: "Farkındalık", color: "#10b981", darkColor: "#a78bfa" };
-  return { label: "Başlangıç", color: "#6ee7b7", darkColor: "#c4b5fd" };
+  if (percentage >= 80) return { label: "Lider", color: "#0891b2", darkColor: "#22d3ee" };
+  if (percentage >= 60) return { label: "Olgun", color: "#0d9488", darkColor: "#2dd4bf" };
+  if (percentage >= 40) return { label: "Gelişen", color: "#0ea5e9", darkColor: "#38bdf8" };
+  if (percentage >= 20) return { label: "Farkındalık", color: "#14b8a6", darkColor: "#5eead4" };
+  return { label: "Başlangıç", color: "#06b6d4", darkColor: "#67e8f9" };
 };
 
 export const percentageToScore = (percentage: number): number => {
@@ -97,7 +97,7 @@ export function MaturityGauge({ score, title = "Seviyelendirme", showOverallLeve
             initial={{ height: 0 }}
             animate={{ height: `${position}%` }}
             transition={{ duration: 1, ease: "easeOut" }}
-            className="absolute bottom-0 left-0 right-0 rounded-2xl bg-gradient-to-t from-emerald-400 via-cyan-500 to-blue-600 dark:from-violet-400 dark:via-cyan-400 dark:to-blue-500"
+            className="absolute bottom-0 left-0 right-0 rounded-2xl bg-gradient-to-t from-cyan-300 via-cyan-400 to-cyan-500 dark:from-cyan-600 dark:via-cyan-400 dark:to-cyan-300"
             style={{ minHeight: score > 1 ? "20px" : "0px" }}
           />
           
