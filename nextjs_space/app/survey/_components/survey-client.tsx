@@ -71,6 +71,8 @@ export default function SurveyClient() {
   const [loading, setLoading] = useState(true);
   const [loadingStructure, setLoadingStructure] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, { fileName: string; cloudStoragePath: string }>>({});
+  const [uploading, setUploading] = useState<string | null>(null);
   const router = useRouter();
 
   // Atanan anketleri getir
@@ -188,6 +190,7 @@ export default function SurveyClient() {
   };
 
   const handleUpload = async (questionId: string, file: File) => {
+    setUploading(questionId);
     try {
       const presignedRes = await fetch("/api/upload/presigned", {
         method: "POST",
@@ -199,7 +202,10 @@ export default function SurveyClient() {
         })
       });
 
-      if (!presignedRes.ok) return;
+      if (!presignedRes.ok) {
+        toast.error("Dosya yükleme başarısız oldu");
+        return;
+      }
 
       const { uploadUrl, cloudStoragePath } = await presignedRes.json();
 
@@ -211,11 +217,16 @@ export default function SurveyClient() {
         uploadHeaders["Content-Disposition"] = "attachment";
       }
 
-      await fetch(uploadUrl, {
+      const uploadResult = await fetch(uploadUrl, {
         method: "PUT",
         body: file,
         headers: uploadHeaders
       });
+
+      if (!uploadResult.ok) {
+        toast.error("S3 yükleme hatası");
+        return;
+      }
 
       await fetch("/api/upload/complete", {
         method: "POST",
@@ -227,9 +238,28 @@ export default function SurveyClient() {
           fileType: file.type
         })
       });
+
+      // State'i güncelle - dosya başarıyla yüklendi
+      setUploadedFiles(prev => ({
+        ...prev,
+        [questionId]: { fileName: file.name, cloudStoragePath }
+      }));
+      
+      toast.success(`${file.name} başarıyla yüklendi`);
     } catch (error) {
       console.error("Error uploading file:", error);
+      toast.error("Dosya yüklenirken bir hata oluştu");
+    } finally {
+      setUploading(null);
     }
+  };
+
+  const handleRemoveFile = (questionId: string) => {
+    setUploadedFiles(prev => {
+      const newFiles = { ...prev };
+      delete newFiles[questionId];
+      return newFiles;
+    });
   };
 
   const canGoNext = () => {
@@ -477,6 +507,9 @@ export default function SurveyClient() {
                       value={responses?.[question?.id ?? '']}
                       onAnswer={handleAnswer}
                       onUpload={handleUpload}
+                      onRemoveFile={handleRemoveFile}
+                      uploadedFile={uploadedFiles[question?.id ?? '']?.fileName || null}
+                      isUploading={uploading === question?.id}
                     />
                   ))
                 )}

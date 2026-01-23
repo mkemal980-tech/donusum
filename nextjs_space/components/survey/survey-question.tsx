@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Upload, X, FileText, Check } from "lucide-react";
+import { Upload, X, FileText, Check, Loader2 } from "lucide-react";
 
 interface Question {
   id: string;
@@ -17,7 +17,9 @@ interface SurveyQuestionProps {
   value?: string;
   onAnswer: (questionId: string, value: string) => void;
   onUpload?: (questionId: string, file: File) => void;
+  onRemoveFile?: (questionId: string) => void;
   uploadedFile?: string | null;
+  isUploading?: boolean;
 }
 
 export default function SurveyQuestion({ 
@@ -25,7 +27,9 @@ export default function SurveyQuestion({
   value, 
   onAnswer, 
   onUpload,
-  uploadedFile 
+  onRemoveFile,
+  uploadedFile,
+  isUploading = false
 }: SurveyQuestionProps) {
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -147,12 +151,21 @@ export default function SurveyQuestion({
             Bu soru için kanıt belgesi gereklidir
           </p>
           
-          {uploadedFile ? (
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+          {isUploading ? (
+            <div className="flex items-center justify-center p-6 bg-purple-50 rounded-lg border-2 border-purple-200">
+              <Loader2 className="animate-spin text-purple-500 mr-2" size={20} />
+              <span className="text-purple-600 text-sm">Dosya yükleniyor...</span>
+            </div>
+          ) : uploadedFile ? (
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
               <span className="text-green-700 text-sm flex items-center gap-2">
                 <Check size={16} /> {uploadedFile}
               </span>
-              <button className="text-gray-400 hover:text-red-500">
+              <button 
+                onClick={() => onRemoveFile?.(q?.id)}
+                className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                title="Dosyayı kaldır"
+              >
                 <X size={16} />
               </button>
             </div>
