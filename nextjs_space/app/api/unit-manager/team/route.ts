@@ -5,6 +5,36 @@ import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
+// Bir kullanıcının admin olduğu tüm birimleri getir (miras dahil)
+async function getAdminUnits(userId: string): Promise<string[]> {
+  // Doğrudan admin olduğu birimler
+  const directAdminUnits = await prisma.unitAdmin.findMany({
+    where: { userId },
+    select: { unitId: true },
+  });
+
+  const unitIds = new Set<string>(directAdminUnits.map(a => a.unitId));
+
+  // Alt birimleri recursive olarak bul
+  async function addSubUnits(parentId: string) {
+    const subUnits = await prisma.unit.findMany({
+      where: { parentId },
+      select: { id: true },
+    });
+
+    for (const sub of subUnits) {
+      unitIds.add(sub.id);
+      await addSubUnits(sub.id);
+    }
+  }
+
+  for (const unitId of directAdminUnits.map(a => a.unitId)) {
+    await addSubUnits(unitId);
+  }
+
+  return Array.from(unitIds);
+}
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,9 +49,19 @@ export async function GET(request: NextRequest) {
     const userId = (session.user as any).id;
     const userRole = (session.user as any).role;
 
-    // Kullanıcının yönettiği birimleri bul
+    // Kullanıcının yönettiği birimlerin ID'lerini bul
+    const managedUnitIds = await getAdminUnits(userId);
+
+    if (managedUnitIds.length === 0 && userRole !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Yönettiğiniz birim bulunamadı" },
+        { status: 403 }
+      );
+    }
+
+    // Yönetilen birimleri getir
     const managedUnits = await prisma.unit.findMany({
-      where: { managerId: userId },
+      where: { id: { in: managedUnitIds } },
       include: {
         users: {
           include: {
@@ -54,13 +94,6 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    if (managedUnits.length === 0 && userRole !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Yönettiğiniz birim bulunamadı" },
-        { status: 403 }
-      );
-    }
-
     // Her kullanıcı için skor hesapla
     const teamData = managedUnits.flatMap((unit) =>
       unit.users.map((user) => {
@@ -68,7 +101,7 @@ export async function GET(request: NextRequest) {
         let totalScore = 0;
         let totalWeight = 0;
 
-        responses.forEach((response) => {
+        responses.forEach((response: any) => {
           const weight = response.question?.weight || 1;
           totalScore += response.score * weight;
           totalWeight += weight;

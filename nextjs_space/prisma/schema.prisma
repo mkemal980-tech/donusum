@@ -18,15 +18,29 @@ enum UserRole {
 
 // Birim Modeli - Lokasyon/Departman yönetimi
 model Unit {
-  id             String   @id @default(cuid())
+  id             String      @id @default(cuid())
   name           String
   description    String?
   organization   String?
-  managerId      String?  // Birim Yöneticisi
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  manager        User?    @relation("UnitManager", fields: [managerId], references: [id])
-  users          User[]   @relation("UnitUsers")
+  parentId       String?     // Üst Birim ID (Alt Birim için)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  parent         Unit?       @relation("UnitHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  subUnits       Unit[]      @relation("UnitHierarchy")
+  users          User[]      @relation("UnitUsers")
+  admins         UnitAdmin[] // Çoklu Admin ilişkisi
+}
+
+// Birim Admin İlişkisi - Çoklu admin desteği
+model UnitAdmin {
+  id        String   @id @default(cuid())
+  unitId    String
+  userId    String
+  createdAt DateTime @default(now())
+  unit      Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([unitId, userId])
 }
 
 model User {
@@ -51,7 +65,7 @@ model User {
   sector               Sector?           @relation(fields: [sectorId], references: [id])
   subSector            SubSector?        @relation(fields: [subSectorId], references: [id])
   unit                 Unit?             @relation("UnitUsers", fields: [unitId], references: [id])
-  managedUnits         Unit[]            @relation("UnitManager")
+  adminOfUnits         UnitAdmin[]       // Kullanıcının admin olduğu birimler
   recommendationCompletions UserRecommendationCompletion[]
   surveyAssignments    UserSurveyAssignment[]
 }
