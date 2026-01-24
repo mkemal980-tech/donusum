@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings, FolderTree, Lightbulb, LayoutDashboard, Factory, BarChart3, Scale, FileText, Activity, Download, Users, Building2, UserCheck, Sun, Moon } from "lucide-react";
+import { Settings, FolderTree, Lightbulb, LayoutDashboard, Factory, BarChart3, Scale, FileText, Activity, Download, Users, Building2, UserCheck, Sun, Moon, Files } from "lucide-react";
 import { useTheme } from "next-themes";
 
 const navItems = [
@@ -13,6 +13,7 @@ const navItems = [
   { href: "/admin/survey-assignments", label: "Anket Atamaları", icon: UserCheck, section: "Anket Yönetimi" },
   { href: "/admin/categories", label: "Kategoriler & Sorular", icon: FolderTree, section: "Anket Yönetimi" },
   { href: "/admin/recommendations", label: "Öneriler", icon: Lightbulb, section: "Anket Yönetimi" },
+  { href: "/admin/documents", label: "Yüklenen Dosyalar", icon: Files, section: "Anket Yönetimi" },
   { href: "/admin/sectors", label: "Sektörler", icon: Factory, section: "Sektör & Benchmark" },
   { href: "/admin/benchmarks", label: "Benchmark Verileri", icon: BarChart3, section: "Sektör & Benchmark" },
   { href: "/admin/sector-weights", label: "Sektör Ağırlıkları", icon: Scale, section: "Sektör & Benchmark" },

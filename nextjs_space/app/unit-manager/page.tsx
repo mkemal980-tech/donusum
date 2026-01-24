@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Header from "@/components/ui/header";
+import { toast } from "sonner";
 import {
   Users,
   Building2,
@@ -14,6 +15,10 @@ import {
   ChevronDown,
   ChevronRight,
   BarChart3,
+  Files,
+  Download,
+  User,
+  FileText,
 } from "lucide-react";
 
 interface TeamMember {
@@ -39,6 +44,28 @@ interface UnitSummary {
   averageScore: number;
 }
 
+interface Document {
+  id: string;
+  fileName: string;
+  fileType: string;
+  createdAt: string;
+  downloadUrl: string | null;
+  user: {
+    id: string;
+    firstName: string | null;
+    lastName: string | null;
+    email: string;
+    unit?: { id: string; name: string } | null;
+  };
+  response?: {
+    question: {
+      text: string;
+      subLevel?: { name: string; subCategory: { name: string; category: { name: string } } } | null;
+      subCategory?: { name: string; category: { name: string } } | null;
+    };
+  } | null;
+}
+
 const getScoreColor = (score: number) => {
   if (score >= 80) return "text-green-600 bg-green-100";
   if (score >= 60) return "text-blue-600 bg-blue-100";
@@ -62,6 +89,9 @@ export default function UnitManagerPage() {
   const [units, setUnits] = useState<UnitSummary[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
   const [expandedUnits, setExpandedUnits] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<"team" | "documents">("team");
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -87,7 +117,6 @@ export default function UnitManagerPage() {
         const data = await res.json();
         setUnits(data.units || []);
         setTeam(data.team || []);
-        // Tüm birimleri varsayılan olarak aç
         setExpandedUnits(new Set(data.units?.map((u: UnitSummary) => u.id) || []));
       }
     } catch (error) {
@@ -96,6 +125,27 @@ export default function UnitManagerPage() {
       setLoading(false);
     }
   };
+
+  const fetchDocuments = async () => {
+    setLoadingDocs(true);
+    try {
+      const res = await fetch("/api/unit-manager/documents");
+      if (res.ok) {
+        const data = await res.json();
+        setDocuments(data);
+      }
+    } catch (error) {
+      console.error("Dosya verisi çekme hatası:", error);
+    } finally {
+      setLoadingDocs(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "documents" && documents.length === 0) {
+      fetchDocuments();
+    }
+  }, [activeTab]);
 
   const toggleUnit = (unitId: string) => {
     setExpandedUnits((prev) => {
@@ -107,6 +157,40 @@ export default function UnitManagerPage() {
       }
       return newSet;
     });
+  };
+
+  const handleDownload = (doc: Document) => {
+    if (doc.downloadUrl) {
+      const link = document.createElement("a");
+      link.href = doc.downloadUrl;
+      link.download = doc.fileName;
+      link.click();
+    } else {
+      toast.error("Dosya indirilemedi");
+    }
+  };
+
+  const getQuestionContext = (doc: Document) => {
+    if (!doc.response?.question) return "Bağlantısız dosya";
+    const q = doc.response.question;
+    if (q.subLevel) {
+      return `${q.subLevel.subCategory.category.name} > ${q.subLevel.subCategory.name} > ${q.subLevel.name}`;
+    } else if (q.subCategory) {
+      return `${q.subCategory.category.name} > ${q.subCategory.name}`;
+    }
+    return "";
+  };
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType.includes("pdf")) return "📄";
+    if (fileType.includes("image")) return "🖼️";
+    if (fileType.includes("word") || fileType.includes("document")) return "📝";
+    if (fileType.includes("excel") || fileType.includes("sheet")) return "📊";
+    return "📎";
+  };
+
+  const getUserName = (doc: Document) => {
+    return [doc.user.firstName, doc.user.lastName].filter(Boolean).join(" ") || doc.user.email;
   };
 
   if (loading || status === "loading") {
@@ -147,15 +231,15 @@ export default function UnitManagerPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white rounded-xl shadow-md p-6"
+            className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-slate-700"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Building2 className="text-[#1e3a8a]" size={24} />
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <Building2 className="text-[#1e3a8a] dark:text-blue-400" size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Birim Sayısı</p>
-                <p className="text-2xl font-bold text-gray-900">{units.length}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Birim Sayısı</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{units.length}</p>
               </div>
             </div>
           </motion.div>
@@ -164,15 +248,15 @@ export default function UnitManagerPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white rounded-xl shadow-md p-6"
+            className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-slate-700"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Users className="text-purple-600" size={24} />
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                <Users className="text-purple-600 dark:text-purple-400" size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Toplam Kullanıcı</p>
-                <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Toplam Kullanıcı</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalUsers}</p>
               </div>
             </div>
           </motion.div>
@@ -181,15 +265,15 @@ export default function UnitManagerPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white rounded-xl shadow-md p-6"
+            className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-slate-700"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckCircle className="text-green-600" size={24} />
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                <CheckCircle className="text-green-600 dark:text-green-400" size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Anketi Tamamlayan</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Anketi Tamamlayan</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {completedUsers} / {totalUsers}
                 </p>
               </div>
@@ -200,21 +284,53 @@ export default function UnitManagerPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-white rounded-xl shadow-md p-6"
+            className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-slate-700"
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="text-orange-600" size={24} />
+              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                <TrendingUp className="text-orange-600 dark:text-orange-400" size={24} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Ortalama Skor</p>
-                <p className="text-2xl font-bold text-gray-900">%{Math.round(avgScore)}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Ortalama Skor</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">%{Math.round(avgScore)}</p>
               </div>
             </div>
           </motion.div>
         </div>
 
-        {/* Units and Team */}
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 bg-gray-100 dark:bg-slate-800 p-1 rounded-xl w-fit border border-gray-200 dark:border-slate-700">
+          <button
+            onClick={() => setActiveTab("team")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+              activeTab === "team"
+                ? "bg-[#1e3a8a] text-white shadow-md"
+                : "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700"
+            }`}
+          >
+            <Users size={18} />
+            Ekip Üyeleri
+          </button>
+          <button
+            onClick={() => setActiveTab("documents")}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
+              activeTab === "documents"
+                ? "bg-[#1e3a8a] text-white shadow-md"
+                : "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700"
+            }`}
+          >
+            <Files size={18} />
+            Yüklenen Dosyalar
+            {documents.length > 0 && (
+              <span className="ml-1 px-2 py-0.5 bg-white/20 rounded-full text-xs">
+                {documents.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === "team" ? (
         <div className="space-y-6">
           {units.map((unit) => {
             const unitMembers = team.filter((m) => m.unitId === unit.id);
@@ -355,17 +471,95 @@ export default function UnitManagerPage() {
               </motion.div>
             );
           })}
-        </div>
 
-        {units.length === 0 && (
-          <div className="bg-white rounded-xl shadow-md p-12 text-center">
-            <Building2 size={48} className="mx-auto text-gray-300 mb-4" />
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">
-              Yönettiğiniz Birim Bulunamadı
-            </h2>
-            <p className="text-gray-500">
-              Henüz yöneticiniz olarak atandığınız bir birim bulunmuyor.
-            </p>
+          {units.length === 0 && (
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md p-12 text-center border border-gray-200 dark:border-slate-700">
+              <Building2 size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
+              <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Yönettiğiniz Birim Bulunamadı
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400">
+                Henüz yöneticiniz olarak atandığınız bir birim bulunmuyor.
+              </p>
+            </div>
+          )}
+        </div>
+        ) : (
+          /* Documents Tab */
+          <div className="space-y-4">
+            {loadingDocs ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="w-8 h-8 border-4 border-[#1e3a8a] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : documents.length === 0 ? (
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-12 text-center border border-gray-200 dark:border-slate-700">
+                <FileText className="mx-auto text-gray-300 dark:text-gray-600 mb-4" size={48} />
+                <p className="text-gray-500 dark:text-gray-400">Henüz yüklenmiş dosya bulunmuyor</p>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-md border border-gray-200 dark:border-slate-700 overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-gray-50 dark:bg-slate-900">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dosya</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kullanıcı</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Soru Bağlamı</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tarih</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">İndir</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+                    {documents.map((doc) => (
+                      <tr key={doc.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{getFileIcon(doc.fileType)}</span>
+                            <div>
+                              <p className="font-medium text-gray-800 dark:text-gray-200">{doc.fileName}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">{doc.fileType}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <User size={16} className="text-gray-400" />
+                            <div>
+                              <p className="text-gray-800 dark:text-gray-200">{getUserName(doc)}</p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">{doc.user.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate" title={getQuestionContext(doc)}>
+                            {getQuestionContext(doc)}
+                          </p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {new Date(doc.createdAt).toLocaleDateString("tr-TR", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          {doc.downloadUrl && (
+                            <button
+                              onClick={() => handleDownload(doc)}
+                              className="p-2 text-[#1e3a8a] dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                              title="İndir"
+                            >
+                              <Download size={18} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </main>
