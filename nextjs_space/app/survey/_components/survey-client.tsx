@@ -15,7 +15,10 @@ import {
   Layers,
   FileQuestion,
   FileText,
-  AlertCircle
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+  Upload
 } from "lucide-react";
 
 interface Question {
@@ -191,6 +194,19 @@ export default function SurveyClient() {
 
   const handleUpload = async (questionId: string, file: File) => {
     setUploading(questionId);
+    
+    // Dosya boyutu kontrolü (10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("Dosya boyutu çok büyük", {
+        description: "Maksimum dosya boyutu 10MB olmalıdır.",
+        duration: 5000,
+        icon: <XCircle className="text-red-500" size={20} />
+      });
+      setUploading(null);
+      return;
+    }
+
     try {
       const presignedRes = await fetch("/api/upload/presigned", {
         method: "POST",
@@ -203,7 +219,11 @@ export default function SurveyClient() {
       });
 
       if (!presignedRes.ok) {
-        toast.error("Dosya yükleme başarısız oldu");
+        toast.error("Dosya yükleme başarısız", {
+          description: "Sunucu bağlantısı kurulamadı. Lütfen tekrar deneyin.",
+          duration: 5000,
+          icon: <XCircle className="text-red-500" size={20} />
+        });
         return;
       }
 
@@ -224,7 +244,11 @@ export default function SurveyClient() {
       });
 
       if (!uploadResult.ok) {
-        toast.error("S3 yükleme hatası");
+        toast.error("Dosya yüklenemedi", {
+          description: "Depolama alanına erişilemiyor. Lütfen tekrar deneyin.",
+          duration: 5000,
+          icon: <XCircle className="text-red-500" size={20} />
+        });
         return;
       }
 
@@ -245,20 +269,33 @@ export default function SurveyClient() {
         [questionId]: { fileName: file.name, cloudStoragePath }
       }));
       
-      toast.success(`${file.name} başarıyla yüklendi`);
+      toast.success("Dosya başarıyla yüklendi!", {
+        description: file.name,
+        duration: 4000,
+        icon: <CheckCircle2 className="text-green-500" size={20} />
+      });
     } catch (error) {
       console.error("Error uploading file:", error);
-      toast.error("Dosya yüklenirken bir hata oluştu");
+      toast.error("Yükleme hatası", {
+        description: "Beklenmeyen bir hata oluştu. İnternet bağlantınızı kontrol edin.",
+        duration: 5000,
+        icon: <XCircle className="text-red-500" size={20} />
+      });
     } finally {
       setUploading(null);
     }
   };
 
   const handleRemoveFile = (questionId: string) => {
+    const fileName = uploadedFiles[questionId]?.fileName;
     setUploadedFiles(prev => {
       const newFiles = { ...prev };
       delete newFiles[questionId];
       return newFiles;
+    });
+    toast.info("Dosya kaldırıldı", {
+      description: fileName || "Dosya başarıyla kaldırıldı",
+      duration: 3000
     });
   };
 
