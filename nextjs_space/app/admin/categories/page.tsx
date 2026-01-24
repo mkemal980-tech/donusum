@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Save, X, FileText, Layers } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Save, X, FileText, Layers, Upload, Download, AlertCircle, CheckCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 interface Question {
@@ -64,6 +64,16 @@ export default function CategoriesPage() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [showModal, setShowModal] = useState<{ type: string; parentId?: string; editItem?: any; parentData?: any } | null>(null);
   const [formData, setFormData] = useState<any>({});
+  
+  // Bulk upload state
+  const [showBulkUpload, setShowBulkUpload] = useState<{ parentId: string; isSubCategory: boolean } | null>(null);
+  const [bulkUploadResult, setBulkUploadResult] = useState<{
+    success: boolean;
+    summary?: { totalRows: number; successCount: number; errorCount: number };
+    errors?: { row: number; message: string }[];
+  } | null>(null);
+  const [bulkUploading, setBulkUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchSurveys = async () => {
     try {
@@ -141,6 +151,81 @@ export default function CategoriesPage() {
     } catch (error) {
       console.error('Error deleting:', error);
     }
+  };
+
+  // Bulk upload functions
+  const handleTemplateDownload = async () => {
+    try {
+      const response = await fetch('/api/admin/questions/template');
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'soru_yukleme_sablonu.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading template:', error);
+      alert('Şablon indirilemedi');
+    }
+  };
+
+  const handleBulkUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !showBulkUpload) return;
+
+    setBulkUploading(true);
+    setBulkUploadResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      if (showBulkUpload.isSubCategory) {
+        formData.append('subCategoryId', showBulkUpload.parentId);
+      } else {
+        formData.append('subLevelId', showBulkUpload.parentId);
+      }
+
+      const response = await fetch('/api/admin/questions/bulk-upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        setBulkUploadResult({
+          success: true,
+          summary: result.summary,
+          errors: result.errors,
+        });
+        fetchCategories();
+      } else {
+        setBulkUploadResult({
+          success: false,
+          errors: [{ row: 0, message: result.error || 'Yükleme başarısız' }],
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading:', error);
+      setBulkUploadResult({
+        success: false,
+        errors: [{ row: 0, message: 'Dosya yüklenirken hata oluştu' }],
+      });
+    } finally {
+      setBulkUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const openBulkUploadModal = (parentId: string, isSubCategory: boolean) => {
+    setShowBulkUpload({ parentId, isSubCategory });
+    setBulkUploadResult(null);
   };
 
   const openModal = (type: string, parentId?: string, editItem?: any, parentData?: any) => {
@@ -372,13 +457,22 @@ export default function CategoriesPage() {
                             <Plus size={16} />
                           </button>
                         ) : (
-                          <button 
-                            onClick={() => openModal('question', subCat.id, undefined, { isSubCategory: true })} 
-                            className="p-1.5 hover:bg-purple-200 rounded text-purple-700" 
-                            title="Soru Ekle"
-                          >
-                            <Plus size={16} />
-                          </button>
+                          <>
+                            <button 
+                              onClick={() => openModal('question', subCat.id, undefined, { isSubCategory: true })} 
+                              className="p-1.5 hover:bg-purple-200 rounded text-purple-700" 
+                              title="Soru Ekle"
+                            >
+                              <Plus size={16} />
+                            </button>
+                            <button 
+                              onClick={() => openBulkUploadModal(subCat.id, true)} 
+                              className="p-1.5 hover:bg-green-200 rounded text-green-700" 
+                              title="Excel'den Toplu Yükle"
+                            >
+                              <Upload size={16} />
+                            </button>
+                          </>
                         )}
                         <button 
                           onClick={() => openModal('subcategory', category.id, subCat)} 
@@ -425,6 +519,13 @@ export default function CategoriesPage() {
                                       title="Soru Ekle"
                                     >
                                       <Plus size={16} />
+                                    </button>
+                                    <button 
+                                      onClick={() => openBulkUploadModal(subLevel.id, false)} 
+                                      className="p-1.5 hover:bg-green-100 rounded text-green-700" 
+                                      title="Excel'den Toplu Yükle"
+                                    >
+                                      <Upload size={16} />
                                     </button>
                                     <button 
                                       onClick={() => openModal('sublevel', subCat.id, subLevel)} 
@@ -779,6 +880,124 @@ export default function CategoriesPage() {
               >
                 <Save size={18} />
                 {showModal.editItem ? 'Güncelle' : 'Kaydet'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Upload Modal */}
+      {showBulkUpload && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Excel'den Toplu Soru Yükle</h2>
+              <button onClick={() => { setShowBulkUpload(null); setBulkUploadResult(null); }} className="text-gray-500 hover:text-gray-700">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Template Download */}
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                  <Download size={18} />
+                  1. Şablonu İndir
+                </h3>
+                <p className="text-sm text-blue-700 mb-3">
+                  Önce Excel şablonunu indirip doldurun. Şablonda örnek sorular ve açıklamalar bulunmaktadır.
+                </p>
+                <button
+                  onClick={handleTemplateDownload}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  <Download size={18} />
+                  Soru Yükleme Şablonu İndir (.xlsx)
+                </button>
+              </div>
+
+              {/* File Upload */}
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <h3 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+                  <Upload size={18} />
+                  2. Doldurduğunuz Dosyayı Yükleyin
+                </h3>
+                <p className="text-sm text-green-700 mb-3">
+                  Şablonu doldurduktan sonra aşağıdan yükleyin.
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleBulkUpload}
+                  disabled={bulkUploading}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 disabled:opacity-50"
+                />
+                {bulkUploading && (
+                  <div className="flex items-center gap-2 mt-3 text-green-700">
+                    <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm">Yükleniyor...</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Results */}
+              {bulkUploadResult && (
+                <div className={`p-4 rounded-lg border ${bulkUploadResult.success ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+                  <h3 className={`font-medium mb-3 flex items-center gap-2 ${bulkUploadResult.success ? 'text-emerald-800' : 'text-red-800'}`}>
+                    {bulkUploadResult.success ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+                    Yükleme Sonucu
+                  </h3>
+                  
+                  {bulkUploadResult.summary && (
+                    <div className="grid grid-cols-3 gap-3 mb-3">
+                      <div className="text-center p-2 bg-white rounded-lg">
+                        <div className="text-lg font-bold text-gray-700">{bulkUploadResult.summary.totalRows}</div>
+                        <div className="text-xs text-gray-500">Toplam Satır</div>
+                      </div>
+                      <div className="text-center p-2 bg-white rounded-lg">
+                        <div className="text-lg font-bold text-emerald-600">{bulkUploadResult.summary.successCount}</div>
+                        <div className="text-xs text-gray-500">Başarılı</div>
+                      </div>
+                      <div className="text-center p-2 bg-white rounded-lg">
+                        <div className="text-lg font-bold text-red-600">{bulkUploadResult.summary.errorCount}</div>
+                        <div className="text-xs text-gray-500">Hatalı</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {bulkUploadResult.errors && bulkUploadResult.errors.length > 0 && (
+                    <div className="mt-3">
+                      <h4 className="text-sm font-medium text-red-700 mb-2">Hatalı Satırlar:</h4>
+                      <div className="max-h-40 overflow-y-auto space-y-1">
+                        {bulkUploadResult.errors.map((err, idx) => (
+                          <div key={idx} className="text-sm text-red-600 p-2 bg-white rounded">
+                            {err.row > 0 ? `Satır ${err.row}: ` : ''}{err.message}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Help Section */}
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h4 className="font-medium text-gray-700 mb-2">Desteklenen Soru Tipleri:</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li><strong>COKTAN_SECMELI:</strong> Çoktan seçmeli (secenekler kolonunu doldurun)</li>
+                  <li><strong>OLCEK_1_5:</strong> 1-5 arası ölçek (otomatik puanlama)</li>
+                  <li><strong>EVET_HAYIR:</strong> Evet/Hayır (evet_puani ve hayir_puani kolonlarını doldurun)</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => { setShowBulkUpload(null); setBulkUploadResult(null); }}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+              >
+                Kapat
               </button>
             </div>
           </div>
