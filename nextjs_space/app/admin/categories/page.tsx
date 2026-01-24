@@ -69,11 +69,21 @@ export default function CategoriesPage() {
   const [showBulkUpload, setShowBulkUpload] = useState<{ parentId: string; isSubCategory: boolean } | null>(null);
   const [bulkUploadResult, setBulkUploadResult] = useState<{
     success: boolean;
-    summary?: { totalRows: number; successCount: number; errorCount: number };
+    summary?: { totalRows: number; successCount: number; errorCount: number; skippedRows?: number };
     errors?: { row: number; message: string }[];
   } | null>(null);
   const [bulkUploading, setBulkUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Survey-level bulk upload state
+  const [showSurveyBulkUpload, setShowSurveyBulkUpload] = useState(false);
+  const [surveyBulkUploadResult, setSurveyBulkUploadResult] = useState<{
+    success: boolean;
+    summary?: { totalRows: number; successCount: number; errorCount: number; skippedRows?: number };
+    errors?: { row: number; message: string }[];
+  } | null>(null);
+  const [surveyBulkUploading, setSurveyBulkUploading] = useState(false);
+  const surveyFileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchSurveys = async () => {
     try {
@@ -228,6 +238,73 @@ export default function CategoriesPage() {
     setBulkUploadResult(null);
   };
 
+  // Survey-level bulk upload functions
+  const handleSurveyTemplateDownload = async () => {
+    if (!selectedSurveyId) return;
+    try {
+      const response = await fetch(`/api/admin/questions/survey-template?surveyId=${selectedSurveyId}`);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const surveyName = surveys.find(s => s.id === selectedSurveyId)?.name || 'anket';
+      a.download = `${surveyName}_soru_sablonu.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading survey template:', error);
+      alert('Şablon indirilemedi');
+    }
+  };
+
+  const handleSurveyBulkUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedSurveyId) return;
+
+    setSurveyBulkUploading(true);
+    setSurveyBulkUploadResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('surveyId', selectedSurveyId);
+
+      const response = await fetch('/api/admin/questions/survey-bulk-upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        setSurveyBulkUploadResult({
+          success: true,
+          summary: result.summary,
+          errors: result.errors,
+        });
+        fetchCategories();
+      } else {
+        setSurveyBulkUploadResult({
+          success: false,
+          errors: [{ row: 0, message: result.error || 'Yükleme başarısız' }],
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading:', error);
+      setSurveyBulkUploadResult({
+        success: false,
+        errors: [{ row: 0, message: 'Dosya yüklenirken hata oluştu' }],
+      });
+    } finally {
+      setSurveyBulkUploading(false);
+      if (surveyFileInputRef.current) {
+        surveyFileInputRef.current.value = '';
+      }
+    }
+  };
+
   const openModal = (type: string, parentId?: string, editItem?: any, parentData?: any) => {
     if (editItem) {
       let initialData = { ...editItem };
@@ -373,7 +450,7 @@ export default function CategoriesPage() {
 
       {/* Anket Seçimi */}
       <div className="bg-white rounded-xl shadow-md p-4 mb-6">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <FileText className="text-[#1e3a8a]" size={20} />
           <label className="font-medium text-gray-700">Anket Seçin:</label>
           <select
@@ -387,9 +464,21 @@ export default function CategoriesPage() {
             ))}
           </select>
           {selectedSurveyId && (
-            <span className="text-sm text-gray-500">
-              {categories.length} kategori gösteriliyor
-            </span>
+            <>
+              <span className="text-sm text-gray-500">
+                {categories.length} kategori gösteriliyor
+              </span>
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  onClick={() => setShowSurveyBulkUpload(true)}
+                  className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                  title="Tüm kategorilere toplu soru yükle"
+                >
+                  <Upload size={16} />
+                  Toplu Soru Yükle
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -995,6 +1084,143 @@ export default function CategoriesPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => { setShowBulkUpload(null); setBulkUploadResult(null); }}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Survey-Level Bulk Upload Modal */}
+      {showSurveyBulkUpload && selectedSurveyId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">
+                📊 Ankete Toplu Soru Yükle
+              </h2>
+              <button onClick={() => { setShowSurveyBulkUpload(false); setSurveyBulkUploadResult(null); }} className="text-gray-500 hover:text-gray-700">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-amber-800">
+                <strong>Seçili Anket:</strong> {surveys.find(s => s.id === selectedSurveyId)?.name}
+              </p>
+              <p className="text-xs text-amber-600 mt-1">
+                Bu şablon, anketin tüm kategori ve alt kategorilerini içerir. Tek dosyada tüm soruları yükleyebilirsiniz.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Template Download */}
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h3 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                  <Download size={18} />
+                  1. Anket Şablonunu İndir
+                </h3>
+                <p className="text-sm text-blue-700 mb-3">
+                  Şablon, anketin yapısını (kategori, alt kategori, alt seviye) içerir. 
+                  Her satırda hangi kategoriye ait olduğunu belirterek soruları doldurun.
+                </p>
+                <button
+                  onClick={handleSurveyTemplateDownload}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  <Download size={18} />
+                  Anket Soru Şablonu İndir (.xlsx)
+                </button>
+              </div>
+
+              {/* File Upload */}
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <h3 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+                  <Upload size={18} />
+                  2. Doldurduğunuz Dosyayı Yükleyin
+                </h3>
+                <p className="text-sm text-green-700 mb-3">
+                  Şablondaki <strong>kategori_adi</strong>, <strong>alt_kategori_adi</strong> ve <strong>alt_seviye_adi</strong> kolonlarını 
+                  değiştirmeden soruları ekleyin. Sistem otomatik olarak doğru yere yerleştirecek.
+                </p>
+                <input
+                  ref={surveyFileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleSurveyBulkUpload}
+                  disabled={surveyBulkUploading}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 disabled:opacity-50"
+                />
+                {surveyBulkUploading && (
+                  <div className="flex items-center gap-2 mt-3 text-green-700">
+                    <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm">Yükleniyor...</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Results */}
+              {surveyBulkUploadResult && (
+                <div className={`p-4 rounded-lg border ${surveyBulkUploadResult.success ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+                  <h3 className={`font-medium mb-3 flex items-center gap-2 ${surveyBulkUploadResult.success ? 'text-emerald-800' : 'text-red-800'}`}>
+                    {surveyBulkUploadResult.success ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
+                    Yükleme Sonucu
+                  </h3>
+                  
+                  {surveyBulkUploadResult.summary && (
+                    <div className="grid grid-cols-4 gap-3 mb-3">
+                      <div className="text-center p-2 bg-white rounded-lg">
+                        <div className="text-lg font-bold text-gray-700">{surveyBulkUploadResult.summary.totalRows}</div>
+                        <div className="text-xs text-gray-500">Toplam Satır</div>
+                      </div>
+                      <div className="text-center p-2 bg-white rounded-lg">
+                        <div className="text-lg font-bold text-emerald-600">{surveyBulkUploadResult.summary.successCount}</div>
+                        <div className="text-xs text-gray-500">Başarılı</div>
+                      </div>
+                      <div className="text-center p-2 bg-white rounded-lg">
+                        <div className="text-lg font-bold text-red-600">{surveyBulkUploadResult.summary.errorCount}</div>
+                        <div className="text-xs text-gray-500">Hatalı</div>
+                      </div>
+                      <div className="text-center p-2 bg-white rounded-lg">
+                        <div className="text-lg font-bold text-gray-400">{surveyBulkUploadResult.summary.skippedRows || 0}</div>
+                        <div className="text-xs text-gray-500">Atlanan</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {surveyBulkUploadResult.errors && surveyBulkUploadResult.errors.length > 0 && (
+                    <div className="mt-3">
+                      <h4 className="text-sm font-medium text-red-700 mb-2">Hatalı Satırlar:</h4>
+                      <div className="max-h-40 overflow-y-auto space-y-1">
+                        {surveyBulkUploadResult.errors.map((err, idx) => (
+                          <div key={idx} className="text-sm text-red-600 p-2 bg-white rounded">
+                            {err.row > 0 ? `Satır ${err.row}: ` : ''}{err.message}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Help Section */}
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h4 className="font-medium text-gray-700 mb-2">📋 Şablon Kullanım Rehberi:</h4>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• <strong>kategori_adi:</strong> Kategori adını şablondaki gibi yazın</li>
+                  <li>• <strong>alt_kategori_adi:</strong> Alt kategori adını tam olarak yazın</li>
+                  <li>• <strong>alt_seviye_adi:</strong> Varsa alt seviye adı, yoksa boş bırakın</li>
+                  <li>• Şablondaki "Anket Yapısı" sayfasından doğru isimleri kopyalayabilirsiniz</li>
+                  <li>• "--- ÖRNEK SATIRLAR ---" işaretli satırlar otomatik atlanır</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => { setShowSurveyBulkUpload(false); setSurveyBulkUploadResult(null); }}
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
               >
                 Kapat
