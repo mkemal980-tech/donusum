@@ -298,7 +298,7 @@ export default function DashboardClient() {
       const subSectorName = userProfile?.subSector?.name || '';
       const reportDate = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-      // HTML içeriği - Dark Theme Design
+      // HTML içeriği - Dark Theme Design (Kompakt 2 Sayfa)
       const htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -307,6 +307,11 @@ export default function DashboardClient() {
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
             
+            @page {
+              size: A4;
+              margin: 15mm;
+            }
+            
             * { margin: 0; padding: 0; box-sizing: border-box; }
             
             body { 
@@ -314,79 +319,78 @@ export default function DashboardClient() {
               background: #0f172a;
               color: #e2e8f0;
               padding: 0;
-              line-height: 1.6;
+              line-height: 1.5;
+              font-size: 12px;
             }
             
             .page {
-              padding: 40px;
-              min-height: 100vh;
+              padding: 20px;
             }
             
             /* Header / Künye Section */
             .header-section {
               background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
               border: 1px solid #334155;
-              border-radius: 16px;
-              padding: 32px;
-              margin-bottom: 32px;
+              border-radius: 12px;
+              padding: 16px 20px;
+              margin-bottom: 16px;
             }
             
             .company-logo {
               display: flex;
               align-items: center;
-              gap: 16px;
-              margin-bottom: 24px;
+              gap: 12px;
+              margin-bottom: 12px;
             }
             
             .logo-icon {
-              width: 56px;
-              height: 56px;
+              width: 40px;
+              height: 40px;
               background: linear-gradient(135deg, #22d3ee 0%, #0ea5e9 100%);
-              border-radius: 12px;
+              border-radius: 8px;
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: 24px;
+              font-size: 18px;
               font-weight: 700;
               color: #0f172a;
             }
             
             .company-name {
-              font-size: 28px;
+              font-size: 20px;
               font-weight: 700;
               color: #f1f5f9;
             }
             
             .company-subtitle {
-              font-size: 14px;
+              font-size: 11px;
               color: #94a3b8;
-              margin-top: 4px;
+              margin-top: 2px;
             }
             
             .info-grid {
               display: grid;
-              grid-template-columns: repeat(2, 1fr);
-              gap: 16px;
-              margin-top: 24px;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 10px;
             }
             
             .info-item {
               background: #1e293b;
-              border-radius: 12px;
-              padding: 16px;
+              border-radius: 8px;
+              padding: 10px;
               border: 1px solid #334155;
             }
             
             .info-label {
-              font-size: 11px;
+              font-size: 9px;
               color: #64748b;
               text-transform: uppercase;
               letter-spacing: 0.5px;
-              margin-bottom: 6px;
+              margin-bottom: 3px;
             }
             
             .info-value {
-              font-size: 15px;
+              font-size: 12px;
               color: #f1f5f9;
               font-weight: 500;
             }
@@ -395,82 +399,82 @@ export default function DashboardClient() {
             .stats-grid {
               display: grid;
               grid-template-columns: repeat(4, 1fr);
-              gap: 16px;
-              margin-bottom: 32px;
+              gap: 10px;
+              margin-bottom: 16px;
             }
             
             .stat-card {
               background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
               border: 1px solid #334155;
-              border-radius: 16px;
-              padding: 24px;
+              border-radius: 10px;
+              padding: 12px;
               text-align: center;
             }
             
             .stat-icon {
-              width: 48px;
-              height: 48px;
+              width: 28px;
+              height: 28px;
               background: linear-gradient(135deg, #22d3ee20 0%, #0ea5e920 100%);
-              border-radius: 12px;
-              margin: 0 auto 12px;
+              border-radius: 6px;
+              margin: 0 auto 6px;
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: 20px;
+              font-size: 14px;
             }
             
             .stat-value {
-              font-size: 32px;
+              font-size: 20px;
               font-weight: 700;
               color: #22d3ee;
-              margin-bottom: 4px;
+              margin-bottom: 2px;
             }
             
             .stat-label {
-              font-size: 12px;
+              font-size: 9px;
               color: #94a3b8;
             }
             
             .stat-change {
-              font-size: 11px;
+              font-size: 9px;
               color: #22c55e;
-              margin-top: 8px;
+              margin-top: 4px;
             }
             
             /* Maturity Section */
             .maturity-section {
               display: grid;
               grid-template-columns: 1fr 1fr;
-              gap: 24px;
-              margin-bottom: 32px;
+              gap: 12px;
+              margin-bottom: 16px;
             }
             
             .maturity-card {
               background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
               border: 1px solid #334155;
-              border-radius: 16px;
-              padding: 24px;
+              border-radius: 10px;
+              padding: 12px;
             }
             
             .maturity-card h3 {
-              font-size: 14px;
+              font-size: 10px;
               color: #94a3b8;
-              margin-bottom: 16px;
+              margin-bottom: 8px;
               text-transform: uppercase;
               letter-spacing: 0.5px;
             }
             
             .maturity-score-display {
               text-align: center;
-              padding: 24px;
+              padding: 8px;
             }
             
             .score-circle {
-              width: 140px;
-              height: 140px;
+              width: 80px;
+              height: 80px;
               border-radius: 50%;
               background: conic-gradient(#22d3ee ${overallPercentage * 3.6}deg, #334155 0deg);
-              margin: 0 auto 16px;
+              margin: 0 auto 8px;
               display: flex;
               align-items: center;
               justify-content: center;
@@ -478,8 +482,8 @@ export default function DashboardClient() {
             }
             
             .score-circle-inner {
-              width: 110px;
-              height: 110px;
+              width: 64px;
+              height: 64px;
               border-radius: 50%;
               background: #1e293b;
               display: flex;
@@ -489,13 +493,13 @@ export default function DashboardClient() {
             }
             
             .score-number {
-              font-size: 36px;
+              font-size: 20px;
               font-weight: 700;
               color: #f1f5f9;
             }
             
             .score-max {
-              font-size: 14px;
+              font-size: 9px;
               color: #64748b;
             }
             
@@ -503,43 +507,42 @@ export default function DashboardClient() {
               display: inline-block;
               background: ${maturity.color}30;
               color: ${maturity.color};
-              padding: 8px 24px;
-              border-radius: 20px;
-              font-size: 16px;
+              padding: 4px 12px;
+              border-radius: 12px;
+              font-size: 11px;
               font-weight: 600;
-              margin-top: 8px;
             }
             
             /* Level Bar */
             .level-bar-container {
-              padding: 16px;
+              padding: 4px;
             }
             
             .level-item {
               display: flex;
               align-items: center;
-              padding: 12px;
-              border-radius: 8px;
-              margin-bottom: 8px;
+              padding: 6px 8px;
+              border-radius: 6px;
+              margin-bottom: 4px;
               background: #1e293b;
             }
             
             .level-item.active {
               background: linear-gradient(90deg, #22d3ee20 0%, transparent 100%);
-              border-left: 3px solid #22d3ee;
+              border-left: 2px solid #22d3ee;
             }
             
             .level-number {
-              width: 32px;
-              height: 32px;
+              width: 20px;
+              height: 20px;
               border-radius: 50%;
               background: #334155;
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: 14px;
+              font-size: 10px;
               font-weight: 600;
-              margin-right: 12px;
+              margin-right: 8px;
             }
             
             .level-item.active .level-number {
@@ -548,7 +551,7 @@ export default function DashboardClient() {
             }
             
             .level-name {
-              font-size: 14px;
+              font-size: 10px;
               color: #94a3b8;
             }
             
@@ -561,50 +564,50 @@ export default function DashboardClient() {
             .section {
               background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
               border: 1px solid #334155;
-              border-radius: 16px;
-              padding: 24px;
-              margin-bottom: 24px;
+              border-radius: 10px;
+              padding: 12px;
+              margin-bottom: 12px;
             }
             
             .section-header {
               display: flex;
               align-items: center;
               justify-content: space-between;
-              margin-bottom: 20px;
+              margin-bottom: 10px;
             }
             
             .section-title {
-              font-size: 16px;
+              font-size: 12px;
               font-weight: 600;
               color: #f1f5f9;
             }
             
             .category-list {
-              margin-top: 16px;
+              margin-top: 8px;
             }
             
             .category-row {
               display: flex;
               align-items: center;
-              padding: 16px;
+              padding: 8px 10px;
               background: #0f172a;
-              border-radius: 12px;
-              margin-bottom: 12px;
+              border-radius: 8px;
+              margin-bottom: 6px;
               border: 1px solid #334155;
             }
             
             .category-rank {
-              width: 32px;
-              height: 32px;
-              border-radius: 8px;
+              width: 22px;
+              height: 22px;
+              border-radius: 6px;
               background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: 14px;
+              font-size: 10px;
               font-weight: 600;
               color: #94a3b8;
-              margin-right: 16px;
+              margin-right: 10px;
             }
             
             .category-info {
@@ -612,31 +615,31 @@ export default function DashboardClient() {
             }
             
             .category-name {
-              font-size: 14px;
+              font-size: 11px;
               font-weight: 500;
               color: #f1f5f9;
-              margin-bottom: 8px;
+              margin-bottom: 4px;
             }
             
             .category-bar {
-              height: 8px;
+              height: 5px;
               background: #334155;
-              border-radius: 4px;
+              border-radius: 3px;
               overflow: hidden;
             }
             
             .category-bar-fill {
               height: 100%;
-              border-radius: 4px;
+              border-radius: 3px;
               background: linear-gradient(90deg, #22d3ee 0%, #0ea5e9 100%);
             }
             
             .category-score {
-              font-size: 16px;
+              font-size: 12px;
               font-weight: 600;
               color: #22d3ee;
-              margin-left: 16px;
-              min-width: 50px;
+              margin-left: 10px;
+              min-width: 40px;
               text-align: right;
             }
             
@@ -645,24 +648,25 @@ export default function DashboardClient() {
               width: 100%;
               border-collapse: separate;
               border-spacing: 0;
-              margin-top: 16px;
+              margin-top: 8px;
+              font-size: 10px;
             }
             
             .gap-table th {
               background: #0f172a;
-              padding: 14px 16px;
+              padding: 8px 10px;
               text-align: left;
-              font-size: 12px;
+              font-size: 9px;
               font-weight: 600;
               color: #94a3b8;
               text-transform: uppercase;
-              letter-spacing: 0.5px;
+              letter-spacing: 0.3px;
               border-bottom: 1px solid #334155;
             }
             
             .gap-table td {
-              padding: 14px 16px;
-              font-size: 14px;
+              padding: 6px 10px;
+              font-size: 10px;
               color: #e2e8f0;
               border-bottom: 1px solid #334155;
             }
@@ -678,9 +682,9 @@ export default function DashboardClient() {
             
             .level-badge {
               display: inline-block;
-              padding: 4px 12px;
-              border-radius: 12px;
-              font-size: 12px;
+              padding: 2px 8px;
+              border-radius: 8px;
+              font-size: 9px;
               font-weight: 500;
             }
             
@@ -688,34 +692,34 @@ export default function DashboardClient() {
             .ironman-grid {
               display: grid;
               grid-template-columns: 1fr 1fr;
-              gap: 16px;
-              margin-top: 16px;
+              gap: 10px;
+              margin-top: 8px;
             }
             
             .ironman-axis {
               background: #0f172a;
-              border-radius: 12px;
-              padding: 20px;
+              border-radius: 8px;
+              padding: 10px;
               border: 1px solid #334155;
             }
             
             .axis-label {
-              font-size: 12px;
+              font-size: 9px;
               color: #94a3b8;
-              margin-bottom: 8px;
+              margin-bottom: 4px;
             }
             
             .axis-value {
-              font-size: 28px;
+              font-size: 18px;
               font-weight: 700;
               color: #f1f5f9;
             }
             
             .axis-bar {
-              height: 8px;
+              height: 5px;
               background: #334155;
-              border-radius: 4px;
-              margin-top: 12px;
+              border-radius: 3px;
+              margin-top: 6px;
               overflow: hidden;
             }
             
@@ -731,37 +735,37 @@ export default function DashboardClient() {
               display: inline-block;
               background: #22d3ee20;
               color: #22d3ee;
-              padding: 8px 20px;
-              border-radius: 20px;
-              font-size: 14px;
+              padding: 4px 12px;
+              border-radius: 12px;
+              font-size: 10px;
               font-weight: 600;
-              margin-top: 16px;
+              margin-top: 8px;
             }
             
             /* Recommendations Section */
             .recommendation-list {
-              margin-top: 16px;
+              margin-top: 8px;
             }
             
             .recommendation-item {
               background: #0f172a;
               border: 1px solid #334155;
-              border-radius: 12px;
-              padding: 16px;
-              margin-bottom: 12px;
+              border-radius: 8px;
+              padding: 8px 10px;
+              margin-bottom: 6px;
             }
             
             .recommendation-header {
               display: flex;
               align-items: center;
-              gap: 12px;
-              margin-bottom: 8px;
+              gap: 8px;
+              margin-bottom: 4px;
             }
             
             .rec-type-badge {
-              padding: 4px 10px;
-              border-radius: 6px;
-              font-size: 11px;
+              padding: 2px 6px;
+              border-radius: 4px;
+              font-size: 8px;
               font-weight: 600;
               text-transform: uppercase;
             }
@@ -771,27 +775,27 @@ export default function DashboardClient() {
             .rec-type-badge.big-bet { background: #ef444420; color: #ef4444; }
             
             .recommendation-title {
-              font-size: 15px;
+              font-size: 11px;
               font-weight: 600;
               color: #f1f5f9;
             }
             
             .recommendation-desc {
-              font-size: 13px;
+              font-size: 9px;
               color: #94a3b8;
-              line-height: 1.5;
+              line-height: 1.4;
             }
             
             .rec-meta {
               display: flex;
-              gap: 16px;
-              margin-top: 12px;
-              padding-top: 12px;
+              gap: 10px;
+              margin-top: 6px;
+              padding-top: 6px;
               border-top: 1px solid #334155;
             }
             
             .rec-meta-item {
-              font-size: 12px;
+              font-size: 8px;
               color: #64748b;
             }
             
@@ -801,14 +805,14 @@ export default function DashboardClient() {
             
             /* Footer */
             .footer {
-              margin-top: 40px;
-              padding: 24px;
+              margin-top: 16px;
+              padding: 12px;
               text-align: center;
               border-top: 1px solid #334155;
             }
             
             .footer-text {
-              font-size: 12px;
+              font-size: 9px;
               color: #64748b;
             }
             
@@ -820,6 +824,11 @@ export default function DashboardClient() {
             /* Page Break */
             .page-break {
               page-break-before: always;
+            }
+            
+            /* Avoid page break inside elements */
+            .section, .recommendation-item, .category-row, .ironman-grid {
+              page-break-inside: avoid;
             }
           </style>
         </head>
