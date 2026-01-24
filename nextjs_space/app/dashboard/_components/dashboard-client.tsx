@@ -89,6 +89,16 @@ interface CategoryStats {
   recommendationCount: number;
 }
 
+interface UserProfile {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  organization: string;
+  sector: { id: string; name: string; naicsCode: string } | null;
+  subSector: { id: string; name: string } | null;
+}
+
 export default function DashboardClient() {
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
@@ -98,8 +108,25 @@ export default function DashboardClient() {
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>("");
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const router = useRouter();
   const dashboardRef = useRef<HTMLDivElement>(null);
+  
+  // Fetch user profile
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const res = await fetch("/api/user/profile");
+        if (res.ok) {
+          const data = await res.json();
+          setUserProfile(data);
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+    fetchUserProfile();
+  }, []);
 
   // Fetch assigned surveys for this user
   useEffect(() => {
@@ -230,7 +257,7 @@ export default function DashboardClient() {
     ? Math.round((completedQuestions / totalQuestions) * 100) 
     : 0;
 
-  // PDF Oluşturma Fonksiyonu
+  // PDF Oluşturma Fonksiyonu - Dark Theme Design
   const generatePdfReport = async () => {
     setGeneratingPdf(true);
     try {
@@ -241,6 +268,21 @@ export default function DashboardClient() {
         categoryData = await categoryScoresRes.json();
       }
 
+      // Ironman verilerini al
+      const ironmanRes = await fetch(`/api/ironman/user?surveyId=${selectedSurveyId}`);
+      let ironmanData = null;
+      if (ironmanRes.ok) {
+        ironmanData = await ironmanRes.json();
+      }
+
+      // Önerileri al
+      const recommendationsRes = await fetch(`/api/recommendations?surveyId=${selectedSurveyId}`);
+      let recommendations: any[] = [];
+      if (recommendationsRes.ok) {
+        const recData = await recommendationsRes.json();
+        recommendations = recData ?? [];
+      }
+
       // Maturity level hesapla - 1-5 puan kullan
       const overallScore = categoryData?.overallScore ?? 1;
       const overallPercentage = categoryData?.overallPercentage ?? scoreData?.totalScore ?? 0;
@@ -249,125 +291,765 @@ export default function DashboardClient() {
       // Seçilen anket adı
       const surveyName = surveys.find(s => s.id === selectedSurveyId)?.name ?? 'Değerlendirme';
 
-      // HTML içeriği oluştur
+      // Kullanıcı bilgileri
+      const userName = [userProfile?.firstName, userProfile?.lastName].filter(Boolean).join(' ') || 'Kullanıcı';
+      const companyName = userProfile?.organization || 'Şirket Adı Belirtilmemiş';
+      const sectorName = userProfile?.sector?.name || 'Sektör Belirtilmemiş';
+      const subSectorName = userProfile?.subSector?.name || '';
+      const reportDate = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      // HTML içeriği - Dark Theme Design
       const htmlContent = `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="UTF-8">
           <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+            
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1f2937; }
-            .header { text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 3px solid #1e3a8a; }
-            .header h1 { color: #1e3a8a; font-size: 28px; margin-bottom: 8px; }
-            .header p { color: #6b7280; font-size: 14px; }
-            .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
-            .summary-card { background: #f8fafc; border-radius: 12px; padding: 20px; text-align: center; }
-            .summary-card .label { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
-            .summary-card .value { font-size: 28px; font-weight: bold; color: #1e3a8a; }
-            .maturity-section { background: linear-gradient(135deg, #1e3a8a 0%, #3b5998 100%); border-radius: 16px; padding: 30px; margin-bottom: 40px; color: white; text-align: center; }
-            .maturity-section h2 { font-size: 18px; margin-bottom: 16px; opacity: 0.9; }
-            .maturity-badge { display: inline-block; background: ${maturity.color}; color: white; padding: 12px 32px; border-radius: 30px; font-size: 24px; font-weight: bold; }
-            .maturity-score { font-size: 48px; font-weight: bold; margin: 20px 0; }
-            .section { margin-bottom: 30px; }
-            .section h3 { font-size: 18px; color: #1e3a8a; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; }
-            .category-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; }
-            .category-name { font-weight: 500; }
-            .category-score { font-weight: bold; color: #1e3a8a; }
-            .progress-bar { flex: 1; height: 8px; background: #e5e7eb; border-radius: 4px; margin: 0 16px; }
-            .progress-fill { height: 100%; border-radius: 4px; }
-            .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 12px; }
-            .gap-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-            .gap-table th, .gap-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-            .gap-table th { background: #f8fafc; font-weight: 600; color: #374151; }
-            .level-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+            
+            body { 
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+              background: #0f172a;
+              color: #e2e8f0;
+              padding: 0;
+              line-height: 1.6;
+            }
+            
+            .page {
+              padding: 40px;
+              min-height: 100vh;
+            }
+            
+            /* Header / Künye Section */
+            .header-section {
+              background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+              border: 1px solid #334155;
+              border-radius: 16px;
+              padding: 32px;
+              margin-bottom: 32px;
+            }
+            
+            .company-logo {
+              display: flex;
+              align-items: center;
+              gap: 16px;
+              margin-bottom: 24px;
+            }
+            
+            .logo-icon {
+              width: 56px;
+              height: 56px;
+              background: linear-gradient(135deg, #22d3ee 0%, #0ea5e9 100%);
+              border-radius: 12px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 24px;
+              font-weight: 700;
+              color: #0f172a;
+            }
+            
+            .company-name {
+              font-size: 28px;
+              font-weight: 700;
+              color: #f1f5f9;
+            }
+            
+            .company-subtitle {
+              font-size: 14px;
+              color: #94a3b8;
+              margin-top: 4px;
+            }
+            
+            .info-grid {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 16px;
+              margin-top: 24px;
+            }
+            
+            .info-item {
+              background: #1e293b;
+              border-radius: 12px;
+              padding: 16px;
+              border: 1px solid #334155;
+            }
+            
+            .info-label {
+              font-size: 11px;
+              color: #64748b;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin-bottom: 6px;
+            }
+            
+            .info-value {
+              font-size: 15px;
+              color: #f1f5f9;
+              font-weight: 500;
+            }
+            
+            /* Stats Cards */
+            .stats-grid {
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 16px;
+              margin-bottom: 32px;
+            }
+            
+            .stat-card {
+              background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+              border: 1px solid #334155;
+              border-radius: 16px;
+              padding: 24px;
+              text-align: center;
+            }
+            
+            .stat-icon {
+              width: 48px;
+              height: 48px;
+              background: linear-gradient(135deg, #22d3ee20 0%, #0ea5e920 100%);
+              border-radius: 12px;
+              margin: 0 auto 12px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 20px;
+            }
+            
+            .stat-value {
+              font-size: 32px;
+              font-weight: 700;
+              color: #22d3ee;
+              margin-bottom: 4px;
+            }
+            
+            .stat-label {
+              font-size: 12px;
+              color: #94a3b8;
+            }
+            
+            .stat-change {
+              font-size: 11px;
+              color: #22c55e;
+              margin-top: 8px;
+            }
+            
+            /* Maturity Section */
+            .maturity-section {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 24px;
+              margin-bottom: 32px;
+            }
+            
+            .maturity-card {
+              background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+              border: 1px solid #334155;
+              border-radius: 16px;
+              padding: 24px;
+            }
+            
+            .maturity-card h3 {
+              font-size: 14px;
+              color: #94a3b8;
+              margin-bottom: 16px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            .maturity-score-display {
+              text-align: center;
+              padding: 24px;
+            }
+            
+            .score-circle {
+              width: 140px;
+              height: 140px;
+              border-radius: 50%;
+              background: conic-gradient(#22d3ee ${overallPercentage * 3.6}deg, #334155 0deg);
+              margin: 0 auto 16px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              position: relative;
+            }
+            
+            .score-circle-inner {
+              width: 110px;
+              height: 110px;
+              border-radius: 50%;
+              background: #1e293b;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+            }
+            
+            .score-number {
+              font-size: 36px;
+              font-weight: 700;
+              color: #f1f5f9;
+            }
+            
+            .score-max {
+              font-size: 14px;
+              color: #64748b;
+            }
+            
+            .maturity-badge {
+              display: inline-block;
+              background: ${maturity.color}30;
+              color: ${maturity.color};
+              padding: 8px 24px;
+              border-radius: 20px;
+              font-size: 16px;
+              font-weight: 600;
+              margin-top: 8px;
+            }
+            
+            /* Level Bar */
+            .level-bar-container {
+              padding: 16px;
+            }
+            
+            .level-item {
+              display: flex;
+              align-items: center;
+              padding: 12px;
+              border-radius: 8px;
+              margin-bottom: 8px;
+              background: #1e293b;
+            }
+            
+            .level-item.active {
+              background: linear-gradient(90deg, #22d3ee20 0%, transparent 100%);
+              border-left: 3px solid #22d3ee;
+            }
+            
+            .level-number {
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              background: #334155;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 14px;
+              font-weight: 600;
+              margin-right: 12px;
+            }
+            
+            .level-item.active .level-number {
+              background: #22d3ee;
+              color: #0f172a;
+            }
+            
+            .level-name {
+              font-size: 14px;
+              color: #94a3b8;
+            }
+            
+            .level-item.active .level-name {
+              color: #f1f5f9;
+              font-weight: 500;
+            }
+            
+            /* Categories Section */
+            .section {
+              background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+              border: 1px solid #334155;
+              border-radius: 16px;
+              padding: 24px;
+              margin-bottom: 24px;
+            }
+            
+            .section-header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 20px;
+            }
+            
+            .section-title {
+              font-size: 16px;
+              font-weight: 600;
+              color: #f1f5f9;
+            }
+            
+            .category-list {
+              margin-top: 16px;
+            }
+            
+            .category-row {
+              display: flex;
+              align-items: center;
+              padding: 16px;
+              background: #0f172a;
+              border-radius: 12px;
+              margin-bottom: 12px;
+              border: 1px solid #334155;
+            }
+            
+            .category-rank {
+              width: 32px;
+              height: 32px;
+              border-radius: 8px;
+              background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 14px;
+              font-weight: 600;
+              color: #94a3b8;
+              margin-right: 16px;
+            }
+            
+            .category-info {
+              flex: 1;
+            }
+            
+            .category-name {
+              font-size: 14px;
+              font-weight: 500;
+              color: #f1f5f9;
+              margin-bottom: 8px;
+            }
+            
+            .category-bar {
+              height: 8px;
+              background: #334155;
+              border-radius: 4px;
+              overflow: hidden;
+            }
+            
+            .category-bar-fill {
+              height: 100%;
+              border-radius: 4px;
+              background: linear-gradient(90deg, #22d3ee 0%, #0ea5e9 100%);
+            }
+            
+            .category-score {
+              font-size: 16px;
+              font-weight: 600;
+              color: #22d3ee;
+              margin-left: 16px;
+              min-width: 50px;
+              text-align: right;
+            }
+            
+            /* GAP Table */
+            .gap-table {
+              width: 100%;
+              border-collapse: separate;
+              border-spacing: 0;
+              margin-top: 16px;
+            }
+            
+            .gap-table th {
+              background: #0f172a;
+              padding: 14px 16px;
+              text-align: left;
+              font-size: 12px;
+              font-weight: 600;
+              color: #94a3b8;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              border-bottom: 1px solid #334155;
+            }
+            
+            .gap-table td {
+              padding: 14px 16px;
+              font-size: 14px;
+              color: #e2e8f0;
+              border-bottom: 1px solid #334155;
+            }
+            
+            .gap-table tr:hover td {
+              background: #1e293b;
+            }
+            
+            .gap-table .category-row-main td {
+              background: #0f172a;
+              font-weight: 600;
+            }
+            
+            .level-badge {
+              display: inline-block;
+              padding: 4px 12px;
+              border-radius: 12px;
+              font-size: 12px;
+              font-weight: 500;
+            }
+            
+            /* Ironman Section */
+            .ironman-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 16px;
+              margin-top: 16px;
+            }
+            
+            .ironman-axis {
+              background: #0f172a;
+              border-radius: 12px;
+              padding: 20px;
+              border: 1px solid #334155;
+            }
+            
+            .axis-label {
+              font-size: 12px;
+              color: #94a3b8;
+              margin-bottom: 8px;
+            }
+            
+            .axis-value {
+              font-size: 28px;
+              font-weight: 700;
+              color: #f1f5f9;
+            }
+            
+            .axis-bar {
+              height: 8px;
+              background: #334155;
+              border-radius: 4px;
+              margin-top: 12px;
+              overflow: hidden;
+            }
+            
+            .axis-bar-fill.velocity {
+              background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+            }
+            
+            .axis-bar-fill.endurance {
+              background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+            }
+            
+            .quadrant-badge {
+              display: inline-block;
+              background: #22d3ee20;
+              color: #22d3ee;
+              padding: 8px 20px;
+              border-radius: 20px;
+              font-size: 14px;
+              font-weight: 600;
+              margin-top: 16px;
+            }
+            
+            /* Recommendations Section */
+            .recommendation-list {
+              margin-top: 16px;
+            }
+            
+            .recommendation-item {
+              background: #0f172a;
+              border: 1px solid #334155;
+              border-radius: 12px;
+              padding: 16px;
+              margin-bottom: 12px;
+            }
+            
+            .recommendation-header {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              margin-bottom: 8px;
+            }
+            
+            .rec-type-badge {
+              padding: 4px 10px;
+              border-radius: 6px;
+              font-size: 11px;
+              font-weight: 600;
+              text-transform: uppercase;
+            }
+            
+            .rec-type-badge.quick-win { background: #22c55e20; color: #22c55e; }
+            .rec-type-badge.project { background: #eab30820; color: #eab308; }
+            .rec-type-badge.big-bet { background: #ef444420; color: #ef4444; }
+            
+            .recommendation-title {
+              font-size: 15px;
+              font-weight: 600;
+              color: #f1f5f9;
+            }
+            
+            .recommendation-desc {
+              font-size: 13px;
+              color: #94a3b8;
+              line-height: 1.5;
+            }
+            
+            .rec-meta {
+              display: flex;
+              gap: 16px;
+              margin-top: 12px;
+              padding-top: 12px;
+              border-top: 1px solid #334155;
+            }
+            
+            .rec-meta-item {
+              font-size: 12px;
+              color: #64748b;
+            }
+            
+            .rec-meta-item span {
+              color: #94a3b8;
+            }
+            
+            /* Footer */
+            .footer {
+              margin-top: 40px;
+              padding: 24px;
+              text-align: center;
+              border-top: 1px solid #334155;
+            }
+            
+            .footer-text {
+              font-size: 12px;
+              color: #64748b;
+            }
+            
+            .footer-brand {
+              color: #22d3ee;
+              font-weight: 600;
+            }
+            
+            /* Page Break */
+            .page-break {
+              page-break-before: always;
+            }
           </style>
         </head>
         <body>
-          <div class="header">
-            <h1>Dönüşüm Platformu - ${surveyName}</h1>
-            <p>Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-          </div>
-
-          <div class="summary-grid">
-            <div class="summary-card">
-              <div class="label">Tamamlanan Sorular</div>
-              <div class="value">${completedQuestions}/${totalQuestions}</div>
-            </div>
-            <div class="summary-card">
-              <div class="label">Tamamlanma Oranı</div>
-              <div class="value">${completionPercentage}%</div>
-            </div>
-            <div class="summary-card">
-              <div class="label">Değerlendirilen Kategoriler</div>
-              <div class="value">${Object.keys(scoreData?.categoryScores ?? {}).length}</div>
-            </div>
-          </div>
-
-          <div class="maturity-section">
-            <h2>Genel Olgunluk Seviyesi</h2>
-            <div class="maturity-score">${overallScore.toFixed(2)} / 5</div>
-            <div class="maturity-badge">${maturity.label}</div>
-          </div>
-
-          <div class="section">
-            <h3>Kategori Bazlı Puanlar</h3>
-            ${Object.entries(scoreData?.categoryScores ?? {}).map(([id, data], index) => `
-              <div class="category-item">
-                <span class="category-name">${data?.name ?? 'Kategori'}</span>
-                <div class="progress-bar">
-                  <div class="progress-fill" style="width: ${data?.percentage ?? 0}%; background: ${categoryColors[index % categoryColors.length]};"></div>
+          <div class="page">
+            <!-- Header / Künye Section -->
+            <div class="header-section">
+              <div class="company-logo">
+                <div class="logo-icon">${companyName.charAt(0).toUpperCase()}</div>
+                <div>
+                  <div class="company-name">${companyName}</div>
+                  <div class="company-subtitle">Dönüşüm Değerlendirme Raporu</div>
                 </div>
-                <span class="category-score">${data?.percentage ?? 0}%</span>
               </div>
-            `).join('')}
+              
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">Sektör</div>
+                  <div class="info-value">${sectorName}${subSectorName ? ` / ${subSectorName}` : ''}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Değerlendirme</div>
+                  <div class="info-value">${surveyName}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Dolduran Kişi</div>
+                  <div class="info-value">${userName}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Rapor Tarihi</div>
+                  <div class="info-value">${reportDate}</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Summary Stats -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-value">${overallScore.toFixed(1)}</div>
+                <div class="stat-label">Genel Puan</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-value">${completedQuestions}</div>
+                <div class="stat-label">Cevaplanan Soru</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-value">${completionPercentage}%</div>
+                <div class="stat-label">Tamamlanma</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">💡</div>
+                <div class="stat-value">${recommendations.length}</div>
+                <div class="stat-label">Öneri Sayısı</div>
+              </div>
+            </div>
+            
+            <!-- Maturity Section -->
+            <div class="maturity-section">
+              <div class="maturity-card">
+                <h3>Genel Olgunluk Puanı</h3>
+                <div class="maturity-score-display">
+                  <div class="score-circle">
+                    <div class="score-circle-inner">
+                      <div class="score-number">${overallScore.toFixed(1)}</div>
+                      <div class="score-max">/ 5.0</div>
+                    </div>
+                  </div>
+                  <div class="maturity-badge">${maturity.label}</div>
+                </div>
+              </div>
+              
+              <div class="maturity-card">
+                <h3>Olgunluk Seviyesi</h3>
+                <div class="level-bar-container">
+                  ${['Lider', 'Olgun', 'Gelişen', 'Farkındalık', 'Başlangıç'].map((level, i) => {
+                    const isActive = level === maturity.label;
+                    return `
+                      <div class="level-item ${isActive ? 'active' : ''}">
+                        <div class="level-number">${5 - i}</div>
+                        <div class="level-name">${level}</div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            </div>
+            
+            <!-- Categories Section -->
+            <div class="section">
+              <div class="section-header">
+                <div class="section-title">Kategori Bazlı Performans</div>
+              </div>
+              <div class="category-list">
+                ${Object.entries(scoreData?.categoryScores ?? {}).map(([id, data], index) => `
+                  <div class="category-row">
+                    <div class="category-rank">${String(index + 1).padStart(2, '0')}</div>
+                    <div class="category-info">
+                      <div class="category-name">${data?.name ?? 'Kategori'}</div>
+                      <div class="category-bar">
+                        <div class="category-bar-fill" style="width: ${data?.percentage ?? 0}%;"></div>
+                      </div>
+                    </div>
+                    <div class="category-score">${data?.percentage ?? 0}%</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            
+            ${ironmanData ? `
+            <!-- Ironman Analysis -->
+            <div class="section">
+              <div class="section-header">
+                <div class="section-title">Ironman Analizi</div>
+              </div>
+              <div class="ironman-grid">
+                <div class="ironman-axis">
+                  <div class="axis-label">⚡ Hız (Velocity)</div>
+                  <div class="axis-value">${(ironmanData.velocity ?? 0).toFixed(2)}</div>
+                  <div class="axis-bar">
+                    <div class="axis-bar-fill velocity" style="width: ${((ironmanData.velocity ?? 0) / 5) * 100}%;"></div>
+                  </div>
+                </div>
+                <div class="ironman-axis">
+                  <div class="axis-label">🏃 Dayanıklılık (Endurance)</div>
+                  <div class="axis-value">${(ironmanData.endurance ?? 0).toFixed(2)}</div>
+                  <div class="axis-bar">
+                    <div class="axis-bar-fill endurance" style="width: ${((ironmanData.endurance ?? 0) / 5) * 100}%;"></div>
+                  </div>
+                </div>
+              </div>
+              <div style="text-align: center; margin-top: 16px;">
+                <div class="quadrant-badge">${ironmanData.quadrant ?? 'Belirsiz'}</div>
+              </div>
+            </div>
+            ` : ''}
           </div>
-
+          
           ${categoryData?.categories ? `
-          <div class="section">
-            <h3>GAP Analizi - Alt Kategori Detayları</h3>
-            <table class="gap-table">
-              <thead>
-                <tr>
-                  <th>Kategori / Alt Kategori</th>
-                  <th>Mevcut Puan</th>
-                  <th>Hedef</th>
-                  <th>Seviye</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${(categoryData.categories ?? []).map((cat: any) => `
-                  <tr style="background: #f0f9ff;">
-                    <td><strong>${cat.name}</strong></td>
-                    <td><strong>${cat.score?.toFixed(2) ?? '-'}</strong></td>
-                    <td>5.00</td>
-                    <td>
-                      <span class="level-badge" style="background: ${getMaturityLevelFromScore(cat.score ?? 1).color}20; color: ${getMaturityLevelFromScore(cat.score ?? 1).color};">
-                        ${getMaturityLevelFromScore(cat.score ?? 1).label}
-                      </span>
-                    </td>
+          <div class="page page-break">
+            <!-- GAP Analysis Detail -->
+            <div class="section">
+              <div class="section-header">
+                <div class="section-title">GAP Analizi - Detaylı Görünüm</div>
+              </div>
+              <table class="gap-table">
+                <thead>
+                  <tr>
+                    <th>Kategori / Alt Kategori</th>
+                    <th>Mevcut Puan</th>
+                    <th>Hedef</th>
+                    <th>Fark</th>
+                    <th>Seviye</th>
                   </tr>
-                  ${(cat.subCategories ?? []).map((sub: any) => `
-                    <tr>
-                      <td style="padding-left: 24px;">└ ${sub.name}</td>
-                      <td>${sub.score?.toFixed(2) ?? '-'}</td>
+                </thead>
+                <tbody>
+                  ${(categoryData.categories ?? []).map((cat: any) => `
+                    <tr class="category-row-main">
+                      <td><strong>${cat.name}</strong></td>
+                      <td><strong>${cat.score?.toFixed(2) ?? '-'}</strong></td>
                       <td>5.00</td>
+                      <td style="color: ${(5 - (cat.score ?? 0)) > 2 ? '#ef4444' : '#22c55e'};">${(5 - (cat.score ?? 0)).toFixed(2)}</td>
                       <td>
-                        <span class="level-badge" style="background: ${getMaturityLevelFromScore(sub.score ?? 1).color}20; color: ${getMaturityLevelFromScore(sub.score ?? 1).color};">
-                          ${getMaturityLevelFromScore(sub.score ?? 1).label}
+                        <span class="level-badge" style="background: ${getMaturityLevelFromScore(cat.score ?? 1).color}30; color: ${getMaturityLevelFromScore(cat.score ?? 1).color};">
+                          ${getMaturityLevelFromScore(cat.score ?? 1).label}
                         </span>
                       </td>
                     </tr>
+                    ${(cat.subCategories ?? []).map((sub: any) => `
+                      <tr>
+                        <td style="padding-left: 32px; color: #94a3b8;">└ ${sub.name}</td>
+                        <td>${sub.score?.toFixed(2) ?? '-'}</td>
+                        <td>5.00</td>
+                        <td style="color: ${(5 - (sub.score ?? 0)) > 2 ? '#ef4444' : '#22c55e'};">${(5 - (sub.score ?? 0)).toFixed(2)}</td>
+                        <td>
+                          <span class="level-badge" style="background: ${getMaturityLevelFromScore(sub.score ?? 1).color}30; color: ${getMaturityLevelFromScore(sub.score ?? 1).color};">
+                            ${getMaturityLevelFromScore(sub.score ?? 1).label}
+                          </span>
+                        </td>
+                      </tr>
+                    `).join('')}
                   `).join('')}
+                </tbody>
+              </table>
+            </div>
+            
+            ${recommendations.length > 0 ? `
+            <!-- Recommendations Section -->
+            <div class="section">
+              <div class="section-header">
+                <div class="section-title">Öneriler (İlk 10)</div>
+              </div>
+              <div class="recommendation-list">
+                ${recommendations.slice(0, 10).map((rec: any) => `
+                  <div class="recommendation-item">
+                    <div class="recommendation-header">
+                      <span class="rec-type-badge ${
+                        rec.strategicType === 'QUICK_WIN' ? 'quick-win' : 
+                        rec.strategicType === 'PROJECT' ? 'project' : 'big-bet'
+                      }">
+                        ${rec.strategicType === 'QUICK_WIN' ? 'Hızlı Kazanım' : 
+                          rec.strategicType === 'PROJECT' ? 'Proje' : 'Büyük Yatırım'}
+                      </span>
+                      <span class="recommendation-title">${rec.title}</span>
+                    </div>
+                    <div class="recommendation-desc">${rec.description?.substring(0, 200) ?? ''}${(rec.description?.length ?? 0) > 200 ? '...' : ''}</div>
+                    <div class="rec-meta">
+                      <div class="rec-meta-item">Zaman: <span>${
+                        rec.timeframe === 'SHORT_TERM' ? 'Kısa Vade' : 
+                        rec.timeframe === 'MEDIUM_TERM' ? 'Orta Vade' : 'Uzun Vade'
+                      }</span></div>
+                      <div class="rec-meta-item">CAPEX: <span>${'$'.repeat(rec.capexLevel ?? 1)}</span></div>
+                      <div class="rec-meta-item">OPEX: <span>${'$'.repeat(rec.opexLevel ?? 1)}</span></div>
+                    </div>
+                  </div>
                 `).join('')}
-              </tbody>
-            </table>
+              </div>
+            </div>
+            ` : ''}
+            
+            <!-- Footer -->
+            <div class="footer">
+              <div class="footer-text">
+                Bu rapor <span class="footer-brand">Dönüşüm Platformu</span> tarafından ${reportDate} tarihinde oluşturulmuştur.
+              </div>
+            </div>
           </div>
           ` : ''}
-
-          <div class="footer">
-            <p>Bu rapor Dönüşüm Platformu tarafından otomatik olarak oluşturulmuştur.</p>
-          </div>
         </body>
         </html>
       `;
@@ -384,7 +1066,7 @@ export default function DashboardClient() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `donusum-raporu-${surveyName.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+        a.download = `${companyName.toLowerCase().replace(/\s+/g, '-')}-donusum-raporu-${new Date().toISOString().split('T')[0]}.pdf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
