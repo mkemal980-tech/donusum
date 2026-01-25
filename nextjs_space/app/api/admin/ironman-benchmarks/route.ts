@@ -34,19 +34,33 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
-    const { sectorId, subSectorId, velocityAverage, velocityBest, enduranceAverage, enduranceBest, applyToAllSubSectors } = data;
+    const { 
+      sectorId, subSectorId, 
+      velocityAverage, velocityBest, enduranceAverage, enduranceBest,
+      velocityAverageTarget, enduranceAverageTarget,
+      applyToAllSubSectors 
+    } = data;
 
     if (!sectorId) {
       return NextResponse.json({ error: 'Sektör seçimi zorunludur' }, { status: 400 });
     }
 
     // Değerlerin 1-5 arasında olduğunu doğrula
-    const values = [velocityAverage, velocityBest, enduranceAverage, enduranceBest];
+    const values = [velocityAverage, velocityBest, enduranceAverage, enduranceBest, velocityAverageTarget, enduranceAverageTarget];
     for (const val of values) {
       if (val < 1 || val > 5) {
         return NextResponse.json({ error: 'Değerler 1-5 arasında olmalıdır' }, { status: 400 });
       }
     }
+
+    const benchmarkData = {
+      velocityAverage,
+      velocityBest,
+      enduranceAverage,
+      enduranceBest,
+      velocityAverageTarget: velocityAverageTarget || 3.0,
+      enduranceAverageTarget: enduranceAverageTarget || 3.0,
+    };
 
     // Tüm alt sektörlere uygula
     if (applyToAllSubSectors) {
@@ -68,19 +82,11 @@ export async function POST(request: NextRequest) {
               subSectorId: sub.id,
             },
           },
-          update: {
-            velocityAverage,
-            velocityBest,
-            enduranceAverage,
-            enduranceBest,
-          },
+          update: benchmarkData,
           create: {
             sectorId,
             subSectorId: sub.id,
-            velocityAverage,
-            velocityBest,
-            enduranceAverage,
-            enduranceBest,
+            ...benchmarkData,
           },
         });
         createdCount++;
@@ -97,19 +103,11 @@ export async function POST(request: NextRequest) {
           subSectorId: subSectorId || null,
         },
       },
-      update: {
-        velocityAverage,
-        velocityBest,
-        enduranceAverage,
-        enduranceBest,
-      },
+      update: benchmarkData,
       create: {
         sectorId,
         subSectorId: subSectorId || null,
-        velocityAverage,
-        velocityBest,
-        enduranceAverage,
-        enduranceBest,
+        ...benchmarkData,
       },
       include: {
         sector: { select: { id: true, name: true } },
@@ -128,14 +126,17 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const data = await request.json();
-    const { id, velocityAverage, velocityBest, enduranceAverage, enduranceBest } = data;
+    const { 
+      id, velocityAverage, velocityBest, enduranceAverage, enduranceBest,
+      velocityAverageTarget, enduranceAverageTarget 
+    } = data;
 
     if (!id) {
       return NextResponse.json({ error: 'Benchmark ID gerekli' }, { status: 400 });
     }
 
     // Değerlerin 1-5 arasında olduğunu doğrula
-    const values = [velocityAverage, velocityBest, enduranceAverage, enduranceBest];
+    const values = [velocityAverage, velocityBest, enduranceAverage, enduranceBest, velocityAverageTarget, enduranceAverageTarget];
     for (const val of values) {
       if (val < 1 || val > 5) {
         return NextResponse.json({ error: 'Değerler 1-5 arasında olmalıdır' }, { status: 400 });
@@ -149,6 +150,8 @@ export async function PUT(request: NextRequest) {
         velocityBest,
         enduranceAverage,
         enduranceBest,
+        velocityAverageTarget: velocityAverageTarget || 3.0,
+        enduranceAverageTarget: enduranceAverageTarget || 3.0,
       },
       include: {
         sector: { select: { id: true, name: true } },

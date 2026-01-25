@@ -1,50 +1,59 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { useTheme } from "next-themes";
+import { Building2, Globe, Target, Plus } from "lucide-react";
 
 interface IronmanData {
-  user: {
+  current: {
     velocity: number;
     endurance: number;
+    date: string;
     quadrant: string;
     quadrantInfo: {
       title: string;
+      titleEn: string;
       description: string;
-      color?: string;
+      color: string;
     };
-    velocityQuestionCount?: number;
-    enduranceQuestionCount?: number;
-    totalResponses?: number;
   };
-  imbalance?: {
-    isImbalanced: boolean;
-    difference: number;
-    warning: {
-      type: string;
-      title: string;
-      message: string;
-      recommendation: string;
-    } | null;
+  target: {
+    velocity: number;
+    endurance: number;
+    date: string;
   };
   benchmark: {
     velocityAverage: number;
     velocityBest: number;
     enduranceAverage: number;
     enduranceBest: number;
+    velocityAverageTarget: number;
+    enduranceAverageTarget: number;
     sectorName: string;
     subSectorName: string | null;
   } | null;
-  sector: { id: string; name: string } | null;
-  subSector: { id: string; name: string } | null;
+  company: {
+    name: string;
+    industry: string;
+    region: string;
+  };
+  stats: {
+    velocityQuestionCount: number;
+    enduranceQuestionCount: number;
+    totalResponses: number;
+  };
 }
 
-const quadrantColors: Record<string, { bg: string; border: string; text: string }> = {
-  IRONMAN: { bg: 'bg-[rgba(12,193,195,0.15)]', border: 'border-[var(--accent)]', text: 'text-[var(--accent)]' },
-  SPRINTER: { bg: 'bg-[rgba(251,146,60,0.15)]', border: 'border-orange-400', text: 'text-orange-400' },
-  MARATHON_RUNNER: { bg: 'bg-[rgba(139,92,246,0.15)]', border: 'border-purple-400', text: 'text-purple-400' },
-  WALKER: { bg: 'bg-[rgba(239,68,68,0.15)]', border: 'border-red-400', text: 'text-red-400' },
+// Simulated other companies data for visualization
+const generateOtherCompanies = () => {
+  const companies = [];
+  for (let i = 0; i < 25; i++) {
+    companies.push({
+      velocity: 1 + Math.random() * 4,
+      endurance: 1 + Math.random() * 4,
+    });
+  }
+  return companies;
 };
 
 export function IronmanChart() {
@@ -52,7 +61,7 @@ export function IronmanChart() {
   const [data, setData] = useState<IronmanData | null>(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const { resolvedTheme } = useTheme();
+  const [otherCompanies] = useState(generateOtherCompanies);
 
   useEffect(() => {
     setMounted(true);
@@ -73,9 +82,7 @@ export function IronmanChart() {
     fetchData();
   }, []);
 
-  const isDark = mounted && resolvedTheme === 'dark';
-
-  useEffect(() => {
+  const drawChart = useCallback(() => {
     if (!canvasRef.current || !data || !mounted) return;
 
     const canvas = canvasRef.current;
@@ -83,7 +90,7 @@ export function IronmanChart() {
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const size = 400;
+    const size = 420;
     canvas.width = size * dpr;
     canvas.height = size * dpr;
     canvas.style.width = `${size}px`;
@@ -93,112 +100,103 @@ export function IronmanChart() {
     const padding = 50;
     const chartSize = size - padding * 2;
 
-    // Clear canvas
     ctx.clearRect(0, 0, size, size);
 
-    // Theme-aware colors
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb';
-    const axisColor = isDark ? 'rgba(255, 255, 255, 0.6)' : '#374151';
-    const labelColor = isDark ? 'rgba(255, 255, 255, 0.8)' : '#374151';
-    const titleColor = isDark ? 'var(--accent-cyan)' : 'var(--accent)';
-    const diagonalColor = isDark ? 'rgba(34, 211, 238, 0.5)' : 'var(--accent)';
+    // Colors
+    const gridColor = 'rgba(200, 200, 210, 0.3)';
+    const axisColor = '#94a3b8';
+    const labelColor = '#64748b';
 
-    // Draw background quadrants
+    // Draw background - light gray
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(padding, padding, chartSize, chartSize);
+
+    // Draw quadrant backgrounds with subtle colors
     const midX = padding + chartSize / 2;
     const midY = padding + chartSize / 2;
 
-    const quadrantOpacity = isDark ? 0.2 : 0.1;
-
-    // Walker (bottom-left) - red
-    ctx.fillStyle = `rgba(239, 68, 68, ${quadrantOpacity})`;
+    // Walker (bottom-left)
+    ctx.fillStyle = 'rgba(241, 245, 249, 1)';
     ctx.fillRect(padding, midY, chartSize / 2, chartSize / 2);
 
-    // Sprinter (bottom-right) - orange
-    ctx.fillStyle = `rgba(249, 115, 22, ${quadrantOpacity})`;
+    // Sprinter (bottom-right)
+    ctx.fillStyle = 'rgba(241, 245, 249, 1)';
     ctx.fillRect(midX, midY, chartSize / 2, chartSize / 2);
 
-    // Marathon Runner (top-left) - purple
-    ctx.fillStyle = `rgba(168, 85, 247, ${quadrantOpacity})`;
+    // Marathon Runner (top-left)
+    ctx.fillStyle = 'rgba(241, 245, 249, 1)';
     ctx.fillRect(padding, padding, chartSize / 2, chartSize / 2);
 
-    // Iron Man (top-right) - green
-    ctx.fillStyle = `rgba(34, 197, 94, ${quadrantOpacity})`;
+    // Iron Man (top-right) - light blue tint
+    ctx.fillStyle = 'rgba(224, 242, 254, 0.5)';
     ctx.fillRect(midX, padding, chartSize / 2, chartSize / 2);
 
     // Draw grid lines
     ctx.strokeStyle = gridColor;
     ctx.lineWidth = 1;
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 0; i <= 5; i++) {
       const pos = padding + (chartSize / 5) * i;
-      // Vertical lines
       ctx.beginPath();
       ctx.moveTo(pos, padding);
       ctx.lineTo(pos, padding + chartSize);
       ctx.stroke();
-      // Horizontal lines
       ctx.beginPath();
       ctx.moveTo(padding, pos);
       ctx.lineTo(padding + chartSize, pos);
       ctx.stroke();
     }
 
-    // Draw axes
-    ctx.strokeStyle = axisColor;
+    // Draw center lines (thicker)
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.5)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(padding, padding + chartSize);
-    ctx.lineTo(padding + chartSize, padding + chartSize);
+    ctx.moveTo(midX, padding);
+    ctx.lineTo(midX, padding + chartSize);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(padding, padding);
-    ctx.lineTo(padding, padding + chartSize);
+    ctx.moveTo(padding, midY);
+    ctx.lineTo(padding + chartSize, midY);
     ctx.stroke();
 
-    // Draw axis labels
-    ctx.fillStyle = labelColor;
-    ctx.font = '12px sans-serif';
-    ctx.textAlign = 'center';
-    for (let i = 1; i <= 5; i++) {
-      const xPos = padding + (chartSize / 5) * (i - 0.5);
-      const yPos = padding + chartSize - (chartSize / 5) * (i - 0.5);
-      ctx.fillText(i.toString(), xPos, padding + chartSize + 15);
-      ctx.fillText(i.toString(), padding - 15, yPos + 4);
-    }
-
-    // Axis titles
-    ctx.font = 'bold 14px sans-serif';
-    ctx.fillStyle = titleColor;
-    ctx.fillText('Velocity (Hız)', size / 2, size - 5);
-    ctx.save();
-    ctx.translate(12, size / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText('Endurance (Olgunluk)', 0, 0);
-    ctx.restore();
-
-    // Draw diagonal reference line
-    ctx.strokeStyle = diagonalColor;
+    // Draw diagonal reference line (Iron Man line)
+    ctx.strokeStyle = 'rgba(99, 102, 241, 0.4)';
     ctx.lineWidth = 2;
-    ctx.setLineDash([5, 5]);
+    ctx.setLineDash([8, 4]);
     ctx.beginPath();
     ctx.moveTo(padding, padding + chartSize);
     ctx.lineTo(padding + chartSize, padding);
     ctx.stroke();
     ctx.setLineDash([]);
 
+    // Axis labels
+    ctx.fillStyle = labelColor;
+    ctx.font = '11px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    for (let i = 1; i <= 5; i++) {
+      const xPos = padding + (chartSize / 5) * i - (chartSize / 10);
+      ctx.fillText(i.toString(), xPos, padding + chartSize + 18);
+    }
+    ctx.textAlign = 'right';
+    for (let i = 1; i <= 5; i++) {
+      const yPos = padding + chartSize - (chartSize / 5) * i + (chartSize / 10);
+      ctx.fillText(i.toString(), padding - 8, yPos + 4);
+    }
+
     // Quadrant labels
-    ctx.font = 'bold 11px sans-serif';
-    ctx.fillStyle = isDark ? 'rgba(248, 113, 113, 0.9)' : 'rgba(239, 68, 68, 0.8)';
-    ctx.fillText('Walker', padding + chartSize / 4, padding + chartSize - 15);
-    ctx.fillStyle = isDark ? 'rgba(251, 146, 60, 0.9)' : 'rgba(249, 115, 22, 0.8)';
-    ctx.fillText('Sprinter', padding + chartSize * 3 / 4, padding + chartSize - 15);
-    ctx.fillStyle = isDark ? 'rgba(192, 132, 252, 0.9)' : 'rgba(168, 85, 247, 0.8)';
-    ctx.fillText('Marathon Runner', padding + chartSize / 4, padding + 20);
-    ctx.fillStyle = isDark ? 'rgba(74, 222, 128, 0.9)' : 'rgba(34, 197, 94, 0.8)';
-    ctx.fillText('Iron Man', padding + chartSize * 3 / 4, padding + 20);
+    ctx.font = 'bold 11px system-ui';
+    ctx.textAlign = 'center';
+    
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText('Walker', padding + chartSize / 4, padding + chartSize - 12);
+    ctx.fillText('Sprinter', padding + chartSize * 3 / 4, padding + chartSize - 12);
+    ctx.fillText('Marathon Runner', padding + chartSize / 4, padding + 18);
+    
+    ctx.fillStyle = '#6366f1';
+    ctx.fillText('Iron Man', padding + chartSize * 3 / 4, padding + 18);
 
     // Helper function to convert score to position
     const scoreToPos = (score: number, axis: 'x' | 'y') => {
-      const normalized = (score - 1) / 4; // Convert 1-5 to 0-1
+      const normalized = (score - 1) / 4;
       if (axis === 'x') {
         return padding + normalized * chartSize;
       } else {
@@ -206,55 +204,73 @@ export function IronmanChart() {
       }
     };
 
-    // Draw benchmark points if available
-    if (data.benchmark) {
-      // Average point
-      const avgX = scoreToPos(data.benchmark.velocityAverage, 'x');
-      const avgY = scoreToPos(data.benchmark.enduranceAverage, 'y');
-      ctx.fillStyle = isDark ? '#38bdf8' : '#60a5fa';
+    // Draw other companies as small blue dots
+    ctx.fillStyle = 'rgba(147, 197, 253, 0.7)';
+    otherCompanies.forEach(company => {
+      const x = scoreToPos(company.velocity, 'x');
+      const y = scoreToPos(company.endurance, 'y');
       ctx.beginPath();
-      ctx.arc(avgX, avgY, 8, 0, Math.PI * 2);
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = isDark ? '#0f172a' : '#fff';
-      ctx.font = 'bold 9px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('O', avgX, avgY + 3);
+    });
 
-      // Best point
-      const bestX = scoreToPos(data.benchmark.velocityBest, 'x');
-      const bestY = scoreToPos(data.benchmark.enduranceBest, 'y');
-      ctx.fillStyle = isDark ? 'var(--accent-cyan)' : 'var(--accent)';
-      ctx.beginPath();
-      ctx.arc(bestX, bestY, 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = isDark ? '#0f172a' : '#fff';
-      ctx.fillText('E', bestX, bestY + 3);
-    }
+    // Draw line from current to target
+    const currentX = scoreToPos(data.current.velocity, 'x');
+    const currentY = scoreToPos(data.current.endurance, 'y');
+    const targetX = scoreToPos(data.target.velocity, 'x');
+    const targetY = scoreToPos(data.target.endurance, 'y');
 
-    // Draw user point
-    const userX = scoreToPos(data.user.velocity, 'x');
-    const userY = scoreToPos(data.user.endurance, 'y');
-    
-    // User point with glow
-    ctx.shadowColor = 'rgba(236, 72, 153, 0.5)';
-    ctx.shadowBlur = 15;
+    ctx.strokeStyle = 'rgba(219, 39, 119, 0.6)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(currentX, currentY);
+    ctx.lineTo(targetX, targetY);
+    ctx.stroke();
+
+    // Draw target point (blue)
+    ctx.fillStyle = '#3b82f6';
+    ctx.beginPath();
+    ctx.arc(targetX, targetY, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Draw current point (pink) - larger
+    ctx.shadowColor = 'rgba(219, 39, 119, 0.4)';
+    ctx.shadowBlur = 12;
     ctx.fillStyle = '#ec4899';
     ctx.beginPath();
-    ctx.arc(userX, userY, 12, 0, Math.PI * 2);
+    ctx.arc(currentX, currentY, 14, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
-    
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 10px sans-serif';
-    ctx.fillText('S', userX, userY + 4);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-  }, [data, mounted, isDark]);
+    // Axis titles
+    ctx.fillStyle = '#475569';
+    ctx.font = 'bold 12px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('Velocity', size / 2, size - 5);
+    
+    ctx.save();
+    ctx.translate(14, size / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Endurance', 0, 0);
+    ctx.restore();
+
+  }, [data, mounted, otherCompanies]);
+
+  useEffect(() => {
+    drawChart();
+  }, [drawChart]);
 
   if (loading || !mounted) {
     return (
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-lg p-6 border border-[var(--border-soft)]">
+      <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
         <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -262,170 +278,236 @@ export function IronmanChart() {
 
   if (!data) {
     return (
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-lg p-6 border border-[var(--border-soft)]">
-        <p className="text-[var(--text-dim)] text-center">Ironman verileri yüklenemedi</p>
+      <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+        <p className="text-gray-500 text-center">Ironman verileri yüklenemedi</p>
       </div>
     );
   }
-
-  const colors = quadrantColors[data.user.quadrant] || quadrantColors.WALKER;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[var(--bg-card)] rounded-xl shadow-lg overflow-hidden border border-[var(--border-soft)]"
+      className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100"
     >
-      {/* Header - Dark navy gradient in dark mode */}
-      <div className="bg-gradient-to-r from-[var(--blue-main)] to-[var(--accent)] px-6 py-4 border-b border-transparent">
-        <h3 className="text-lg font-bold text-white">Ironman Analizi</h3>
-        <p className="text-white/70 text-sm">Hız ve Olgunluk Değerlendirmesi</p>
-      </div>
-
       <div className="p-6">
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Chart */}
-          <div className="flex-shrink-0">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left: Scatter Plot */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Ironman Analysis</h3>
+              <button className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+              </button>
+            </div>
+            
             <canvas ref={canvasRef} className="mx-auto" />
             
             {/* Legend */}
-            <div className="flex flex-wrap justify-center gap-4 mt-4 text-sm text-[var(--text-muted)]">
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 rounded-full bg-pink-500"></span>
-                <span>Sizin Skorunuz</span>
+            <div className="flex flex-wrap justify-center gap-4 mt-4 text-xs text-gray-500">
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-pink-500" />
+                <span>Your current ({data.current.date})</span>
               </div>
-              {data.benchmark && (
-                <>
-                  <div className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full bg-blue-400"></span>
-                    <span>Sektör Ort.</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full bg-blue-900"></span>
-                    <span>Sektör En İyi</span>
-                  </div>
-                </>
-              )}
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-blue-500" />
+                <span>Your target ({data.target.date})</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-blue-300" />
+                <span>Other companies (current - {data.current.date})</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-6 border-t-2 border-dashed border-indigo-400" />
+                <span>Reference line (Iron Man)</span>
+              </div>
             </div>
           </div>
 
-          {/* Info Panel */}
-          <div className="flex-1 space-y-4">
-            {/* Quadrant Info */}
-            <div className={`p-4 rounded-lg border-2 ${colors.bg} ${colors.border}`}>
-              <h4 className={`text-xl font-bold ${colors.text}`}>{data.user.quadrantInfo.title}</h4>
-              <p className={`mt-2 text-sm ${colors.text} opacity-90`}>{data.user.quadrantInfo.description}</p>
+          {/* Right: Benchmark & Info */}
+          <div className="space-y-4">
+            {/* Benchmark Bar Chart */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-4">Benchmark of Ironman Analysis</h4>
+              
+              {/* Velocity Benchmark */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-600">Velocity</span>
+                </div>
+                <div className="relative h-6 bg-gray-200 rounded-full overflow-hidden">
+                  {/* Scale markers */}
+                  <div className="absolute inset-0 flex justify-between px-1 text-[10px] text-gray-400 items-center z-10">
+                    <span>1.0</span><span>2.0</span><span>3.0</span><span>4.0</span><span>5.0</span>
+                  </div>
+                  {/* Your Current - Pink */}
+                  <div 
+                    className="absolute h-6 flex items-center justify-end pr-1"
+                    style={{ width: `${(data.current.velocity / 5) * 100}%` }}
+                  >
+                    <div className="bg-pink-400 h-5 rounded-full flex items-center justify-center px-2 text-[10px] text-white font-medium min-w-[32px]">
+                      {data.current.velocity.toFixed(1)}
+                    </div>
+                  </div>
+                  {/* Your Target - Blue */}
+                  <div 
+                    className="absolute h-6 flex items-center"
+                    style={{ left: `${(data.target.velocity / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                  >
+                    <div className="bg-blue-500 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                      {data.target.velocity.toFixed(1)}
+                    </div>
+                  </div>
+                  {/* Industry Avg - Purple */}
+                  {data.benchmark && (
+                    <>
+                      <div 
+                        className="absolute h-6 flex items-center"
+                        style={{ left: `${(data.benchmark.velocityAverage / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                      >
+                        <div className="bg-purple-400 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                          {data.benchmark.velocityAverage.toFixed(1)}
+                        </div>
+                      </div>
+                      <div 
+                        className="absolute h-6 flex items-center"
+                        style={{ left: `${(data.benchmark.velocityBest / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                      >
+                        <div className="bg-purple-700 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                          {data.benchmark.velocityBest.toFixed(1)}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Endurance Benchmark */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-600">Endurance</span>
+                </div>
+                <div className="relative h-6 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="absolute inset-0 flex justify-between px-1 text-[10px] text-gray-400 items-center z-10">
+                    <span>1.0</span><span>2.0</span><span>3.0</span><span>4.0</span><span>5.0</span>
+                  </div>
+                  {/* Your Current - Pink */}
+                  <div 
+                    className="absolute h-6 flex items-center justify-end pr-1"
+                    style={{ width: `${(data.current.endurance / 5) * 100}%` }}
+                  >
+                    <div className="bg-pink-400 h-5 rounded-full flex items-center justify-center px-2 text-[10px] text-white font-medium min-w-[32px]">
+                      {data.current.endurance.toFixed(1)}
+                    </div>
+                  </div>
+                  {/* Your Target - Blue */}
+                  <div 
+                    className="absolute h-6 flex items-center"
+                    style={{ left: `${(data.target.endurance / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                  >
+                    <div className="bg-blue-500 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                      {data.target.endurance.toFixed(1)}
+                    </div>
+                  </div>
+                  {/* Industry Avg - Purple */}
+                  {data.benchmark && (
+                    <>
+                      <div 
+                        className="absolute h-6 flex items-center"
+                        style={{ left: `${(data.benchmark.enduranceAverage / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                      >
+                        <div className="bg-purple-400 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                          {data.benchmark.enduranceAverage.toFixed(1)}
+                        </div>
+                      </div>
+                      <div 
+                        className="absolute h-6 flex items-center"
+                        style={{ left: `${(data.benchmark.enduranceBest / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                      >
+                        <div className="bg-purple-700 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                          {data.benchmark.enduranceBest.toFixed(1)}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="flex flex-wrap gap-3 text-[10px] text-gray-500 mt-3">
+                <div className="flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-pink-400" />
+                  <span>Your Current</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                  <span>Your Target</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-400" />
+                  <span>Ind. Avg. Current</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-700" />
+                  <span>Ind. Avg. Target</span>
+                </div>
+              </div>
             </div>
 
-            {/* Scores */}
+            {/* Quadrant Info & Company Details */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-[rgba(46,134,255,0.1)] p-4 rounded-lg border border-blue-200">
-                <p className="text-sm text-[var(--blue-main)] font-medium">Velocity (Hız)</p>
-                <p className="text-3xl font-bold text-[var(--blue-main)]">{data.user.velocity.toFixed(1)}</p>
-                <p className="text-xs text-[var(--text-dim)] mt-1">
-                  {data.user.velocityQuestionCount || 0} soru • 1-5 ölçeği
+              {/* Quadrant Info */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h4 className="text-sm font-bold text-gray-800 mb-2">{data.current.quadrantInfo.title}</h4>
+                <p className="text-xs text-gray-600 leading-relaxed">
+                  {data.current.quadrantInfo.description}
                 </p>
+                
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Building2 className="w-4 h-4 text-gray-400" />
+                    <span className="text-xs font-medium text-gray-700">Industry</span>
+                  </div>
+                  <p className="text-xs text-gray-600">{data.company.industry}</p>
+                  
+                  <div className="flex items-center gap-2 mt-3 mb-2">
+                    <Globe className="w-4 h-4 text-gray-400" />
+                    <span className="text-xs font-medium text-gray-700">Region</span>
+                  </div>
+                  <p className="text-xs text-gray-600">{data.company.region}</p>
+                </div>
+
+                {/* Score Summary */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="w-4 h-4 text-gray-400" />
+                    <span className="text-xs font-medium text-gray-700">Score</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <p className="text-gray-500">Current ({data.current.date})</p>
+                      <p className="text-gray-700">Velocity: {data.current.velocity.toFixed(1)}</p>
+                      <p className="text-gray-700">Endurance: {data.current.endurance.toFixed(1)}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Target ({data.target.date})</p>
+                      <p className="text-gray-700">Velocity: {data.target.velocity.toFixed(1)}</p>
+                      <p className="text-gray-700">Endurance: {data.target.endurance.toFixed(1)}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="bg-teal-50 p-4 rounded-lg border border-teal-200">
-                <p className="text-sm text-teal-600 font-medium">Endurance (Olgunluk)</p>
-                <p className="text-3xl font-bold text-teal-600">{data.user.endurance.toFixed(1)}</p>
-                <p className="text-xs text-[var(--text-dim)] mt-1">
-                  {data.user.enduranceQuestionCount || 0} soru • 1-5 ölçeği
-                </p>
+
+              {/* Select to Compare */}
+              <div className="bg-gray-50 rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                <p className="text-sm text-gray-400 mb-4">Select to compare</p>
+                <button className="w-16 h-16 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors">
+                  <Plus className="w-8 h-8" />
+                </button>
               </div>
             </div>
-
-            {/* Dengesizlik Uyarısı */}
-            {data.imbalance?.isImbalanced && data.imbalance.warning && (
-              <div className="p-4 rounded-lg bg-[rgba(245,158,11,0.1)] border-2 border-amber-400">
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">⚠️</span>
-                  <div>
-                    <h5 className="font-bold text-amber-400">{data.imbalance.warning.title}</h5>
-                    <p className="text-sm text-amber-800 mt-1">{data.imbalance.warning.message}</p>
-                    <p className="text-xs text-amber-400 mt-2 italic">
-                      💡 {data.imbalance.warning.recommendation}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Benchmark Comparison */}
-            {data.benchmark && (
-              <div className="bg-[var(--bg-card-2)] p-4 rounded-lg border border-[var(--border-soft)]">
-                <h5 className="font-semibold text-[var(--text-main)] mb-3">
-                  Sektör Karşılaştırması: {data.benchmark.sectorName}
-                  {data.benchmark.subSectorName && ` - ${data.benchmark.subSectorName}`}
-                </h5>
-                
-                {/* Velocity Comparison */}
-                <div className="mb-3">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-[var(--blue-main)]">Velocity</span>
-                    <span className="text-[var(--text-dim)]">
-                      Ort: {data.benchmark.velocityAverage.toFixed(1)} | En İyi: {data.benchmark.velocityBest.toFixed(1)}
-                    </span>
-                  </div>
-                  <div className="relative h-3 bg-[var(--border-soft)] rounded-full overflow-hidden">
-                    <div
-                      className="absolute h-full bg-blue-300 rounded-full"
-                      style={{ width: `${(data.benchmark.velocityBest / 5) * 100}%` }}
-                    />
-                    <div
-                      className="absolute h-full bg-[rgba(46,134,255,0.1)]0 rounded-full"
-                      style={{ width: `${(data.benchmark.velocityAverage / 5) * 100}%` }}
-                    />
-                    <div
-                      className="absolute h-full w-1 bg-pink-500 rounded-full"
-                      style={{ left: `${(data.user.velocity / 5) * 100}%`, transform: 'translateX(-50%)' }}
-                    />
-                  </div>
-                </div>
-
-                {/* Endurance Comparison */}
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span className="text-teal-600">Endurance</span>
-                    <span className="text-[var(--text-dim)]">
-                      Ort: {data.benchmark.enduranceAverage.toFixed(1)} | En İyi: {data.benchmark.enduranceBest.toFixed(1)}
-                    </span>
-                  </div>
-                  <div className="relative h-3 bg-[var(--border-soft)] rounded-full overflow-hidden">
-                    <div
-                      className="absolute h-full bg-teal-300 rounded-full"
-                      style={{ width: `${(data.benchmark.enduranceBest / 5) * 100}%` }}
-                    />
-                    <div
-                      className="absolute h-full bg-teal-500 rounded-full"
-                      style={{ width: `${(data.benchmark.enduranceAverage / 5) * 100}%` }}
-                    />
-                    <div
-                      className="absolute h-full w-1 bg-pink-500 rounded-full"
-                      style={{ left: `${(data.user.endurance / 5) * 100}%`, transform: 'translateX(-50%)' }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {!data.benchmark && data.sector && (
-              <div className="bg-[rgba(245,158,11,0.1)] border border-amber-500/50 p-4 rounded-lg">
-                <p className="text-amber-400 text-sm">
-                  <strong>{data.sector.name}</strong> sektörü için henüz benchmark verisi tanımlanmamış.
-                  Admin panelinden ekleyebilirsiniz.
-                </p>
-              </div>
-            )}
-
-            {!data.sector && (
-              <div className="bg-[var(--bg-card-2)] border border-[var(--border-soft)] p-4 rounded-lg">
-                <p className="text-[var(--text-muted)] text-sm">
-                  Sektör bilginiz tanımlı değil. Profil ayarlarından sektörünüzü seçerek
-                  benchmark karşılaştırması görebilirsiniz.
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </div>
