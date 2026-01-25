@@ -48,7 +48,7 @@ export function BenchmarkChart({
               {[1, 2, 3, 4].map((n) => (
                 <div
                   key={n}
-                  className="absolute top-1/2 -translate-y-1/2 w-px h-3 bg-gray-300"
+                  className="absolute top-1/2 -translate-y-1/2 w-px h-3 bg-[var(--ui-passive)]"
                   style={{ left: `${(n / maxScore) * 100}%` }}
                 />
               ))}
@@ -71,7 +71,7 @@ export function BenchmarkChart({
             transition={{ duration: 0.5, delay: 0.1 }}
             className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center"
           >
-            <div className="w-7 h-7 rounded-full bg-gray-400 flex items-center justify-center text-white text-xs font-bold shadow-md">
+            <div className="w-7 h-7 rounded-full bg-[var(--ui-passive)] flex items-center justify-center text-white text-xs font-bold shadow-md">
               {item.averageScore.toFixed(1)}
             </div>
           </motion.div>
@@ -137,7 +137,7 @@ export function BenchmarkChart({
       {/* Legend */}
       <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-gray-400" />
+          <div className="w-4 h-4 rounded-full bg-[var(--ui-passive)]" />
           <span className="text-sm text-[var(--text-muted)]">Ortalama</span>
         </div>
         <div className="flex items-center gap-2">

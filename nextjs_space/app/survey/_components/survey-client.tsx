@@ -272,7 +272,7 @@ export default function SurveyClient() {
       toast.success("Dosya başarıyla yüklendi!", {
         description: file.name,
         duration: 4000,
-        icon: <CheckCircle2 className="text-green-500" size={20} />
+        icon: <CheckCircle2 className="text-[var(--accent)]" size={20} />
       });
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -482,7 +482,7 @@ export default function SurveyClient() {
               <span className="text-[var(--text-dim)]">{totalQuestions} sorudan {answeredQuestions} tanesi cevaplandı</span>
             </div>
           </div>
-          <ProgressBar value={progressPercentage} label="Genel İlerleme" color="#1e3a8a" />
+          <ProgressBar value={progressPercentage} label="Genel İlerleme" color="var(--accent)" />
         </motion.div>
 
         {loadingStructure ? (
@@ -594,7 +594,7 @@ export default function SurveyClient() {
               ) : (
                 <button
                   onClick={handleComplete}
-                  className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors shadow-md"
+                  className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-dark)] text-white rounded-lg font-medium hover:bg-green-700 transition-colors shadow-md"
                 >
                   Anketi Tamamla
                   <Check size={20} />

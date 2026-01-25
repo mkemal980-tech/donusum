@@ -287,15 +287,15 @@ export default function RecommendationsClient() {
           <div 
             onClick={() => setStatusFilter('NOT_STARTED')}
             className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-light)] cursor-pointer transition-all hover:shadow-md ${
-              statusFilter === 'NOT_STARTED' ? 'ring-2 ring-gray-400 dark:ring-gray-500' : ''
+              statusFilter === 'NOT_STARTED' ? 'ring-2 ring-gray-400' : ''
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
-                <Circle size={20} className="text-gray-500 dark:text-gray-400" />
+              <div className="p-2 bg-[var(--bg-card-2)] rounded-lg">
+                <Circle size={20} className="text-[var(--text-dim)]" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-600 dark:text-gray-300">{stats.notStarted}</p>
+                <p className="text-2xl font-bold text-[var(--text-muted)]">{stats.notStarted}</p>
                 <p className="text-sm text-[var(--text-muted)]">Başlanmadı</p>
               </div>
             </div>
@@ -308,11 +308,11 @@ export default function RecommendationsClient() {
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
-                <Play size={20} className="text-amber-600 dark:text-amber-400" />
+              <div className="p-2 bg-[rgba(245,158,11,0.15)] rounded-lg">
+                <Play size={20} className="text-amber-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.inProgress}</p>
+                <p className="text-2xl font-bold text-amber-400">{stats.inProgress}</p>
                 <p className="text-sm text-[var(--text-muted)]">Devam Ediyor</p>
               </div>
             </div>
@@ -325,11 +325,11 @@ export default function RecommendationsClient() {
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <CheckCircle2 size={20} className="text-green-600 dark:text-green-400" />
+              <div className="p-2 bg-[rgba(12,193,195,0.15)] rounded-lg">
+                <CheckCircle2 size={20} className="text-[var(--accent)]" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.completed}</p>
+                <p className="text-2xl font-bold text-[var(--accent)]">{stats.completed}</p>
                 <p className="text-sm text-[var(--text-muted)]">Tamamlandı</p>
               </div>
             </div>
@@ -427,7 +427,7 @@ export default function RecommendationsClient() {
                 className="mb-10"
               >
                 <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  <div className="w-3 h-3 rounded-full bg-[rgba(12,193,195,0.1)]0" />
                   Hızlı Kazanımlar ({quickWins?.length ?? 0})
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

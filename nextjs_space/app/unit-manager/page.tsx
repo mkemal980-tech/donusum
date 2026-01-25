@@ -67,19 +67,19 @@ interface Document {
 }
 
 const getScoreColor = (score: number) => {
-  if (score >= 80) return "text-green-600 bg-green-100";
-  if (score >= 60) return "text-blue-600 bg-blue-100";
-  if (score >= 40) return "text-purple-600 bg-purple-100";
-  if (score >= 20) return "text-orange-600 bg-orange-100";
-  return "text-red-600 bg-red-100";
+  if (score >= 80) return "text-[var(--accent)] bg-[rgba(12,193,195,0.15)]";
+  if (score >= 60) return "text-[var(--blue-main)] bg-[rgba(46,134,255,0.15)]";
+  if (score >= 40) return "text-purple-400 bg-[rgba(139,92,246,0.15)]";
+  if (score >= 20) return "text-orange-400 bg-[rgba(251,146,60,0.15)]";
+  return "text-red-400 bg-[rgba(239,68,68,0.15)]";
 };
 
 const getMaturityLabel = (score: number) => {
-  if (score >= 4.5) return { label: "Lider", color: "text-green-600" };
-  if (score >= 3.5) return { label: "Olgun", color: "text-blue-600" };
-  if (score >= 2.5) return { label: "Gelişen", color: "text-purple-600" };
-  if (score >= 1.5) return { label: "Farkındalık", color: "text-orange-600" };
-  return { label: "Başlangıç", color: "text-red-600" };
+  if (score >= 4.5) return { label: "Lider", color: "text-[var(--accent)]" };
+  if (score >= 3.5) return { label: "Olgun", color: "text-[var(--blue-main)]" };
+  if (score >= 2.5) return { label: "Gelişen", color: "text-purple-400" };
+  if (score >= 1.5) return { label: "Farkındalık", color: "text-orange-400" };
+  return { label: "Başlangıç", color: "text-red-400" };
 };
 
 export default function UnitManagerPage() {
@@ -234,7 +234,7 @@ export default function UnitManagerPage() {
             className="bg-[var(--bg-card)]  rounded-xl shadow-md p-6 border border-[var(--border-soft)] "
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-blue-100  rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-[rgba(46,134,255,0.15)]  rounded-lg flex items-center justify-center">
                 <Building2 className="text-[var(--accent)] " size={24} />
               </div>
               <div>
@@ -251,8 +251,8 @@ export default function UnitManagerPage() {
             className="bg-[var(--bg-card)]  rounded-xl shadow-md p-6 border border-[var(--border-soft)] "
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-purple-100  rounded-lg flex items-center justify-center">
-                <Users className="text-purple-600 " size={24} />
+              <div className="w-12 h-12 bg-[rgba(139,92,246,0.15)]  rounded-lg flex items-center justify-center">
+                <Users className="text-purple-400 " size={24} />
               </div>
               <div>
                 <p className="text-sm text-[var(--text-dim)] ">Toplam Kullanıcı</p>
@@ -268,8 +268,8 @@ export default function UnitManagerPage() {
             className="bg-[var(--bg-card)]  rounded-xl shadow-md p-6 border border-[var(--border-soft)] "
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100  rounded-lg flex items-center justify-center">
-                <CheckCircle className="text-green-600 " size={24} />
+              <div className="w-12 h-12 bg-[rgba(12,193,195,0.15)]  rounded-lg flex items-center justify-center">
+                <CheckCircle className="text-[var(--accent)] " size={24} />
               </div>
               <div>
                 <p className="text-sm text-[var(--text-dim)] ">Anketi Tamamlayan</p>
@@ -287,8 +287,8 @@ export default function UnitManagerPage() {
             className="bg-[var(--bg-card)]  rounded-xl shadow-md p-6 border border-[var(--border-soft)] "
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-orange-100  rounded-lg flex items-center justify-center">
-                <TrendingUp className="text-orange-600 " size={24} />
+              <div className="w-12 h-12 bg-[rgba(251,146,60,0.15)]  rounded-lg flex items-center justify-center">
+                <TrendingUp className="text-orange-400 " size={24} />
               </div>
               <div>
                 <p className="text-sm text-[var(--text-dim)] ">Ortalama Skor</p>
@@ -369,7 +369,7 @@ export default function UnitManagerPage() {
                       </div>
                       <div className="text-center">
                         <p className="text-sm text-[var(--text-dim)]">Tamamlayan</p>
-                        <p className="font-semibold text-green-600">{unit.completedUsers}</p>
+                        <p className="font-semibold text-[var(--accent)]">{unit.completedUsers}</p>
                       </div>
                       <div className="text-center">
                         <p className="text-sm text-[var(--text-dim)]">Ort. Skor</p>
@@ -423,12 +423,12 @@ export default function UnitManagerPage() {
                               </td>
                               <td className="px-6 py-4 text-center">
                                 {member.responseCount > 0 ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-[rgba(12,193,195,0.15)] text-[var(--accent)] rounded-full text-xs font-medium">
                                     <CheckCircle size={12} />
                                     Tamamlandı
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-[rgba(251,146,60,0.15)] text-orange-400 rounded-full text-xs font-medium">
                                     <Clock size={12} />
                                     Bekliyor
                                   </span>
@@ -547,7 +547,7 @@ export default function UnitManagerPage() {
                           {doc.downloadUrl && (
                             <button
                               onClick={() => handleDownload(doc)}
-                              className="p-2 text-[var(--accent)]  hover:bg-blue-100  rounded-lg transition-colors"
+                              className="p-2 text-[var(--accent)]  hover:bg-[rgba(46,134,255,0.15)]  rounded-lg transition-colors"
                               title="İndir"
                             >
                               <Download size={18} />

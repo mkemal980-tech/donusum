@@ -171,7 +171,7 @@ export default function SignupPage() {
               <motion.div 
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="p-4 bg-red-50  rounded-xl flex items-center gap-3 text-red-600  border border-red-100 "
+                className="p-4 bg-[rgba(239,68,68,0.1)]  rounded-xl flex items-center gap-3 text-red-400  border border-red-100 "
               >
                 <AlertCircle size={20} />
                 <span className="text-sm font-medium">{error}</span>

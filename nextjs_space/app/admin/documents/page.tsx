@@ -181,8 +181,8 @@ export default function DocumentsPage() {
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Yüklenen Dosyalar</h1>
           <p className="text-[var(--text-dim)]  mt-1">Kullanıcıların yüklediği kanıt dosyaları</p>
         </div>
-        <div className="flex items-center gap-2 bg-cyan-100  px-4 py-2 rounded-lg">
-          <FileText className="text-cyan-600 " size={20} />
+        <div className="flex items-center gap-2 bg-[rgba(6,182,212,0.15)]  px-4 py-2 rounded-lg">
+          <FileText className="text-[var(--accent-cyan)] " size={20} />
           <span className="font-semibold text-cyan-700 ">{documents.length} dosya</span>
         </div>
       </div>
@@ -235,11 +235,11 @@ export default function DocumentsPage() {
       {/* Documents List */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[var(--accent-cyan)] border-t-transparent rounded-full animate-spin" />
         </div>
       ) : filteredDocuments.length === 0 ? (
         <div className="bg-[var(--bg-card)]  rounded-xl p-12 text-center border border-[var(--border-soft)] ">
-          <FileText className="mx-auto text-gray-300  mb-4" size={48} />
+          <FileText className="mx-auto text-[var(--ui-passive)]  mb-4" size={48} />
           <p className="text-[var(--text-dim)] ">Henüz yüklenmiş dosya bulunmuyor</p>
         </div>
       ) : (
@@ -307,7 +307,7 @@ export default function DocumentsPage() {
                       {doc.downloadUrl && (
                         <button
                           onClick={() => handleDownload(doc)}
-                          className="p-2 text-cyan-600  hover:bg-cyan-100  rounded-lg transition-colors"
+                          className="p-2 text-[var(--accent-cyan)]  hover:bg-[rgba(6,182,212,0.15)]  rounded-lg transition-colors"
                           title="İndir"
                         >
                           <Download size={18} />
@@ -315,7 +315,7 @@ export default function DocumentsPage() {
                       )}
                       <button
                         onClick={() => handleDelete(doc.id)}
-                        className="p-2 text-red-600  hover:bg-red-100  rounded-lg transition-colors"
+                        className="p-2 text-red-400  hover:bg-[rgba(239,68,68,0.15)]  rounded-lg transition-colors"
                         title="Sil"
                       >
                         <Trash2 size={18} />

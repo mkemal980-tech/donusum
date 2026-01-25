@@ -286,7 +286,7 @@ export default function UnitsPage() {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => openCreateModal(unit.id)}
-                className="p-2 text-[var(--text-dim)] hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                className="p-2 text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[rgba(12,193,195,0.1)] rounded-lg transition-colors"
                 title="Alt Birim Ekle"
               >
                 <Plus size={16} />
@@ -300,7 +300,7 @@ export default function UnitsPage() {
               </button>
               <button
                 onClick={() => handleDelete(unit.id)}
-                className="p-2 text-[var(--text-dim)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                className="p-2 text-[var(--text-dim)] hover:text-red-500 hover:bg-[rgba(239,68,68,0.1)] rounded-lg transition-colors"
                 title="Sil"
               >
                 <Trash2 size={16} />
@@ -309,10 +309,10 @@ export default function UnitsPage() {
           </div>
 
           {/* Admins */}
-          <div className="mt-4 p-3 bg-purple-50 rounded-lg">
+          <div className="mt-4 p-3 bg-[rgba(139,92,246,0.1)] rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <Shield className="text-purple-600" size={18} />
-              <span className="text-sm font-medium text-purple-700">Birim Adminleri</span>
+              <Shield className="text-purple-400" size={18} />
+              <span className="text-sm font-medium text-purple-400">Birim Adminleri</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {unit.admins.map(admin => (
@@ -322,14 +322,14 @@ export default function UnitsPage() {
                 </span>
               ))}
               {parentAdmins.length > 0 && parentAdmins.map(admin => (
-                <span key={`inherited-${admin.id}`} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-200 text-[var(--text-muted)] text-xs rounded-full" title="Üst birimden miras">
+                <span key={`inherited-${admin.id}`} className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--border-soft)] text-[var(--text-muted)] text-xs rounded-full" title="Üst birimden miras">
                   <Shield size={12} />
                   {admin.user.firstName} {admin.user.lastName}
                   <span className="text-[var(--text-dim)]">(miras)</span>
                 </span>
               ))}
               {unit.admins.length === 0 && parentAdmins.length === 0 && (
-                <span className="text-xs text-purple-500">Admin atanmamış</span>
+                <span className="text-xs text-purple-400">Admin atanmamış</span>
               )}
             </div>
           </div>
@@ -485,7 +485,7 @@ export default function UnitsPage() {
               <div>
                 <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
                   <div className="flex items-center gap-2">
-                    <Shield size={16} className="text-purple-600" />
+                    <Shield size={16} className="text-purple-400" />
                     Birim Adminleri (Birden fazla seçebilirsiniz)
                   </div>
                 </label>
@@ -496,14 +496,14 @@ export default function UnitsPage() {
                       <label
                         key={user.id}
                         className={`flex items-center gap-3 p-3 hover:bg-[var(--bg-card-2)] cursor-pointer border-b last:border-b-0 ${
-                          formData.adminIds.includes(user.id) ? 'bg-purple-50' : ''
+                          formData.adminIds.includes(user.id) ? 'bg-[rgba(139,92,246,0.1)]' : ''
                         }`}
                       >
                         <input
                           type="checkbox"
                           checked={formData.adminIds.includes(user.id)}
                           onChange={() => toggleAdmin(user.id)}
-                          className="w-4 h-4 text-purple-600 rounded border-[var(--border-soft)] focus:ring-purple-500"
+                          className="w-4 h-4 text-purple-400 rounded border-[var(--border-soft)] focus:ring-purple-500"
                         />
                         <div>
                           <p className="font-medium text-[var(--text-main)] text-sm">
@@ -521,8 +521,8 @@ export default function UnitsPage() {
               </div>
 
               {formData.adminIds.length > 0 && (
-                <div className="p-3 bg-purple-50 rounded-lg">
-                  <p className="text-sm text-purple-700 font-medium mb-2">Seçilen Adminler ({formData.adminIds.length}):</p>
+                <div className="p-3 bg-[rgba(139,92,246,0.1)] rounded-lg">
+                  <p className="text-sm text-purple-400 font-medium mb-2">Seçilen Adminler ({formData.adminIds.length}):</p>
                   <div className="flex flex-wrap gap-2">
                     {formData.adminIds.map(id => {
                       const user = allUsers.find(u => u.id === id);
@@ -533,7 +533,7 @@ export default function UnitsPage() {
                           <button
                             type="button"
                             onClick={() => toggleAdmin(id)}
-                            className="ml-1 hover:text-red-600"
+                            className="ml-1 hover:text-red-400"
                           >
                             <X size={12} />
                           </button>
@@ -599,7 +599,7 @@ export default function UnitsPage() {
                         </div>
                         <button
                           onClick={() => handleRemoveUserFromUnit(user.id)}
-                          className="text-sm text-red-600 hover:underline"
+                          className="text-sm text-red-400 hover:underline"
                         >
                           Çıkar
                         </button>

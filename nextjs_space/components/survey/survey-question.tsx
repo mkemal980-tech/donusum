@@ -152,18 +152,18 @@ export default function SurveyQuestion({
           </p>
           
           {isUploading ? (
-            <div className="flex items-center justify-center p-6 bg-purple-50 rounded-lg border-2 border-purple-200">
-              <Loader2 className="animate-spin text-purple-500 mr-2" size={20} />
-              <span className="text-purple-600 text-sm">Dosya yükleniyor...</span>
+            <div className="flex items-center justify-center p-6 bg-[rgba(139,92,246,0.1)] rounded-lg border-2 border-purple-200">
+              <Loader2 className="animate-spin text-purple-400 mr-2" size={20} />
+              <span className="text-purple-400 text-sm">Dosya yükleniyor...</span>
             </div>
           ) : uploadedFile ? (
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-              <span className="text-green-700 text-sm flex items-center gap-2">
+            <div className="flex items-center justify-between p-3 bg-[rgba(12,193,195,0.1)] rounded-lg border border-[var(--accent)]">
+              <span className="text-[var(--accent)] text-sm flex items-center gap-2">
                 <Check size={16} /> {uploadedFile}
               </span>
               <button 
                 onClick={() => onRemoveFile?.(q?.id)}
-                className="text-[var(--text-dim)] hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                className="text-[var(--text-dim)] hover:text-red-500 transition-colors p-1 rounded hover:bg-[rgba(239,68,68,0.1)]"
                 title="Dosyayı kaldır"
               >
                 <X size={16} />
@@ -178,7 +178,7 @@ export default function SurveyQuestion({
               onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
                 dragActive
-                  ? "border-[#a78bfa] bg-purple-50"
+                  ? "border-[#a78bfa] bg-[rgba(139,92,246,0.1)]"
                   : "border-[var(--border-soft)] hover:border-[#a78bfa] hover:bg-[var(--bg-card-2)]"
               }`}
             >

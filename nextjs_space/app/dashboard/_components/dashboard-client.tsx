@@ -65,7 +65,7 @@ const categoryColors = [
  * %80-100: Lider
  */
 const getMaturityLevelFromPercentage = (percentage: number) => {
-  if (percentage >= 80) return { label: 'Lider', color: '#22d3ee' };
+  if (percentage >= 80) return { label: 'Lider', color: 'var(--accent-cyan)' };
   if (percentage >= 60) return { label: 'Olgun', color: '#2dd4bf' };
   if (percentage >= 40) return { label: 'Gelişen', color: '#38bdf8' };
   if (percentage >= 20) return { label: 'Farkındalık', color: '#5eead4' };
@@ -1241,8 +1241,8 @@ export default function DashboardClient() {
                     </span>
                     <span className="text-[var(--text-muted)]">|</span>
                     <span className="flex items-center gap-1">
-                      <Lightbulb size={12} className="text-amber-500" />
-                      <span className="font-semibold text-amber-600 ">{cat.recommendationCount}</span>
+                      <Lightbulb size={12} className="text-amber-400" />
+                      <span className="font-semibold text-amber-400 ">{cat.recommendationCount}</span>
                     </span>
                   </div>
                 </div>

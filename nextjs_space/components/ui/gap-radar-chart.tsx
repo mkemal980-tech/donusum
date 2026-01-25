@@ -23,7 +23,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
 
   // Theme-aware colors
   const colors = {
-    primary: isDark ? '#22d3ee' : 'var(--blue-main)',
+    primary: isDark ? 'var(--accent-cyan)' : 'var(--blue-main)',
     primaryLight: isDark ? 'rgba(34, 211, 238, 0.2)' : 'rgba(59, 130, 246, 0.15)',
     secondary: isDark ? '#818cf8' : '#06b6d4',
     secondaryLight: isDark ? 'rgba(129, 140, 248, 0.3)' : 'rgba(6, 182, 212, 0.3)',

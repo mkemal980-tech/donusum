@@ -95,9 +95,9 @@ const timeframes = [
 ];
 
 const strategicTypes = [
-  { value: 'QUICK_WIN', label: 'Hızlı Kazanım', color: 'bg-green-100 text-green-700' },
+  { value: 'QUICK_WIN', label: 'Hızlı Kazanım', color: 'bg-[rgba(12,193,195,0.15)] text-[var(--accent)]' },
   { value: 'PROJECT', label: 'Proje', color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'BIG_BET', label: 'Büyük Yatırım', color: 'bg-red-100 text-red-700' },
+  { value: 'BIG_BET', label: 'Büyük Yatırım', color: 'bg-[rgba(239,68,68,0.15)] text-red-400' },
 ];
 
 const DollarIndicator = ({ level, max = 5 }: { level: number; max?: number }) => (
@@ -106,7 +106,7 @@ const DollarIndicator = ({ level, max = 5 }: { level: number; max?: number }) =>
       <DollarSign 
         key={i} 
         size={14} 
-        className={i < level ? 'text-green-600' : 'text-gray-300'} 
+        className={i < level ? 'text-[var(--accent)]' : 'text-[var(--ui-passive)]'} 
       />
     ))}
   </div>
@@ -420,7 +420,7 @@ export default function RecommendationsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -514,14 +514,14 @@ export default function RecommendationsPage() {
                   <td className="p-4">
                     {triggerInfo ? (
                       <div className="flex flex-col gap-1">
-                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs flex items-center gap-1 w-fit">
+                        <span className="px-2 py-1 bg-[rgba(12,193,195,0.15)] text-[var(--accent)] rounded text-xs flex items-center gap-1 w-fit">
                           <HelpCircle size={12} />
                           Soru Bağlı
                         </span>
                         <span className="text-xs text-[var(--text-dim)]">{triggerInfo.optionsCount} şık</span>
                       </div>
                     ) : (
-                      <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs">
+                      <span className="px-2 py-1 bg-[rgba(245,158,11,0.15)] text-amber-400 rounded text-xs">
                         Puan Aralığı: %{rec.minScoreThreshold}-{rec.maxScoreThreshold}
                       </span>
                     )}
@@ -541,7 +541,7 @@ export default function RecommendationsPage() {
                     <button onClick={() => openModal(rec)} className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]">
                       <Edit size={18} />
                     </button>
-                    <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-red-100 rounded text-red-600">
+                    <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-[rgba(239,68,68,0.15)] rounded text-red-400">
                       <Trash2 size={18} />
                     </button>
                   </td>
@@ -609,12 +609,12 @@ export default function RecommendationsPage() {
               </div>
               
               {/* Hedef Alan Seçimi - Kademeli */}
-              <div className="p-4 bg-indigo-50 rounded-lg">
+              <div className="p-4 bg-[rgba(99,102,241,0.1)] rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
-                  <FolderTree size={18} className="text-indigo-700" />
-                  <label className="text-sm font-medium text-indigo-800">Hedef Alan Seçimi</label>
+                  <FolderTree size={18} className="text-indigo-400" />
+                  <label className="text-sm font-medium text-indigo-400">Hedef Alan Seçimi</label>
                 </div>
-                <p className="text-xs text-indigo-600 mb-4">
+                <p className="text-xs text-indigo-400 mb-4">
                   Öneri hangi alana ait olacak? Anket → Kategori → Alt Kategori sırasıyla seçim yapın.
                 </p>
                 
@@ -709,12 +709,12 @@ export default function RecommendationsPage() {
               </div>
 
               {/* SORU-CEVAP BAZLI TETİKLEME - YENİ */}
-              <div className="p-4 bg-green-50 rounded-lg border-2 border-green-200">
+              <div className="p-4 bg-[rgba(12,193,195,0.1)] rounded-lg border-2 border-[var(--accent)]">
                 <div className="flex items-center gap-2 mb-3">
-                  <CheckSquare size={18} className="text-green-700" />
-                  <label className="text-sm font-medium text-green-800">Şık Bazlı Tetikleme (Yeni!)</label>
+                  <CheckSquare size={18} className="text-[var(--accent)]" />
+                  <label className="text-sm font-medium text-[var(--accent-bright)]">Şık Bazlı Tetikleme (Yeni!)</label>
                 </div>
-                <p className="text-xs text-green-600 mb-4">
+                <p className="text-xs text-[var(--accent)] mb-4">
                   Bir soru seçin ve bu önerinin hangi cevaplarda aktif olacağını belirleyin. 
                   Kullanıcı seçtiğiniz şıklardan birine cevap verdiğinde bu öneri gösterilecek.
                 </p>
@@ -753,7 +753,7 @@ export default function RecommendationsPage() {
                               key={opt.value} 
                               className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
                                 selectedTriggerOptions.includes(opt.value) 
-                                  ? 'bg-green-100 border-green-500' 
+                                  ? 'bg-[rgba(12,193,195,0.15)] border-[var(--accent)]' 
                                   : 'bg-[var(--bg-card)] hover:bg-[var(--bg-card-2)]'
                               }`}
                             >
@@ -767,14 +767,14 @@ export default function RecommendationsPage() {
                                     setSelectedTriggerOptions(selectedTriggerOptions.filter(v => v !== opt.value));
                                   }
                                 }}
-                                className="w-4 h-4 text-green-600 rounded"
+                                className="w-4 h-4 text-[var(--accent)] rounded"
                               />
                               <span className="text-sm">{opt.label}</span>
                             </label>
                           ))}
                         </div>
                         {selectedTriggerOptions.length > 0 && (
-                          <p className="mt-2 text-xs text-green-700 bg-green-100 p-2 rounded">
+                          <p className="mt-2 text-xs text-[var(--accent)] bg-[rgba(12,193,195,0.15)] p-2 rounded">
                             ✅ Seçili {selectedTriggerOptions.length} şıktan birine cevap verildiğinde bu öneri gösterilecek.
                           </p>
                         )}
@@ -795,9 +795,9 @@ export default function RecommendationsPage() {
 
               {/* Puan Aralığı (Soru seçilmediyse) */}
               {!modalQuestionId && (
-                <div className="p-4 bg-amber-50 rounded-lg">
+                <div className="p-4 bg-[rgba(245,158,11,0.1)] rounded-lg">
                   <label className="block text-sm font-medium text-amber-800 mb-2">Puan Aralığı (Alternatif Yöntem)</label>
-                  <p className="text-xs text-amber-600 mb-3">
+                  <p className="text-xs text-amber-400 mb-3">
                     Soru seçmediyseniz, bu öneri seçilen alandaki puan aralığına göre gösterilir.
                   </p>
                   <div className="grid grid-cols-2 gap-4">
@@ -859,9 +859,9 @@ export default function RecommendationsPage() {
               </div>
 
               {/* Bubble Chart Ayarları */}
-              <div className="p-4 bg-purple-50 rounded-lg">
+              <div className="p-4 bg-[rgba(139,92,246,0.1)] rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
-                  <Target size={18} className="text-purple-700" />
+                  <Target size={18} className="text-purple-400" />
                   <label className="text-sm font-medium text-purple-800">Bubble Chart Konumu</label>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -878,7 +878,7 @@ export default function RecommendationsPage() {
                     />
                     <div className="flex justify-between text-xs text-[var(--text-dim)]">
                       <span>Düşük</span>
-                      <span className="font-semibold text-purple-700">{formData.xPosition || 5}</span>
+                      <span className="font-semibold text-purple-400">{formData.xPosition || 5}</span>
                       <span>Yüksek</span>
                     </div>
                   </div>
@@ -895,7 +895,7 @@ export default function RecommendationsPage() {
                     />
                     <div className="flex justify-between text-xs text-[var(--text-dim)]">
                       <span>Düşük</span>
-                      <span className="font-semibold text-purple-700">{formData.yPosition || 5}</span>
+                      <span className="font-semibold text-purple-400">{formData.yPosition || 5}</span>
                       <span>Yüksek</span>
                     </div>
                   </div>

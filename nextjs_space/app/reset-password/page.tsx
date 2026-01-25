@@ -70,8 +70,8 @@ function ResetPasswordForm() {
           animate={{ opacity: 1, scale: 1 }}
           className="bg-[var(--bg-card)] rounded-2xl shadow-2xl p-8 w-full max-w-md text-center"
         >
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="text-green-600" size={32} />
+          <div className="w-16 h-16 bg-[rgba(12,193,195,0.15)] rounded-full flex items-center justify-center mx-auto mb-4">
+            <CheckCircle className="text-[var(--accent)]" size={32} />
           </div>
           <h2 className="text-2xl font-bold text-[var(--text-main)] mb-2">Şifre Güncellendi</h2>
           <p className="text-[var(--text-muted)] mb-6">
@@ -90,8 +90,8 @@ function ResetPasswordForm() {
           animate={{ opacity: 1, scale: 1 }}
           className="bg-[var(--bg-card)] rounded-2xl shadow-2xl p-8 w-full max-w-md text-center"
         >
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="text-red-600" size={32} />
+          <div className="w-16 h-16 bg-[rgba(239,68,68,0.15)] rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="text-red-400" size={32} />
           </div>
           <h2 className="text-2xl font-bold text-[var(--text-main)] mb-2">Geçersiz Link</h2>
           <p className="text-[var(--text-muted)] mb-6">
@@ -116,7 +116,7 @@ function ResetPasswordForm() {
         className="bg-[var(--bg-card)] rounded-2xl shadow-2xl p-8 w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[rgba(46,134,255,0.15)] rounded-full flex items-center justify-center mx-auto mb-4">
             <Lock className="text-[var(--accent)]" size={32} />
           </div>
           <h1 className="text-2xl font-bold text-[var(--text-main)]">Yeni Şifre Belirle</h1>
@@ -126,7 +126,7 @@ function ResetPasswordForm() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
+          <div className="mb-4 p-3 bg-[rgba(239,68,68,0.1)] border border-red-500/50 rounded-lg flex items-center gap-2 text-red-400">
             <AlertCircle size={18} />
             {error}
           </div>

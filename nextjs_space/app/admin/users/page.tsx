@@ -57,7 +57,7 @@ const roleLabels: Record<string, string> = {
 
 const roleColors: Record<string, string> = {
   USER: "bg-[var(--bg-card-2)] text-[var(--text-muted)]",
-  UNIT_MANAGER: "bg-purple-100 text-purple-700",
+  UNIT_MANAGER: "bg-[rgba(139,92,246,0.15)] text-purple-400",
   ADMIN: "bg-[var(--bg-card-2)] text-[var(--accent)]",
 };
 
@@ -353,8 +353,8 @@ export default function UsersPage() {
         </div>
         <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-              <Building2 className="text-purple-600" size={20} />
+            <div className="w-10 h-10 bg-[rgba(139,92,246,0.15)] rounded-lg flex items-center justify-center">
+              <Building2 className="text-purple-400" size={20} />
             </div>
             <div>
               <p className="text-sm text-[var(--text-dim)]">Birim Yöneticisi</p>
@@ -421,7 +421,7 @@ export default function UsersPage() {
                   <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={() => openAssignModal(user)}
-                      className="p-2 text-[var(--text-dim)] hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      className="p-2 text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[rgba(12,193,195,0.1)] rounded-lg transition-colors"
                       title="Anket Ata"
                     >
                       <FileText size={16} />
@@ -435,7 +435,7 @@ export default function UsersPage() {
                     </button>
                     <button
                       onClick={() => handleDelete(user.id)}
-                      className="p-2 text-[var(--text-dim)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-2 text-[var(--text-dim)] hover:text-red-500 hover:bg-[rgba(239,68,68,0.1)] rounded-lg transition-colors"
                       title="Sil"
                     >
                       <Trash2 size={16} />
@@ -636,7 +636,7 @@ export default function UsersPage() {
               {/* Atanmış Anketler */}
               <div>
                 <h3 className="text-sm font-semibold text-[var(--text-muted)] mb-3 flex items-center gap-2">
-                  <Check size={16} className="text-green-600" />
+                  <Check size={16} className="text-[var(--accent)]" />
                   Atanmış Anketler ({userAssignments.length})
                 </h3>
                 {userAssignments.length > 0 ? (
@@ -644,10 +644,10 @@ export default function UsersPage() {
                     {userAssignments.map((assignment) => (
                       <div
                         key={assignment.id}
-                        className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-[rgba(12,193,195,0.1)] border border-[var(--accent)] rounded-lg"
                       >
                         <div className="flex items-center gap-3">
-                          <FileText size={18} className="text-green-600" />
+                          <FileText size={18} className="text-[var(--accent)]" />
                           <div>
                             <p className="font-medium text-[var(--text-main)]">{assignment.survey.name}</p>
                             <p className="text-xs text-[var(--text-dim)]">
@@ -657,7 +657,7 @@ export default function UsersPage() {
                         </div>
                         <button
                           onClick={() => handleRemoveAssignment(assignment.surveyId)}
-                          className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors"
+                          className="p-2 text-red-500 hover:bg-[rgba(239,68,68,0.15)] rounded-lg transition-colors"
                           title="Atamayı Kaldır"
                         >
                           <Trash2 size={16} />

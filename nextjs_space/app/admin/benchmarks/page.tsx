@@ -140,7 +140,7 @@ export default function BenchmarksPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -165,7 +165,7 @@ export default function BenchmarksPage() {
             <select
               value={selectedSector}
               onChange={(e) => { setSelectedSector(e.target.value); setSelectedSubSector(""); }}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
             >
               <option value="">Sektör Seçin</option>
               {sectors.map(s => (
@@ -179,7 +179,7 @@ export default function BenchmarksPage() {
             <select
               value={selectedSubSector}
               onChange={(e) => setSelectedSubSector(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
               disabled={!selectedSector}
             >
               <option value="">Tüm Sektör (Genel)</option>
@@ -194,7 +194,7 @@ export default function BenchmarksPage() {
             <select
               value={selectedLevel}
               onChange={(e) => { setSelectedLevel(e.target.value); setSelectedTarget(""); }}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
             >
               <option value="OVERALL">Genel Skor</option>
               <option value="CATEGORY">Kategori Bazlı</option>
@@ -208,7 +208,7 @@ export default function BenchmarksPage() {
               <select
                 value={selectedTarget}
                 onChange={(e) => setSelectedTarget(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
               >
                 <option value="">Kategori Seçin</option>
                 {categories.map(c => (
@@ -224,7 +224,7 @@ export default function BenchmarksPage() {
               <select
                 value={selectedTarget}
                 onChange={(e) => setSelectedTarget(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
               >
                 <option value="">Alt Kategori Seçin</option>
                 {categories.map(c => (
@@ -247,7 +247,7 @@ export default function BenchmarksPage() {
               min="0"
               max="5"
               step="0.1"
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
             />
           </div>
 
@@ -260,7 +260,7 @@ export default function BenchmarksPage() {
               min="0"
               max="5"
               step="0.1"
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
             />
           </div>
         </div>
@@ -310,15 +310,15 @@ export default function BenchmarksPage() {
                     <td className="px-4 py-3 text-sm">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         b.level === "OVERALL" ? "bg-[var(--bg-card-2)] text-[var(--accent)]" :
-                        b.level === "CATEGORY" ? "bg-purple-100 text-purple-700" :
-                        "bg-green-100 text-green-700"
+                        b.level === "CATEGORY" ? "bg-[rgba(139,92,246,0.15)] text-purple-400" :
+                        "bg-[rgba(12,193,195,0.15)] text-[var(--accent)]"
                       }`}>
                         {b.level === "OVERALL" ? "Genel" : b.level === "CATEGORY" ? "Kategori" : "Alt Kategori"}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-[var(--text-muted)]">{getTargetName(b)}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded font-medium">{b.bestScore.toFixed(1)}</span>
+                      <span className="px-2 py-1 bg-[rgba(139,92,246,0.15)] text-purple-400 rounded font-medium">{b.bestScore.toFixed(1)}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className="px-2 py-1 bg-[var(--bg-card-2)] text-[var(--text-muted)] rounded font-medium">{b.averageScore.toFixed(1)}</span>
@@ -326,7 +326,7 @@ export default function BenchmarksPage() {
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => handleDelete(b.id)}
-                        className="p-1 text-red-600 hover:bg-red-50 rounded"
+                        className="p-1 text-red-400 hover:bg-[rgba(239,68,68,0.1)] rounded"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -338,7 +338,7 @@ export default function BenchmarksPage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <BarChart3 size={48} className="mx-auto text-gray-300 mb-4" />
+            <BarChart3 size={48} className="mx-auto text-[var(--ui-passive)] mb-4" />
             <p className="text-[var(--text-dim)]">Henüz benchmark verisi girilmemiş</p>
             <p className="text-sm text-[var(--text-dim)] mt-1">
               {selectedSector ? "Seçili sektör için veri bulunamadı" : "Yukarıdaki formu kullanarak veri ekleyin"}

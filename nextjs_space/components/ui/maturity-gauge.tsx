@@ -97,7 +97,7 @@ export function MaturityGauge({ score, title = "Seviyelendirme", showOverallLeve
             initial={{ height: 0 }}
             animate={{ height: `${position}%` }}
             transition={{ duration: 1, ease: "easeOut" }}
-            className="absolute bottom-0 left-0 right-0 rounded-2xl bg-gradient-to-t from-cyan-300 via-cyan-400 to-cyan-500   "
+            className="absolute bottom-0 left-0 right-0 rounded-2xl bg-gradient-to-t from-[var(--accent-cyan)] via-[var(--accent-bright)] to-[var(--accent)]   "
             style={{ minHeight: score > 1 ? "20px" : "0px" }}
           />
           

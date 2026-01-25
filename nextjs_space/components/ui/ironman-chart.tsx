@@ -40,23 +40,11 @@ interface IronmanData {
   subSector: { id: string; name: string } | null;
 }
 
-const quadrantColors: Record<string, { light: { bg: string; border: string; text: string }; dark: { bg: string; border: string; text: string } }> = {
-  IRONMAN: { 
-    light: { bg: 'bg-green-100', border: 'border-green-500', text: 'text-green-700' },
-    dark: { bg: 'bg-green-900/40', border: 'border-green-400', text: 'text-green-300' }
-  },
-  SPRINTER: { 
-    light: { bg: 'bg-orange-100', border: 'border-orange-500', text: 'text-orange-700' },
-    dark: { bg: 'bg-orange-900/40', border: 'border-orange-400', text: 'text-orange-300' }
-  },
-  MARATHON_RUNNER: { 
-    light: { bg: 'bg-purple-100', border: 'border-purple-500', text: 'text-purple-700' },
-    dark: { bg: 'bg-purple-900/40', border: 'border-purple-400', text: 'text-purple-300' }
-  },
-  WALKER: { 
-    light: { bg: 'bg-red-100', border: 'border-red-500', text: 'text-red-700' },
-    dark: { bg: 'bg-red-900/40', border: 'border-red-400', text: 'text-red-300' }
-  },
+const quadrantColors: Record<string, { bg: string; border: string; text: string }> = {
+  IRONMAN: { bg: 'bg-[rgba(12,193,195,0.15)]', border: 'border-[var(--accent)]', text: 'text-[var(--accent)]' },
+  SPRINTER: { bg: 'bg-[rgba(251,146,60,0.15)]', border: 'border-orange-400', text: 'text-orange-400' },
+  MARATHON_RUNNER: { bg: 'bg-[rgba(139,92,246,0.15)]', border: 'border-purple-400', text: 'text-purple-400' },
+  WALKER: { bg: 'bg-[rgba(239,68,68,0.15)]', border: 'border-red-400', text: 'text-red-400' },
 };
 
 export function IronmanChart() {
@@ -112,8 +100,8 @@ export function IronmanChart() {
     const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : '#e5e7eb';
     const axisColor = isDark ? 'rgba(255, 255, 255, 0.6)' : '#374151';
     const labelColor = isDark ? 'rgba(255, 255, 255, 0.8)' : '#374151';
-    const titleColor = isDark ? '#22d3ee' : '#1e3a8a';
-    const diagonalColor = isDark ? 'rgba(34, 211, 238, 0.5)' : '#1e3a8a';
+    const titleColor = isDark ? 'var(--accent-cyan)' : 'var(--accent)';
+    const diagonalColor = isDark ? 'rgba(34, 211, 238, 0.5)' : 'var(--accent)';
 
     // Draw background quadrants
     const midX = padding + chartSize / 2;
@@ -235,7 +223,7 @@ export function IronmanChart() {
       // Best point
       const bestX = scoreToPos(data.benchmark.velocityBest, 'x');
       const bestY = scoreToPos(data.benchmark.enduranceBest, 'y');
-      ctx.fillStyle = isDark ? '#22d3ee' : '#1e3a8a';
+      ctx.fillStyle = isDark ? 'var(--accent-cyan)' : 'var(--accent)';
       ctx.beginPath();
       ctx.arc(bestX, bestY, 8, 0, Math.PI * 2);
       ctx.fill();
@@ -264,9 +252,9 @@ export function IronmanChart() {
 
   if (loading || !mounted) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 border border-gray-200 dark:border-slate-700">
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-lg p-6 border border-[var(--border-soft)]">
         <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-blue-500 dark:border-cyan-400 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -274,25 +262,24 @@ export function IronmanChart() {
 
   if (!data) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 border border-gray-200 dark:border-slate-700">
-        <p className="text-gray-500 dark:text-gray-400 text-center">Ironman verileri yüklenemedi</p>
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-lg p-6 border border-[var(--border-soft)]">
+        <p className="text-[var(--text-dim)] text-center">Ironman verileri yüklenemedi</p>
       </div>
     );
   }
 
-  const quadrantColorSet = quadrantColors[data.user.quadrant] || quadrantColors.WALKER;
-  const colors = isDark ? quadrantColorSet.dark : quadrantColorSet.light;
+  const colors = quadrantColors[data.user.quadrant] || quadrantColors.WALKER;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-slate-800 rounded-xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] overflow-hidden border border-gray-200 dark:border-slate-700"
+      className="bg-[var(--bg-card)] rounded-xl shadow-lg overflow-hidden border border-[var(--border-soft)]"
     >
       {/* Header - Dark navy gradient in dark mode */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-slate-900 dark:to-slate-800 px-6 py-4 border-b border-transparent dark:border-slate-700">
-        <h3 className="text-lg font-bold text-white dark:text-gray-100">Ironman Analizi</h3>
-        <p className="text-white/70 dark:text-gray-400 text-sm">Hız ve Olgunluk Değerlendirmesi</p>
+      <div className="bg-gradient-to-r from-[var(--blue-main)] to-[var(--accent)] px-6 py-4 border-b border-transparent">
+        <h3 className="text-lg font-bold text-white">Ironman Analizi</h3>
+        <p className="text-white/70 text-sm">Hız ve Olgunluk Değerlendirmesi</p>
       </div>
 
       <div className="p-6">
@@ -302,7 +289,7 @@ export function IronmanChart() {
             <canvas ref={canvasRef} className="mx-auto" />
             
             {/* Legend */}
-            <div className="flex flex-wrap justify-center gap-4 mt-4 text-sm text-gray-600 dark:text-gray-300">
+            <div className="flex flex-wrap justify-center gap-4 mt-4 text-sm text-[var(--text-muted)]">
               <div className="flex items-center gap-2">
                 <span className="w-4 h-4 rounded-full bg-pink-500"></span>
                 <span>Sizin Skorunuz</span>
@@ -310,11 +297,11 @@ export function IronmanChart() {
               {data.benchmark && (
                 <>
                   <div className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full bg-blue-400 dark:bg-sky-400"></span>
+                    <span className="w-4 h-4 rounded-full bg-blue-400"></span>
                     <span>Sektör Ort.</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full bg-blue-900 dark:bg-cyan-400"></span>
+                    <span className="w-4 h-4 rounded-full bg-blue-900"></span>
                     <span>Sektör En İyi</span>
                   </div>
                 </>
@@ -332,17 +319,17 @@ export function IronmanChart() {
 
             {/* Scores */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
-                <p className="text-sm text-blue-600 dark:text-blue-300 font-medium">Velocity (Hız)</p>
-                <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{data.user.velocity.toFixed(1)}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <div className="bg-[rgba(46,134,255,0.1)] p-4 rounded-lg border border-blue-200">
+                <p className="text-sm text-[var(--blue-main)] font-medium">Velocity (Hız)</p>
+                <p className="text-3xl font-bold text-[var(--blue-main)]">{data.user.velocity.toFixed(1)}</p>
+                <p className="text-xs text-[var(--text-dim)] mt-1">
                   {data.user.velocityQuestionCount || 0} soru • 1-5 ölçeği
                 </p>
               </div>
-              <div className="bg-teal-50 dark:bg-teal-900/30 p-4 rounded-lg border border-teal-200 dark:border-teal-700">
-                <p className="text-sm text-teal-600 dark:text-teal-300 font-medium">Endurance (Olgunluk)</p>
-                <p className="text-3xl font-bold text-teal-600 dark:text-teal-400">{data.user.endurance.toFixed(1)}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <div className="bg-teal-50 p-4 rounded-lg border border-teal-200">
+                <p className="text-sm text-teal-600 font-medium">Endurance (Olgunluk)</p>
+                <p className="text-3xl font-bold text-teal-600">{data.user.endurance.toFixed(1)}</p>
+                <p className="text-xs text-[var(--text-dim)] mt-1">
                   {data.user.enduranceQuestionCount || 0} soru • 1-5 ölçeği
                 </p>
               </div>
@@ -350,13 +337,13 @@ export function IronmanChart() {
 
             {/* Dengesizlik Uyarısı */}
             {data.imbalance?.isImbalanced && data.imbalance.warning && (
-              <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/30 border-2 border-amber-400 dark:border-amber-500">
+              <div className="p-4 rounded-lg bg-[rgba(245,158,11,0.1)] border-2 border-amber-400">
                 <div className="flex items-start gap-3">
                   <span className="text-2xl">⚠️</span>
                   <div>
-                    <h5 className="font-bold text-amber-700 dark:text-amber-300">{data.imbalance.warning.title}</h5>
-                    <p className="text-sm text-amber-800 dark:text-amber-200 mt-1">{data.imbalance.warning.message}</p>
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 italic">
+                    <h5 className="font-bold text-amber-400">{data.imbalance.warning.title}</h5>
+                    <p className="text-sm text-amber-800 mt-1">{data.imbalance.warning.message}</p>
+                    <p className="text-xs text-amber-400 mt-2 italic">
                       💡 {data.imbalance.warning.recommendation}
                     </p>
                   </div>
@@ -366,8 +353,8 @@ export function IronmanChart() {
 
             {/* Benchmark Comparison */}
             {data.benchmark && (
-              <div className="bg-gray-50 dark:bg-slate-900 p-4 rounded-lg border border-gray-200 dark:border-slate-700">
-                <h5 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">
+              <div className="bg-[var(--bg-card-2)] p-4 rounded-lg border border-[var(--border-soft)]">
+                <h5 className="font-semibold text-[var(--text-main)] mb-3">
                   Sektör Karşılaştırması: {data.benchmark.sectorName}
                   {data.benchmark.subSectorName && ` - ${data.benchmark.subSectorName}`}
                 </h5>
@@ -375,18 +362,18 @@ export function IronmanChart() {
                 {/* Velocity Comparison */}
                 <div className="mb-3">
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-blue-600 dark:text-blue-400">Velocity</span>
-                    <span className="text-gray-500 dark:text-gray-400">
+                    <span className="text-[var(--blue-main)]">Velocity</span>
+                    <span className="text-[var(--text-dim)]">
                       Ort: {data.benchmark.velocityAverage.toFixed(1)} | En İyi: {data.benchmark.velocityBest.toFixed(1)}
                     </span>
                   </div>
-                  <div className="relative h-3 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div className="relative h-3 bg-[var(--border-soft)] rounded-full overflow-hidden">
                     <div
-                      className="absolute h-full bg-blue-300 dark:bg-blue-700 rounded-full"
+                      className="absolute h-full bg-blue-300 rounded-full"
                       style={{ width: `${(data.benchmark.velocityBest / 5) * 100}%` }}
                     />
                     <div
-                      className="absolute h-full bg-blue-500 dark:bg-blue-500 rounded-full"
+                      className="absolute h-full bg-[rgba(46,134,255,0.1)]0 rounded-full"
                       style={{ width: `${(data.benchmark.velocityAverage / 5) * 100}%` }}
                     />
                     <div
@@ -399,18 +386,18 @@ export function IronmanChart() {
                 {/* Endurance Comparison */}
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-teal-600 dark:text-teal-400">Endurance</span>
-                    <span className="text-gray-500 dark:text-gray-400">
+                    <span className="text-teal-600">Endurance</span>
+                    <span className="text-[var(--text-dim)]">
                       Ort: {data.benchmark.enduranceAverage.toFixed(1)} | En İyi: {data.benchmark.enduranceBest.toFixed(1)}
                     </span>
                   </div>
-                  <div className="relative h-3 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div className="relative h-3 bg-[var(--border-soft)] rounded-full overflow-hidden">
                     <div
-                      className="absolute h-full bg-teal-300 dark:bg-teal-700 rounded-full"
+                      className="absolute h-full bg-teal-300 rounded-full"
                       style={{ width: `${(data.benchmark.enduranceBest / 5) * 100}%` }}
                     />
                     <div
-                      className="absolute h-full bg-teal-500 dark:bg-teal-500 rounded-full"
+                      className="absolute h-full bg-teal-500 rounded-full"
                       style={{ width: `${(data.benchmark.enduranceAverage / 5) * 100}%` }}
                     />
                     <div
@@ -423,8 +410,8 @@ export function IronmanChart() {
             )}
 
             {!data.benchmark && data.sector && (
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-600 p-4 rounded-lg">
-                <p className="text-amber-700 dark:text-amber-300 text-sm">
+              <div className="bg-[rgba(245,158,11,0.1)] border border-amber-500/50 p-4 rounded-lg">
+                <p className="text-amber-400 text-sm">
                   <strong>{data.sector.name}</strong> sektörü için henüz benchmark verisi tanımlanmamış.
                   Admin panelinden ekleyebilirsiniz.
                 </p>
@@ -432,8 +419,8 @@ export function IronmanChart() {
             )}
 
             {!data.sector && (
-              <div className="bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 p-4 rounded-lg">
-                <p className="text-gray-600 dark:text-gray-300 text-sm">
+              <div className="bg-[var(--bg-card-2)] border border-[var(--border-soft)] p-4 rounded-lg">
+                <p className="text-[var(--text-muted)] text-sm">
                   Sektör bilginiz tanımlı değil. Profil ayarlarından sektörünüzü seçerek
                   benchmark karşılaştırması görebilirsiniz.
                 </p>

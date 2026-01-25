@@ -39,14 +39,14 @@ const exportOptions: { type: ExportType; label: string; description: string; ico
     label: 'Kullanıcı Puanları', 
     description: 'Kullanıcıların olgunluk puanlarını ve seviyelerini dışa aktar',
     icon: Users,
-    color: 'bg-green-500'
+    color: 'bg-[rgba(12,193,195,0.1)]0'
   },
   { 
     type: 'recommendations', 
     label: 'Öneriler', 
     description: 'Tüm önerileri ve detaylarını dışa aktar',
     icon: Lightbulb,
-    color: 'bg-purple-500'
+    color: 'bg-[rgba(139,92,246,0.1)]0'
   },
   { 
     type: 'categories', 
@@ -60,7 +60,7 @@ const exportOptions: { type: ExportType; label: string; description: string; ico
     label: 'Sektörler', 
     description: 'Sektör ve alt sektör listesini dışa aktar',
     icon: Factory,
-    color: 'bg-slate-500'
+    color: 'bg-[var(--bg-card-2)]0'
   }
 ];
 

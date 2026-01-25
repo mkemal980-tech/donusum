@@ -117,7 +117,7 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
           onClick={() => setViewMode('subcategory')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             viewMode === 'subcategory'
-              ? 'bg-amber-500 text-white'
+              ? 'bg-[rgba(245,158,11,0.1)]0 text-white'
               : 'bg-[var(--muted)] text-[var(--muted-foreground)] hover:bg-[var(--accent)]'
           }`}
         >
@@ -127,7 +127,7 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
           onClick={() => setViewMode('category')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             viewMode === 'category'
-              ? 'bg-cyan-500 text-white'
+              ? 'bg-[rgba(6,182,212,0.1)]0 text-white'
               : 'bg-[var(--muted)] text-[var(--muted-foreground)] hover:bg-[var(--accent)]'
           }`}
         >

@@ -25,9 +25,9 @@ interface BubbleChartProps {
 }
 
 const strategicColors = {
-  QUICK_WIN: { bg: '#a78bfa', border: '#8b5cf6', label: 'Hızlı Kazanım' },
-  PROJECT: { bg: '#93c5fd', border: '#3b82f6', label: 'Proje' },
-  BIG_BET: { bg: '#f9a8d4', border: '#ec4899', label: 'Büyük Yatırım' }
+  QUICK_WIN: { bg: 'var(--accent-bright)', border: 'var(--accent)', label: 'Hızlı Kazanım' },
+  PROJECT: { bg: 'var(--blue-light)', border: 'var(--blue-main)', label: 'Proje' },
+  BIG_BET: { bg: '#c084fc', border: '#a855f7', label: 'Büyük Yatırım' }
 };
 
 const timeframeLabels = {
@@ -42,7 +42,7 @@ const DollarIndicator = ({ level, size = 12 }: { level: number; size?: number })
       <DollarSign 
         key={i} 
         size={size} 
-        className={i < level ? 'text-green-600 dark:text-green-400' : 'text-gray-300 dark:text-gray-600'} 
+        className={i < level ? 'text-[var(--accent)]' : 'text-[var(--ui-passive)]'} 
       />
     ))}
   </div>
@@ -301,11 +301,11 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
             ))}
             <div className="flex items-center gap-2 ml-4">
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600" />
+                <div className="w-3 h-3 rounded-full bg-[var(--ui-passive)]" />
                 <span className="text-xs text-[var(--text-muted)]">Küçük Etki</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-5 h-5 rounded-full bg-gray-300 dark:bg-gray-600" />
+                <div className="w-5 h-5 rounded-full bg-[var(--ui-passive)]" />
                 <span className="text-xs text-[var(--text-muted)]">Büyük Etki</span>
               </div>
             </div>
@@ -387,11 +387,11 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
                             >
                               {colors.label}
                             </span>
-                            <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 rounded text-xs font-medium flex items-center gap-1">
+                            <span className="px-2 py-1 bg-[rgba(46,134,255,0.15)] text-[var(--blue-main)] rounded text-xs font-medium flex items-center gap-1">
                               <Clock size={12} />
                               {timeframeLabels[rec.timeframe]}
                             </span>
-                            <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 rounded text-xs font-medium flex items-center gap-1">
+                            <span className="px-2 py-1 bg-[rgba(245,158,11,0.15)] text-amber-400 rounded text-xs font-medium flex items-center gap-1">
                               <TrendingUp size={12} />
                               Etki: {rec.estimatedImpact}
                             </span>

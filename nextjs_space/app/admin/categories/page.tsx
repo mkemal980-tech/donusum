@@ -396,7 +396,7 @@ export default function CategoriesPage() {
           <span className="text-xs px-2 py-1 bg-[var(--bg-card-2)] text-[var(--accent)] rounded">
             {questionTypes.find(t => t.value === question.type)?.label}
           </span>
-          <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
+          <span className="text-xs px-2 py-1 bg-[rgba(12,193,195,0.15)] text-[var(--accent)] rounded">
             Ağırlık: {question.weight || 1}x
           </span>
           {question.requiresEvidence && (
@@ -419,7 +419,7 @@ export default function CategoriesPage() {
         </button>
         <button 
           onClick={() => handleDelete('question', question.id)} 
-          className="p-1.5 hover:bg-red-100 rounded text-red-600" 
+          className="p-1.5 hover:bg-[rgba(239,68,68,0.15)] rounded text-red-400" 
           title="Sil"
         >
           <Trash2 size={16} />
@@ -471,7 +471,7 @@ export default function CategoriesPage() {
               <div className="flex items-center gap-2 ml-auto">
                 <button
                   onClick={() => setShowSurveyBulkUpload(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                  className="flex items-center gap-2 px-3 py-2 bg-[var(--accent-dark)] text-white rounded-lg hover:bg-green-700 text-sm"
                   title="Tüm kategorilere toplu soru yükle"
                 >
                   <Upload size={16} />
@@ -510,7 +510,7 @@ export default function CategoriesPage() {
                 </button>
                 <button 
                   onClick={() => handleDelete('category', category.id)} 
-                  className="p-2 hover:bg-red-500 rounded" 
+                  className="p-2 hover:bg-[rgba(239,68,68,0.1)]0 rounded" 
                   title="Sil"
                 >
                   <Trash2 size={18} />
@@ -523,24 +523,24 @@ export default function CategoriesPage() {
               <div className="p-4 space-y-3">
                 {category.subCategories?.map((subCat) => (
                   <div key={subCat.id} className="border rounded-lg overflow-hidden">
-                    <div className="flex items-center justify-between p-3 bg-purple-100">
+                    <div className="flex items-center justify-between p-3 bg-[rgba(139,92,246,0.15)]">
                       <div className="flex items-center gap-3 cursor-pointer" onClick={() => toggleExpand(`sub-${subCat.id}`)}>
                         {expanded[`sub-${subCat.id}`] ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                         <span className="font-medium text-purple-800">{subCat.name}</span>
                         {subCat.hasSubLevels ? (
-                          <span className="text-purple-600 text-sm">({subCat.subLevels?.length || 0} alt seviye)</span>
+                          <span className="text-purple-400 text-sm">({subCat.subLevels?.length || 0} alt seviye)</span>
                         ) : (
-                          <span className="text-purple-600 text-sm">({subCat.questions?.length || 0} soru)</span>
+                          <span className="text-purple-400 text-sm">({subCat.questions?.length || 0} soru)</span>
                         )}
                         {!subCat.hasSubLevels && (
-                          <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded">Doğrudan Sorular</span>
+                          <span className="text-xs px-2 py-0.5 bg-[rgba(245,158,11,0.15)] text-amber-400 rounded">Doğrudan Sorular</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
                         {subCat.hasSubLevels ? (
                           <button 
                             onClick={() => openModal('sublevel', subCat.id)} 
-                            className="p-1.5 hover:bg-purple-200 rounded text-purple-700" 
+                            className="p-1.5 hover:bg-purple-200 rounded text-purple-400" 
                             title="Alt Seviye Ekle"
                           >
                             <Plus size={16} />
@@ -549,14 +549,14 @@ export default function CategoriesPage() {
                           <>
                             <button 
                               onClick={() => openModal('question', subCat.id, undefined, { isSubCategory: true })} 
-                              className="p-1.5 hover:bg-purple-200 rounded text-purple-700" 
+                              className="p-1.5 hover:bg-purple-200 rounded text-purple-400" 
                               title="Soru Ekle"
                             >
                               <Plus size={16} />
                             </button>
                             <button 
                               onClick={() => openBulkUploadModal(subCat.id, true)} 
-                              className="p-1.5 hover:bg-green-200 rounded text-green-700" 
+                              className="p-1.5 hover:bg-green-200 rounded text-[var(--accent)]" 
                               title="Excel'den Toplu Yükle"
                             >
                               <Upload size={16} />
@@ -565,14 +565,14 @@ export default function CategoriesPage() {
                         )}
                         <button 
                           onClick={() => openModal('subcategory', category.id, subCat)} 
-                          className="p-1.5 hover:bg-purple-200 rounded text-purple-700" 
+                          className="p-1.5 hover:bg-purple-200 rounded text-purple-400" 
                           title="Düzenle"
                         >
                           <Edit size={16} />
                         </button>
                         <button 
                           onClick={() => handleDelete('subcategory', subCat.id)} 
-                          className="p-1.5 hover:bg-red-100 rounded text-red-600" 
+                          className="p-1.5 hover:bg-[rgba(239,68,68,0.15)] rounded text-red-400" 
                           title="Sil"
                         >
                           <Trash2 size={16} />
@@ -588,15 +588,15 @@ export default function CategoriesPage() {
                           <>
                             {subCat.subLevels?.map((subLevel) => (
                               <div key={subLevel.id} className="border rounded-lg bg-[var(--bg-card)] overflow-hidden">
-                                <div className="flex items-center justify-between p-3 bg-indigo-50">
+                                <div className="flex items-center justify-between p-3 bg-[rgba(99,102,241,0.1)]">
                                   <div className="flex items-center gap-3 cursor-pointer" onClick={() => toggleExpand(`level-${subLevel.id}`)}>
                                     {expanded[`level-${subLevel.id}`] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                                    <span className="font-medium text-indigo-800">{subLevel.name}</span>
-                                    <span className="text-indigo-600 text-sm">({subLevel.questions?.length || 0} soru)</span>
+                                    <span className="font-medium text-indigo-400">{subLevel.name}</span>
+                                    <span className="text-indigo-400 text-sm">({subLevel.questions?.length || 0} soru)</span>
                                     <span className={`text-xs px-2 py-0.5 rounded ${
                                       subLevel.axisType === 'VELOCITY' 
                                         ? 'bg-[var(--bg-card-2)] text-[var(--accent)]' 
-                                        : 'bg-green-100 text-green-700'
+                                        : 'bg-[rgba(12,193,195,0.15)] text-[var(--accent)]'
                                     }`}>
                                       {subLevel.axisType === 'VELOCITY' ? 'X: Velocity' : 'Y: Endurance'}
                                     </span>
@@ -604,28 +604,28 @@ export default function CategoriesPage() {
                                   <div className="flex items-center gap-2">
                                     <button 
                                       onClick={() => openModal('question', subLevel.id, undefined, { isSubCategory: false })} 
-                                      className="p-1.5 hover:bg-indigo-100 rounded text-indigo-700" 
+                                      className="p-1.5 hover:bg-[rgba(99,102,241,0.15)] rounded text-indigo-400" 
                                       title="Soru Ekle"
                                     >
                                       <Plus size={16} />
                                     </button>
                                     <button 
                                       onClick={() => openBulkUploadModal(subLevel.id, false)} 
-                                      className="p-1.5 hover:bg-green-100 rounded text-green-700" 
+                                      className="p-1.5 hover:bg-[rgba(12,193,195,0.15)] rounded text-[var(--accent)]" 
                                       title="Excel'den Toplu Yükle"
                                     >
                                       <Upload size={16} />
                                     </button>
                                     <button 
                                       onClick={() => openModal('sublevel', subCat.id, subLevel)} 
-                                      className="p-1.5 hover:bg-indigo-100 rounded text-indigo-700" 
+                                      className="p-1.5 hover:bg-[rgba(99,102,241,0.15)] rounded text-indigo-400" 
                                       title="Düzenle"
                                     >
                                       <Edit size={16} />
                                     </button>
                                     <button 
                                       onClick={() => handleDelete('sublevel', subLevel.id)} 
-                                      className="p-1.5 hover:bg-red-100 rounded text-red-600" 
+                                      className="p-1.5 hover:bg-[rgba(239,68,68,0.15)] rounded text-red-400" 
                                       title="Sil"
                                     >
                                       <Trash2 size={16} />
@@ -846,9 +846,9 @@ export default function CategoriesPage() {
                       className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                     />
                   </div>
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="p-4 bg-[rgba(245,158,11,0.1)] border border-amber-500/50 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
-                      <Layers size={20} className="text-amber-600" />
+                      <Layers size={20} className="text-amber-400" />
                       <span className="font-medium text-amber-800">Alt Seviye Yapısı</span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -873,7 +873,7 @@ export default function CategoriesPage() {
                         <span className="text-sm text-[var(--text-muted)]">Doğrudan sorular ekle</span>
                       </label>
                     </div>
-                    <p className="text-xs text-amber-600 mt-2">
+                    <p className="text-xs text-amber-400 mt-2">
                       {formData.hasSubLevels 
                         ? '"İzleme", "İnisiyatifler" gibi alt seviyeler oluşturabilirsiniz' 
                         : 'Soruları doğrudan bu alt kategoriye ekleyebilirsiniz'}
@@ -998,7 +998,7 @@ export default function CategoriesPage() {
                 </p>
                 <button
                   onClick={handleTemplateDownload}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="flex items-center gap-2 px-4 py-2 bg-[var(--blue-main)] text-white rounded-lg hover:bg-[var(--blue-dark)]"
                 >
                   <Download size={18} />
                   Soru Yükleme Şablonu İndir (.xlsx)
@@ -1006,12 +1006,12 @@ export default function CategoriesPage() {
               </div>
 
               {/* File Upload */}
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <h3 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+              <div className="p-4 bg-[rgba(12,193,195,0.1)] rounded-lg border border-[var(--accent)]">
+                <h3 className="font-medium text-[var(--accent-bright)] mb-2 flex items-center gap-2">
                   <Upload size={18} />
                   2. Doldurduğunuz Dosyayı Yükleyin
                 </h3>
-                <p className="text-sm text-green-700 mb-3">
+                <p className="text-sm text-[var(--accent)] mb-3">
                   Şablonu doldurduktan sonra aşağıdan yükleyin.
                 </p>
                 <input
@@ -1020,10 +1020,10 @@ export default function CategoriesPage() {
                   accept=".xlsx,.xls"
                   onChange={handleBulkUpload}
                   disabled={bulkUploading}
-                  className="block w-full text-sm text-[var(--text-dim)] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 disabled:opacity-50"
+                  className="block w-full text-sm text-[var(--text-dim)] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[var(--accent-dark)] file:text-white hover:file:bg-green-700 disabled:opacity-50"
                 />
                 {bulkUploading && (
-                  <div className="flex items-center gap-2 mt-3 text-green-700">
+                  <div className="flex items-center gap-2 mt-3 text-[var(--accent)]">
                     <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
                     <span className="text-sm">Yükleniyor...</span>
                   </div>
@@ -1032,7 +1032,7 @@ export default function CategoriesPage() {
 
               {/* Results */}
               {bulkUploadResult && (
-                <div className={`p-4 rounded-lg border ${bulkUploadResult.success ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+                <div className={`p-4 rounded-lg border ${bulkUploadResult.success ? 'bg-emerald-50 border-emerald-200' : 'bg-[rgba(239,68,68,0.1)] border-red-500/50'}`}>
                   <h3 className={`font-medium mb-3 flex items-center gap-2 ${bulkUploadResult.success ? 'text-emerald-800' : 'text-red-800'}`}>
                     {bulkUploadResult.success ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
                     Yükleme Sonucu
@@ -1049,7 +1049,7 @@ export default function CategoriesPage() {
                         <div className="text-xs text-[var(--text-dim)]">Başarılı</div>
                       </div>
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-                        <div className="text-lg font-bold text-red-600">{bulkUploadResult.summary.errorCount}</div>
+                        <div className="text-lg font-bold text-red-400">{bulkUploadResult.summary.errorCount}</div>
                         <div className="text-xs text-[var(--text-dim)]">Hatalı</div>
                       </div>
                     </div>
@@ -1057,10 +1057,10 @@ export default function CategoriesPage() {
 
                   {bulkUploadResult.errors && bulkUploadResult.errors.length > 0 && (
                     <div className="mt-3">
-                      <h4 className="text-sm font-medium text-red-700 mb-2">Hatalı Satırlar:</h4>
+                      <h4 className="text-sm font-medium text-red-400 mb-2">Hatalı Satırlar:</h4>
                       <div className="max-h-40 overflow-y-auto space-y-1">
                         {bulkUploadResult.errors.map((err, idx) => (
-                          <div key={idx} className="text-sm text-red-600 p-2 bg-[var(--bg-card)] rounded">
+                          <div key={idx} className="text-sm text-red-400 p-2 bg-[var(--bg-card)] rounded">
                             {err.row > 0 ? `Satır ${err.row}: ` : ''}{err.message}
                           </div>
                         ))}
@@ -1084,7 +1084,7 @@ export default function CategoriesPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => { setShowBulkUpload(null); setBulkUploadResult(null); }}
-                className="px-4 py-2 bg-gray-200 text-[var(--text-muted)] rounded-lg hover:bg-gray-300"
+                className="px-4 py-2 bg-[var(--border-soft)] text-[var(--text-muted)] rounded-lg hover:bg-[var(--ui-passive)]"
               >
                 Kapat
               </button>
@@ -1106,11 +1106,11 @@ export default function CategoriesPage() {
               </button>
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+            <div className="bg-[rgba(245,158,11,0.1)] border border-amber-500/50 rounded-lg p-3 mb-4">
               <p className="text-sm text-amber-800">
                 <strong>Seçili Anket:</strong> {surveys.find(s => s.id === selectedSurveyId)?.name}
               </p>
-              <p className="text-xs text-amber-600 mt-1">
+              <p className="text-xs text-amber-400 mt-1">
                 Bu şablon, anketin tüm kategori ve alt kategorilerini içerir. Tek dosyada tüm soruları yükleyebilirsiniz.
               </p>
             </div>
@@ -1128,7 +1128,7 @@ export default function CategoriesPage() {
                 </p>
                 <button
                   onClick={handleSurveyTemplateDownload}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="flex items-center gap-2 px-4 py-2 bg-[var(--blue-main)] text-white rounded-lg hover:bg-[var(--blue-dark)]"
                 >
                   <Download size={18} />
                   Anket Soru Şablonu İndir (.xlsx)
@@ -1136,12 +1136,12 @@ export default function CategoriesPage() {
               </div>
 
               {/* File Upload */}
-              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                <h3 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+              <div className="p-4 bg-[rgba(12,193,195,0.1)] rounded-lg border border-[var(--accent)]">
+                <h3 className="font-medium text-[var(--accent-bright)] mb-2 flex items-center gap-2">
                   <Upload size={18} />
                   2. Doldurduğunuz Dosyayı Yükleyin
                 </h3>
-                <p className="text-sm text-green-700 mb-3">
+                <p className="text-sm text-[var(--accent)] mb-3">
                   Şablondaki <strong>kategori_adi</strong>, <strong>alt_kategori_adi</strong> ve <strong>alt_seviye_adi</strong> kolonlarını 
                   değiştirmeden soruları ekleyin. Sistem otomatik olarak doğru yere yerleştirecek.
                 </p>
@@ -1151,10 +1151,10 @@ export default function CategoriesPage() {
                   accept=".xlsx,.xls"
                   onChange={handleSurveyBulkUpload}
                   disabled={surveyBulkUploading}
-                  className="block w-full text-sm text-[var(--text-dim)] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-600 file:text-white hover:file:bg-green-700 disabled:opacity-50"
+                  className="block w-full text-sm text-[var(--text-dim)] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[var(--accent-dark)] file:text-white hover:file:bg-green-700 disabled:opacity-50"
                 />
                 {surveyBulkUploading && (
-                  <div className="flex items-center gap-2 mt-3 text-green-700">
+                  <div className="flex items-center gap-2 mt-3 text-[var(--accent)]">
                     <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin" />
                     <span className="text-sm">Yükleniyor...</span>
                   </div>
@@ -1163,7 +1163,7 @@ export default function CategoriesPage() {
 
               {/* Results */}
               {surveyBulkUploadResult && (
-                <div className={`p-4 rounded-lg border ${surveyBulkUploadResult.success ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+                <div className={`p-4 rounded-lg border ${surveyBulkUploadResult.success ? 'bg-emerald-50 border-emerald-200' : 'bg-[rgba(239,68,68,0.1)] border-red-500/50'}`}>
                   <h3 className={`font-medium mb-3 flex items-center gap-2 ${surveyBulkUploadResult.success ? 'text-emerald-800' : 'text-red-800'}`}>
                     {surveyBulkUploadResult.success ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
                     Yükleme Sonucu
@@ -1180,7 +1180,7 @@ export default function CategoriesPage() {
                         <div className="text-xs text-[var(--text-dim)]">Başarılı</div>
                       </div>
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-                        <div className="text-lg font-bold text-red-600">{surveyBulkUploadResult.summary.errorCount}</div>
+                        <div className="text-lg font-bold text-red-400">{surveyBulkUploadResult.summary.errorCount}</div>
                         <div className="text-xs text-[var(--text-dim)]">Hatalı</div>
                       </div>
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
@@ -1192,10 +1192,10 @@ export default function CategoriesPage() {
 
                   {surveyBulkUploadResult.errors && surveyBulkUploadResult.errors.length > 0 && (
                     <div className="mt-3">
-                      <h4 className="text-sm font-medium text-red-700 mb-2">Hatalı Satırlar:</h4>
+                      <h4 className="text-sm font-medium text-red-400 mb-2">Hatalı Satırlar:</h4>
                       <div className="max-h-40 overflow-y-auto space-y-1">
                         {surveyBulkUploadResult.errors.map((err, idx) => (
-                          <div key={idx} className="text-sm text-red-600 p-2 bg-[var(--bg-card)] rounded">
+                          <div key={idx} className="text-sm text-red-400 p-2 bg-[var(--bg-card)] rounded">
                             {err.row > 0 ? `Satır ${err.row}: ` : ''}{err.message}
                           </div>
                         ))}
@@ -1221,7 +1221,7 @@ export default function CategoriesPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => { setShowSurveyBulkUpload(false); setSurveyBulkUploadResult(null); }}
-                className="px-4 py-2 bg-gray-200 text-[var(--text-muted)] rounded-lg hover:bg-gray-300"
+                className="px-4 py-2 bg-[var(--border-soft)] text-[var(--text-muted)] rounded-lg hover:bg-[var(--ui-passive)]"
               >
                 Kapat
               </button>

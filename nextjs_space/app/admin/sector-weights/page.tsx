@@ -206,7 +206,7 @@ export default function SectorWeightsPage() {
         </div>
 
         {selectedSurvey && !selectedSector && (
-          <p className="mt-4 text-amber-600 text-sm">Şimdi sektör seçin.</p>
+          <p className="mt-4 text-amber-400 text-sm">Şimdi sektör seçin.</p>
         )}
       </div>
 
@@ -255,7 +255,7 @@ export default function SectorWeightsPage() {
                     <span className="text-[var(--text-dim)]">%</span>
                   </div>
                   <div className="w-32">
-                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-2 bg-[var(--border-soft)] rounded-full overflow-hidden">
                       <div
                         className="h-full bg-[var(--accent)] transition-all duration-300"
                         style={{ width: `${Math.min(weightPercent, 100)}%` }}
@@ -274,19 +274,19 @@ export default function SectorWeightsPage() {
                 <span className="font-semibold text-[var(--text-main)]">Toplam:</span>
                 <span
                   className={`text-lg font-bold ${
-                    isValidTotal ? "text-green-600" : "text-red-600"
+                    isValidTotal ? "text-[var(--accent)]" : "text-red-400"
                   }`}
                 >
                   {(totalWeight * 100).toFixed(1)}%
                 </span>
                 {isValidTotal ? (
-                  <CheckCircle className="text-green-600" size={20} />
+                  <CheckCircle className="text-[var(--accent)]" size={20} />
                 ) : (
-                  <AlertCircle className="text-red-600" size={20} />
+                  <AlertCircle className="text-red-400" size={20} />
                 )}
               </div>
               {!isValidTotal && (
-                <p className="text-sm text-red-600">Toplam ağırlık 100% olmalıdır</p>
+                <p className="text-sm text-red-400">Toplam ağırlık 100% olmalıdır</p>
               )}
             </div>
           </div>
@@ -296,8 +296,8 @@ export default function SectorWeightsPage() {
             <div
               className={`mt-4 p-4 rounded-lg ${
                 message.type === "success"
-                  ? "bg-green-50 text-green-700"
-                  : "bg-red-50 text-red-700"
+                  ? "bg-[rgba(12,193,195,0.1)] text-[var(--accent)]"
+                  : "bg-[rgba(239,68,68,0.1)] text-red-400"
               }`}
             >
               {message.text}
@@ -324,8 +324,8 @@ export default function SectorWeightsPage() {
 
       {/* Empty State */}
       {selectedSector && selectedSurvey && filteredCategories.length === 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-center">
-          <p className="text-amber-700">Bu ankete ait kategori bulunamadı.</p>
+        <div className="bg-[rgba(245,158,11,0.1)] border border-amber-500/50 rounded-xl p-6 text-center">
+          <p className="text-amber-400">Bu ankete ait kategori bulunamadı.</p>
         </div>
       )}
 

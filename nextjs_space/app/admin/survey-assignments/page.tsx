@@ -165,7 +165,7 @@ export default function SurveyAssignmentsPage() {
 
       {message && (
         <div className={`p-4 rounded-lg ${
-          message.type === "success" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"
+          message.type === "success" ? "bg-[rgba(12,193,195,0.1)] text-[var(--accent)] border border-[var(--accent)]" : "bg-[rgba(239,68,68,0.1)] text-red-400 border border-red-500/50"
         }`}>
           {message.text}
           <button onClick={() => setMessage(null)} className="float-right font-bold">×</button>
@@ -215,7 +215,7 @@ export default function SurveyAssignmentsPage() {
               ))}
             </select>
             {selectedUserId && availableSurveysForUser.length === 0 && (
-              <p className="text-sm text-amber-600 mt-1">Bu kullanıcıya atanabilecek aktif anket kalmadı</p>
+              <p className="text-sm text-amber-400 mt-1">Bu kullanıcıya atanabilecek aktif anket kalmadı</p>
             )}
           </div>
           
@@ -258,7 +258,7 @@ export default function SurveyAssignmentsPage() {
 
         {filteredAssignments.length === 0 ? (
           <div className="p-12 text-center text-[var(--text-dim)]">
-            <UserCheck className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <UserCheck className="w-12 h-12 mx-auto mb-4 text-[var(--ui-passive)]" />
             <p>Henüz anket ataması yapılmamış</p>
           </div>
         ) : (
@@ -309,7 +309,7 @@ export default function SurveyAssignmentsPage() {
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         assignment.isActive
-                          ? "bg-green-100 text-green-800"
+                          ? "bg-[rgba(12,193,195,0.15)] text-[var(--accent-bright)]"
                           : "bg-[var(--bg-card-2)] text-[var(--text-main)]"
                       }`}>
                         {assignment.isActive ? "Aktif" : "Pasif"}
@@ -318,7 +318,7 @@ export default function SurveyAssignmentsPage() {
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => handleRemove(assignment.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-2 text-red-400 hover:bg-[rgba(239,68,68,0.1)] rounded-lg transition-colors"
                         title="Atamayı Kaldır"
                       >
                         <Trash2 className="w-4 h-4" />
