@@ -431,7 +431,7 @@ export default function RecommendationsPage() {
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Öneri Yönetimi</h1>
         <button
           onClick={() => openModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)] transition-colors"
         >
           <Plus size={20} /> Yeni Öneri
         </button>
@@ -503,7 +503,7 @@ export default function RecommendationsPage() {
                   </td>
                   <td className="p-4">
                     {surveyName ? (
-                      <span className="px-2 py-1 bg-primary-100 text-primary-700 rounded text-xs flex items-center gap-1 w-fit">
+                      <span className="px-2 py-1 bg-[var(--accent)]/15 text-primary-700 rounded text-xs flex items-center gap-1 w-fit">
                         <FileText size={12} />
                         {surveyName}
                       </span>
@@ -964,7 +964,7 @@ export default function RecommendationsPage() {
                 </button>
                 <button
                   onClick={handleSave}
-                  className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+                  className="px-6 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)] transition-colors"
                 >
                   Kaydet
                 </button>

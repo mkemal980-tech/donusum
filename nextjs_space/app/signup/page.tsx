@@ -124,11 +124,11 @@ export default function SignupPage() {
     }
   };
 
-  const inputClasses = "w-full pl-12 pr-4 py-3.5 bg-[var(--bg-secondary)] dark:bg-[var(--bg-main)] border border-[var(--border-light)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all duration-200";
-  const selectClasses = "w-full pl-12 pr-4 py-3.5 bg-[var(--bg-secondary)] dark:bg-[var(--bg-main)] border border-[var(--border-light)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all duration-200 appearance-none cursor-pointer";
+  const inputClasses = "w-full pl-12 pr-4 py-3.5 bg-[var(--bg-secondary)]  border border-[var(--border-light)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all duration-200";
+  const selectClasses = "w-full pl-12 pr-4 py-3.5 bg-[var(--bg-secondary)]  border border-[var(--border-light)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all duration-200 appearance-none cursor-pointer";
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 py-12 bg-[var(--bg-main)] dark:bg-gradient-to-br dark:from-[#0a1628] dark:to-[#111d32]">
+    <div className="min-h-screen flex items-center justify-center p-4 py-12 bg-[var(--bg-main)]   ">
       {/* Theme Toggle */}
       <button
         onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -143,8 +143,8 @@ export default function SignupPage() {
 
       {/* Background decorations */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-72 h-72 bg-[var(--secondary)] rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20 dark:opacity-10 animate-pulse" />
-        <div className="absolute bottom-20 left-20 w-72 h-72 bg-[var(--primary)] rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-3xl opacity-20 dark:opacity-10 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-20 right-20 w-72 h-72 bg-[var(--secondary)] rounded-full mix-blend-multiply  filter blur-3xl opacity-20  animate-pulse" />
+        <div className="absolute bottom-20 left-20 w-72 h-72 bg-[var(--primary)] rounded-full mix-blend-multiply  filter blur-3xl opacity-20  animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
       <motion.div
@@ -157,21 +157,21 @@ export default function SignupPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", duration: 0.6 }}
-            className="w-20 h-20 bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg dark:shadow-[0_0_30px_rgba(34,211,238,0.3)]"
+            className="w-20 h-20 bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg "
           >
-            <Sparkles className="w-10 h-10 text-white dark:text-[var(--bg-main)]" />
+            <Sparkles className="w-10 h-10 text-white " />
           </motion.div>
           <h1 className="text-3xl font-bold text-[var(--text-primary)]">Hesap Oluşturun</h1>
           <p className="text-[var(--text-secondary)] mt-2">Dönüşüm yolculuğunuza başlayın</p>
         </div>
 
-        <div className="bg-[var(--bg-card)] rounded-3xl shadow-xl dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] p-8 border border-[var(--border-light)]">
+        <div className="bg-[var(--bg-card)] rounded-3xl shadow-xl  p-8 border border-[var(--border-light)]">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <motion.div 
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl flex items-center gap-3 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-800/50"
+                className="p-4 bg-red-50  rounded-xl flex items-center gap-3 text-red-600  border border-red-100 "
               >
                 <AlertCircle size={20} />
                 <span className="text-sm font-medium">{error}</span>
@@ -325,10 +325,10 @@ export default function SignupPage() {
               whileTap={{ scale: 0.99 }}
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white dark:text-[var(--bg-main)] rounded-xl font-semibold hover:from-[var(--primary-light)] hover:to-[var(--secondary-light)] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg dark:shadow-[0_4px_20px_rgba(34,211,238,0.3)]"
+              className="w-full py-3.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white  rounded-xl font-semibold hover:from-[var(--primary-light)] hover:to-[var(--secondary-light)] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg "
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white dark:border-[var(--bg-main)] border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white  border-t-transparent rounded-full animate-spin" />
               ) : (
                 <><UserPlus size={20} /> Kayıt Ol</>
               )}

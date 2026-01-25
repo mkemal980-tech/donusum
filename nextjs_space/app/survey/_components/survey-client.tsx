@@ -390,10 +390,10 @@ export default function SurveyClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[var(--bg-main)]">
         <Header />
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-          <div className="w-12 h-12 border-4 border-[#1e3a8a] border-t-transparent rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -402,20 +402,20 @@ export default function SurveyClient() {
   // Hiç anket atanmamışsa
   if (surveys.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[var(--bg-main)]">
         <Header />
         <div className="max-w-[800px] mx-auto px-6 py-16">
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+          <div className="bg-[var(--bg-card)] rounded-2xl shadow-lg p-8 text-center">
             <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertCircle size={40} className="text-yellow-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Henüz Anket Atanmadı</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-2xl font-bold text-[var(--text-main)] mb-3">Henüz Anket Atanmadı</h2>
+            <p className="text-[var(--text-muted)] mb-6">
               Hesabınıza henüz bir anket atanmamış. Lütfen sistem yöneticinizle iletişime geçin.
             </p>
             <button
               onClick={() => router.push("/dashboard")}
-              className="px-6 py-3 bg-[#1e3a8a] text-white rounded-lg font-medium hover:bg-[#3b5998] transition-colors"
+              className="px-6 py-3 bg-[var(--accent)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors"
             >
               Ana Sayfaya Dön
             </button>
@@ -426,7 +426,7 @@ export default function SurveyClient() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--bg-main)]">
       <Header />
       
       <main className="max-w-[1200px] mx-auto px-6 py-8">
@@ -435,16 +435,16 @@ export default function SurveyClient() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-xl shadow-md p-4 mb-6"
+            className="bg-[var(--bg-card)] rounded-xl shadow-md p-4 mb-6"
           >
             <div className="flex items-center gap-4">
-              <FileText size={24} className="text-[#1e3a8a]" />
+              <FileText size={24} className="text-[var(--accent)]" />
               <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Anket Seçin</label>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Anket Seçin</label>
                 <select
                   value={selectedSurveyId}
                   onChange={(e) => setSelectedSurveyId(e.target.value)}
-                  className="w-full md:w-auto px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  className="w-full md:w-auto px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                 >
                   {surveys.map((survey) => (
                     <option key={survey.id} value={survey.id}>
@@ -461,15 +461,15 @@ export default function SurveyClient() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl shadow-md p-6 mb-6"
+          className="bg-[var(--bg-card)] rounded-xl shadow-md p-6 mb-6"
         >
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-[var(--text-main)]">
                 {selectedSurvey?.name || "Olgunluk Değerlendirme Anketi"}
               </h1>
               {selectedSurvey?.description && (
-                <p className="text-sm text-gray-500 mt-1">{selectedSurvey.description}</p>
+                <p className="text-sm text-[var(--text-dim)] mt-1">{selectedSurvey.description}</p>
               )}
             </div>
             <div className="flex items-center gap-2 text-sm">
@@ -479,7 +479,7 @@ export default function SurveyClient() {
                   Kaydediliyor...
                 </span>
               )}
-              <span className="text-gray-500">{totalQuestions} sorudan {answeredQuestions} tanesi cevaplandı</span>
+              <span className="text-[var(--text-dim)]">{totalQuestions} sorudan {answeredQuestions} tanesi cevaplandı</span>
             </div>
           </div>
           <ProgressBar value={progressPercentage} label="Genel İlerleme" color="#1e3a8a" />
@@ -487,13 +487,13 @@ export default function SurveyClient() {
 
         {loadingStructure ? (
           <div className="flex items-center justify-center py-16">
-            <div className="w-12 h-12 border-4 border-[#1e3a8a] border-t-transparent rounded-full animate-spin" />
+            <div className="w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : categories.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-md p-8 text-center">
-            <FileQuestion size={64} className="mx-auto text-gray-300 mb-4" />
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">Anket Henüz Hazırlanmamış</h2>
-            <p className="text-gray-500">Bu ankete henüz soru eklenmemiş. Lütfen daha sonra tekrar kontrol edin.</p>
+          <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-8 text-center">
+            <FileQuestion size={64} className="mx-auto text-[var(--ui-passive)] mb-4" />
+            <h2 className="text-xl font-semibold text-[var(--text-muted)] mb-2">Anket Henüz Hazırlanmamış</h2>
+            <p className="text-[var(--text-dim)]">Bu ankete henüz soru eklenmemiş. Lütfen daha sonra tekrar kontrol edin.</p>
           </div>
         ) : (
           <>
@@ -503,19 +503,19 @@ export default function SurveyClient() {
               animate={{ opacity: 1 }}
               className="flex items-center gap-2 text-sm mb-6 flex-wrap"
             >
-              <span className="flex items-center gap-1 px-3 py-1 bg-[#1e3a8a] text-white rounded-lg">
+              <span className="flex items-center gap-1 px-3 py-1 bg-[var(--accent)] text-white rounded-lg">
                 <FolderOpen size={14} />
                 {currentCategory?.name ?? 'Category'}
               </span>
-              <ChevronRight size={16} className="text-gray-400" />
+              <ChevronRight size={16} className="text-[var(--text-dim)]" />
               <span className="flex items-center gap-1 px-3 py-1 bg-[#a78bfa] text-white rounded-lg">
                 <Layers size={14} />
                 {currentSubCategory?.name ?? 'Sub-category'}
               </span>
               {hasSubLevels && currentSubLevel && (
                 <>
-                  <ChevronRight size={16} className="text-gray-400" />
-                  <span className="flex items-center gap-1 px-3 py-1 bg-gray-200 text-gray-700 rounded-lg">
+                  <ChevronRight size={16} className="text-[var(--text-dim)]" />
+                  <span className="flex items-center gap-1 px-3 py-1 bg-[var(--border-soft)] text-[var(--text-muted)] rounded-lg">
                     {currentSubLevel?.name ?? 'Level'}
                   </span>
                 </>
@@ -532,9 +532,9 @@ export default function SurveyClient() {
                 className="space-y-6 mb-8"
               >
                 {currentQuestions?.length === 0 ? (
-                  <div className="bg-white rounded-xl shadow-md p-8 text-center">
-                    <FileQuestion size={48} className="mx-auto text-gray-300 mb-4" />
-                    <p className="text-gray-500">Bu bölümde henüz soru bulunmuyor.</p>
+                  <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-8 text-center">
+                    <FileQuestion size={48} className="mx-auto text-[var(--ui-passive)] mb-4" />
+                    <p className="text-[var(--text-dim)]">Bu bölümde henüz soru bulunmuyor.</p>
                   </div>
                 ) : (
                   currentQuestions?.map((question) => (
@@ -562,7 +562,7 @@ export default function SurveyClient() {
               <button
                 onClick={goPrev}
                 disabled={!canGoPrev()}
-                className="flex items-center gap-2 px-6 py-3 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                className="flex items-center gap-2 px-6 py-3 bg-[var(--bg-card)] text-[var(--text-muted)] rounded-lg font-medium hover:bg-[var(--bg-main)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
               >
                 <ChevronLeft size={20} />
                 Önceki
@@ -574,10 +574,10 @@ export default function SurveyClient() {
                     key={index}
                     className={`w-3 h-3 rounded-full transition-colors ${
                       index === currentCategoryIndex
-                        ? "bg-[#1e3a8a]"
+                        ? "bg-[var(--accent)]"
                         : index < (currentCategoryIndex ?? 0)
                         ? "bg-[#a78bfa]"
-                        : "bg-gray-200"
+                        : "bg-[var(--border-soft)]"
                     }`}
                   />
                 ))}
@@ -586,7 +586,7 @@ export default function SurveyClient() {
               {canGoNext() ? (
                 <button
                   onClick={goNext}
-                  className="flex items-center gap-2 px-6 py-3 bg-[#1e3a8a] text-white rounded-lg font-medium hover:bg-[#3b5998] transition-colors shadow-md"
+                  className="flex items-center gap-2 px-6 py-3 bg-[var(--accent)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors shadow-md"
                 >
                   Sonraki
                   <ChevronRight size={20} />

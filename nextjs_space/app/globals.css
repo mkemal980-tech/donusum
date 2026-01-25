@@ -914,3 +914,49 @@ table tbody tr:hover {
   background: var(--bg-card-2) !important;
   border: 1px solid var(--border-soft) !important;
 }
+
+/* ===== FORCE DARK THEME OVERRIDES ===== */
+/* These overrides ensure all Tailwind gray utilities use our dark theme colors */
+
+/* Background color overrides */
+.bg-white { background-color: var(--bg-card) !important; }
+.bg-gray-50, .bg-slate-50 { background-color: var(--bg-card-2) !important; }
+.bg-gray-100, .bg-slate-100 { background-color: var(--bg-card-2) !important; }
+.bg-gray-200, .bg-slate-200 { background-color: var(--border-soft) !important; }
+
+/* Text color overrides */
+.text-gray-900, .text-slate-900 { color: var(--text-main) !important; }
+.text-gray-800, .text-slate-800 { color: var(--text-main) !important; }
+.text-gray-700, .text-slate-700 { color: var(--text-muted) !important; }
+.text-gray-600, .text-slate-600 { color: var(--text-muted) !important; }
+.text-gray-500, .text-slate-500 { color: var(--text-dim) !important; }
+.text-gray-400, .text-slate-400 { color: var(--text-dim) !important; }
+.text-gray-300, .text-slate-300 { color: var(--ui-passive) !important; }
+
+/* Border color overrides */
+.border-gray-200, .border-slate-200 { border-color: var(--border-soft) !important; }
+.border-gray-300, .border-slate-300 { border-color: var(--border-soft) !important; }
+.border-gray-100, .border-slate-100 { border-color: var(--border-soft) !important; }
+
+/* Divide color overrides */
+.divide-gray-200 > * + *, .divide-slate-200 > * + * { border-color: var(--border-soft) !important; }
+
+/* Ring color overrides */
+.ring-gray-300 { --tw-ring-color: var(--border-soft) !important; }
+
+/* Hover state overrides */
+.hover\:bg-gray-50:hover, .hover\:bg-slate-50:hover { background-color: var(--bg-card-2) !important; }
+.hover\:bg-gray-100:hover, .hover\:bg-slate-100:hover { background-color: var(--bg-card-2) !important; }
+.hover\:bg-gray-200:hover, .hover\:bg-slate-200:hover { background-color: var(--bg-card) !important; }
+.hover\:text-gray-900:hover, .hover\:text-slate-900:hover { color: var(--text-main) !important; }
+
+/* Focus states */
+.focus\:ring-gray-300:focus { --tw-ring-color: var(--accent) !important; }
+.focus\:border-gray-300:focus { border-color: var(--accent) !important; }
+
+/* Placeholder colors */
+.placeholder-gray-400::placeholder, .placeholder\:text-gray-400::placeholder { color: var(--text-dim) !important; }
+.placeholder-gray-500::placeholder, .placeholder\:text-gray-500::placeholder { color: var(--text-dim) !important; }
+
+/* Remove all dark: variants - force single theme */
+[class*="dark:"] { /* Dark mode variants are disabled via theme overrides */ }

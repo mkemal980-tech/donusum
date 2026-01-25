@@ -23,7 +23,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
 
   // Theme-aware colors
   const colors = {
-    primary: isDark ? '#22d3ee' : '#3b82f6',
+    primary: isDark ? '#22d3ee' : 'var(--blue-main)',
     primaryLight: isDark ? 'rgba(34, 211, 238, 0.2)' : 'rgba(59, 130, 246, 0.15)',
     secondary: isDark ? '#818cf8' : '#06b6d4',
     secondaryLight: isDark ? 'rgba(129, 140, 248, 0.3)' : 'rgba(6, 182, 212, 0.3)',
@@ -363,8 +363,8 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
 
   if (!mounted) {
     return (
-      <div className="bg-white dark:bg-dark-card rounded-2xl shadow-soft dark:shadow-glow-cyan/10 p-6 h-full border border-gray-100 dark:border-dark-border transition-colors duration-300">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{title}</h3>
+      <div className="bg-[var(--bg-card)]  rounded-2xl shadow-soft  p-6 h-full border border-[var(--border-soft)]  transition-colors duration-300">
+        <h3 className="text-lg font-semibold text-[var(--text-main)]  mb-4">{title}</h3>
         <div className="h-[300px] flex items-center justify-center">
           <div className="spinner" />
         </div>
@@ -375,9 +375,9 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
   // Show message if no data
   if (data.length < 1) {
     return (
-      <div className="bg-white dark:bg-dark-card rounded-2xl shadow-soft dark:shadow-glow-cyan/10 p-6 h-full border border-gray-100 dark:border-dark-border transition-colors duration-300">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{title}</h3>
-        <div className="h-[300px] flex items-center justify-center text-gray-500 dark:text-gray-400">
+      <div className="bg-[var(--bg-card)]  rounded-2xl shadow-soft  p-6 h-full border border-[var(--border-soft)]  transition-colors duration-300">
+        <h3 className="text-lg font-semibold text-[var(--text-main)]  mb-4">{title}</h3>
+        <div className="h-[300px] flex items-center justify-center text-[var(--text-dim)] ">
           <p>GAP analizi için veri bulunamadı.</p>
         </div>
       </div>
@@ -388,11 +388,11 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
   const isBarChart = data.length < 3;
 
   return (
-    <div className="bg-white dark:bg-dark-card rounded-2xl shadow-soft dark:shadow-glow-cyan/10 p-6 h-full border border-gray-100 dark:border-dark-border transition-colors duration-300">
+    <div className="bg-[var(--bg-card)]  rounded-2xl shadow-soft  p-6 h-full border border-[var(--border-soft)]  transition-colors duration-300">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{title}</h3>
+        <h3 className="text-lg font-semibold text-[var(--text-main)] ">{title}</h3>
         {isBarChart && (
-          <span className="text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-dark-border px-2 py-1 rounded">
+          <span className="text-xs text-[var(--text-dim)]  bg-[var(--bg-card-2)]  px-2 py-1 rounded">
             3+ alt kategori ile örümcek grafik
           </span>
         )}
@@ -405,14 +405,14 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
             className={`w-4 h-4 ${isBarChart ? 'rounded' : 'rounded-full'}`} 
             style={{ backgroundColor: colors.accent }} 
           />
-          <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">Mevcut Durum</span>
+          <span className="text-sm text-[var(--text-muted)]  font-medium">Mevcut Durum</span>
         </div>
         <div className="flex items-center gap-2">
           <div 
             className={`w-4 h-4 ${isBarChart ? 'rounded' : 'rounded-full'}`} 
             style={{ backgroundColor: colors.primary }} 
           />
-          <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">Hedef</span>
+          <span className="text-sm text-[var(--text-muted)]  font-medium">Hedef</span>
         </div>
       </div>
       

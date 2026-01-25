@@ -90,7 +90,7 @@ export function ProgressBenchmarkChart({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
             className={`text-sm font-bold ${
-              hasProgress ? 'text-emerald-500 dark:text-emerald-400' : 'text-[var(--muted-foreground)]'
+              hasProgress ? 'text-emerald-500  : 'text-[var(--muted-foreground)]'
             }`}
           >
             {hasProgress ? `+${item.delta.toFixed(2)}` : '+0.00'}

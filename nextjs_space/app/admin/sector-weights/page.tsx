@@ -142,7 +142,7 @@ export default function SectorWeightsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-10 h-10 border-4 border-[#1e3a8a] border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -172,7 +172,7 @@ export default function SectorWeightsPage() {
                 setWeights([]);
                 setMessage(null);
               }}
-              className="w-full px-4 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+              className="w-full px-4 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
             >
               <option value="">-- Anket Seçin --</option>
               {surveys.map((survey) => (
@@ -192,7 +192,7 @@ export default function SectorWeightsPage() {
                 setSelectedSector(e.target.value);
                 setMessage(null);
               }}
-              className="w-full px-4 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+              className="w-full px-4 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
               disabled={!selectedSurvey}
             >
               <option value="">-- Sektör Seçin --</option>
@@ -250,14 +250,14 @@ export default function SectorWeightsPage() {
                       step="1"
                       value={weightPercent.toFixed(0)}
                       onChange={(e) => handleWeightChange(category.id, e.target.value)}
-                      className="w-20 px-3 py-2 border border-[var(--border-soft)] rounded-lg text-center focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                      className="w-20 px-3 py-2 border border-[var(--border-soft)] rounded-lg text-center focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                     />
                     <span className="text-[var(--text-dim)]">%</span>
                   </div>
                   <div className="w-32">
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[#1e3a8a] transition-all duration-300"
+                        className="h-full bg-[var(--accent)] transition-all duration-300"
                         style={{ width: `${Math.min(weightPercent, 100)}%` }}
                       />
                     </div>
@@ -309,7 +309,7 @@ export default function SectorWeightsPage() {
             <button
               onClick={handleSave}
               disabled={saving || !isValidTotal}
-              className="flex items-center gap-2 px-6 py-3 bg-[#1e3a8a] text-white rounded-lg font-medium hover:bg-[#3b5998] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-3 bg-[var(--accent)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

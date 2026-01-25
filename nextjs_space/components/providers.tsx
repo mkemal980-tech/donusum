@@ -16,7 +16,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       <ThemeProvider
         attribute="class"
-        defaultTheme="light"
+        defaultTheme="dark"
         enableSystem={false}
         disableTransitionOnChange={false}
       >
@@ -26,7 +26,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           richColors
           closeButton
           toastOptions={{
-            className: 'dark:bg-dark-card dark:border-dark-border dark:text-gray-100',
+            style: {
+              background: 'var(--bg-card)',
+              color: 'var(--text-main)',
+              border: '1px solid var(--border-soft)'
+            }
           }}
         />
       </ThemeProvider>

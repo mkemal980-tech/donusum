@@ -431,7 +431,7 @@ export default function CategoriesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[#1e3a8a] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -442,7 +442,7 @@ export default function CategoriesPage() {
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Kategoriler & Sorular</h1>
         <button
           onClick={() => openModal('category')}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998]"
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)]"
         >
           <Plus size={20} /> Yeni Kategori
         </button>
@@ -451,12 +451,12 @@ export default function CategoriesPage() {
       {/* Anket Seçimi */}
       <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-4 mb-6">
         <div className="flex flex-wrap items-center gap-4">
-          <FileText className="text-[#1e3a8a]" size={20} />
+          <FileText className="text-[var(--accent)]" size={20} />
           <label className="font-medium text-[var(--text-muted)]">Anket Seçin:</label>
           <select
             value={selectedSurveyId}
             onChange={(e) => setSelectedSurveyId(e.target.value)}
-            className="flex-1 max-w-md p-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+            className="flex-1 max-w-md p-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
           >
             <option value="">Tüm Kategoriler (Anketsiz)</option>
             {surveys.map(s => (
@@ -487,7 +487,7 @@ export default function CategoriesPage() {
         {categories.map((category) => (
           <div key={category.id} className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden">
             {/* Category Header */}
-            <div className="flex items-center justify-between p-4 bg-[#1e3a8a] text-white">
+            <div className="flex items-center justify-between p-4 bg-[var(--accent)] text-white">
               <div className="flex items-center gap-3 cursor-pointer" onClick={() => toggleExpand(`cat-${category.id}`)}>
                 {expanded[`cat-${category.id}`] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                 <span className="font-semibold">{category.name}</span>
@@ -678,7 +678,7 @@ export default function CategoriesPage() {
             <p className="text-[var(--text-dim)]">Henüz kategori eklenmemiş</p>
             <button
               onClick={() => openModal('category')}
-              className="mt-4 px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998]"
+              className="mt-4 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)]"
             >
               İlk Kategoriyi Ekle
             </button>
@@ -705,7 +705,7 @@ export default function CategoriesPage() {
                     <textarea
                       value={formData.text || ''}
                       onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                       rows={3}
                     />
                   </div>
@@ -714,7 +714,7 @@ export default function CategoriesPage() {
                     <select
                       value={formData.type || 'SCALE'}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                     >
                       {questionTypes.map(t => (
                         <option key={t.value} value={t.value}>{t.label}</option>
@@ -729,7 +729,7 @@ export default function CategoriesPage() {
                       min="0.1"
                       value={formData.weight || 1}
                       onChange={(e) => setFormData({ ...formData, weight: parseFloat(e.target.value) })}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -743,7 +743,7 @@ export default function CategoriesPage() {
                         className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
                           (!formData.axisType || formData.axisType === 'VELOCITY')
                             ? 'bg-orange-500 text-white shadow-md'
-                            : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-gray-200'
+                            : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--bg-card-2)]'
                         }`}
                       >
                         ⚡ Hız (Velocity)
@@ -754,7 +754,7 @@ export default function CategoriesPage() {
                         className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
                           formData.axisType === 'ENDURANCE'
                             ? 'bg-[var(--bg-card-2)]0 text-white shadow-md'
-                            : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-gray-200'
+                            : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--bg-card-2)]'
                         }`}
                       >
                         🏃 Olgunluk (Endurance)
@@ -770,7 +770,7 @@ export default function CategoriesPage() {
                       <textarea
                         value={formData.optionsText || ''}
                         onChange={(e) => setFormData({ ...formData, optionsText: e.target.value })}
-                        className="w-full p-3 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                        className="w-full p-3 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                         rows={5}
                         placeholder={`dusuk|Düşük|1\norta|Orta|3\nyuksek|Yüksek|5`}
                       />
@@ -791,7 +791,7 @@ export default function CategoriesPage() {
                           max="5"
                           value={formData.yesScore || 5}
                           onChange={(e) => setFormData({ ...formData, yesScore: parseInt(e.target.value) })}
-                          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                         />
                       </div>
                       <div>
@@ -802,7 +802,7 @@ export default function CategoriesPage() {
                           max="5"
                           value={formData.noScore || 1}
                           onChange={(e) => setFormData({ ...formData, noScore: parseInt(e.target.value) })}
-                          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                         />
                       </div>
                     </div>
@@ -812,7 +812,7 @@ export default function CategoriesPage() {
                       type="checkbox"
                       checked={formData.requiresEvidence || false}
                       onChange={(e) => setFormData({ ...formData, requiresEvidence: e.target.checked })}
-                      className="w-4 h-4 text-[#1e3a8a] rounded"
+                      className="w-4 h-4 text-[var(--accent)] rounded"
                     />
                     <label className="text-sm text-[var(--text-muted)]">Kanıt belgesi gerekli</label>
                   </div>
@@ -822,7 +822,7 @@ export default function CategoriesPage() {
                       type="number"
                       value={formData.order || 1}
                       onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                     />
                   </div>
                 </>
@@ -834,7 +834,7 @@ export default function CategoriesPage() {
                       type="text"
                       value={formData.name || ''}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -843,7 +843,7 @@ export default function CategoriesPage() {
                       type="number"
                       value={formData.order || 1}
                       onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                     />
                   </div>
                   <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
@@ -858,7 +858,7 @@ export default function CategoriesPage() {
                           name="hasSubLevels"
                           checked={formData.hasSubLevels === true}
                           onChange={() => setFormData({ ...formData, hasSubLevels: true })}
-                          className="w-4 h-4 text-[#1e3a8a]"
+                          className="w-4 h-4 text-[var(--accent)]"
                         />
                         <span className="text-sm text-[var(--text-muted)]">Alt seviyeler kullan</span>
                       </label>
@@ -868,7 +868,7 @@ export default function CategoriesPage() {
                           name="hasSubLevels"
                           checked={formData.hasSubLevels === false}
                           onChange={() => setFormData({ ...formData, hasSubLevels: false })}
-                          className="w-4 h-4 text-[#1e3a8a]"
+                          className="w-4 h-4 text-[var(--accent)]"
                         />
                         <span className="text-sm text-[var(--text-muted)]">Doğrudan sorular ekle</span>
                       </label>
@@ -888,7 +888,7 @@ export default function CategoriesPage() {
                       type="text"
                       value={formData.name || ''}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                     />
                   </div>
                   {showModal.type === 'category' && (
@@ -897,7 +897,7 @@ export default function CategoriesPage() {
                       <textarea
                         value={formData.description || ''}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                         rows={2}
                       />
                     </div>
@@ -949,7 +949,7 @@ export default function CategoriesPage() {
                       type="number"
                       value={formData.order || 1}
                       onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                     />
                   </div>
                 </>
@@ -965,7 +965,7 @@ export default function CategoriesPage() {
               </button>
               <button
                 onClick={handleModalSubmit}
-                className="px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998] flex items-center gap-2"
+                className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] flex items-center gap-2"
               >
                 <Save size={18} />
                 {showModal.editItem ? 'Güncelle' : 'Kaydet'}

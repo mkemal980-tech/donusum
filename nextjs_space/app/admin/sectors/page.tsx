@@ -175,7 +175,7 @@ export default function SectorsPage() {
         </div>
         <button
           onClick={() => setShowNewSector(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998] transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] transition-colors"
         >
           <Plus size={20} />
           Yeni Sektör

@@ -1133,11 +1133,11 @@ export default function DashboardClient() {
             <button
               onClick={generatePdfReport}
               disabled={generatingPdf}
-              className="flex items-center gap-2 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-dark)] text-white dark:text-[var(--bg-main)] px-5 py-2.5 rounded-xl hover:shadow-lg dark:shadow-[0_4px_20px_rgba(34,211,238,0.3)] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              className="flex items-center gap-2 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-dark)] text-white  px-5 py-2.5 rounded-xl hover:shadow-lg  transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               {generatingPdf ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white dark:border-[var(--bg-main)] border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white  border-t-transparent rounded-full animate-spin" />
                   <span className="text-sm">Oluşturuluyor...</span>
                 </>
               ) : (
@@ -1170,7 +1170,7 @@ export default function DashboardClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 border border-[var(--border-light)] hover:shadow-xl transition-all duration-300"
+            className="bg-[var(--bg-card)] rounded-2xl shadow-lg  p-6 border border-[var(--border-light)] hover:shadow-xl transition-all duration-300"
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-xl flex items-center justify-center">
@@ -1191,7 +1191,7 @@ export default function DashboardClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 border border-[var(--border-light)] hover:shadow-xl transition-all duration-300"
+            className="bg-[var(--bg-card)] rounded-2xl shadow-lg  p-6 border border-[var(--border-light)] hover:shadow-xl transition-all duration-300"
           >
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-[var(--secondary)]/10 rounded-xl flex items-center justify-center">
@@ -1208,7 +1208,7 @@ export default function DashboardClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 border border-[var(--border-light)] hover:shadow-xl transition-all duration-300"
+            className="bg-[var(--bg-card)] rounded-2xl shadow-lg  p-6 border border-[var(--border-light)] hover:shadow-xl transition-all duration-300"
           >
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-[var(--accent)]/10 rounded-xl flex items-center justify-center">
@@ -1242,7 +1242,7 @@ export default function DashboardClient() {
                     <span className="text-[var(--text-muted)]">|</span>
                     <span className="flex items-center gap-1">
                       <Lightbulb size={12} className="text-amber-500" />
-                      <span className="font-semibold text-amber-600 dark:text-amber-400">{cat.recommendationCount}</span>
+                      <span className="font-semibold text-amber-600 ">{cat.recommendationCount}</span>
                     </span>
                   </div>
                 </div>
@@ -1264,7 +1264,7 @@ export default function DashboardClient() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="lg:col-span-2 bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-8 border border-[var(--border-light)]"
+            className="lg:col-span-2 bg-[var(--bg-card)] rounded-2xl shadow-lg  p-8 border border-[var(--border-light)]"
           >
             <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 h-full">
               {/* Score Card */}
@@ -1294,7 +1294,7 @@ export default function DashboardClient() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5 }}
-            className="lg:col-span-1 bg-[var(--bg-card)] rounded-2xl shadow-lg dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] p-6 border border-[var(--border-light)]"
+            className="lg:col-span-1 bg-[var(--bg-card)] rounded-2xl shadow-lg  p-6 border border-[var(--border-light)]"
           >
             <div className="flex items-center gap-2 mb-6">
               <BarChart3 className="text-[var(--secondary)]" size={20} />
@@ -1378,7 +1378,7 @@ export default function DashboardClient() {
         >
           <button
             onClick={() => router.push("/survey")}
-            className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white dark:text-[var(--bg-main)] rounded-2xl p-6 text-left hover:shadow-xl dark:shadow-[0_8px_30px_rgba(34,211,238,0.3)] transition-all duration-200 hover:-translate-y-1"
+            className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white  rounded-2xl p-6 text-left hover:shadow-xl  transition-all duration-200 hover:-translate-y-1"
           >
             <ClipboardList size={32} className="mb-4" />
             <h3 className="text-lg font-semibold mb-2">Ankete Devam Et</h3>
@@ -1390,7 +1390,7 @@ export default function DashboardClient() {
 
           <button
             onClick={() => router.push("/recommendations")}
-            className="bg-gradient-to-br from-[var(--secondary)] to-[var(--secondary-dark)] text-white dark:text-[var(--bg-main)] rounded-2xl p-6 text-left hover:shadow-xl dark:shadow-[0_8px_30px_rgba(129,140,248,0.3)] transition-all duration-200 hover:-translate-y-1"
+            className="bg-gradient-to-br from-[var(--secondary)] to-[var(--secondary-dark)] text-white  rounded-2xl p-6 text-left hover:shadow-xl  transition-all duration-200 hover:-translate-y-1"
           >
             <Lightbulb size={32} className="mb-4" />
             <h3 className="text-lg font-semibold mb-2">Önerileri Görüntüle</h3>
@@ -1402,7 +1402,7 @@ export default function DashboardClient() {
 
           <button
             onClick={() => router.push("/roadmap")}
-            className="bg-gradient-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white dark:text-[var(--bg-main)] rounded-2xl p-6 text-left hover:shadow-xl dark:shadow-[0_8px_30px_rgba(52,211,153,0.3)] transition-all duration-200 hover:-translate-y-1"
+            className="bg-gradient-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white  rounded-2xl p-6 text-left hover:shadow-xl  transition-all duration-200 hover:-translate-y-1"
           >
             <Map size={32} className="mb-4" />
             <h3 className="text-lg font-semibold mb-2">Yol Haritası Oluştur</h3>

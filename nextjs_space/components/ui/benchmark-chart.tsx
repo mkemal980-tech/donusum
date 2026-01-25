@@ -35,15 +35,15 @@ export function BenchmarkChart({
     return (
       <div 
         key={item.name} 
-        className={`flex items-center gap-4 py-3 ${isOverall ? 'border-b-2 border-gray-200 pb-4 mb-2' : 'border-b border-gray-100'}`}
+        className={`flex items-center gap-4 py-3 ${isOverall ? 'border-b-2 border-[var(--border-soft)] pb-4 mb-2' : 'border-b border-[var(--border-soft)]'}`}
       >
-        <div className={`w-28 text-sm ${isOverall ? 'font-bold text-[#1e3a8a]' : 'text-gray-700'}`}>
+        <div className={`w-28 text-sm ${isOverall ? 'font-bold text-[var(--accent)]' : 'text-[var(--text-muted)]'}`}>
           {item.name}
         </div>
         <div className="flex-1 relative h-8">
           {/* Background track */}
           <div className="absolute inset-y-0 left-0 right-0 flex items-center">
-            <div className="w-full h-1 bg-gray-200 rounded-full relative">
+            <div className="w-full h-1 bg-[var(--border-soft)] rounded-full relative">
               {/* Grid lines */}
               {[1, 2, 3, 4].map((n) => (
                 <div
@@ -83,7 +83,7 @@ export function BenchmarkChart({
             transition={{ duration: 0.5, delay: 0.3 }}
             className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center z-10"
           >
-            <div className="w-8 h-8 rounded-full bg-[#3b82f6] flex items-center justify-center text-white text-xs font-bold shadow-lg border-2 border-white">
+            <div className="w-8 h-8 rounded-full bg-[var(--blue-main)] flex items-center justify-center text-white text-xs font-bold shadow-lg border-2 border-white">
               {item.userScore.toFixed(1)}
             </div>
           </motion.div>
@@ -105,10 +105,10 @@ export function BenchmarkChart({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-6">
+    <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
-        <div className="text-sm text-gray-400">
+        <h3 className="text-lg font-semibold text-[var(--text-main)]">{title}</h3>
+        <div className="text-sm text-[var(--text-dim)]">
           1≡
         </div>
       </div>
@@ -125,7 +125,7 @@ export function BenchmarkChart({
       {/* Scale */}
       <div className="flex items-center gap-4 mt-4 pt-4 border-t">
         <div className="w-28" />
-        <div className="flex-1 flex justify-between text-xs text-gray-400 px-2">
+        <div className="flex-1 flex justify-between text-xs text-[var(--text-dim)] px-2">
           <span>1.0</span>
           <span>2.0</span>
           <span>3.0</span>
@@ -138,15 +138,15 @@ export function BenchmarkChart({
       <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded-full bg-gray-400" />
-          <span className="text-sm text-gray-600">Ortalama</span>
+          <span className="text-sm text-[var(--text-muted)]">Ortalama</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded-full bg-[#3b82f6]" />
-          <span className="text-sm text-gray-600">{companyName}</span>
+          <div className="w-4 h-4 rounded-full bg-[var(--blue-main)]" />
+          <span className="text-sm text-[var(--text-muted)]">{companyName}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded-full bg-[#8b5cf6]" />
-          <span className="text-sm text-gray-600">En İyi</span>
+          <span className="text-sm text-[var(--text-muted)]">En İyi</span>
         </div>
       </div>
     </div>

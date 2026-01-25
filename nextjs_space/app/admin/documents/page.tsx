@@ -181,14 +181,14 @@ export default function DocumentsPage() {
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Yüklenen Dosyalar</h1>
           <p className="text-[var(--text-dim)]  mt-1">Kullanıcıların yüklediği kanıt dosyaları</p>
         </div>
-        <div className="flex items-center gap-2 bg-cyan-100 dark:bg-cyan-900/30 px-4 py-2 rounded-lg">
-          <FileText className="text-cyan-600 dark:text-cyan-400" size={20} />
-          <span className="font-semibold text-cyan-700 dark:text-cyan-300">{documents.length} dosya</span>
+        <div className="flex items-center gap-2 bg-cyan-100  px-4 py-2 rounded-lg">
+          <FileText className="text-cyan-600 " size={20} />
+          <span className="font-semibold text-cyan-700 ">{documents.length} dosya</span>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-[var(--bg-card)] dark:bg-slate-800 rounded-xl shadow-sm p-4 border border-[var(--border-soft)] dark:border-slate-700">
+      <div className="bg-[var(--bg-card)]  rounded-xl shadow-sm p-4 border border-[var(--border-soft)] ">
         <div className="flex items-center gap-2 mb-4">
           <Filter size={18} className="text-[var(--text-dim)] " />
           <span className="font-medium text-[var(--text-muted)] ">Filtreler</span>
@@ -202,7 +202,7 @@ export default function DocumentsPage() {
               placeholder="Dosya adı veya kullanıcı ara..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[var(--border-soft)] dark:border-slate-600 rounded-lg bg-[var(--bg-card)] dark:bg-slate-900 text-[var(--text-main)]  focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-[var(--border-soft)]  rounded-lg bg-[var(--bg-card)]  text-[var(--text-main)]  focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
             />
           </div>
 
@@ -210,7 +210,7 @@ export default function DocumentsPage() {
           <select
             value={selectedUnit}
             onChange={(e) => setSelectedUnit(e.target.value)}
-            className="px-4 py-2 border border-[var(--border-soft)] dark:border-slate-600 rounded-lg bg-[var(--bg-card)] dark:bg-slate-900 text-[var(--text-main)]  focus:ring-2 focus:ring-cyan-500"
+            className="px-4 py-2 border border-[var(--border-soft)]  rounded-lg bg-[var(--bg-card)]  text-[var(--text-main)]  focus:ring-2 focus:ring-cyan-500"
           >
             <option value="">Tüm Birimler</option>
             {units.map((unit) => (
@@ -222,7 +222,7 @@ export default function DocumentsPage() {
           <select
             value={selectedUser}
             onChange={(e) => setSelectedUser(e.target.value)}
-            className="px-4 py-2 border border-[var(--border-soft)] dark:border-slate-600 rounded-lg bg-[var(--bg-card)] dark:bg-slate-900 text-[var(--text-main)]  focus:ring-2 focus:ring-cyan-500"
+            className="px-4 py-2 border border-[var(--border-soft)]  rounded-lg bg-[var(--bg-card)]  text-[var(--text-main)]  focus:ring-2 focus:ring-cyan-500"
           >
             <option value="">Tüm Kullanıcılar</option>
             {users.map((user) => (
@@ -238,14 +238,14 @@ export default function DocumentsPage() {
           <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : filteredDocuments.length === 0 ? (
-        <div className="bg-[var(--bg-card)] dark:bg-slate-800 rounded-xl p-12 text-center border border-[var(--border-soft)] dark:border-slate-700">
-          <FileText className="mx-auto text-gray-300 dark:text-[var(--text-muted)] mb-4" size={48} />
+        <div className="bg-[var(--bg-card)]  rounded-xl p-12 text-center border border-[var(--border-soft)] ">
+          <FileText className="mx-auto text-gray-300  mb-4" size={48} />
           <p className="text-[var(--text-dim)] ">Henüz yüklenmiş dosya bulunmuyor</p>
         </div>
       ) : (
-        <div className="bg-[var(--bg-card)] dark:bg-slate-800 rounded-xl shadow-sm border border-[var(--border-soft)] dark:border-slate-700 overflow-hidden">
+        <div className="bg-[var(--bg-card)]  rounded-xl shadow-sm border border-[var(--border-soft)]  overflow-hidden">
           <table className="w-full">
-            <thead className="bg-[var(--bg-card-2)] dark:bg-slate-900">
+            <thead className="bg-[var(--bg-card-2)] ">
               <tr>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Dosya</th>
                 <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Kullanıcı</th>
@@ -255,9 +255,9 @@ export default function DocumentsPage() {
                 <th className="px-6 py-4 text-right text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">İşlemler</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+            <tbody className="divide-y divide-gray-200 ">
               {filteredDocuments.map((doc) => (
-                <tr key={doc.id} className="hover:bg-[var(--bg-card-2)] dark:hover:bg-slate-700/50 transition-colors">
+                <tr key={doc.id} className="hover:bg-[var(--bg-card-2)]  transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{getFileIcon(doc.fileType)}</span>
@@ -278,12 +278,12 @@ export default function DocumentsPage() {
                   </td>
                   <td className="px-6 py-4">
                     {doc.user.unit ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--bg-card-2)] dark:bg-blue-900/30 text-[var(--accent)] dark:text-blue-300 rounded text-sm">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--bg-card-2)]  text-[var(--accent)]  rounded text-sm">
                         <Building2 size={14} />
                         {doc.user.unit.name}
                       </span>
                     ) : (
-                      <span className="text-[var(--text-dim)] dark:text-[var(--text-dim)]">-</span>
+                      <span className="text-[var(--text-dim)] ">-</span>
                     )}
                   </td>
                   <td className="px-6 py-4">
@@ -307,7 +307,7 @@ export default function DocumentsPage() {
                       {doc.downloadUrl && (
                         <button
                           onClick={() => handleDownload(doc)}
-                          className="p-2 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 rounded-lg transition-colors"
+                          className="p-2 text-cyan-600  hover:bg-cyan-100  rounded-lg transition-colors"
                           title="İndir"
                         >
                           <Download size={18} />
@@ -315,7 +315,7 @@ export default function DocumentsPage() {
                       )}
                       <button
                         onClick={() => handleDelete(doc.id)}
-                        className="p-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                        className="p-2 text-red-600  hover:bg-red-100  rounded-lg transition-colors"
                         title="Sil"
                       >
                         <Trash2 size={18} />

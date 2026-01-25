@@ -156,7 +156,7 @@ export default function SurveyAssignmentsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[var(--text-main)] flex items-center gap-2">
-            <UserCheck className="w-7 h-7 text-primary-600" />
+            <UserCheck className="w-7 h-7 text-[var(--accent)]" />
             Anket Atamaları
           </h1>
           <p className="text-[var(--text-muted)] mt-1">Kullanıcılara anket atayın ve yönetin</p>
@@ -175,7 +175,7 @@ export default function SurveyAssignmentsPage() {
       {/* Yeni Atama Formu */}
       <div className="bg-[var(--bg-card)] rounded-xl shadow-sm border border-[var(--border-soft)] p-6">
         <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
-          <Plus className="w-5 h-5 text-primary-600" />
+          <Plus className="w-5 h-5 text-[var(--accent)]" />
           Yeni Anket Ata
         </h2>
         
@@ -188,7 +188,7 @@ export default function SurveyAssignmentsPage() {
                 setSelectedUserId(e.target.value);
                 setSelectedSurveyId("");
               }}
-              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)]"
             >
               <option value="">Kullanıcı seçin...</option>
               {users.map(user => (
@@ -205,7 +205,7 @@ export default function SurveyAssignmentsPage() {
               value={selectedSurveyId}
               onChange={(e) => setSelectedSurveyId(e.target.value)}
               disabled={!selectedUserId}
-              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-[var(--bg-card-2)] disabled:cursor-not-allowed"
+              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] disabled:bg-[var(--bg-card-2)] disabled:cursor-not-allowed"
             >
               <option value="">{selectedUserId ? "Anket seçin..." : "Önce kullanıcı seçin"}</option>
               {availableSurveysForUser.map(survey => (
@@ -223,7 +223,7 @@ export default function SurveyAssignmentsPage() {
             <button
               onClick={handleAssign}
               disabled={!selectedUserId || !selectedSurveyId || saving}
-              className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+              className="w-full px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] disabled:bg-[var(--ui-passive)] disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
             >
               {saving ? (
                 <div className="spinner-sm" />
@@ -247,7 +247,7 @@ export default function SurveyAssignmentsPage() {
                 placeholder="Kullanıcı veya anket ara..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full pl-10 pr-4 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)]"
               />
             </div>
             <div className="text-sm text-[var(--text-dim)]">
@@ -279,8 +279,8 @@ export default function SurveyAssignmentsPage() {
                   <tr key={assignment.id} className="hover:bg-[var(--bg-card-2)]">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-                          <Users className="w-4 h-4 text-primary-600" />
+                        <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 flex items-center justify-center">
+                          <Users className="w-4 h-4 text-[var(--accent)]" />
                         </div>
                         <div>
                           <p className="font-medium text-[var(--text-main)]">{getUserName(assignment.user)}</p>
@@ -296,7 +296,7 @@ export default function SurveyAssignmentsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-primary-600" />
+                        <FileText className="w-4 h-4 text-[var(--accent)]" />
                         <span className="font-medium text-[var(--text-main)]">{assignment.survey.name}</span>
                       </div>
                     </td>
@@ -341,8 +341,8 @@ export default function SurveyAssignmentsPage() {
             return (
               <div key={user.id} className="p-4 border border-[var(--border-soft)] rounded-lg">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-primary-600" />
+                  <div className="w-10 h-10 rounded-full bg-[var(--accent)]/15 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-[var(--accent)]" />
                   </div>
                   <div>
                     <p className="font-medium text-[var(--text-main)]">{getUserName(user)}</p>
@@ -355,7 +355,7 @@ export default function SurveyAssignmentsPage() {
                   ) : (
                     <div className="flex flex-wrap gap-1">
                       {userAssignments.map(a => (
-                        <span key={a.id} className="inline-flex items-center px-2 py-1 rounded text-xs bg-primary-100 text-primary-700">
+                        <span key={a.id} className="inline-flex items-center px-2 py-1 rounded text-xs bg-[var(--accent)]/15 text-primary-700">
                           {a.survey.name}
                         </span>
                       ))}

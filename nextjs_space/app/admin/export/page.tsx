@@ -146,7 +146,7 @@ export default function ExportPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-[#1e3a8a] rounded-xl flex items-center justify-center">
+        <div className="w-12 h-12 bg-[var(--accent)] rounded-xl flex items-center justify-center">
           <Download className="text-white" size={24} />
         </div>
         <div>
@@ -158,7 +158,7 @@ export default function ExportPage() {
       {/* Filtreler */}
       <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-6">
         <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
-          <FileText size={20} className="text-[#1e3a8a]" />
+          <FileText size={20} className="text-[var(--accent)]" />
           Filtreler (Opsiyonel)
         </h2>
         
@@ -170,7 +170,7 @@ export default function ExportPage() {
             <select
               value={selectedSurvey}
               onChange={(e) => setSelectedSurvey(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[#1e3a8a] outline-none bg-[var(--bg-card)]"
+              className="w-full px-4 py-2.5 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none bg-[var(--bg-card)]"
             >
               <option value="">Tüm Anketler</option>
               {surveys.map(survey => (
@@ -187,7 +187,7 @@ export default function ExportPage() {
             <select
               value={selectedSector}
               onChange={(e) => setSelectedSector(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[#1e3a8a] outline-none bg-[var(--bg-card)]"
+              className="w-full px-4 py-2.5 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none bg-[var(--bg-card)]"
             >
               <option value="">Tüm Sektörler</option>
               {sectors.map(sector => (
@@ -220,7 +220,7 @@ export default function ExportPage() {
                 <button
                   onClick={() => handleExport(option.type)}
                   disabled={isExporting}
-                  className="w-full flex items-center justify-center gap-2 bg-[#1e3a8a] text-white px-4 py-2.5 rounded-lg hover:bg-[#1e3a8a]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 bg-[var(--accent)] text-white px-4 py-2.5 rounded-lg hover:bg-[var(--accent)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isExporting ? (
                     <>

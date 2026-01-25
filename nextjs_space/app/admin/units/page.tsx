@@ -293,7 +293,7 @@ export default function UnitsPage() {
               </button>
               <button
                 onClick={() => openEditModal(unit)}
-                className="p-2 text-[var(--text-dim)] hover:text-[#1e3a8a] hover:bg-[var(--bg-card-2)] rounded-lg transition-colors"
+                className="p-2 text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[var(--bg-card-2)] rounded-lg transition-colors"
                 title="Düzenle"
               >
                 <Edit size={16} />
@@ -350,7 +350,7 @@ export default function UnitsPage() {
             </div>
             <button
               onClick={() => setShowUsersModal(unit)}
-              className="text-sm text-[#1e3a8a] hover:underline"
+              className="text-sm text-[var(--accent)] hover:underline"
             >
               Kullanıcıları Yönet
             </button>
@@ -370,7 +370,7 @@ export default function UnitsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[#1e3a8a] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -379,12 +379,12 @@ export default function UnitsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Building2 className="text-[#1e3a8a]" size={28} />
+          <Building2 className="text-[var(--accent)]" size={28} />
           <h1 className="text-2xl font-bold text-[var(--text-main)]">Birim Yönetimi</h1>
         </div>
         <button
           onClick={() => openCreateModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998] transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] transition-colors"
         >
           <Plus size={20} />
           Yeni Birim
@@ -435,7 +435,7 @@ export default function UnitsPage() {
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                   required
                   placeholder="Örn: İstanbul Merkez"
                 />
@@ -446,7 +446,7 @@ export default function UnitsPage() {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                   rows={2}
                   placeholder="Birim hakkında kısa açıklama"
                 />
@@ -458,7 +458,7 @@ export default function UnitsPage() {
                   type="text"
                   value={formData.organization}
                   onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                   placeholder="Örn: ABC Şirketi"
                 />
               </div>
@@ -468,7 +468,7 @@ export default function UnitsPage() {
                 <select
                   value={formData.parentId}
                   onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                 >
                   <option value="">Yok (Üst Birim)</option>
                   {getFlatUnitsForParent(editingUnit?.id).map((u) => (
@@ -554,7 +554,7 @@ export default function UnitsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998] transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] transition-colors"
                 >
                   <Save size={18} />
                   Kaydet
@@ -629,7 +629,7 @@ export default function UnitsPage() {
                         </div>
                         <button
                           onClick={() => handleAssignUser(user.id, showUsersModal.id)}
-                          className="text-sm text-[#1e3a8a] hover:underline"
+                          className="text-sm text-[var(--accent)] hover:underline"
                         >
                           Ekle
                         </button>

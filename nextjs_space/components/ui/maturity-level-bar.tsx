@@ -95,7 +95,7 @@ export function MaturityLevelBar({ score, isPercentage = true }: MaturityLevelBa
             initial={{ bottom: 0 }}
             animate={{ bottom: `${barPosition}%` }}
             transition={{ duration: 1, ease: "easeOut" }}
-            className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white dark:bg-[var(--bg-card)] shadow-lg flex items-center justify-center border-4"
+            className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-[var(--bg-card)]  shadow-lg flex items-center justify-center border-4"
             style={{ borderColor: currentLevel.color }}
           >
             <span className="text-base font-bold" style={{ color: currentLevel.color }}>
@@ -107,7 +107,7 @@ export function MaturityLevelBar({ score, isPercentage = true }: MaturityLevelBa
           <div className="absolute inset-0 flex flex-col justify-between py-3">
             {[5, 4, 3, 2, 1].map((val, i) => (
               <div key={val} className="w-full flex items-center justify-center">
-                <div className="w-2 h-0.5 bg-white/40" />
+                <div className="w-2 h-0.5 bg-[var(--bg-card)]/40" />
               </div>
             ))}
           </div>

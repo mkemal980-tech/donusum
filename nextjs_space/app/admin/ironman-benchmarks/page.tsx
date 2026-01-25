@@ -151,7 +151,7 @@ export default function IronmanBenchmarksPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[#1e3a8a] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -161,14 +161,14 @@ export default function IronmanBenchmarksPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-3" style={{ color: 'var(--text-main)' }}>
-            <Activity className="text-[#1e3a8a]" />
+            <Activity className="text-[var(--accent)]" />
             Ironman Benchmark Verileri
           </h1>
           <p className="text-[var(--text-dim)] mt-1">Sektör bazlı Velocity (Hız) ve Endurance (Olgunluk) değerlerini yönetin</p>
         </div>
         <button
           onClick={() => openModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998]"
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)]"
         >
           <Plus size={20} /> Yeni Benchmark
         </button>
@@ -307,7 +307,7 @@ export default function IronmanBenchmarksPage() {
                 <select
                   value={formData.sectorId}
                   onChange={(e) => setFormData({ ...formData, sectorId: e.target.value, subSectorId: '' })}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                   disabled={!!editItem}
                 >
                   <option value="">Sektör seçin</option>
@@ -349,7 +349,7 @@ export default function IronmanBenchmarksPage() {
                   <select
                     value={formData.subSectorId}
                     onChange={(e) => setFormData({ ...formData, subSectorId: e.target.value })}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                     disabled={!!editItem || !formData.sectorId}
                   >
                     <option value="">Tüm alt sektörler için (genel)</option>
@@ -434,7 +434,7 @@ export default function IronmanBenchmarksPage() {
               <button
                 onClick={handleSave}
                 disabled={!formData.sectorId || saving}
-                className="px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {saving ? (
                   <>

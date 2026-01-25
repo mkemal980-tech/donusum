@@ -273,7 +273,7 @@ export default function UsersPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[#1e3a8a] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -282,7 +282,7 @@ export default function UsersPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Users className="text-[#1e3a8a]" size={28} />
+          <Users className="text-[var(--accent)]" size={28} />
           <h1 className="text-2xl font-bold text-[var(--text-main)]">Kullanıcı Yönetimi</h1>
         </div>
         <button
@@ -291,7 +291,7 @@ export default function UsersPage() {
             resetForm();
             setShowModal(true);
           }}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998] transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] transition-colors"
         >
           <Plus size={20} />
           Yeni Kullanıcı
@@ -307,7 +307,7 @@ export default function UsersPage() {
             placeholder="Kullanıcı ara..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -315,7 +315,7 @@ export default function UsersPage() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
           >
             <option value="">Tüm Roller</option>
             <option value="USER">Kullanıcı</option>
@@ -330,7 +330,7 @@ export default function UsersPage() {
         <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[var(--bg-card-2)] rounded-lg flex items-center justify-center">
-              <Users className="text-[#1e3a8a]" size={20} />
+              <Users className="text-[var(--accent)]" size={20} />
             </div>
             <div>
               <p className="text-sm text-[var(--text-dim)]">Toplam</p>
@@ -367,7 +367,7 @@ export default function UsersPage() {
         <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[var(--bg-card-2)] rounded-lg flex items-center justify-center">
-              <Shield className="text-[#1e3a8a]" size={20} />
+              <Shield className="text-[var(--accent)]" size={20} />
             </div>
             <div>
               <p className="text-sm text-[var(--text-dim)]">Yönetici</p>
@@ -428,7 +428,7 @@ export default function UsersPage() {
                     </button>
                     <button
                       onClick={() => openEditModal(user)}
-                      className="p-2 text-[var(--text-dim)] hover:text-[#1e3a8a] hover:bg-[var(--bg-card-2)] rounded-lg transition-colors"
+                      className="p-2 text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[var(--bg-card-2)] rounded-lg transition-colors"
                       title="Düzenle"
                     >
                       <Edit size={16} />
@@ -477,7 +477,7 @@ export default function UsersPage() {
                     type="text"
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -486,7 +486,7 @@ export default function UsersPage() {
                     type="text"
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                   />
                 </div>
               </div>
@@ -497,7 +497,7 @@ export default function UsersPage() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                   required
                 />
               </div>
@@ -510,7 +510,7 @@ export default function UsersPage() {
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                   required={!editingUser}
                 />
               </div>
@@ -521,7 +521,7 @@ export default function UsersPage() {
                   type="text"
                   value={formData.organization}
                   onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                 />
               </div>
 
@@ -530,7 +530,7 @@ export default function UsersPage() {
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value as "USER" | "UNIT_MANAGER" | "ADMIN" })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                 >
                   <option value="USER">Kullanıcı</option>
                   <option value="UNIT_MANAGER">Birim Yöneticisi</option>
@@ -543,7 +543,7 @@ export default function UsersPage() {
                 <select
                   value={formData.unitId}
                   onChange={(e) => setFormData({ ...formData, unitId: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                 >
                   <option value="">Seçiniz</option>
                   {units.map((unit) => (
@@ -559,7 +559,7 @@ export default function UsersPage() {
                 <select
                   value={formData.sectorId}
                   onChange={(e) => setFormData({ ...formData, sectorId: e.target.value, subSectorId: "" })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                 >
                   <option value="">Sektör Seçiniz</option>
                   {sectors.map((sector) => (
@@ -576,7 +576,7 @@ export default function UsersPage() {
                   <select
                     value={formData.subSectorId}
                     onChange={(e) => setFormData({ ...formData, subSectorId: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                   >
                     <option value="">Alt Sektör Seçiniz</option>
                     {selectedSector.subSectors.map((sub) => (
@@ -598,7 +598,7 @@ export default function UsersPage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998] transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] transition-colors"
                 >
                   <Save size={18} />
                   Kaydet
@@ -694,7 +694,7 @@ export default function UsersPage() {
                         </div>
                         <button
                           onClick={() => handleAssignSurvey(survey.id)}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-[#1e3a8a] text-white text-sm rounded-lg hover:bg-[#3b5998] transition-colors"
+                          className="flex items-center gap-1 px-3 py-1.5 bg-[var(--accent)] text-white text-sm rounded-lg hover:bg-[var(--accent-dark)] transition-colors"
                         >
                           <Plus size={14} />
                           Ata

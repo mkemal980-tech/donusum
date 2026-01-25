@@ -83,7 +83,7 @@ export default function SurveysPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[#1e3a8a] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -94,7 +94,7 @@ export default function SurveysPage() {
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Anket Yönetimi</h1>
         <button
           onClick={() => openModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998]"
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)]"
         >
           <Plus size={20} /> Yeni Anket
         </button>
@@ -106,7 +106,7 @@ export default function SurveysPage() {
           <div key={survey.id} className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-[#1e3a8a] rounded-lg flex items-center justify-center">
+                <div className="w-12 h-12 bg-[var(--accent)] rounded-lg flex items-center justify-center">
                   <FileText className="text-white" size={24} />
                 </div>
                 <div>
@@ -127,7 +127,7 @@ export default function SurveysPage() {
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-[#1e3a8a]">{survey._count.categories}</p>
+                  <p className="text-2xl font-bold text-[var(--accent)]">{survey._count.categories}</p>
                   <p className="text-xs text-[var(--text-dim)]">Kategori</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -178,7 +178,7 @@ export default function SurveysPage() {
             <p className="text-[var(--text-dim)] mb-4">Henüz anket oluşturulmamış</p>
             <button
               onClick={() => openModal()}
-              className="px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998]"
+              className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)]"
             >
               İlk Anketi Oluştur
             </button>
@@ -204,7 +204,7 @@ export default function SurveysPage() {
                   type="text"
                   value={formData.name || ''}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                   placeholder="Örn: 2025 Dijital Dönüşüm Anketi"
                 />
               </div>
@@ -213,7 +213,7 @@ export default function SurveysPage() {
                 <textarea
                   value={formData.description || ''}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                   rows={3}
                   placeholder="Anketin amacını ve kapsamını açıklayın"
                 />
@@ -225,7 +225,7 @@ export default function SurveysPage() {
                     type="number"
                     value={formData.order || 1}
                     onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) })}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                   />
                 </div>
                 <div className="flex items-center">
@@ -234,7 +234,7 @@ export default function SurveysPage() {
                       type="checkbox"
                       checked={formData.isActive ?? true}
                       onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                      className="w-5 h-5 text-[#1e3a8a] rounded"
+                      className="w-5 h-5 text-[var(--accent)] rounded"
                     />
                     <span className="text-sm text-[var(--text-muted)]">Aktif</span>
                   </label>
@@ -251,7 +251,7 @@ export default function SurveysPage() {
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-[#1e3a8a] text-white rounded-lg hover:bg-[#3b5998] flex items-center gap-2"
+                className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] flex items-center gap-2"
               >
                 <Save size={18} />
                 {editItem ? 'Güncelle' : 'Kaydet'}

@@ -30,9 +30,9 @@ const timeframeLabels: Record<string, string> = {
 };
 
 const strategicColors: Record<string, string> = {
-  QUICK_WIN: "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400",
-  BIG_BET: "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-400",
-  PROJECT: "bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400"
+  QUICK_WIN: "bg-green-100  text-green-700 ",
+  BIG_BET: "bg-purple-100  text-purple-700 ",
+  PROJECT: "bg-blue-100  text-blue-700 "
 };
 
 const strategicLabels: Record<string, string> = {
@@ -44,20 +44,20 @@ const strategicLabels: Record<string, string> = {
 const statusConfig: Record<CompletionStatus, { label: string; color: string; bgColor: string; icon: React.ElementType }> = {
   NOT_STARTED: { 
     label: "Başlanmadı", 
-    color: "text-gray-500 dark:text-gray-400", 
-    bgColor: "bg-gray-100 dark:bg-gray-700/50",
+    color: "text-[var(--text-dim)] ", 
+    bgColor: "bg-[var(--bg-card-2)] ",
     icon: Circle 
   },
   IN_PROGRESS: { 
     label: "Devam Ediyor", 
-    color: "text-amber-600 dark:text-amber-400", 
-    bgColor: "bg-amber-100 dark:bg-amber-900/40",
+    color: "text-amber-600 ", 
+    bgColor: "bg-amber-100 ",
     icon: Play 
   },
   COMPLETED: { 
     label: "Tamamlandı", 
-    color: "text-green-600 dark:text-green-400", 
-    bgColor: "bg-green-100 dark:bg-green-900/40",
+    color: "text-green-600 ", 
+    bgColor: "bg-green-100 ",
     icon: CheckCircle2 
   }
 };
@@ -94,15 +94,15 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
       whileHover={{ y: -4 }}
       className={`bg-[var(--bg-card)] rounded-xl shadow-md p-6 card-hover border-2 transition-colors ${
         currentStatus === 'COMPLETED' 
-          ? 'border-green-300 dark:border-green-700 bg-green-50/30 dark:bg-green-900/20' 
+          ? 'border-green-300  bg-green-50/30  
           : currentStatus === 'IN_PROGRESS' 
-            ? 'border-amber-300 dark:border-amber-700 bg-amber-50/30 dark:bg-amber-900/20' 
+            ? 'border-amber-300  bg-amber-50/30  
             : 'border-[var(--border-light)]'
       }`}
     >
       {/* Header with Strategic Type and Status */}
       <div className="flex justify-between items-start mb-3">
-        <span className={`px-3 py-1 rounded-full text-xs font-medium ${strategicColors[rec?.strategicType ?? ''] ?? 'bg-gray-100 dark:bg-gray-700/50 text-gray-700 dark:text-gray-300'}`}>
+        <span className={`px-3 py-1 rounded-full text-xs font-medium ${strategicColors[rec?.strategicType ?? ''] ?? 'bg-[var(--bg-card-2)]  text-[var(--text-muted)] 
           {strategicLabels[rec?.strategicType ?? ''] ?? rec?.strategicType ?? 'Bilinmiyor'}
         </span>
         
@@ -141,7 +141,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
         </div>
       </div>
 
-      <h3 className={`text-lg font-semibold mb-3 ${currentStatus === 'COMPLETED' ? 'text-green-700 dark:text-green-400' : 'text-[var(--text-primary)]'}`}>
+      <h3 className={`text-lg font-semibold mb-3 ${currentStatus === 'COMPLETED' ? 'text-green-700  : 'text-[var(--text-primary)]'}`}>
         {rec?.title ?? 'Başlıksız'}
       </h3>
       
@@ -157,11 +157,11 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
           <span>{rec?.costType ?? 'Belirsiz'}</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
-          <TrendingUp size={14} className="text-green-500 dark:text-green-400" />
+          <TrendingUp size={14} className="text-green-500 " />
           <span>+{rec?.estimatedImpact ?? 0}% etki</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
-          <Target size={14} className="text-orange-500 dark:text-orange-400" />
+          <Target size={14} className="text-orange-500 " />
           <span>Puan artışı</span>
         </div>
       </div>
@@ -185,7 +185,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
         disabled={rec?.isInRoadmap}
         className={`w-full py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
           rec?.isInRoadmap
-            ? "bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 cursor-default"
+            ? "bg-green-100  text-green-700  cursor-default"
             : "bg-[var(--primary)] text-white hover:opacity-90"
         }`}
       >

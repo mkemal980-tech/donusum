@@ -67,7 +67,7 @@ export default function SurveyQuestion({
       case "SCALE":
         return (
           <div className="flex flex-col gap-3">
-            <div className="flex justify-between text-sm text-gray-500 px-1">
+            <div className="flex justify-between text-sm text-[var(--text-dim)] px-1">
               <span>Düşük Olgunluk</span>
               <span>Yüksek Olgunluk</span>
             </div>
@@ -78,8 +78,8 @@ export default function SurveyQuestion({
                   onClick={() => onAnswer?.(q?.id, String(num))}
                   className={`flex-1 py-4 rounded-lg font-semibold text-lg transition-all ${
                     value === String(num)
-                      ? "bg-[#1e3a8a] text-white shadow-lg scale-105"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? "bg-[var(--accent)] text-white shadow-lg scale-105"
+                      : "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--border-soft)]"
                   }`}
                 >
                   {num}
@@ -98,8 +98,8 @@ export default function SurveyQuestion({
                 onClick={() => onAnswer?.(q?.id, option)}
                 className={`flex-1 py-4 rounded-lg font-medium text-lg capitalize transition-all ${
                   value === option
-                    ? "bg-[#1e3a8a] text-white shadow-lg"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    ? "bg-[var(--accent)] text-white shadow-lg"
+                    : "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--border-soft)]"
                 }`}
               >
                 {option === "yes" ? <Check className="inline mr-2" size={20} /> : null}
@@ -119,8 +119,8 @@ export default function SurveyQuestion({
                 onClick={() => onAnswer?.(q?.id, option?.value)}
                 className={`p-4 rounded-lg text-left transition-all ${
                   value === option?.value
-                    ? "bg-[#1e3a8a] text-white shadow-lg"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-[var(--accent)] text-white shadow-lg"
+                    : "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--border-soft)]"
                 }`}
               >
                 {option?.label ?? option?.value ?? ''}
@@ -138,15 +138,15 @@ export default function SurveyQuestion({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-xl shadow-md p-6 border border-gray-100"
+      className="bg-[var(--bg-card)] rounded-xl shadow-md p-6 border border-[var(--border-soft)]"
     >
-      <h3 className="text-lg font-medium text-gray-900 mb-6">{q?.text ?? ''}</h3>
+      <h3 className="text-lg font-medium text-[var(--text-main)] mb-6">{q?.text ?? ''}</h3>
       
       {renderInput()}
 
       {q?.requiresEvidence && (
-        <div className="mt-6 pt-6 border-t border-gray-100">
-          <p className="text-sm text-gray-600 mb-3 flex items-center gap-2">
+        <div className="mt-6 pt-6 border-t border-[var(--border-soft)]">
+          <p className="text-sm text-[var(--text-muted)] mb-3 flex items-center gap-2">
             <FileText size={16} className="text-[#a78bfa]" />
             Bu soru için kanıt belgesi gereklidir
           </p>
@@ -163,7 +163,7 @@ export default function SurveyQuestion({
               </span>
               <button 
                 onClick={() => onRemoveFile?.(q?.id)}
-                className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                className="text-[var(--text-dim)] hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
                 title="Dosyayı kaldır"
               >
                 <X size={16} />
@@ -179,12 +179,12 @@ export default function SurveyQuestion({
               className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
                 dragActive
                   ? "border-[#a78bfa] bg-purple-50"
-                  : "border-gray-200 hover:border-[#a78bfa] hover:bg-gray-50"
+                  : "border-[var(--border-soft)] hover:border-[#a78bfa] hover:bg-[var(--bg-card-2)]"
               }`}
             >
-              <Upload className="mx-auto text-gray-400 mb-2" size={24} />
-              <p className="text-sm text-gray-500">Dosyayı buraya bırakın veya yüklemek için tıklayın</p>
-              <p className="text-xs text-gray-400 mt-1">PDF, 10MB&apos;a kadar görseller</p>
+              <Upload className="mx-auto text-[var(--text-dim)] mb-2" size={24} />
+              <p className="text-sm text-[var(--text-dim)]">Dosyayı buraya bırakın veya yüklemek için tıklayın</p>
+              <p className="text-xs text-[var(--text-dim)] mt-1">PDF, 10MB&apos;a kadar görseller</p>
               <input
                 ref={fileInputRef}
                 type="file"

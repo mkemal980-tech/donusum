@@ -64,17 +64,17 @@ function ResetPasswordForm() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#1e3a8a] to-[#3b5998] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[var(--bg-main)] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center"
+          className="bg-[var(--bg-card)] rounded-2xl shadow-2xl p-8 w-full max-w-md text-center"
         >
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="text-green-600" size={32} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Şifre Güncellendi</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-2xl font-bold text-[var(--text-main)] mb-2">Şifre Güncellendi</h2>
+          <p className="text-[var(--text-muted)] mb-6">
             Şifreniz başarıyla güncellendi. Giriş sayfasına yönlendiriliyorsunuz...
           </p>
         </motion.div>
@@ -84,22 +84,22 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#1e3a8a] to-[#3b5998] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[var(--bg-main)] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center"
+          className="bg-[var(--bg-card)] rounded-2xl shadow-2xl p-8 w-full max-w-md text-center"
         >
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="text-red-600" size={32} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Geçersiz Link</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="text-2xl font-bold text-[var(--text-main)] mb-2">Geçersiz Link</h2>
+          <p className="text-[var(--text-muted)] mb-6">
             Bu şifre sıfırlama linki geçersiz veya süresi dolmuş.
           </p>
           <Link
             href="/forgot-password"
-            className="inline-flex items-center gap-2 text-[#1e3a8a] hover:underline"
+            className="inline-flex items-center gap-2 text-[var(--accent)] hover:underline"
           >
             Yeni link talep et
           </Link>
@@ -109,18 +109,18 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1e3a8a] to-[#3b5998] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[var(--bg-main)] flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md"
+        className="bg-[var(--bg-card)] rounded-2xl shadow-2xl p-8 w-full max-w-md"
       >
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="text-[#1e3a8a]" size={32} />
+            <Lock className="text-[var(--accent)]" size={32} />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Yeni Şifre Belirle</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-2xl font-bold text-[var(--text-main)]">Yeni Şifre Belirle</h1>
+          <p className="text-[var(--text-muted)] mt-2">
             Yeni şifrenizi girin.
           </p>
         </div>
@@ -134,7 +134,7 @@ function ResetPasswordForm() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
               Yeni Şifre
             </label>
             <div className="relative">
@@ -142,7 +142,7 @@ function ResetPasswordForm() {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent pr-12"
+                className="w-full px-4 py-3 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent pr-12"
                 placeholder="••••••••"
                 required
                 minLength={6}
@@ -150,7 +150,7 @@ function ResetPasswordForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)]"
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -158,14 +158,14 @@ function ResetPasswordForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
               Şifre Tekrar
             </label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+              className="w-full px-4 py-3 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
               placeholder="••••••••"
               required
             />
@@ -174,7 +174,7 @@ function ResetPasswordForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-[#1e3a8a] text-white rounded-lg font-medium hover:bg-[#3b5998] transition-colors disabled:opacity-50"
+            className="w-full py-3 bg-[var(--accent)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50"
           >
             {loading ? "Güncelleniyor..." : "Şifreyi Güncelle"}
           </button>
@@ -183,7 +183,7 @@ function ResetPasswordForm() {
         <div className="mt-6 text-center">
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 text-[#1e3a8a] hover:underline"
+            className="inline-flex items-center gap-2 text-[var(--accent)] hover:underline"
           >
             <ArrowLeft size={16} />
             Giriş sayfasına dön
@@ -197,7 +197,7 @@ function ResetPasswordForm() {
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-[#1e3a8a] to-[#3b5998] flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--bg-main)] flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin" />
       </div>
     }>

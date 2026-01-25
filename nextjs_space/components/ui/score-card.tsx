@@ -61,7 +61,7 @@ export default function ScoreCard({ score, label, color, size = "large" }: Score
             cx={radius + strokeWidth}
             cy={radius + strokeWidth}
             r={radius}
-            className="stroke-gray-200 dark:stroke-dark-border"
+            className="stroke-gray-200 "
             strokeWidth={strokeWidth}
             fill="none"
           />
@@ -78,7 +78,7 @@ export default function ScoreCard({ score, label, color, size = "large" }: Score
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset: circumference - progress }}
             transition={{ duration: 1.5, ease: "easeOut" }}
-            className="dark:drop-shadow-[0_0_8px_var(--primary)]"
+            className=""
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
