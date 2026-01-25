@@ -56,6 +56,12 @@ model User {
   subSectorId          String?
   passwordResetToken   String?
   passwordResetExpires DateTime?
+  // Ironman Target Scores
+  targetVelocity       Float?
+  targetEndurance      Float?
+  targetDate           DateTime?
+  currentScoreDate     DateTime?
+  region               String?           @default("Global")
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
   assessmentScores     AssessmentScore[]
@@ -208,17 +214,20 @@ enum AxisType {
 
 // Ironman Benchmark - Sektör bazlı velocity/endurance değerleri
 model IronmanBenchmark {
-  id                  String     @id @default(cuid())
-  sectorId            String
-  subSectorId         String?
-  velocityAverage     Float      @default(2.5)
-  velocityBest        Float      @default(4.5)
-  enduranceAverage    Float      @default(2.5)
-  enduranceBest       Float      @default(4.5)
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
-  sector              Sector     @relation(fields: [sectorId], references: [id], onDelete: Cascade)
-  subSector           SubSector? @relation(fields: [subSectorId], references: [id], onDelete: Cascade)
+  id                      String     @id @default(cuid())
+  sectorId                String
+  subSectorId             String?
+  velocityAverage         Float      @default(2.5)
+  velocityBest            Float      @default(4.5)
+  enduranceAverage        Float      @default(2.5)
+  enduranceBest           Float      @default(4.5)
+  // Industry Average Targets (for next year projections)
+  velocityAverageTarget   Float      @default(3.0)
+  enduranceAverageTarget  Float      @default(3.0)
+  createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
+  sector                  Sector     @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  subSector               SubSector? @relation(fields: [subSectorId], references: [id], onDelete: Cascade)
 
   @@unique([sectorId, subSectorId])
 }
