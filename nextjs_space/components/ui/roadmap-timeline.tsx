@@ -35,15 +35,9 @@ const quarters = [
 ];
 
 const strategicColors: Record<string, string> = {
-  QUICK_WIN: "bg-green-500",
-  BIG_BET: "bg-purple-500",
-  PROJECT: "bg-[#1e3a8a]"
-};
-
-const strategicBorderColors: Record<string, string> = {
-  QUICK_WIN: "border-green-500",
-  BIG_BET: "border-purple-500",
-  PROJECT: "border-[#1e3a8a]"
+  QUICK_WIN: "var(--success)",
+  BIG_BET: "#a855f7",
+  PROJECT: "var(--blue-main)"
 };
 
 export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: RoadmapTimelineProps) {
@@ -81,16 +75,26 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
     setDraggedItem(null);
   };
 
+  const getBorderColor = (strategicType: string) => {
+    return strategicColors[strategicType] || 'var(--ui-passive)';
+  };
+
   return (
     <div className="space-y-8">
       {/* Unassigned Items */}
       {(unassignedItems?.length ?? 0) > 0 && (
-        <div className="bg-gray-50 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center gap-2">
-            <Calendar size={20} />
+        <div 
+          className="rounded-xl p-6"
+          style={{ backgroundColor: 'var(--bg-card-2)' }}
+        >
+          <h3 
+            className="text-lg font-semibold mb-4 flex items-center gap-2"
+            style={{ color: 'var(--text-main)' }}
+          >
+            <Calendar size={20} style={{ color: 'var(--accent)' }} />
             Planlanmamış Öğeler ({unassignedItems?.length ?? 0})
           </h3>
-          <p className="text-sm text-gray-500 mb-4">Öğeleri sürükleyip çeyreklere bırakabilirsiniz</p>
+          <p className="text-sm mb-4" style={{ color: 'var(--text-dim)' }}>Öğeleri sürükleyip çeyreklere bırakabilirsiniz</p>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {unassignedItems?.map((item) => (
               <motion.div
@@ -100,21 +104,26 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                 draggable
                 onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, item?.recommendationId)}
                 onDragEnd={handleDragEnd}
-                className={`bg-white rounded-lg p-4 shadow-sm border-l-4 cursor-grab active:cursor-grabbing ${strategicBorderColors[item?.recommendation?.strategicType ?? ''] ?? 'border-gray-400'}`}
+                className="rounded-lg p-4 shadow-sm cursor-grab active:cursor-grabbing"
+                style={{ 
+                  backgroundColor: 'var(--bg-card)', 
+                  borderLeft: `4px solid ${getBorderColor(item?.recommendation?.strategicType ?? '')}`
+                }}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2 flex-1 min-w-0">
-                    <GripVertical size={16} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                    <GripVertical size={16} style={{ color: 'var(--ui-passive)' }} className="mt-0.5 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <span className="font-medium text-gray-800 text-sm block truncate">{item?.recommendation?.title ?? 'Başlıksız'}</span>
-                      <span className="text-xs text-green-600 flex items-center gap-1 mt-1">
+                      <span className="font-medium text-sm block truncate" style={{ color: 'var(--text-main)' }}>{item?.recommendation?.title ?? 'Başlıksız'}</span>
+                      <span className="text-xs flex items-center gap-1 mt-1" style={{ color: 'var(--success)' }}>
                         <TrendingUp size={12} /> +{item?.recommendation?.estimatedImpact ?? 0}%
                       </span>
                     </div>
                   </div>
                   <button
                     onClick={() => onRemove?.(item?.recommendationId)}
-                    className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors flex-shrink-0"
+                    className="p-1 rounded transition-colors flex-shrink-0 hover:bg-red-500/20"
+                    style={{ color: 'var(--ui-passive)' }}
                   >
                     <X size={14} />
                   </button>
@@ -134,15 +143,27 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
               <div key={`${quarter?.q}-${quarter?.year}`} className="flex-1 relative">
                 {/* Connecting line */}
                 {index < quarters.length - 1 && (
-                  <div className="absolute top-1/2 left-1/2 right-0 h-1 bg-gradient-to-r from-[#1e3a8a] to-[#3b82f6] -translate-y-1/2 z-0" />
+                  <div 
+                    className="absolute top-1/2 left-1/2 right-0 h-1 -translate-y-1/2 z-0"
+                    style={{ background: 'linear-gradient(90deg, var(--blue-main), var(--accent))' }}
+                  />
                 )}
                 {index > 0 && (
-                  <div className="absolute top-1/2 left-0 right-1/2 h-1 bg-gradient-to-r from-[#3b82f6] to-[#1e3a8a] -translate-y-1/2 z-0" />
+                  <div 
+                    className="absolute top-1/2 left-0 right-1/2 h-1 -translate-y-1/2 z-0"
+                    style={{ background: 'linear-gradient(90deg, var(--accent), var(--blue-main))' }}
+                  />
                 )}
                 {/* Quarter circle */}
                 <div className="relative z-10 flex justify-center">
-                  <div className="w-10 h-10 rounded-full bg-white border-4 border-[#1e3a8a] flex items-center justify-center shadow-md">
-                    <span className="text-xs font-bold text-[#1e3a8a]">Ç{quarter?.q}</span>
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center shadow-md border-4"
+                    style={{ 
+                      backgroundColor: 'var(--bg-card)', 
+                      borderColor: 'var(--blue-main)' 
+                    }}
+                  >
+                    <span className="text-xs font-bold" style={{ color: 'var(--blue-main)' }}>Ç{quarter?.q}</span>
                   </div>
                 </div>
               </div>
@@ -153,7 +174,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
           <div className="flex items-center mb-4">
             {quarters?.map((quarter) => (
               <div key={`label-${quarter?.q}-${quarter?.year}`} className="flex-1 text-center">
-                <span className="text-sm font-semibold text-[#1e3a8a]">{quarter?.label}</span>
+                <span className="text-sm font-semibold" style={{ color: 'var(--text-main)' }}>{quarter?.label}</span>
               </div>
             ))}
           </div>
@@ -171,11 +192,11 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                   animate={{ opacity: 1, y: 0 }}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, quarter?.q, quarter?.year)}
-                  className={`flex-1 min-h-[200px] rounded-xl p-3 border-2 border-dashed transition-all ${
-                    isDropTarget 
-                      ? 'border-[#1e3a8a] bg-blue-50' 
-                      : 'border-gray-200 bg-gray-50'
-                  }`}
+                  className="flex-1 min-h-[200px] rounded-xl p-3 border-2 border-dashed transition-all"
+                  style={{ 
+                    borderColor: isDropTarget ? 'var(--accent)' : 'var(--border-soft)',
+                    backgroundColor: isDropTarget ? 'rgba(12, 193, 195, 0.05)' : 'var(--bg-card-2)'
+                  }}
                 >
                   {(quarterItems?.length ?? 0) > 0 ? (
                     <div className="space-y-2">
@@ -187,21 +208,26 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                           draggable
                           onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, item?.recommendationId)}
                           onDragEnd={handleDragEnd}
-                          className={`bg-white rounded-lg p-3 shadow-sm border-l-4 cursor-grab active:cursor-grabbing ${strategicBorderColors[item?.recommendation?.strategicType ?? ''] ?? 'border-gray-400'}`}
+                          className="rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing"
+                          style={{ 
+                            backgroundColor: 'var(--bg-card)', 
+                            borderLeft: `4px solid ${getBorderColor(item?.recommendation?.strategicType ?? '')}`
+                          }}
                         >
                           <div className="flex items-start justify-between gap-1">
                             <div className="flex items-start gap-1 flex-1 min-w-0">
-                              <GripVertical size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
+                              <GripVertical size={14} style={{ color: 'var(--ui-passive)' }} className="mt-0.5 flex-shrink-0" />
                               <div className="min-w-0 flex-1">
-                                <span className="font-medium text-gray-800 text-xs block leading-tight">{item?.recommendation?.title ?? 'Başlıksız'}</span>
-                                <span className="text-xs text-green-600 flex items-center gap-0.5 mt-1">
+                                <span className="font-medium text-xs block leading-tight" style={{ color: 'var(--text-main)' }}>{item?.recommendation?.title ?? 'Başlıksız'}</span>
+                                <span className="text-xs flex items-center gap-0.5 mt-1" style={{ color: 'var(--success)' }}>
                                   <TrendingUp size={10} /> +{item?.recommendation?.estimatedImpact ?? 0}%
                                 </span>
                               </div>
                             </div>
                             <button
                               onClick={() => onRemove?.(item?.recommendationId)}
-                              className="p-0.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors flex-shrink-0"
+                              className="p-0.5 rounded transition-colors flex-shrink-0 hover:bg-red-500/20"
+                              style={{ color: 'var(--ui-passive)' }}
                             >
                               <X size={12} />
                             </button>
@@ -210,7 +236,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                       ))}
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+                    <div className="flex items-center justify-center h-full text-sm" style={{ color: 'var(--text-dim)' }}>
                       {isDropTarget ? 'Buraya bırakın' : 'Boş'}
                     </div>
                   )}
@@ -222,16 +248,16 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
           {/* Legend */}
           <div className="mt-6 flex items-center justify-center gap-6 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500" />
-              <span className="text-gray-600">Hızlı Kazanım</span>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--success)' }} />
+              <span style={{ color: 'var(--text-muted)' }}>Hızlı Kazanım</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-purple-500" />
-              <span className="text-gray-600">Büyük Bahis</span>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#a855f7' }} />
+              <span style={{ color: 'var(--text-muted)' }}>Büyük Bahis</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#1e3a8a]" />
-              <span className="text-gray-600">Proje</span>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--blue-main)' }} />
+              <span style={{ color: 'var(--text-muted)' }}>Proje</span>
             </div>
           </div>
         </div>

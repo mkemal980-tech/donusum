@@ -41,13 +41,19 @@ export function BenchmarkSection() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-md p-6">
+      <div 
+        className="rounded-xl shadow-lg p-6 border"
+        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
+      >
         <div className="flex items-center gap-3 mb-4">
-          <BarChart3 className="text-[#1e3a8a]" size={24} />
-          <h3 className="text-lg font-semibold text-gray-800">Benchmark Karşılaştırması</h3>
+          <BarChart3 style={{ color: 'var(--accent)' }} size={24} />
+          <h3 className="text-lg font-semibold" style={{ color: 'var(--text-main)' }}>Benchmark Karşılaştırması</h3>
         </div>
         <div className="flex items-center justify-center h-48">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <div 
+            className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" 
+            style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }}
+          />
         </div>
       </div>
     );
@@ -55,15 +61,18 @@ export function BenchmarkSection() {
 
   if (!data?.hasSector) {
     return (
-      <div className="bg-white rounded-xl shadow-md p-6">
+      <div 
+        className="rounded-xl shadow-lg p-6 border"
+        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
+      >
         <div className="flex items-center gap-3 mb-4">
-          <BarChart3 className="text-[#1e3a8a]" size={24} />
-          <h3 className="text-lg font-semibold text-gray-800">Benchmark Karşılaştırması</h3>
+          <BarChart3 style={{ color: 'var(--accent)' }} size={24} />
+          <h3 className="text-lg font-semibold" style={{ color: 'var(--text-main)' }}>Benchmark Karşılaştırması</h3>
         </div>
         <div className="flex flex-col items-center justify-center py-8 text-center">
-          <AlertCircle size={48} className="text-amber-400 mb-4" />
-          <p className="text-gray-600 mb-2">Sektör bilgisi bulunamadı</p>
-          <p className="text-sm text-gray-400">
+          <AlertCircle size={48} style={{ color: 'var(--warning)' }} className="mb-4" />
+          <p style={{ color: 'var(--text-muted)' }} className="mb-2">Sektör bilgisi bulunamadı</p>
+          <p className="text-sm" style={{ color: 'var(--text-dim)' }}>
             Benchmark karşılaştırması için profilinizde sektör bilgisi gereklidir
           </p>
         </div>
@@ -79,15 +88,18 @@ export function BenchmarkSection() {
 
   if (!currentBenchmark) {
     return (
-      <div className="bg-white rounded-xl shadow-md p-6">
+      <div 
+        className="rounded-xl shadow-lg p-6 border"
+        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
+      >
         <div className="flex items-center gap-3 mb-4">
-          <BarChart3 className="text-[#1e3a8a]" size={24} />
-          <h3 className="text-lg font-semibold text-gray-800">Benchmark Karşılaştırması</h3>
+          <BarChart3 style={{ color: 'var(--accent)' }} size={24} />
+          <h3 className="text-lg font-semibold" style={{ color: 'var(--text-main)' }}>Benchmark Karşılaştırması</h3>
         </div>
         <div className="flex flex-col items-center justify-center py-8 text-center">
-          <Factory size={48} className="text-gray-300 mb-4" />
-          <p className="text-gray-500">Sektörünüz için benchmark verisi henüz girilmemiş</p>
-          <p className="text-sm text-gray-400 mt-1">Sektör: {data.sector?.name}</p>
+          <Factory size={48} style={{ color: 'var(--ui-passive)' }} className="mb-4" />
+          <p style={{ color: 'var(--text-muted)' }}>Sektörünüz için benchmark verisi henüz girilmemiş</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-dim)' }}>Sektör: {data.sector?.name}</p>
         </div>
       </div>
     );
@@ -96,7 +108,10 @@ export function BenchmarkSection() {
   return (
     <div className="space-y-4">
       {/* Sector Info */}
-      <div className="bg-gradient-to-r from-[#1e3a8a] to-[#3b5998] rounded-xl p-4 text-white">
+      <div 
+        className="rounded-xl p-4 text-white"
+        style={{ background: 'linear-gradient(135deg, var(--blue-main), var(--accent))' }}
+      >
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <Factory size={20} />
@@ -122,21 +137,27 @@ export function BenchmarkSection() {
         <div className="flex gap-2">
           <button
             onClick={() => setActiveTab("sector")}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === "sector"
-                ? "bg-[#1e3a8a] text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
+            className="px-4 py-2 rounded-lg font-medium transition-colors"
+            style={activeTab === "sector" ? {
+              backgroundColor: 'var(--accent)',
+              color: 'var(--bg-deep)'
+            } : {
+              backgroundColor: 'var(--bg-card-2)',
+              color: 'var(--text-muted)'
+            }}
           >
             Sektör Benchmark
           </button>
           <button
             onClick={() => setActiveTab("subsector")}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              activeTab === "subsector"
-                ? "bg-[#1e3a8a] text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
+            className="px-4 py-2 rounded-lg font-medium transition-colors"
+            style={activeTab === "subsector" ? {
+              backgroundColor: 'var(--accent)',
+              color: 'var(--bg-deep)'
+            } : {
+              backgroundColor: 'var(--bg-card-2)',
+              color: 'var(--text-muted)'
+            }}
           >
             Alt Sektör Benchmark
           </button>

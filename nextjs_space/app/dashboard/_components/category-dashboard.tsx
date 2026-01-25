@@ -87,15 +87,21 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+        <div 
+          className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" 
+          style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }}
+        />
       </div>
     );
   }
 
   if (!data || data.categories.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-soft p-8 text-center border border-gray-200 dark:border-slate-700">
-        <p className="text-gray-500 dark:text-gray-400">Henüz kategori verisi bulunmuyor</p>
+      <div 
+        className="rounded-2xl shadow-lg p-8 text-center border"
+        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
+      >
+        <p style={{ color: 'var(--text-muted)' }}>Henüz kategori verisi bulunmuyor</p>
       </div>
     );
   }
@@ -113,20 +119,30 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
         {/* Back button */}
         <button
           onClick={() => setSelectedSubCategory(null)}
-          className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+          className="flex items-center gap-2 transition-colors"
+          style={{ color: 'var(--text-muted)' }}
         >
           <ArrowLeft size={20} />
           <span>Geri Dön</span>
         </button>
 
         {/* SubCategory Header */}
-        <div className="bg-gradient-to-r from-cyan-500 to-teal-500 dark:from-slate-800 dark:to-slate-700 rounded-2xl p-6 shadow-lg border border-transparent dark:border-slate-600">
-          <h2 className="text-2xl font-bold text-white dark:text-gray-100">{selectedSubCategory.name}</h2>
-          <p className="text-white/70 dark:text-gray-400 mt-1">{currentCategory.name}</p>
+        <div 
+          className="rounded-2xl p-6 shadow-lg border"
+          style={{ 
+            background: 'linear-gradient(135deg, var(--accent), var(--blue-main))',
+            borderColor: 'var(--border-soft)'
+          }}
+        >
+          <h2 className="text-2xl font-bold text-white">{selectedSubCategory.name}</h2>
+          <p className="text-white/70 mt-1">{currentCategory.name}</p>
           <div className="flex items-center gap-4 mt-4">
-            <div className="bg-white/20 dark:bg-slate-900/50 rounded-xl px-4 py-2 backdrop-blur-sm">
-              <span className="text-white/70 dark:text-gray-400 text-sm">Puan</span>
-              <p className="text-2xl font-bold text-white dark:text-cyan-400">{selectedSubCategory.score.toFixed(1)}</p>
+            <div 
+              className="rounded-xl px-4 py-2 backdrop-blur-sm"
+              style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+            >
+              <span className="text-white/70 text-sm">Puan</span>
+              <p className="text-2xl font-bold text-white">{selectedSubCategory.score.toFixed(1)}</p>
             </div>
             <div 
               className="rounded-xl px-4 py-2"
@@ -143,15 +159,22 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
           {selectedSubCategory.subLevels.map((subLevel) => {
             const levelInfo = getScoreLevel(subLevel.score);
             return (
-              <div key={subLevel.id} className="bg-white dark:bg-slate-800 rounded-2xl shadow-soft p-5 border border-gray-200 dark:border-slate-700">
-                <h4 className="text-gray-800 dark:text-gray-100 font-medium mb-3">{subLevel.name}</h4>
+              <div 
+                key={subLevel.id} 
+                className="rounded-2xl shadow-lg p-5 border"
+                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
+              >
+                <h4 className="font-medium mb-3" style={{ color: 'var(--text-main)' }}>{subLevel.name}</h4>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-gray-500 dark:text-gray-400 text-sm">Puan</span>
+                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Puan</span>
                   <span className="text-xl font-bold" style={{ color: levelInfo.color }}>
                     {subLevel.score.toFixed(1)}
                   </span>
                 </div>
-                <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2.5 mb-3">
+                <div 
+                  className="w-full rounded-full h-2.5 mb-3"
+                  style={{ backgroundColor: 'var(--bg-card-2)' }}
+                >
                   <div
                     className="h-2.5 rounded-full transition-all duration-500"
                     style={{ 
@@ -160,7 +183,7 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
                     }}
                   />
                 </div>
-                <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
+                <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-dim)' }}>
                   <span 
                     className="px-3 py-1 rounded-full text-white text-xs font-medium"
                     style={{ backgroundColor: levelInfo.color }}
@@ -180,15 +203,24 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
   return (
     <div className="space-y-6">
       {/* Overall Score Card */}
-      <div className="bg-gradient-to-r from-cyan-500 to-teal-500 dark:from-slate-800 dark:to-slate-700 rounded-2xl p-6 shadow-lg border border-transparent dark:border-slate-600">
+      <div 
+        className="rounded-2xl p-6 shadow-lg border"
+        style={{ 
+          background: 'linear-gradient(135deg, var(--accent), var(--blue-main))',
+          borderColor: 'var(--border-soft)'
+        }}
+      >
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-white/20 dark:bg-slate-900/50 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-              <Award className="text-white dark:text-cyan-400" size={28} />
+            <div 
+              className="w-14 h-14 rounded-2xl flex items-center justify-center backdrop-blur-sm"
+              style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+            >
+              <Award className="text-white" size={28} />
             </div>
             <div>
-              <p className="text-white/70 dark:text-gray-400 text-sm">Genel Olgunluk Seviyesi</p>
-              <p className="text-3xl font-bold text-white dark:text-gray-100">{data.overallScore.toFixed(1)} / 5.0</p>
+              <p className="text-white/70 text-sm">Genel Olgunluk Seviyesi</p>
+              <p className="text-3xl font-bold text-white">{data.overallScore.toFixed(1)} / 5.0</p>
             </div>
           </div>
           <div 
@@ -201,7 +233,10 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
       </div>
 
       {/* Category Tabs */}
-      <div className="flex flex-wrap gap-2 p-1 bg-gray-100 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700">
+      <div 
+        className="flex flex-wrap gap-2 p-1 rounded-xl border"
+        style={{ backgroundColor: 'var(--bg-card-2)', borderColor: 'var(--border-soft)' }}
+      >
         {data.categories.map((category, index) => {
           const isActive = activeCategory === category.id;
           const color = getCategoryColor(index);
@@ -210,12 +245,13 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
             <button
               key={category.id}
               onClick={() => setActiveCategory(category.id)}
-              className={`px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
-                isActive
-                  ? "text-white shadow-lg"
-                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700"
-              }`}
-              style={isActive ? { backgroundColor: color } : {}}
+              className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200"
+              style={isActive ? { 
+                backgroundColor: color, 
+                color: 'var(--bg-deep)' 
+              } : { 
+                color: 'var(--text-muted)' 
+              }}
             >
               {category.name}
               {category.weight !== 1 && (
@@ -259,9 +295,15 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
 
       {/* SubCategories List */}
       {currentCategory && currentCategory.subCategories.length > 0 && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-soft p-6 border border-gray-200 dark:border-slate-700">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Layers size={20} className="text-teal-500 dark:text-cyan-400" />
+        <div 
+          className="rounded-2xl shadow-lg p-6 border"
+          style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
+        >
+          <h3 
+            className="text-lg font-semibold mb-4 flex items-center gap-2"
+            style={{ color: 'var(--text-main)' }}
+          >
+            <Layers size={20} style={{ color: 'var(--accent)' }} />
             Alt Kategoriler
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -271,21 +313,28 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
                 <button
                   key={subCat.id}
                   onClick={() => setSelectedSubCategory(subCat)}
-                  className="bg-gray-50 dark:bg-slate-900 hover:bg-cyan-50 dark:hover:bg-slate-700 rounded-xl p-4 text-left transition-all duration-200 group border border-gray-100 dark:border-slate-700 hover:border-cyan-300 dark:hover:border-cyan-600"
+                  className="rounded-xl p-4 text-left transition-all duration-200 group border"
+                  style={{ 
+                    backgroundColor: 'var(--bg-card-2)', 
+                    borderColor: 'var(--border-soft)' 
+                  }}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-gray-800 dark:text-gray-100 font-medium">{subCat.name}</h4>
-                    <ChevronRight className="text-gray-400 dark:text-gray-500 group-hover:text-cyan-500 dark:group-hover:text-cyan-400 transition-colors" size={20} />
+                    <h4 className="font-medium" style={{ color: 'var(--text-main)' }}>{subCat.name}</h4>
+                    <ChevronRight style={{ color: 'var(--ui-passive)' }} size={20} />
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-gray-500 dark:text-gray-400 text-sm">Puan</span>
+                        <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Puan</span>
                         <span className="font-bold" style={{ color: levelInfo.color }}>
                           {subCat.score.toFixed(1)}
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
+                      <div 
+                        className="w-full rounded-full h-2"
+                        style={{ backgroundColor: 'var(--border-soft)' }}
+                      >
                         <div
                           className="h-2 rounded-full transition-all duration-500"
                           style={{ 
