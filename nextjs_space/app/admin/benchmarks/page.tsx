@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BarChart3, Save, Trash2, Plus } from "lucide-react";
+import { BarChart3, Save, Trash2, Plus, FileText, Factory, Layers } from "lucide-react";
+
+interface Survey {
+  id: string;
+  name: string;
+  categories: Category[];
+}
 
 interface Sector {
   id: string;
@@ -17,45 +23,49 @@ interface Category {
 
 interface Benchmark {
   id: string;
+  surveyId: string;
   sectorId: string;
   subSectorId: string | null;
   level: string;
   targetId: string | null;
   bestScore: number;
   averageScore: number;
+  survey?: { name: string };
   sector?: { name: string };
   subSector?: { name: string } | null;
 }
 
 export default function BenchmarksPage() {
+  const [surveys, setSurveys] = useState<Survey[]>([]);
   const [sectors, setSectors] = useState<Sector[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [benchmarks, setBenchmarks] = useState<Benchmark[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Form state
+  // Form state - Yeni sıra: Anket -> Seviye -> Kategori/AltKategori -> Sektör -> Alt Sektör -> Puanlar
+  const [selectedSurvey, setSelectedSurvey] = useState("");
+  const [selectedLevel, setSelectedLevel] = useState("OVERALL");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSubCategory, setSelectedSubCategory] = useState("");
   const [selectedSector, setSelectedSector] = useState("");
   const [selectedSubSector, setSelectedSubSector] = useState("");
-  const [selectedLevel, setSelectedLevel] = useState("OVERALL");
-  const [selectedTarget, setSelectedTarget] = useState("");
   const [bestScore, setBestScore] = useState(0);
   const [averageScore, setAverageScore] = useState(0);
 
   const fetchData = async () => {
     try {
-      const [sectorsRes, categoriesRes, benchmarksRes] = await Promise.all([
+      const [surveysRes, sectorsRes, benchmarksRes] = await Promise.all([
+        fetch("/api/admin/surveys"),
         fetch("/api/admin/sectors"),
-        fetch("/api/admin/categories"),
         fetch("/api/admin/benchmarks")
       ]);
       
+      const surveysData = await surveysRes.json();
       const sectorsData = await sectorsRes.json();
-      const categoriesData = await categoriesRes.json();
       const benchmarksData = await benchmarksRes.json();
       
+      setSurveys(surveysData || []);
       setSectors(sectorsData || []);
-      setCategories(categoriesData || []);
       setBenchmarks(benchmarksData || []);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -68,22 +78,54 @@ export default function BenchmarksPage() {
     fetchData();
   }, []);
 
+  // Seçili anketin kategorileri
+  const selectedSurveyData = surveys.find(s => s.id === selectedSurvey);
+  const categories = selectedSurveyData?.categories || [];
+  
+  // Seçili kategorinin alt kategorileri
+  const selectedCategoryData = categories.find(c => c.id === selectedCategory);
+  const subCategories = selectedCategoryData?.subCategories || [];
+  
+  // Seçili sektörün alt sektörleri
+  const selectedSectorData = sectors.find(s => s.id === selectedSector);
+
   const handleSave = async () => {
+    if (!selectedSurvey) {
+      alert("Lütfen bir anket seçin");
+      return;
+    }
     if (!selectedSector) {
       alert("Lütfen bir sektör seçin");
+      return;
+    }
+    if (selectedLevel === "CATEGORY" && !selectedCategory) {
+      alert("Lütfen bir kategori seçin");
+      return;
+    }
+    if (selectedLevel === "SUBCATEGORY" && !selectedSubCategory) {
+      alert("Lütfen bir alt kategori seçin");
       return;
     }
 
     setSaving(true);
     try {
+      // targetId belirleme
+      let targetId = null;
+      if (selectedLevel === "CATEGORY") {
+        targetId = selectedCategory;
+      } else if (selectedLevel === "SUBCATEGORY") {
+        targetId = selectedSubCategory;
+      }
+
       const res = await fetch("/api/admin/benchmarks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          surveyId: selectedSurvey,
           sectorId: selectedSector,
-          subSectorId: selectedSubSector || null,
+          subSectorId: selectedSubSector || null, // Boş ise tüm alt sektörlerde geçerli
           level: selectedLevel,
-          targetId: selectedLevel !== "OVERALL" ? selectedTarget : null,
+          targetId,
           bestScore,
           averageScore
         })
@@ -91,10 +133,12 @@ export default function BenchmarksPage() {
 
       if (res.ok) {
         fetchData();
-        // Reset form
-        setSelectedTarget("");
+        // Reset scores
         setBestScore(0);
         setAverageScore(0);
+      } else {
+        const err = await res.json();
+        alert(err.error || "Kayıt sırasında hata oluştu");
       }
     } catch (error) {
       console.error("Error saving benchmark:", error);
@@ -113,25 +157,32 @@ export default function BenchmarksPage() {
     }
   };
 
-  const selectedSectorData = sectors.find(s => s.id === selectedSector);
-
   const getTargetName = (b: Benchmark) => {
-    if (b.level === "OVERALL") return "Genel";
+    if (b.level === "OVERALL") return "Genel Skor";
     if (b.level === "CATEGORY") {
-      const cat = categories.find(c => c.id === b.targetId);
-      return cat?.name || b.targetId;
+      // Tüm anketlerin kategorilerinde ara
+      for (const survey of surveys) {
+        const cat = survey.categories?.find(c => c.id === b.targetId);
+        if (cat) return cat.name;
+      }
+      return b.targetId || "-";
     }
     if (b.level === "SUBCATEGORY") {
-      for (const cat of categories) {
-        const sub = cat.subCategories.find(s => s.id === b.targetId);
-        if (sub) return sub.name;
+      // Tüm anketlerin kategorilerinin alt kategorilerinde ara
+      for (const survey of surveys) {
+        for (const cat of (survey.categories || [])) {
+          const sub = cat.subCategories?.find(s => s.id === b.targetId);
+          if (sub) return `${cat.name} > ${sub.name}`;
+        }
       }
-      return b.targetId;
+      return b.targetId || "-";
     }
     return "-";
   };
 
+  // Filtreleme
   const filteredBenchmarks = benchmarks.filter(b => {
+    if (selectedSurvey && b.surveyId !== selectedSurvey) return false;
     if (selectedSector && b.sectorId !== selectedSector) return false;
     if (selectedSubSector && b.subSectorId !== selectedSubSector) return false;
     return true;
@@ -148,53 +199,55 @@ export default function BenchmarksPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Benchmark Verileri</h1>
-        <p className="text-[var(--text-muted)] mt-1">Sektör ve alt sektör bazlı en iyi ve ortalama puanları girin</p>
+        <h1 className="text-2xl font-bold text-[var(--text-main)]">Benchmark Verileri</h1>
+        <p className="text-[var(--text-muted)] mt-1">Anket, kategori ve sektör bazlı en iyi ve ortalama puanları girin</p>
       </div>
 
       {/* Form */}
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-6 mb-6">
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-6 mb-6 border border-[var(--border-soft)]">
         <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
-          <Plus size={20} />
+          <Plus size={20} className="text-[var(--accent)]" />
           Benchmark Verisi Ekle / Güncelle
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+          {/* 1. Anket Seçimi */}
           <div>
-            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Sektör *</label>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1 flex items-center gap-1">
+              <FileText size={14} />
+              Anket *
+            </label>
             <select
-              value={selectedSector}
-              onChange={(e) => { setSelectedSector(e.target.value); setSelectedSubSector(""); }}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
+              value={selectedSurvey}
+              onChange={(e) => { 
+                setSelectedSurvey(e.target.value); 
+                setSelectedCategory("");
+                setSelectedSubCategory("");
+              }}
+              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg bg-[var(--bg-card-2)] text-[var(--text-main)] focus:ring-2 focus:ring-[var(--accent)] outline-none"
             >
-              <option value="">Sektör Seçin</option>
-              {sectors.map(s => (
+              <option value="">Anket Seçin</option>
+              {surveys.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
           </div>
 
+          {/* 2. Seviye Seçimi */}
           <div>
-            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Alt Sektör (Opsiyonel)</label>
-            <select
-              value={selectedSubSector}
-              onChange={(e) => setSelectedSubSector(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
-              disabled={!selectedSector}
-            >
-              <option value="">Tüm Sektör (Genel)</option>
-              {selectedSectorData?.subSectors.map(sub => (
-                <option key={sub.id} value={sub.id}>{sub.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Seviye</label>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1 flex items-center gap-1">
+              <Layers size={14} />
+              Seviye *
+            </label>
             <select
               value={selectedLevel}
-              onChange={(e) => { setSelectedLevel(e.target.value); setSelectedTarget(""); }}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
+              onChange={(e) => { 
+                setSelectedLevel(e.target.value); 
+                setSelectedCategory("");
+                setSelectedSubCategory("");
+              }}
+              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg bg-[var(--bg-card-2)] text-[var(--text-main)] focus:ring-2 focus:ring-[var(--accent)] outline-none"
+              disabled={!selectedSurvey}
             >
               <option value="OVERALL">Genel Skor</option>
               <option value="CATEGORY">Kategori Bazlı</option>
@@ -202,13 +255,17 @@ export default function BenchmarksPage() {
             </select>
           </div>
 
-          {selectedLevel === "CATEGORY" && (
+          {/* 3. Kategori Seçimi (CATEGORY veya SUBCATEGORY seviyesinde) */}
+          {(selectedLevel === "CATEGORY" || selectedLevel === "SUBCATEGORY") && selectedSurvey && (
             <div>
-              <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Kategori</label>
+              <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Kategori *</label>
               <select
-                value={selectedTarget}
-                onChange={(e) => setSelectedTarget(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
+                value={selectedCategory}
+                onChange={(e) => { 
+                  setSelectedCategory(e.target.value);
+                  setSelectedSubCategory("");
+                }}
+                className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg bg-[var(--bg-card-2)] text-[var(--text-main)] focus:ring-2 focus:ring-[var(--accent)] outline-none"
               >
                 <option value="">Kategori Seçin</option>
                 {categories.map(c => (
@@ -218,28 +275,63 @@ export default function BenchmarksPage() {
             </div>
           )}
 
-          {selectedLevel === "SUBCATEGORY" && (
+          {/* 4. Alt Kategori Seçimi (Sadece SUBCATEGORY seviyesinde) */}
+          {selectedLevel === "SUBCATEGORY" && selectedCategory && (
             <div>
-              <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Alt Kategori</label>
+              <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Alt Kategori *</label>
               <select
-                value={selectedTarget}
-                onChange={(e) => setSelectedTarget(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
+                value={selectedSubCategory}
+                onChange={(e) => setSelectedSubCategory(e.target.value)}
+                className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg bg-[var(--bg-card-2)] text-[var(--text-main)] focus:ring-2 focus:ring-[var(--accent)] outline-none"
               >
                 <option value="">Alt Kategori Seçin</option>
-                {categories.map(c => (
-                  <optgroup key={c.id} label={c.name}>
-                    {c.subCategories.map(sub => (
-                      <option key={sub.id} value={sub.id}>{sub.name}</option>
-                    ))}
-                  </optgroup>
+                {subCategories.map(sub => (
+                  <option key={sub.id} value={sub.id}>{sub.name}</option>
                 ))}
               </select>
             </div>
           )}
 
+          {/* 5. Sektör Seçimi */}
           <div>
-            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">En İyi Puan (0-5)</label>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1 flex items-center gap-1">
+              <Factory size={14} />
+              Sektör *
+            </label>
+            <select
+              value={selectedSector}
+              onChange={(e) => { setSelectedSector(e.target.value); setSelectedSubSector(""); }}
+              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg bg-[var(--bg-card-2)] text-[var(--text-main)] focus:ring-2 focus:ring-[var(--accent)] outline-none"
+            >
+              <option value="">Sektör Seçin</option>
+              {sectors.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 6. Alt Sektör Seçimi (Opsiyonel) */}
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">
+              Alt Sektör <span className="text-[var(--text-dim)]">(Opsiyonel)</span>
+            </label>
+            <select
+              value={selectedSubSector}
+              onChange={(e) => setSelectedSubSector(e.target.value)}
+              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg bg-[var(--bg-card-2)] text-[var(--text-main)] focus:ring-2 focus:ring-[var(--accent)] outline-none"
+              disabled={!selectedSector}
+            >
+              <option value="">Tüm Alt Sektörler (Genel)</option>
+              {selectedSectorData?.subSectors.map(sub => (
+                <option key={sub.id} value={sub.id}>{sub.name}</option>
+              ))}
+            </select>
+            <p className="text-xs text-[var(--text-dim)] mt-1">Seçilmezse tüm alt sektörlerde geçerli olur</p>
+          </div>
+
+          {/* 7. En İyi Puan */}
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">En İyi Puan (0-5) *</label>
             <input
               type="number"
               value={bestScore}
@@ -247,12 +339,13 @@ export default function BenchmarksPage() {
               min="0"
               max="5"
               step="0.1"
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
+              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg bg-[var(--bg-card-2)] text-[var(--text-main)] focus:ring-2 focus:ring-[var(--accent)] outline-none"
             />
           </div>
 
+          {/* 8. Ortalama Puan */}
           <div>
-            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Ortalama Puan (0-5)</label>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Ortalama Puan (0-5) *</label>
             <input
               type="number"
               value={averageScore}
@@ -260,18 +353,18 @@ export default function BenchmarksPage() {
               min="0"
               max="5"
               step="0.1"
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
+              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg bg-[var(--bg-card-2)] text-[var(--text-main)] focus:ring-2 focus:ring-[var(--accent)] outline-none"
             />
           </div>
         </div>
 
         <button
           onClick={handleSave}
-          disabled={saving || !selectedSector}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50"
+          disabled={saving || !selectedSurvey || !selectedSector}
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-[var(--bg-deep)] font-medium rounded-lg hover:brightness-110 transition-all disabled:opacity-50"
         >
           {saving ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-[var(--bg-deep)] border-t-transparent rounded-full animate-spin" />
           ) : (
             <Save size={20} />
           )}
@@ -280,10 +373,10 @@ export default function BenchmarksPage() {
       </div>
 
       {/* Existing Benchmarks */}
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden">
-        <div className="p-4 border-b bg-[var(--bg-card-2)]">
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden border border-[var(--border-soft)]">
+        <div className="p-4 border-b border-[var(--border-soft)] bg-[var(--bg-card-2)]">
           <h2 className="text-lg font-semibold text-[var(--text-main)] flex items-center gap-2">
-            <BarChart3 size={20} />
+            <BarChart3 size={20} className="text-[var(--accent)]" />
             Mevcut Benchmark Verileri
           </h2>
         </div>
@@ -293,6 +386,7 @@ export default function BenchmarksPage() {
             <table className="w-full">
               <thead className="bg-[var(--bg-card-2)]">
                 <tr>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)]">Anket</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)]">Sektör</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)]">Alt Sektör</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)]">Seviye</th>
@@ -302,9 +396,10 @@ export default function BenchmarksPage() {
                   <th className="px-4 py-3 text-center text-sm font-medium text-[var(--text-muted)]">İşlem</th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-[var(--border-soft)]">
                 {filteredBenchmarks.map((b) => (
-                  <tr key={b.id} className="hover:bg-[var(--bg-card-2)]">
+                  <tr key={b.id} className="hover:bg-[var(--bg-card-2)] transition-colors">
+                    <td className="px-4 py-3 text-sm text-[var(--accent)]">{b.survey?.name || "-"}</td>
                     <td className="px-4 py-3 text-sm text-[var(--text-main)]">{b.sector?.name}</td>
                     <td className="px-4 py-3 text-sm text-[var(--text-muted)]">{b.subSector?.name || "Tüm"}</td>
                     <td className="px-4 py-3 text-sm">
@@ -326,7 +421,7 @@ export default function BenchmarksPage() {
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => handleDelete(b.id)}
-                        className="p-1 text-red-400 hover:bg-[rgba(239,68,68,0.1)] rounded"
+                        className="p-1 text-red-400 hover:bg-[rgba(239,68,68,0.1)] rounded transition-colors"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -341,7 +436,7 @@ export default function BenchmarksPage() {
             <BarChart3 size={48} className="mx-auto text-[var(--ui-passive)] mb-4" />
             <p className="text-[var(--text-dim)]">Henüz benchmark verisi girilmemiş</p>
             <p className="text-sm text-[var(--text-dim)] mt-1">
-              {selectedSector ? "Seçili sektör için veri bulunamadı" : "Yukarıdaki formu kullanarak veri ekleyin"}
+              {selectedSurvey || selectedSector ? "Seçili filtreler için veri bulunamadı" : "Yukarıdaki formu kullanarak veri ekleyin"}
             </p>
           </div>
         )}

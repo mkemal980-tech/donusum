@@ -6,16 +6,19 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const surveyId = searchParams.get("surveyId");
     const sectorId = searchParams.get("sectorId");
     const subSectorId = searchParams.get("subSectorId");
 
     const where: any = {};
+    if (surveyId) where.surveyId = surveyId;
     if (sectorId) where.sectorId = sectorId;
     if (subSectorId) where.subSectorId = subSectorId;
 
     const benchmarks = await prisma.benchmark.findMany({
       where,
       include: {
+        survey: true,
         sector: true,
         subSector: true
       },
@@ -31,16 +34,17 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { sectorId, subSectorId, level, targetId, bestScore, averageScore } = await request.json();
+    const { surveyId, sectorId, subSectorId, level, targetId, bestScore, averageScore } = await request.json();
     
-    if (!sectorId || !level) {
-      return NextResponse.json({ error: "Sektör ve seviye gerekli" }, { status: 400 });
+    if (!surveyId || !sectorId || !level) {
+      return NextResponse.json({ error: "Anket, sektör ve seviye gerekli" }, { status: 400 });
     }
 
     // Upsert benchmark
     const benchmark = await prisma.benchmark.upsert({
       where: {
-        sectorId_subSectorId_level_targetId: {
+        surveyId_sectorId_subSectorId_level_targetId: {
+          surveyId,
           sectorId,
           subSectorId: subSectorId || null,
           level,
@@ -52,6 +56,7 @@ export async function POST(request: NextRequest) {
         averageScore: averageScore || 0
       },
       create: {
+        surveyId,
         sectorId,
         subSectorId: subSectorId || null,
         level,
@@ -60,6 +65,7 @@ export async function POST(request: NextRequest) {
         averageScore: averageScore || 0
       },
       include: {
+        survey: true,
         sector: true,
         subSector: true
       }

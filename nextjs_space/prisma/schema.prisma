@@ -98,6 +98,7 @@ model SubSector {
 
 model Benchmark {
   id            String     @id @default(cuid())
+  surveyId      String
   sectorId      String
   subSectorId   String?
   level         BenchmarkLevel @default(OVERALL)
@@ -106,10 +107,11 @@ model Benchmark {
   averageScore  Float      @default(0)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
+  survey        Survey     @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   sector        Sector     @relation(fields: [sectorId], references: [id], onDelete: Cascade)
   subSector     SubSector? @relation(fields: [subSectorId], references: [id], onDelete: Cascade)
 
-  @@unique([sectorId, subSectorId, level, targetId])
+  @@unique([surveyId, sectorId, subSectorId, level, targetId])
 }
 
 model SectorCategoryWeight {
@@ -143,6 +145,7 @@ model Survey {
   categories            Category[]
   sectorCategoryWeights SectorCategoryWeight[]
   userAssignments       UserSurveyAssignment[]
+  benchmarks            Benchmark[]
 }
 
 // Kullanıcı-Anket Atama Modeli
