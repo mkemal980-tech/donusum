@@ -148,20 +148,20 @@ export default function BenchmarksPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Benchmark Verileri</h1>
-        <p className="text-gray-600 mt-1">Sektör ve alt sektör bazlı en iyi ve ortalama puanları girin</p>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Benchmark Verileri</h1>
+        <p className="text-[var(--text-muted)] mt-1">Sektör ve alt sektör bazlı en iyi ve ortalama puanları girin</p>
       </div>
 
       {/* Form */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-6 mb-6">
+        <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
           <Plus size={20} />
           Benchmark Verisi Ekle / Güncelle
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sektör *</label>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Sektör *</label>
             <select
               value={selectedSector}
               onChange={(e) => { setSelectedSector(e.target.value); setSelectedSubSector(""); }}
@@ -175,7 +175,7 @@ export default function BenchmarksPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Alt Sektör (Opsiyonel)</label>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Alt Sektör (Opsiyonel)</label>
             <select
               value={selectedSubSector}
               onChange={(e) => setSelectedSubSector(e.target.value)}
@@ -190,7 +190,7 @@ export default function BenchmarksPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Seviye</label>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Seviye</label>
             <select
               value={selectedLevel}
               onChange={(e) => { setSelectedLevel(e.target.value); setSelectedTarget(""); }}
@@ -204,7 +204,7 @@ export default function BenchmarksPage() {
 
           {selectedLevel === "CATEGORY" && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+              <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Kategori</label>
               <select
                 value={selectedTarget}
                 onChange={(e) => setSelectedTarget(e.target.value)}
@@ -220,7 +220,7 @@ export default function BenchmarksPage() {
 
           {selectedLevel === "SUBCATEGORY" && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Alt Kategori</label>
+              <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Alt Kategori</label>
               <select
                 value={selectedTarget}
                 onChange={(e) => setSelectedTarget(e.target.value)}
@@ -239,7 +239,7 @@ export default function BenchmarksPage() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">En İyi Puan (0-5)</label>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">En İyi Puan (0-5)</label>
             <input
               type="number"
               value={bestScore}
@@ -252,7 +252,7 @@ export default function BenchmarksPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ortalama Puan (0-5)</label>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Ortalama Puan (0-5)</label>
             <input
               type="number"
               value={averageScore}
@@ -280,9 +280,9 @@ export default function BenchmarksPage() {
       </div>
 
       {/* Existing Benchmarks */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="p-4 border-b bg-gray-50">
-          <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden">
+        <div className="p-4 border-b bg-[var(--bg-card-2)]">
+          <h2 className="text-lg font-semibold text-[var(--text-main)] flex items-center gap-2">
             <BarChart3 size={20} />
             Mevcut Benchmark Verileri
           </h2>
@@ -291,37 +291,37 @@ export default function BenchmarksPage() {
         {filteredBenchmarks.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-[var(--bg-card-2)]">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Sektör</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Alt Sektör</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Seviye</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-600">Hedef</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-600">En İyi</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-600">Ortalama</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-600">İşlem</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)]">Sektör</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)]">Alt Sektör</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)]">Seviye</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)]">Hedef</th>
+                  <th className="px-4 py-3 text-center text-sm font-medium text-[var(--text-muted)]">En İyi</th>
+                  <th className="px-4 py-3 text-center text-sm font-medium text-[var(--text-muted)]">Ortalama</th>
+                  <th className="px-4 py-3 text-center text-sm font-medium text-[var(--text-muted)]">İşlem</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {filteredBenchmarks.map((b) => (
-                  <tr key={b.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-800">{b.sector?.name}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{b.subSector?.name || "Tüm"}</td>
+                  <tr key={b.id} className="hover:bg-[var(--bg-card-2)]">
+                    <td className="px-4 py-3 text-sm text-[var(--text-main)]">{b.sector?.name}</td>
+                    <td className="px-4 py-3 text-sm text-[var(--text-muted)]">{b.subSector?.name || "Tüm"}</td>
                     <td className="px-4 py-3 text-sm">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        b.level === "OVERALL" ? "bg-blue-100 text-blue-700" :
+                        b.level === "OVERALL" ? "bg-[var(--bg-card-2)] text-[var(--accent)]" :
                         b.level === "CATEGORY" ? "bg-purple-100 text-purple-700" :
                         "bg-green-100 text-green-700"
                       }`}>
                         {b.level === "OVERALL" ? "Genel" : b.level === "CATEGORY" ? "Kategori" : "Alt Kategori"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{getTargetName(b)}</td>
+                    <td className="px-4 py-3 text-sm text-[var(--text-muted)]">{getTargetName(b)}</td>
                     <td className="px-4 py-3 text-center">
                       <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded font-medium">{b.bestScore.toFixed(1)}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded font-medium">{b.averageScore.toFixed(1)}</span>
+                      <span className="px-2 py-1 bg-[var(--bg-card-2)] text-[var(--text-muted)] rounded font-medium">{b.averageScore.toFixed(1)}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button
@@ -339,8 +339,8 @@ export default function BenchmarksPage() {
         ) : (
           <div className="text-center py-12">
             <BarChart3 size={48} className="mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500">Henüz benchmark verisi girilmemiş</p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-[var(--text-dim)]">Henüz benchmark verisi girilmemiş</p>
+            <p className="text-sm text-[var(--text-dim)] mt-1">
               {selectedSector ? "Seçili sektör için veri bulunamadı" : "Yukarıdaki formu kullanarak veri ekleyin"}
             </p>
           </div>

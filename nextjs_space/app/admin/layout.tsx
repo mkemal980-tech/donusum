@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings, FolderTree, Lightbulb, LayoutDashboard, Factory, BarChart3, Scale, FileText, Activity, Download, Users, Building2, UserCheck, Sun, Moon, Files } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Settings, FolderTree, Lightbulb, LayoutDashboard, Factory, BarChart3, Scale, FileText, Activity, Download, Users, Building2, UserCheck, Files } from "lucide-react";
 
 const navItems = [
   { href: "/admin", label: "Genel Bakış", icon: LayoutDashboard, section: null },
@@ -23,7 +22,6 @@ const navItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
   
   // Group items by section
   const sections = navItems.reduce((acc, item) => {
@@ -38,12 +36,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const isActive = pathname === item.href;
     return (
       <Link key={item.href} href={item.href}>
-        <div className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+        <div className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
           isActive 
-            ? 'bg-gradient-to-r from-[var(--primary)] to-[var(--primary-dark)] text-white dark:text-[var(--bg-main)] shadow-lg' 
-            : 'text-[var(--text-secondary)] hover:bg-[var(--primary)]/10 hover:text-[var(--primary)]'
+            ? 'bg-[var(--accent)]/10 text-[var(--accent)] border-l-[3px] border-[var(--accent)]' 
+            : 'text-[var(--ui-passive)] hover:bg-[var(--bg-card-2)] hover:text-[var(--text-muted)]'
         }`}>
-          <Icon size={20} />
+          <Icon size={20} className={isActive ? 'text-[var(--accent)]' : ''} />
           {item.label}
         </div>
       </Link>
@@ -51,34 +49,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-main)]">
+    <div className="min-h-screen" style={{ background: 'var(--bg-main)' }}>
       {/* Header */}
-      <header className="bg-gradient-to-r from-[var(--primary)] to-[var(--primary-dark)] dark:from-[var(--bg-card)] dark:to-[var(--bg-secondary)] text-white shadow-lg sticky top-0 z-50 border-b border-transparent dark:border-[var(--border-light)]">
+      <header className="sticky top-0 z-50 border-b" style={{ 
+        background: 'var(--bg-card)', 
+        borderColor: 'var(--border-soft)' 
+      }}>
         <div className="max-w-[1400px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-white/20 dark:bg-[var(--primary)]/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                <Settings className="w-6 h-6 dark:text-[var(--primary)]" />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(12, 193, 195, 0.1)' }}>
+                <Settings className="w-6 h-6" style={{ color: 'var(--accent)' }} />
               </div>
               <div>
-                <h1 className="text-xl font-bold dark:text-[var(--text-primary)]">Yönetim Paneli</h1>
-                <p className="text-sm text-white/70 dark:text-[var(--text-muted)]">Dönüşüm Platformu</p>
+                <h1 className="text-xl font-semibold" style={{ color: 'var(--text-main)' }}>Yönetim Paneli</h1>
+                <p className="text-sm" style={{ color: 'var(--text-dim)' }}>Dönüşüm Platformu</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="p-2.5 rounded-xl bg-white/10 dark:bg-[var(--bg-main)] hover:bg-white/20 dark:hover:bg-[var(--border-light)] transition-all duration-200"
-              >
-                {theme === "dark" ? (
-                  <Sun className="w-5 h-5 text-yellow-400" />
-                ) : (
-                  <Moon className="w-5 h-5" />
-                )}
-              </button>
               <Link 
                 href="/dashboard" 
-                className="flex items-center gap-2 px-4 py-2 bg-white/10 dark:bg-[var(--bg-main)] hover:bg-white/20 dark:hover:bg-[var(--border-light)] rounded-xl transition-all duration-200 backdrop-blur-sm dark:text-[var(--text-primary)]"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200"
+                style={{ 
+                  background: 'var(--bg-card-2)', 
+                  color: 'var(--text-muted)',
+                  border: '1px solid var(--border-soft)'
+                }}
               >
                 <LayoutDashboard size={18} />
                 Ana Sayfaya Dön
@@ -90,37 +86,40 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-72 bg-[var(--bg-card)] shadow-lg min-h-[calc(100vh-72px)] p-4 border-r border-[var(--border-light)]">
+        <aside className="w-72 min-h-[calc(100vh-72px)] p-4 border-r" style={{ 
+          background: 'var(--bg-deep)', 
+          borderColor: 'var(--border-soft)' 
+        }}>
           <nav className="space-y-1">
             {/* Main nav item */}
             {sections['main']?.map(renderNavItem)}
             
             {/* Kullanıcı Yönetimi */}
             <div className="pt-4 pb-2">
-              <p className="px-4 text-xs font-semibold text-[var(--primary)] uppercase tracking-wider">Kullanıcı Yönetimi</p>
+              <p className="px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--accent)' }}>Kullanıcı Yönetimi</p>
             </div>
             {sections['Kullanıcı Yönetimi']?.map(renderNavItem)}
             
             {/* Anket Yönetimi */}
             <div className="pt-4 pb-2">
-              <p className="px-4 text-xs font-semibold text-[var(--primary)] uppercase tracking-wider">Anket Yönetimi</p>
+              <p className="px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--accent)' }}>Anket Yönetimi</p>
             </div>
             {sections['Anket Yönetimi']?.map(renderNavItem)}
             
             {/* Sektör & Benchmark */}
             <div className="pt-4 pb-2">
-              <p className="px-4 text-xs font-semibold text-[var(--primary)] uppercase tracking-wider">Sektör & Benchmark</p>
+              <p className="px-4 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--accent)' }}>Sektör & Benchmark</p>
             </div>
             {sections['Sektör & Benchmark']?.map(renderNavItem)}
             
             {/* Diğer */}
-            <div className="border-t border-[var(--border-light)] my-4" />
+            <div className="my-4" style={{ borderTop: '1px solid var(--divider)' }} />
             {sections['Diğer']?.map(renderNavItem)}
           </nav>
         </aside>
         
         {/* Main Content */}
-        <main className="flex-1 p-8 bg-[var(--bg-secondary)] dark:bg-[var(--bg-main)] min-h-[calc(100vh-72px)]">
+        <main className="flex-1 p-8 min-h-[calc(100vh-72px)]" style={{ background: 'var(--bg-main)' }}>
           {children}
         </main>
       </div>

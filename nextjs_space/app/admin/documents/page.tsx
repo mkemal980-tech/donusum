@@ -178,8 +178,8 @@ export default function DocumentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Yüklenen Dosyalar</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Kullanıcıların yüklediği kanıt dosyaları</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Yüklenen Dosyalar</h1>
+          <p className="text-[var(--text-dim)]  mt-1">Kullanıcıların yüklediği kanıt dosyaları</p>
         </div>
         <div className="flex items-center gap-2 bg-cyan-100 dark:bg-cyan-900/30 px-4 py-2 rounded-lg">
           <FileText className="text-cyan-600 dark:text-cyan-400" size={20} />
@@ -188,21 +188,21 @@ export default function DocumentsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-4 border border-gray-200 dark:border-slate-700">
+      <div className="bg-[var(--bg-card)] dark:bg-slate-800 rounded-xl shadow-sm p-4 border border-[var(--border-soft)] dark:border-slate-700">
         <div className="flex items-center gap-2 mb-4">
-          <Filter size={18} className="text-gray-500 dark:text-gray-400" />
-          <span className="font-medium text-gray-700 dark:text-gray-300">Filtreler</span>
+          <Filter size={18} className="text-[var(--text-dim)] " />
+          <span className="font-medium text-[var(--text-muted)] ">Filtreler</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)]" size={18} />
             <input
               type="text"
               placeholder="Dosya adı veya kullanıcı ara..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-[var(--border-soft)] dark:border-slate-600 rounded-lg bg-[var(--bg-card)] dark:bg-slate-900 text-[var(--text-main)]  focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
             />
           </div>
 
@@ -210,7 +210,7 @@ export default function DocumentsPage() {
           <select
             value={selectedUnit}
             onChange={(e) => setSelectedUnit(e.target.value)}
-            className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-cyan-500"
+            className="px-4 py-2 border border-[var(--border-soft)] dark:border-slate-600 rounded-lg bg-[var(--bg-card)] dark:bg-slate-900 text-[var(--text-main)]  focus:ring-2 focus:ring-cyan-500"
           >
             <option value="">Tüm Birimler</option>
             {units.map((unit) => (
@@ -222,7 +222,7 @@ export default function DocumentsPage() {
           <select
             value={selectedUser}
             onChange={(e) => setSelectedUser(e.target.value)}
-            className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-cyan-500"
+            className="px-4 py-2 border border-[var(--border-soft)] dark:border-slate-600 rounded-lg bg-[var(--bg-card)] dark:bg-slate-900 text-[var(--text-main)]  focus:ring-2 focus:ring-cyan-500"
           >
             <option value="">Tüm Kullanıcılar</option>
             {users.map((user) => (
@@ -238,61 +238,61 @@ export default function DocumentsPage() {
           <div className="w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : filteredDocuments.length === 0 ? (
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-12 text-center border border-gray-200 dark:border-slate-700">
-          <FileText className="mx-auto text-gray-300 dark:text-gray-600 mb-4" size={48} />
-          <p className="text-gray-500 dark:text-gray-400">Henüz yüklenmiş dosya bulunmuyor</p>
+        <div className="bg-[var(--bg-card)] dark:bg-slate-800 rounded-xl p-12 text-center border border-[var(--border-soft)] dark:border-slate-700">
+          <FileText className="mx-auto text-gray-300 dark:text-[var(--text-muted)] mb-4" size={48} />
+          <p className="text-[var(--text-dim)] ">Henüz yüklenmiş dosya bulunmuyor</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+        <div className="bg-[var(--bg-card)] dark:bg-slate-800 rounded-xl shadow-sm border border-[var(--border-soft)] dark:border-slate-700 overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-slate-900">
+            <thead className="bg-[var(--bg-card-2)] dark:bg-slate-900">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Dosya</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kullanıcı</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Birim</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Soru Bağlamı</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tarih</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">İşlemler</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Dosya</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Kullanıcı</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Birim</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Soru Bağlamı</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Tarih</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">İşlemler</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
               {filteredDocuments.map((doc) => (
-                <tr key={doc.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+                <tr key={doc.id} className="hover:bg-[var(--bg-card-2)] dark:hover:bg-slate-700/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{getFileIcon(doc.fileType)}</span>
                       <div>
-                        <p className="font-medium text-gray-800 dark:text-gray-200">{doc.fileName}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{doc.fileType}</p>
+                        <p className="font-medium text-[var(--text-main)] ">{doc.fileName}</p>
+                        <p className="text-xs text-[var(--text-dim)] ">{doc.fileType}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <User size={16} className="text-gray-400" />
+                      <User size={16} className="text-[var(--text-dim)]" />
                       <div>
-                        <p className="text-gray-800 dark:text-gray-200">{getUserName(doc)}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{doc.user.email}</p>
+                        <p className="text-[var(--text-main)] ">{getUserName(doc)}</p>
+                        <p className="text-xs text-[var(--text-dim)] ">{doc.user.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     {doc.user.unit ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-sm">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--bg-card-2)] dark:bg-blue-900/30 text-[var(--accent)] dark:text-blue-300 rounded text-sm">
                         <Building2 size={14} />
                         {doc.user.unit.name}
                       </span>
                     ) : (
-                      <span className="text-gray-400 dark:text-gray-500">-</span>
+                      <span className="text-[var(--text-dim)] dark:text-[var(--text-dim)]">-</span>
                     )}
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate" title={getQuestionContext(doc)}>
+                    <p className="text-sm text-[var(--text-muted)]  max-w-xs truncate" title={getQuestionContext(doc)}>
                       {getQuestionContext(doc)}
                     </p>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-[var(--text-dim)] ">
                       {new Date(doc.createdAt).toLocaleDateString("tr-TR", {
                         day: "2-digit",
                         month: "2-digit",

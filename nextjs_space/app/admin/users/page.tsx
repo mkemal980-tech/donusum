@@ -56,9 +56,9 @@ const roleLabels: Record<string, string> = {
 };
 
 const roleColors: Record<string, string> = {
-  USER: "bg-gray-100 text-gray-700",
+  USER: "bg-[var(--bg-card-2)] text-[var(--text-muted)]",
   UNIT_MANAGER: "bg-purple-100 text-purple-700",
-  ADMIN: "bg-blue-100 text-blue-700",
+  ADMIN: "bg-[var(--bg-card-2)] text-[var(--accent)]",
 };
 
 export default function UsersPage() {
@@ -283,7 +283,7 @@ export default function UsersPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Users className="text-[#1e3a8a]" size={28} />
-          <h1 className="text-2xl font-bold text-gray-900">Kullanıcı Yönetimi</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-main)]">Kullanıcı Yönetimi</h1>
         </div>
         <button
           onClick={() => {
@@ -299,9 +299,9 @@ export default function UsersPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-6 flex flex-wrap gap-4">
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-4 mb-6 flex flex-wrap gap-4">
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)]" size={20} />
           <input
             type="text"
             placeholder="Kullanıcı ara..."
@@ -311,7 +311,7 @@ export default function UsersPage() {
           />
         </div>
         <div className="flex items-center gap-2">
-          <Filter size={20} className="text-gray-400" />
+          <Filter size={20} className="text-[var(--text-dim)]" />
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
@@ -327,51 +327,51 @@ export default function UsersPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-[var(--bg-card-2)] rounded-lg flex items-center justify-center">
               <Users className="text-[#1e3a8a]" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Toplam</p>
-              <p className="text-xl font-bold text-gray-900">{users.length}</p>
+              <p className="text-sm text-[var(--text-dim)]">Toplam</p>
+              <p className="text-xl font-bold text-[var(--text-main)]">{users.length}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-              <User className="text-gray-600" size={20} />
+            <div className="w-10 h-10 bg-[var(--bg-card-2)] rounded-lg flex items-center justify-center">
+              <User className="text-[var(--text-muted)]" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Kullanıcı</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-sm text-[var(--text-dim)]">Kullanıcı</p>
+              <p className="text-xl font-bold text-[var(--text-main)]">
                 {users.filter((u) => u.role === "USER").length}
               </p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
               <Building2 className="text-purple-600" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Birim Yöneticisi</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-sm text-[var(--text-dim)]">Birim Yöneticisi</p>
+              <p className="text-xl font-bold text-[var(--text-main)]">
                 {users.filter((u) => u.role === "UNIT_MANAGER").length}
               </p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-[var(--bg-card-2)] rounded-lg flex items-center justify-center">
               <Shield className="text-[#1e3a8a]" size={20} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Yönetici</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-sm text-[var(--text-dim)]">Yönetici</p>
+              <p className="text-xl font-bold text-[var(--text-main)]">
                 {users.filter((u) => u.role === "ADMIN").length}
               </p>
             </div>
@@ -380,27 +380,27 @@ export default function UsersPage() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-sm overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-[var(--bg-card-2)]">
             <tr>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Kullanıcı</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Rol</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Birim</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Sektör</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Yanıt</th>
-              <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">İşlemler</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">Kullanıcı</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">Rol</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">Birim</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">Sektör</th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">Yanıt</th>
+              <th className="px-4 py-3 text-right text-sm font-semibold text-[var(--text-muted)]">İşlemler</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {filteredUsers.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
+              <tr key={user.id} className="hover:bg-[var(--bg-card-2)]">
                 <td className="px-4 py-3">
                   <div>
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-[var(--text-main)]">
                       {user.firstName} {user.lastName}
                     </p>
-                    <p className="text-sm text-gray-500">{user.email}</p>
+                    <p className="text-sm text-[var(--text-dim)]">{user.email}</p>
                   </div>
                 </td>
                 <td className="px-4 py-3">
@@ -408,34 +408,34 @@ export default function UsersPage() {
                     {roleLabels[user.role]}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-600">
+                <td className="px-4 py-3 text-sm text-[var(--text-muted)]">
                   {user.unit?.name || "-"}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-600">
+                <td className="px-4 py-3 text-sm text-[var(--text-muted)]">
                   {user.sector?.name || "-"}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-600">
+                <td className="px-4 py-3 text-sm text-[var(--text-muted)]">
                   {user._count.surveyResponses}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={() => openAssignModal(user)}
-                      className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      className="p-2 text-[var(--text-dim)] hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                       title="Anket Ata"
                     >
                       <FileText size={16} />
                     </button>
                     <button
                       onClick={() => openEditModal(user)}
-                      className="p-2 text-gray-400 hover:text-[#1e3a8a] hover:bg-blue-50 rounded-lg transition-colors"
+                      className="p-2 text-[var(--text-dim)] hover:text-[#1e3a8a] hover:bg-[var(--bg-card-2)] rounded-lg transition-colors"
                       title="Düzenle"
                     >
                       <Edit size={16} />
                     </button>
                     <button
                       onClick={() => handleDelete(user.id)}
-                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-2 text-[var(--text-dim)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                       title="Sil"
                     >
                       <Trash2 size={16} />
@@ -448,7 +448,7 @@ export default function UsersPage() {
         </table>
 
         {filteredUsers.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-[var(--text-dim)]">
             Kullanıcı bulunamadı
           </div>
         )}
@@ -457,14 +457,14 @@ export default function UsersPage() {
       {/* User Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-[var(--bg-card)] rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-[var(--text-main)]">
                 {editingUser ? "Kullanıcı Düzenle" : "Yeni Kullanıcı"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-2 hover:bg-[var(--bg-card-2)] rounded-lg"
               >
                 <X size={20} />
               </button>
@@ -472,7 +472,7 @@ export default function UsersPage() {
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ad</label>
+                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Ad</label>
                   <input
                     type="text"
                     value={formData.firstName}
@@ -481,7 +481,7 @@ export default function UsersPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Soyad</label>
+                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Soyad</label>
                   <input
                     type="text"
                     value={formData.lastName}
@@ -492,7 +492,7 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Email *</label>
                 <input
                   type="email"
                   value={formData.email}
@@ -503,7 +503,7 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">
                   Şifre {editingUser ? "(boş bırakırsanız değişmez)" : "*"}
                 </label>
                 <input
@@ -516,7 +516,7 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Organizasyon</label>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Organizasyon</label>
                 <input
                   type="text"
                   value={formData.organization}
@@ -526,7 +526,7 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rol *</label>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Rol *</label>
                 <select
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value as "USER" | "UNIT_MANAGER" | "ADMIN" })}
@@ -539,7 +539,7 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Birim</label>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Birim</label>
                 <select
                   value={formData.unitId}
                   onChange={(e) => setFormData({ ...formData, unitId: e.target.value })}
@@ -555,7 +555,7 @@ export default function UsersPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sektör (NAICS)</label>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Sektör (NAICS)</label>
                 <select
                   value={formData.sectorId}
                   onChange={(e) => setFormData({ ...formData, sectorId: e.target.value, subSectorId: "" })}
@@ -572,7 +572,7 @@ export default function UsersPage() {
               
               {formData.sectorId && selectedSector?.subSectors && selectedSector.subSectors.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Alt Sektör</label>
+                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Alt Sektör</label>
                   <select
                     value={formData.subSectorId}
                     onChange={(e) => setFormData({ ...formData, subSectorId: e.target.value })}
@@ -592,7 +592,7 @@ export default function UsersPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border rounded-lg hover:bg-[var(--bg-card-2)] transition-colors"
                 >
                   İptal
                 </button>
@@ -612,11 +612,11 @@ export default function UsersPage() {
       {/* Survey Assignment Modal */}
       {showAssignModal && selectedUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-[var(--bg-card)] rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Anket Atama</h2>
-                <p className="text-sm text-gray-500">
+                <h2 className="text-lg font-semibold text-[var(--text-main)]">Anket Atama</h2>
+                <p className="text-sm text-[var(--text-dim)]">
                   {selectedUser.firstName} {selectedUser.lastName} ({selectedUser.email})
                 </p>
               </div>
@@ -626,7 +626,7 @@ export default function UsersPage() {
                   setSelectedUser(null);
                   setUserAssignments([]);
                 }}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-2 hover:bg-[var(--bg-card-2)] rounded-lg"
               >
                 <X size={20} />
               </button>
@@ -635,7 +635,7 @@ export default function UsersPage() {
             <div className="p-4 space-y-6">
               {/* Atanmış Anketler */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-[var(--text-muted)] mb-3 flex items-center gap-2">
                   <Check size={16} className="text-green-600" />
                   Atanmış Anketler ({userAssignments.length})
                 </h3>
@@ -649,8 +649,8 @@ export default function UsersPage() {
                         <div className="flex items-center gap-3">
                           <FileText size={18} className="text-green-600" />
                           <div>
-                            <p className="font-medium text-gray-900">{assignment.survey.name}</p>
-                            <p className="text-xs text-gray-500">
+                            <p className="font-medium text-[var(--text-main)]">{assignment.survey.name}</p>
+                            <p className="text-xs text-[var(--text-dim)]">
                               Atandı: {new Date(assignment.assignedAt).toLocaleDateString('tr-TR')}
                             </p>
                           </div>
@@ -666,14 +666,14 @@ export default function UsersPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 italic">Henüz anket atanmamış</p>
+                  <p className="text-sm text-[var(--text-dim)] italic">Henüz anket atanmamış</p>
                 )}
               </div>
 
               {/* Atanabilecek Anketler */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <Plus size={16} className="text-blue-600" />
+                <h3 className="text-sm font-semibold text-[var(--text-muted)] mb-3 flex items-center gap-2">
+                  <Plus size={16} className="text-[var(--blue-main)]" />
                   Atanabilecek Anketler ({unassignedSurveys.length})
                 </h3>
                 {unassignedSurveys.length > 0 ? (
@@ -681,14 +681,14 @@ export default function UsersPage() {
                     {unassignedSurveys.map((survey) => (
                       <div
                         key={survey.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                        className="flex items-center justify-between p-3 bg-[var(--bg-card-2)] border border-[var(--border-soft)] rounded-lg hover:bg-[var(--bg-card-2)] hover:border-blue-200 transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <FileText size={18} className="text-gray-400" />
+                          <FileText size={18} className="text-[var(--text-dim)]" />
                           <div>
-                            <p className="font-medium text-gray-900">{survey.name}</p>
+                            <p className="font-medium text-[var(--text-main)]">{survey.name}</p>
                             {survey.description && (
-                              <p className="text-xs text-gray-500">{survey.description}</p>
+                              <p className="text-xs text-[var(--text-dim)]">{survey.description}</p>
                             )}
                           </div>
                         </div>
@@ -703,19 +703,19 @@ export default function UsersPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 italic">Tüm anketler zaten atanmış</p>
+                  <p className="text-sm text-[var(--text-dim)] italic">Tüm anketler zaten atanmış</p>
                 )}
               </div>
             </div>
 
-            <div className="p-4 border-t bg-gray-50">
+            <div className="p-4 border-t bg-[var(--bg-card-2)]">
               <button
                 onClick={() => {
                   setShowAssignModal(false);
                   setSelectedUser(null);
                   setUserAssignments([]);
                 }}
-                className="w-full px-4 py-2 border rounded-lg hover:bg-white transition-colors"
+                className="w-full px-4 py-2 border rounded-lg hover:bg-[var(--bg-card)] transition-colors"
               >
                 Kapat
               </button>

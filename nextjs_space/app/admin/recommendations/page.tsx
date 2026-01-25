@@ -428,7 +428,7 @@ export default function RecommendationsPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Öneri Yönetimi</h1>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Öneri Yönetimi</h1>
         <button
           onClick={() => openModal()}
           className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
@@ -438,10 +438,10 @@ export default function RecommendationsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-soft p-4 mb-6">
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-soft p-4 mb-6">
         <div className="flex gap-4 flex-wrap">
           <div className="flex-1 min-w-[200px] relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)]" size={20} />
             <input
               type="text"
               placeholder="Öneri ara..."
@@ -477,17 +477,17 @@ export default function RecommendationsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl shadow-soft overflow-hidden">
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-soft overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-[var(--bg-card-2)]">
             <tr>
-              <th className="text-left p-4 font-semibold text-gray-700">Başlık</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Anket</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Tetikleyici</th>
-              <th className="text-left p-4 font-semibold text-gray-700">CAPEX</th>
-              <th className="text-left p-4 font-semibold text-gray-700">OPEX</th>
-              <th className="text-left p-4 font-semibold text-gray-700">Tip</th>
-              <th className="text-right p-4 font-semibold text-gray-700">İşlemler</th>
+              <th className="text-left p-4 font-semibold text-[var(--text-muted)]">Başlık</th>
+              <th className="text-left p-4 font-semibold text-[var(--text-muted)]">Anket</th>
+              <th className="text-left p-4 font-semibold text-[var(--text-muted)]">Tetikleyici</th>
+              <th className="text-left p-4 font-semibold text-[var(--text-muted)]">CAPEX</th>
+              <th className="text-left p-4 font-semibold text-[var(--text-muted)]">OPEX</th>
+              <th className="text-left p-4 font-semibold text-[var(--text-muted)]">Tip</th>
+              <th className="text-right p-4 font-semibold text-[var(--text-muted)]">İşlemler</th>
             </tr>
           </thead>
           <tbody>
@@ -496,10 +496,10 @@ export default function RecommendationsPage() {
               const triggerInfo = getTriggerInfo(rec);
               const stratType = strategicTypes.find(t => t.value === rec.strategicType);
               return (
-                <tr key={rec.id} className="border-t hover:bg-gray-50">
+                <tr key={rec.id} className="border-t hover:bg-[var(--bg-card-2)]">
                   <td className="p-4">
-                    <p className="font-medium text-gray-800">{rec.title}</p>
-                    <p className="text-sm text-gray-500 truncate max-w-xs">{rec.description}</p>
+                    <p className="font-medium text-[var(--text-main)]">{rec.title}</p>
+                    <p className="text-sm text-[var(--text-dim)] truncate max-w-xs">{rec.description}</p>
                   </td>
                   <td className="p-4">
                     {surveyName ? (
@@ -508,7 +508,7 @@ export default function RecommendationsPage() {
                         {surveyName}
                       </span>
                     ) : (
-                      <span className="text-gray-400 text-sm">-</span>
+                      <span className="text-[var(--text-dim)] text-sm">-</span>
                     )}
                   </td>
                   <td className="p-4">
@@ -518,7 +518,7 @@ export default function RecommendationsPage() {
                           <HelpCircle size={12} />
                           Soru Bağlı
                         </span>
-                        <span className="text-xs text-gray-500">{triggerInfo.optionsCount} şık</span>
+                        <span className="text-xs text-[var(--text-dim)]">{triggerInfo.optionsCount} şık</span>
                       </div>
                     ) : (
                       <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs">
@@ -538,7 +538,7 @@ export default function RecommendationsPage() {
                     </span>
                   </td>
                   <td className="p-4 text-right">
-                    <button onClick={() => openModal(rec)} className="p-2 hover:bg-blue-100 rounded text-blue-600">
+                    <button onClick={() => openModal(rec)} className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]">
                       <Edit size={18} />
                     </button>
                     <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-red-100 rounded text-red-600">
@@ -551,7 +551,7 @@ export default function RecommendationsPage() {
           </tbody>
         </table>
         {filteredRecs.length === 0 && (
-          <p className="text-center text-gray-400 py-8">
+          <p className="text-center text-[var(--text-dim)] py-8">
             {filterSurvey || filterCategory || search ? 'Öneri bulunamadı' : 'Henüz öneri eklenmemiş'}
           </p>
         )}
@@ -560,10 +560,10 @@ export default function RecommendationsPage() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">{editItem ? 'Öneri Düzenle' : 'Yeni Öneri'}</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">
+              <button onClick={() => setShowModal(false)} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
                 <X size={24} />
               </button>
             </div>
@@ -572,7 +572,7 @@ export default function RecommendationsPage() {
               {/* Temel Bilgiler */}
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Başlık *</label>
+                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Başlık *</label>
                   <input
                     type="text"
                     value={formData.title || ''}
@@ -582,7 +582,7 @@ export default function RecommendationsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Açıklama</label>
                   <textarea
                     value={formData.description || ''}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -592,7 +592,7 @@ export default function RecommendationsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">
                     🎬 Nasıl Yapılır Öğrenin - Video Linki
                   </label>
                   <input
@@ -602,7 +602,7 @@ export default function RecommendationsPage() {
                     className="w-full p-3 border rounded-lg"
                     placeholder="YouTube veya Vimeo linki girin... (örn: https://www.youtube.com/watch?v=...)"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-[var(--text-dim)] mt-1">
                     YouTube, Vimeo veya başka bir video platformunun linkini girebilirsiniz.
                   </p>
                 </div>
@@ -620,7 +620,7 @@ export default function RecommendationsPage() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">1. Anket</label>
+                    <label className="block text-xs text-[var(--text-muted)] mb-1">1. Anket</label>
                     <select
                       value={modalSurveyId}
                       onChange={(e) => {
@@ -631,7 +631,7 @@ export default function RecommendationsPage() {
                         setModalQuestionId('');
                         setSelectedTriggerOptions([]);
                       }}
-                      className="w-full p-2 border rounded-lg bg-white"
+                      className="w-full p-2 border rounded-lg bg-[var(--bg-card)]"
                     >
                       <option value="">-- Anket Seçin --</option>
                       {surveys.map(survey => (
@@ -641,7 +641,7 @@ export default function RecommendationsPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">2. Kategori</label>
+                    <label className="block text-xs text-[var(--text-muted)] mb-1">2. Kategori</label>
                     <select
                       value={modalCategoryId}
                       onChange={(e) => {
@@ -651,7 +651,7 @@ export default function RecommendationsPage() {
                         setModalQuestionId('');
                         setSelectedTriggerOptions([]);
                       }}
-                      className="w-full p-2 border rounded-lg bg-white"
+                      className="w-full p-2 border rounded-lg bg-[var(--bg-card)]"
                       disabled={!modalSurveyId}
                     >
                       <option value="">-- Kategori Seçin --</option>
@@ -662,7 +662,7 @@ export default function RecommendationsPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">3. Alt Kategori</label>
+                    <label className="block text-xs text-[var(--text-muted)] mb-1">3. Alt Kategori</label>
                     <select
                       value={modalSubCategoryId}
                       onChange={(e) => {
@@ -671,7 +671,7 @@ export default function RecommendationsPage() {
                         setModalQuestionId('');
                         setSelectedTriggerOptions([]);
                       }}
-                      className="w-full p-2 border rounded-lg bg-white"
+                      className="w-full p-2 border rounded-lg bg-[var(--bg-card)]"
                       disabled={!modalCategoryId}
                     >
                       <option value="">-- Alt Kategori Seçin --</option>
@@ -684,7 +684,7 @@ export default function RecommendationsPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">4. Alt Seviye (Opsiyonel)</label>
+                    <label className="block text-xs text-[var(--text-muted)] mb-1">4. Alt Seviye (Opsiyonel)</label>
                     <select
                       value={modalSubLevelId}
                       onChange={(e) => {
@@ -692,7 +692,7 @@ export default function RecommendationsPage() {
                         setModalQuestionId('');
                         setSelectedTriggerOptions([]);
                       }}
-                      className="w-full p-2 border rounded-lg bg-white"
+                      className="w-full p-2 border rounded-lg bg-[var(--bg-card)]"
                       disabled={!modalSubCategoryId || !selectedSubCategory?.hasSubLevels}
                     >
                       <option value="">
@@ -723,14 +723,14 @@ export default function RecommendationsPage() {
                   <div className="space-y-4">
                     {/* Soru Seçimi */}
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Bağlanacak Soru</label>
+                      <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Bağlanacak Soru</label>
                       <select
                         value={modalQuestionId}
                         onChange={(e) => {
                           setModalQuestionId(e.target.value);
                           setSelectedTriggerOptions([]);
                         }}
-                        className="w-full p-2 border rounded-lg bg-white"
+                        className="w-full p-2 border rounded-lg bg-[var(--bg-card)]"
                       >
                         <option value="">-- Soru Seçin (Opsiyonel) --</option>
                         {availableQuestions.map(q => (
@@ -744,7 +744,7 @@ export default function RecommendationsPage() {
                     {/* Şık Seçimi */}
                     {selectedQuestion && questionOptions.length > 0 && (
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-2">
+                        <label className="block text-xs font-medium text-[var(--text-muted)] mb-2">
                           Tetikleyici Şıklar (Hangi cevaplarda bu öneri gösterilsin?)
                         </label>
                         <div className="grid grid-cols-2 gap-2">
@@ -754,7 +754,7 @@ export default function RecommendationsPage() {
                               className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
                                 selectedTriggerOptions.includes(opt.value) 
                                   ? 'bg-green-100 border-green-500' 
-                                  : 'bg-white hover:bg-gray-50'
+                                  : 'bg-[var(--bg-card)] hover:bg-[var(--bg-card-2)]'
                               }`}
                             >
                               <input
@@ -782,7 +782,7 @@ export default function RecommendationsPage() {
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-4 text-gray-500">
+                  <div className="text-center py-4 text-[var(--text-dim)]">
                     <HelpCircle size={24} className="mx-auto mb-2 opacity-50" />
                     <p className="text-sm">
                       {modalSubCategoryId 
@@ -802,7 +802,7 @@ export default function RecommendationsPage() {
                   </p>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">Minimum Puan (%)</label>
+                      <label className="block text-xs text-[var(--text-muted)] mb-1">Minimum Puan (%)</label>
                       <input
                         type="number"
                         min="0"
@@ -813,7 +813,7 @@ export default function RecommendationsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-gray-600 mb-1">Maksimum Puan (%)</label>
+                      <label className="block text-xs text-[var(--text-muted)] mb-1">Maksimum Puan (%)</label>
                       <input
                         type="number"
                         min="0"
@@ -828,12 +828,12 @@ export default function RecommendationsPage() {
               )}
 
               {/* Gelişim Skoru Puanı */}
-              <div className="p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+              <div className="p-4 bg-[var(--bg-card-2)] rounded-lg border-2 border-blue-200">
                 <div className="flex items-center gap-2 mb-3">
-                  <TrendingUp size={18} className="text-blue-700" />
-                  <label className="text-sm font-medium text-blue-800">Gelişim Skoru Puanı</label>
+                  <TrendingUp size={18} className="text-[var(--accent)]" />
+                  <label className="text-sm font-medium text-[var(--accent)]">Gelişim Skoru Puanı</label>
                 </div>
-                <p className="text-xs text-blue-600 mb-4">
+                <p className="text-xs text-[var(--blue-main)] mb-4">
                   Bu öneri tamamlandığında kullanıcının gelişim skoruna eklenecek puan (0-2 arası önerilir).
                   Devam ediyor durumunda %50'si, tamamlandığında %100'ü eklenir.
                 </p>
@@ -848,11 +848,11 @@ export default function RecommendationsPage() {
                     className="flex-1"
                   />
                   <div className="w-20 text-center">
-                    <span className="text-2xl font-bold text-blue-700">{(formData.points || 0.5).toFixed(1)}</span>
-                    <p className="text-xs text-gray-500">puan</p>
+                    <span className="text-2xl font-bold text-[var(--accent)]">{(formData.points || 0.5).toFixed(1)}</span>
+                    <p className="text-xs text-[var(--text-dim)]">puan</p>
                   </div>
                 </div>
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <div className="flex justify-between text-xs text-[var(--text-dim)] mt-1">
                   <span>0 (Düşük etki)</span>
                   <span>2 (Yüksek etki)</span>
                 </div>
@@ -866,7 +866,7 @@ export default function RecommendationsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">X Konumu (1-10)</label>
+                    <label className="block text-xs text-[var(--text-muted)] mb-1">X Konumu (1-10)</label>
                     <input
                       type="range"
                       min="1"
@@ -876,14 +876,14 @@ export default function RecommendationsPage() {
                       onChange={(e) => setFormData({ ...formData, xPosition: parseFloat(e.target.value) })}
                       className="w-full"
                     />
-                    <div className="flex justify-between text-xs text-gray-500">
+                    <div className="flex justify-between text-xs text-[var(--text-dim)]">
                       <span>Düşük</span>
                       <span className="font-semibold text-purple-700">{formData.xPosition || 5}</span>
                       <span>Yüksek</span>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-600 mb-1">Y Konumu (1-10)</label>
+                    <label className="block text-xs text-[var(--text-muted)] mb-1">Y Konumu (1-10)</label>
                     <input
                       type="range"
                       min="1"
@@ -893,7 +893,7 @@ export default function RecommendationsPage() {
                       onChange={(e) => setFormData({ ...formData, yPosition: parseFloat(e.target.value) })}
                       className="w-full"
                     />
-                    <div className="flex justify-between text-xs text-gray-500">
+                    <div className="flex justify-between text-xs text-[var(--text-dim)]">
                       <span>Düşük</span>
                       <span className="font-semibold text-purple-700">{formData.yPosition || 5}</span>
                       <span>Yüksek</span>
@@ -905,7 +905,7 @@ export default function RecommendationsPage() {
               {/* Maliyet ve Diğer Ayarlar */}
               <div className="grid grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">CAPEX (1-5)</label>
+                  <label className="block text-xs text-[var(--text-muted)] mb-1">CAPEX (1-5)</label>
                   <input
                     type="range"
                     min="1"
@@ -917,7 +917,7 @@ export default function RecommendationsPage() {
                   <DollarIndicator level={formData.capexLevel || 1} />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">OPEX (1-5)</label>
+                  <label className="block text-xs text-[var(--text-muted)] mb-1">OPEX (1-5)</label>
                   <input
                     type="range"
                     min="1"
@@ -929,7 +929,7 @@ export default function RecommendationsPage() {
                   <DollarIndicator level={formData.opexLevel || 1} />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Zaman Dilimi</label>
+                  <label className="block text-xs text-[var(--text-muted)] mb-1">Zaman Dilimi</label>
                   <select
                     value={formData.timeframe || 'SHORT_TERM'}
                     onChange={(e) => setFormData({ ...formData, timeframe: e.target.value as 'SHORT_TERM' | 'MEDIUM_TERM' | 'LONG_TERM' })}
@@ -941,7 +941,7 @@ export default function RecommendationsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Stratejik Tip</label>
+                  <label className="block text-xs text-[var(--text-muted)] mb-1">Stratejik Tip</label>
                   <select
                     value={formData.strategicType || 'QUICK_WIN'}
                     onChange={(e) => setFormData({ ...formData, strategicType: e.target.value as 'QUICK_WIN' | 'PROJECT' | 'BIG_BET' })}
@@ -958,7 +958,7 @@ export default function RecommendationsPage() {
               <div className="flex justify-end gap-3 pt-4 border-t">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+                  className="px-4 py-2 border rounded-lg hover:bg-[var(--bg-card-2)]"
                 >
                   İptal
                 </button>

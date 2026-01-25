@@ -170,8 +170,8 @@ export default function SectorsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Sektör Yönetimi</h1>
-          <p className="text-gray-600 mt-1">Sektör ve alt sektörleri tanımlayın</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Sektör Yönetimi</h1>
+          <p className="text-[var(--text-muted)] mt-1">Sektör ve alt sektörleri tanımlayın</p>
         </div>
         <button
           onClick={() => setShowNewSector(true)}
@@ -183,7 +183,7 @@ export default function SectorsPage() {
       </div>
 
       {showNewSector && (
-        <div className="bg-white rounded-xl shadow-md p-4 mb-4">
+        <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-4 mb-4">
           <div className="flex items-center gap-3">
             <input
               type="text"
@@ -208,7 +208,7 @@ export default function SectorsPage() {
             </button>
             <button
               onClick={() => { setShowNewSector(false); setNewSectorName(""); setNewSectorNaicsCode(""); }}
-              className="p-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              className="p-2 bg-gray-300 text-[var(--text-muted)] rounded-lg hover:bg-gray-400"
             >
               <X size={20} />
             </button>
@@ -218,14 +218,14 @@ export default function SectorsPage() {
 
       <div className="space-y-3">
         {sectors.map((sector) => (
-          <div key={sector.id} className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div key={sector.id} className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden">
             <div
-              className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50"
+              className="flex items-center justify-between p-4 cursor-pointer hover:bg-[var(--bg-card-2)]"
               onClick={() => setExpandedSector(expandedSector === sector.id ? null : sector.id)}
             >
               <div className="flex items-center gap-3">
                 {expandedSector === sector.id ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                <Factory size={20} className="text-blue-600" />
+                <Factory size={20} className="text-[var(--blue-main)]" />
                 {editingSector === sector.id ? (
                   <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                     <input
@@ -245,28 +245,28 @@ export default function SectorsPage() {
                     <button onClick={() => handleUpdateSector(sector.id)} className="p-1 text-green-600 hover:bg-green-50 rounded">
                       <Save size={18} />
                     </button>
-                    <button onClick={() => { setEditingSector(null); setEditSectorNaicsCode(""); }} className="p-1 text-gray-600 hover:bg-gray-100 rounded">
+                    <button onClick={() => { setEditingSector(null); setEditSectorNaicsCode(""); }} className="p-1 text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] rounded">
                       <X size={18} />
                     </button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     {sector.naicsCode && (
-                      <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-mono rounded">
+                      <span className="px-2 py-0.5 bg-[var(--bg-card-2)] text-[var(--accent)] text-xs font-mono rounded">
                         {sector.naicsCode}
                       </span>
                     )}
-                    <span className="font-medium text-gray-800">{sector.name}</span>
+                    <span className="font-medium text-[var(--text-main)]">{sector.name}</span>
                   </div>
                 )}
               </div>
               <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                <span className="text-sm text-gray-500 mr-2">
+                <span className="text-sm text-[var(--text-dim)] mr-2">
                   {sector.subSectors.length} alt sektör | {sector._count?.users || 0} kullanıcı
                 </span>
                 <button
                   onClick={() => { setEditingSector(sector.id); setEditSectorName(sector.name); setEditSectorNaicsCode(sector.naicsCode || ""); }}
-                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                  className="p-2 text-[var(--blue-main)] hover:bg-[var(--bg-card-2)] rounded-lg"
                 >
                   <Edit2 size={18} />
                 </button>
@@ -280,10 +280,10 @@ export default function SectorsPage() {
             </div>
 
             {expandedSector === sector.id && (
-              <div className="px-4 pb-4 pt-2 bg-gray-50 border-t">
+              <div className="px-4 pb-4 pt-2 bg-[var(--bg-card-2)] border-t">
                 <div className="ml-8 space-y-2">
                   {sector.subSectors.map((sub) => (
-                    <div key={sub.id} className="flex items-center justify-between py-2 px-3 bg-white rounded-lg">
+                    <div key={sub.id} className="flex items-center justify-between py-2 px-3 bg-[var(--bg-card)] rounded-lg">
                       <div className="flex items-center gap-2">
                         <Layers size={16} className="text-purple-500" />
                         {editingSubSector === sub.id ? (
@@ -298,18 +298,18 @@ export default function SectorsPage() {
                             <button onClick={() => handleUpdateSubSector(sub.id)} className="p-1 text-green-600 hover:bg-green-50 rounded">
                               <Save size={16} />
                             </button>
-                            <button onClick={() => setEditingSubSector(null)} className="p-1 text-gray-600 hover:bg-gray-100 rounded">
+                            <button onClick={() => setEditingSubSector(null)} className="p-1 text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] rounded">
                               <X size={16} />
                             </button>
                           </div>
                         ) : (
-                          <span className="text-gray-700">{sub.name}</span>
+                          <span className="text-[var(--text-muted)]">{sub.name}</span>
                         )}
                       </div>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => { setEditingSubSector(sub.id); setEditSubSectorName(sub.name); }}
-                          className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                          className="p-1 text-[var(--blue-main)] hover:bg-[var(--bg-card-2)] rounded"
                         >
                           <Edit2 size={16} />
                         </button>
@@ -324,7 +324,7 @@ export default function SectorsPage() {
                   ))}
 
                   {showNewSubSector === sector.id ? (
-                    <div className="flex items-center gap-2 py-2 px-3 bg-white rounded-lg">
+                    <div className="flex items-center gap-2 py-2 px-3 bg-[var(--bg-card)] rounded-lg">
                       <Layers size={16} className="text-purple-500" />
                       <input
                         type="text"
@@ -337,7 +337,7 @@ export default function SectorsPage() {
                       <button onClick={() => handleCreateSubSector(sector.id)} className="p-1 text-green-600 hover:bg-green-50 rounded">
                         <Save size={16} />
                       </button>
-                      <button onClick={() => { setShowNewSubSector(null); setNewSubSectorName(""); }} className="p-1 text-gray-600 hover:bg-gray-100 rounded">
+                      <button onClick={() => { setShowNewSubSector(null); setNewSubSectorName(""); }} className="p-1 text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] rounded">
                         <X size={16} />
                       </button>
                     </div>
@@ -357,10 +357,10 @@ export default function SectorsPage() {
         ))}
 
         {sectors.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-xl shadow-md">
+          <div className="text-center py-12 bg-[var(--bg-card)] rounded-xl shadow-md">
             <Factory size={48} className="mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500">Henüz sektör tanımlanmamış</p>
-            <p className="text-sm text-gray-400 mt-1">Yukarıdaki butonu kullanarak sektör ekleyin</p>
+            <p className="text-[var(--text-dim)]">Henüz sektör tanımlanmamış</p>
+            <p className="text-sm text-[var(--text-dim)] mt-1">Yukarıdaki butonu kullanarak sektör ekleyin</p>
           </div>
         )}
       </div>

@@ -150,18 +150,18 @@ export default function SectorWeightsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">Sektör Ağırlıklandırması</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Sektör Ağırlıklandırması</h1>
+        <p className="text-[var(--text-muted)] mt-1">
           Her sektör ve anket için kategori ağırlıklarını belirleyin. Genel puan bu ağırlıklara göre hesaplanır.
         </p>
       </div>
 
       {/* Selection Area */}
-      <div className="bg-white rounded-xl shadow-md p-6">
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Survey Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
               <FileText size={16} className="inline mr-2" />
               Anket Seçin
             </label>
@@ -172,7 +172,7 @@ export default function SectorWeightsPage() {
                 setWeights([]);
                 setMessage(null);
               }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+              className="w-full px-4 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
             >
               <option value="">-- Anket Seçin --</option>
               {surveys.map((survey) => (
@@ -185,14 +185,14 @@ export default function SectorWeightsPage() {
 
           {/* Sector Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Sektör Seçin</label>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">Sektör Seçin</label>
             <select
               value={selectedSector}
               onChange={(e) => {
                 setSelectedSector(e.target.value);
                 setMessage(null);
               }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+              className="w-full px-4 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
               disabled={!selectedSurvey}
             >
               <option value="">-- Sektör Seçin --</option>
@@ -212,17 +212,17 @@ export default function SectorWeightsPage() {
 
       {/* Weights Configuration */}
       {selectedSector && selectedSurvey && filteredCategories.length > 0 && (
-        <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">Kategori Ağırlıkları</h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <h2 className="text-lg font-semibold text-[var(--text-main)]">Kategori Ağırlıkları</h2>
+              <p className="text-sm text-[var(--text-dim)] mt-1">
                 {surveys.find(s => s.id === selectedSurvey)?.name} anketi için
               </p>
             </div>
             <button
               onClick={distributeEqually}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-[#1e3a8a] hover:bg-blue-50 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-sm text-[var(--accent)] hover:bg-[var(--bg-card-2)] rounded-lg transition-colors"
             >
               <RefreshCw size={16} />
               Eşit Dağıt
@@ -237,10 +237,10 @@ export default function SectorWeightsPage() {
               return (
                 <div
                   key={category.id}
-                  className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg"
+                  className="flex items-center gap-4 p-4 bg-[var(--bg-card-2)] rounded-lg"
                 >
                   <div className="flex-1">
-                    <span className="font-medium text-gray-800">{category.name}</span>
+                    <span className="font-medium text-[var(--text-main)]">{category.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <input
@@ -250,9 +250,9 @@ export default function SectorWeightsPage() {
                       step="1"
                       value={weightPercent.toFixed(0)}
                       onChange={(e) => handleWeightChange(category.id, e.target.value)}
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
+                      className="w-20 px-3 py-2 border border-[var(--border-soft)] rounded-lg text-center focus:ring-2 focus:ring-[#1e3a8a] focus:border-transparent"
                     />
-                    <span className="text-gray-500">%</span>
+                    <span className="text-[var(--text-dim)]">%</span>
                   </div>
                   <div className="w-32">
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -268,10 +268,10 @@ export default function SectorWeightsPage() {
           </div>
 
           {/* Total */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="mt-6 pt-6 border-t border-[var(--border-soft)]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-800">Toplam:</span>
+                <span className="font-semibold text-[var(--text-main)]">Toplam:</span>
                 <span
                   className={`text-lg font-bold ${
                     isValidTotal ? "text-green-600" : "text-red-600"
@@ -330,9 +330,9 @@ export default function SectorWeightsPage() {
       )}
 
       {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="font-semibold text-[#1e3a8a] mb-2">Nasıl Çalışır?</h3>
-        <ul className="text-sm text-gray-700 space-y-2">
+      <div className="bg-[var(--bg-card-2)] border border-blue-200 rounded-xl p-6">
+        <h3 className="font-semibold text-[var(--accent)] mb-2">Nasıl Çalışır?</h3>
+        <ul className="text-sm text-[var(--text-muted)] space-y-2">
           <li>• Önce anketi, sonra sektörü seçin.</li>
           <li>• Her sektör ve anket kombinasyonu için farklı kategori ağırlıkları tanımlayabilirsiniz.</li>
           <li>• Ağırlıkların toplamı 100% olmalıdır.</li>

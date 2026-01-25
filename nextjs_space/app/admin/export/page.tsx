@@ -32,7 +32,7 @@ const exportOptions: { type: ExportType; label: string; description: string; ico
     label: 'Anket Cevapları', 
     description: 'Tüm kullanıcı cevaplarını detaylı olarak dışa aktar',
     icon: FileSpreadsheet,
-    color: 'bg-blue-500'
+    color: 'bg-[var(--bg-card-2)]0'
   },
   { 
     type: 'user-scores', 
@@ -150,51 +150,51 @@ export default function ExportPage() {
           <Download className="text-white" size={24} />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Veri Dışa Aktarma</h1>
-          <p className="text-gray-500">Platform verilerini CSV formatında dışa aktarın</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Veri Dışa Aktarma</h1>
+          <p className="text-[var(--text-dim)]">Platform verilerini CSV formatında dışa aktarın</p>
         </div>
       </div>
 
       {/* Filtreler */}
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-6">
+        <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
           <FileText size={20} className="text-[#1e3a8a]" />
           Filtreler (Opsiyonel)
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
               Anket Seçin
             </label>
             <select
               value={selectedSurvey}
               onChange={(e) => setSelectedSurvey(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] outline-none bg-white"
+              className="w-full px-4 py-2.5 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[#1e3a8a] outline-none bg-[var(--bg-card)]"
             >
               <option value="">Tüm Anketler</option>
               {surveys.map(survey => (
                 <option key={survey.id} value={survey.id}>{survey.name}</option>
               ))}
             </select>
-            <p className="text-xs text-gray-500 mt-1">Anket cevapları, öneriler ve kategoriler için geçerli</p>
+            <p className="text-xs text-[var(--text-dim)] mt-1">Anket cevapları, öneriler ve kategoriler için geçerli</p>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
               Sektör Seçin
             </label>
             <select
               value={selectedSector}
               onChange={(e) => setSelectedSector(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#1e3a8a] outline-none bg-white"
+              className="w-full px-4 py-2.5 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[#1e3a8a] outline-none bg-[var(--bg-card)]"
             >
               <option value="">Tüm Sektörler</option>
               {sectors.map(sector => (
                 <option key={sector.id} value={sector.id}>{sector.name}</option>
               ))}
             </select>
-            <p className="text-xs text-gray-500 mt-1">Kullanıcı puanları için geçerli</p>
+            <p className="text-xs text-[var(--text-dim)] mt-1">Kullanıcı puanları için geçerli</p>
           </div>
         </div>
       </div>
@@ -208,14 +208,14 @@ export default function ExportPage() {
           return (
             <div
               key={option.type}
-              className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+              className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
             >
               <div className={`${option.color} px-6 py-4`}>
                 <Icon className="text-white" size={32} />
               </div>
               <div className="p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">{option.label}</h3>
-                <p className="text-gray-500 text-sm mb-4">{option.description}</p>
+                <h3 className="text-lg font-semibold text-[var(--text-main)] mb-2">{option.label}</h3>
+                <p className="text-[var(--text-dim)] text-sm mb-4">{option.description}</p>
                 
                 <button
                   onClick={() => handleExport(option.type)}
@@ -241,12 +241,12 @@ export default function ExportPage() {
       </div>
 
       {/* Bilgi Kutusu */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+      <div className="bg-[var(--bg-card-2)] border border-blue-200 rounded-xl p-6">
         <div className="flex items-start gap-3">
-          <CheckCircle className="text-blue-600 mt-0.5" size={20} />
+          <CheckCircle className="text-[var(--blue-main)] mt-0.5" size={20} />
           <div>
-            <h3 className="font-semibold text-blue-800 mb-1">CSV Formatı Hakkında</h3>
-            <ul className="text-sm text-blue-700 space-y-1">
+            <h3 className="font-semibold text-[var(--accent)] mb-1">CSV Formatı Hakkında</h3>
+            <ul className="text-sm text-[var(--accent)] space-y-1">
               <li>• Dosyalar UTF-8 BOM ile kodlanır, Excel&apos;de Türkçe karakterler doğru görünür</li>
               <li>• CSV dosyaları Microsoft Excel, Google Sheets ve diğer tablo programlarında açılabilir</li>
               <li>• Filtreleri kullanarak belirli anket veya sektöre ait verileri dışa aktarabilirsiniz</li>

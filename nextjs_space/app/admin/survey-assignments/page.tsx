@@ -155,11 +155,11 @@ export default function SurveyAssignmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-[var(--text-main)] flex items-center gap-2">
             <UserCheck className="w-7 h-7 text-primary-600" />
             Anket Atamaları
           </h1>
-          <p className="text-gray-600 mt-1">Kullanıcılara anket atayın ve yönetin</p>
+          <p className="text-[var(--text-muted)] mt-1">Kullanıcılara anket atayın ve yönetin</p>
         </div>
       </div>
 
@@ -173,22 +173,22 @@ export default function SurveyAssignmentsPage() {
       )}
 
       {/* Yeni Atama Formu */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-sm border border-[var(--border-soft)] p-6">
+        <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
           <Plus className="w-5 h-5 text-primary-600" />
           Yeni Anket Ata
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Kullanıcı</label>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">Kullanıcı</label>
             <select
               value={selectedUserId}
               onChange={(e) => {
                 setSelectedUserId(e.target.value);
                 setSelectedSurveyId("");
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="">Kullanıcı seçin...</option>
               {users.map(user => (
@@ -200,12 +200,12 @@ export default function SurveyAssignmentsPage() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Anket</label>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">Anket</label>
             <select
               value={selectedSurveyId}
               onChange={(e) => setSelectedSurveyId(e.target.value)}
               disabled={!selectedUserId}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-[var(--bg-card-2)] disabled:cursor-not-allowed"
             >
               <option value="">{selectedUserId ? "Anket seçin..." : "Önce kullanıcı seçin"}</option>
               {availableSurveysForUser.map(survey => (
@@ -237,59 +237,59 @@ export default function SurveyAssignmentsPage() {
       </div>
 
       {/* Atamalar Listesi */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-200">
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-sm border border-[var(--border-soft)] overflow-hidden">
+        <div className="p-4 border-b border-[var(--border-soft)]">
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-dim)]" />
               <input
                 type="text"
                 placeholder="Kullanıcı veya anket ara..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full pl-10 pr-4 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
-            <div className="text-sm text-gray-500">
-              Toplam: <span className="font-semibold text-gray-900">{filteredAssignments.length}</span> atama
+            <div className="text-sm text-[var(--text-dim)]">
+              Toplam: <span className="font-semibold text-[var(--text-main)]">{filteredAssignments.length}</span> atama
             </div>
           </div>
         </div>
 
         {filteredAssignments.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">
+          <div className="p-12 text-center text-[var(--text-dim)]">
             <UserCheck className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <p>Henüz anket ataması yapılmamış</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-[var(--bg-card-2)]">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kullanıcı</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Organizasyon</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Anket</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Atama Tarihi</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durum</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">İşlemler</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Kullanıcı</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Organizasyon</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Anket</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Atama Tarihi</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Durum</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-[var(--text-dim)] uppercase">İşlemler</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredAssignments.map((assignment) => (
-                  <tr key={assignment.id} className="hover:bg-gray-50">
+                  <tr key={assignment.id} className="hover:bg-[var(--bg-card-2)]">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
                           <Users className="w-4 h-4 text-primary-600" />
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{getUserName(assignment.user)}</p>
-                          <p className="text-sm text-gray-500">{assignment.user.email}</p>
+                          <p className="font-medium text-[var(--text-main)]">{getUserName(assignment.user)}</p>
+                          <p className="text-sm text-[var(--text-dim)]">{assignment.user.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 text-gray-600">
+                      <div className="flex items-center gap-2 text-[var(--text-muted)]">
                         <Building2 className="w-4 h-4" />
                         {assignment.user.organization || "-"}
                       </div>
@@ -297,11 +297,11 @@ export default function SurveyAssignmentsPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-primary-600" />
-                        <span className="font-medium text-gray-900">{assignment.survey.name}</span>
+                        <span className="font-medium text-[var(--text-main)]">{assignment.survey.name}</span>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 text-gray-600">
+                      <div className="flex items-center gap-2 text-[var(--text-muted)]">
                         <Calendar className="w-4 h-4" />
                         {new Date(assignment.assignedAt).toLocaleDateString("tr-TR")}
                       </div>
@@ -310,7 +310,7 @@ export default function SurveyAssignmentsPage() {
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         assignment.isActive
                           ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
+                          : "bg-[var(--bg-card-2)] text-[var(--text-main)]"
                       }`}>
                         {assignment.isActive ? "Aktif" : "Pasif"}
                       </span>
@@ -333,25 +333,25 @@ export default function SurveyAssignmentsPage() {
       </div>
 
       {/* Kullanıcı Bazlı Özet */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Kullanıcı Bazlı Özet</h2>
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-sm border border-[var(--border-soft)] p-6">
+        <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4">Kullanıcı Bazlı Özet</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {users.slice(0, 9).map(user => {
             const userAssignments = assignments.filter(a => a.userId === user.id && a.isActive);
             return (
-              <div key={user.id} className="p-4 border border-gray-200 rounded-lg">
+              <div key={user.id} className="p-4 border border-[var(--border-soft)] rounded-lg">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center">
                     <Users className="w-5 h-5 text-primary-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{getUserName(user)}</p>
-                    <p className="text-xs text-gray-500">{user.email}</p>
+                    <p className="font-medium text-[var(--text-main)]">{getUserName(user)}</p>
+                    <p className="text-xs text-[var(--text-dim)]">{user.email}</p>
                   </div>
                 </div>
                 <div className="mt-3">
                   {userAssignments.length === 0 ? (
-                    <p className="text-sm text-gray-400">Atanmış anket yok</p>
+                    <p className="text-sm text-[var(--text-dim)]">Atanmış anket yok</p>
                   ) : (
                     <div className="flex flex-wrap gap-1">
                       {userAssignments.map(a => (
@@ -367,7 +367,7 @@ export default function SurveyAssignmentsPage() {
           })}
         </div>
         {users.length > 9 && (
-          <p className="text-sm text-gray-500 mt-4 text-center">ve {users.length - 9} kullanıcı daha...</p>
+          <p className="text-sm text-[var(--text-dim)] mt-4 text-center">ve {users.length - 9} kullanıcı daha...</p>
         )}
       </div>
     </div>

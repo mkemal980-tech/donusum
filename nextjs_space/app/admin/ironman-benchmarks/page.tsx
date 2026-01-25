@@ -160,11 +160,11 @@ export default function IronmanBenchmarksPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-3">
+          <h1 className="text-2xl font-bold flex items-center gap-3" style={{ color: 'var(--text-main)' }}>
             <Activity className="text-[#1e3a8a]" />
             Ironman Benchmark Verileri
           </h1>
-          <p className="text-gray-500 mt-1">Sektör bazlı Velocity (Hız) ve Endurance (Olgunluk) değerlerini yönetin</p>
+          <p className="text-[var(--text-dim)] mt-1">Sektör bazlı Velocity (Hız) ve Endurance (Olgunluk) değerlerini yönetin</p>
         </div>
         <button
           onClick={() => openModal()}
@@ -175,9 +175,9 @@ export default function IronmanBenchmarksPage() {
       </div>
 
       {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-        <h3 className="font-semibold text-blue-800 mb-2">Ironman Analizi Nedir?</h3>
-        <div className="grid md:grid-cols-2 gap-4 text-sm text-blue-700">
+      <div className="bg-[var(--bg-card-2)] border border-blue-200 rounded-xl p-4 mb-6">
+        <h3 className="font-semibold text-[var(--accent)] mb-2">Ironman Analizi Nedir?</h3>
+        <div className="grid md:grid-cols-2 gap-4 text-sm text-[var(--accent)]">
           <div>
             <strong>Velocity (X Ekseni):</strong> Şirketin hızını ve aksiyon alma kapasitesini ölçer.
             <br /><span className="text-xs">(İnisiyatifler, projeler, hedefler)</span>
@@ -204,45 +204,45 @@ export default function IronmanBenchmarksPage() {
       </div>
 
       {/* Benchmark Table */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+      <div className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-[var(--bg-card-2)]">
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Sektör</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Alt Sektör</th>
-              <th className="px-6 py-4 text-center text-sm font-semibold text-blue-700">Velocity Ort.</th>
-              <th className="px-6 py-4 text-center text-sm font-semibold text-blue-700">Velocity En İyi</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-[var(--text-muted)]">Sektör</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-[var(--text-muted)]">Alt Sektör</th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-[var(--accent)]">Velocity Ort.</th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-[var(--accent)]">Velocity En İyi</th>
               <th className="px-6 py-4 text-center text-sm font-semibold text-green-700">Endurance Ort.</th>
               <th className="px-6 py-4 text-center text-sm font-semibold text-green-700">Endurance En İyi</th>
-              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">İşlemler</th>
+              <th className="px-6 py-4 text-center text-sm font-semibold text-[var(--text-muted)]">İşlemler</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {benchmarks.map((benchmark) => (
-              <tr key={benchmark.id} className="hover:bg-gray-50">
+              <tr key={benchmark.id} className="hover:bg-[var(--bg-card-2)]">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
-                    <Factory size={16} className="text-gray-400" />
-                    <span className="font-medium text-gray-800">{benchmark.sector.name}</span>
+                    <Factory size={16} className="text-[var(--text-dim)]" />
+                    <span className="font-medium text-[var(--text-main)]">{benchmark.sector.name}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
                   {benchmark.subSector ? (
                     <div className="flex items-center gap-2">
-                      <Layers size={14} className="text-gray-400" />
-                      <span className="text-gray-600">{benchmark.subSector.name}</span>
+                      <Layers size={14} className="text-[var(--text-dim)]" />
+                      <span className="text-[var(--text-muted)]">{benchmark.subSector.name}</span>
                     </div>
                   ) : (
-                    <span className="text-gray-400 text-sm">Tüm alt sektörler</span>
+                    <span className="text-[var(--text-dim)] text-sm">Tüm alt sektörler</span>
                   )}
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-semibold">
+                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[var(--bg-card-2)] text-[var(--accent)] font-semibold">
                     {benchmark.velocityAverage.toFixed(1)}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-200 text-blue-800 font-semibold">
+                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-200 text-[var(--accent)] font-semibold">
                     {benchmark.velocityBest.toFixed(1)}
                   </span>
                 </td>
@@ -260,7 +260,7 @@ export default function IronmanBenchmarksPage() {
                   <div className="flex items-center justify-center gap-2">
                     <button
                       onClick={() => openModal(benchmark)}
-                      className="p-2 hover:bg-blue-100 rounded text-blue-600"
+                      className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]"
                       title="Düzenle"
                     >
                       <Edit size={18} />
@@ -278,7 +278,7 @@ export default function IronmanBenchmarksPage() {
             ))}
             {benchmarks.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                <td colSpan={7} className="px-6 py-12 text-center text-[var(--text-dim)]">
                   Henüz benchmark verisi eklenmemiş. "Yeni Benchmark" butonunu kullanarak ekleyin.
                 </td>
               </tr>
@@ -290,12 +290,12 @@ export default function IronmanBenchmarksPage() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+          <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-lg">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">
+              <h2 className="text-xl font-bold text-[var(--text-main)]">
                 {editItem ? 'Benchmark Düzenle' : 'Yeni Ironman Benchmark'}
               </h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">
+              <button onClick={() => setShowModal(false)} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
                 <X size={24} />
               </button>
             </div>
@@ -303,7 +303,7 @@ export default function IronmanBenchmarksPage() {
             <div className="space-y-4">
               {/* Sektör Seçimi */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sektör *</label>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Sektör *</label>
                 <select
                   value={formData.sectorId}
                   onChange={(e) => setFormData({ ...formData, sectorId: e.target.value, subSectorId: '' })}
@@ -345,7 +345,7 @@ export default function IronmanBenchmarksPage() {
               {/* Alt Sektör Seçimi */}
               {!formData.applyToAllSubSectors && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Alt Sektör (Opsiyonel)</label>
+                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Alt Sektör (Opsiyonel)</label>
                   <select
                     value={formData.subSectorId}
                     onChange={(e) => setFormData({ ...formData, subSectorId: e.target.value })}
@@ -357,16 +357,16 @@ export default function IronmanBenchmarksPage() {
                       <option key={sub.id} value={sub.id}>{sub.name}</option>
                     ))}
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">Boş bırakırsanız sektör geneli için tek kayıt oluşturulur</p>
+                  <p className="text-xs text-[var(--text-dim)] mt-1">Boş bırakırsanız sektör geneli için tek kayıt oluşturulur</p>
                 </div>
               )}
 
               {/* Velocity Değerleri */}
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-semibold text-blue-800 mb-3">Velocity (Hız) Değerleri</h3>
+              <div className="p-4 bg-[var(--bg-card-2)] rounded-lg">
+                <h3 className="font-semibold text-[var(--accent)] mb-3">Velocity (Hız) Değerleri</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-blue-700 mb-1">Sektör Ortalaması</label>
+                    <label className="block text-sm font-medium text-[var(--accent)] mb-1">Sektör Ortalaması</label>
                     <input
                       type="number"
                       step="0.1"
@@ -378,7 +378,7 @@ export default function IronmanBenchmarksPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-blue-700 mb-1">Sektör En İyisi</label>
+                    <label className="block text-sm font-medium text-[var(--accent)] mb-1">Sektör En İyisi</label>
                     <input
                       type="number"
                       step="0.1"
@@ -427,7 +427,7 @@ export default function IronmanBenchmarksPage() {
             <div className="flex justify-end gap-3 mt-6">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                className="px-4 py-2 text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] rounded-lg"
               >
                 İptal
               </button>

@@ -259,48 +259,48 @@ export default function UnitsPage() {
     const parentAdmins = getParentAdmins(unit);
 
     return (
-      <div key={unit.id} className={`${level > 0 ? 'ml-8 border-l-2 border-gray-200 pl-4' : ''}`}>
-        <div className="bg-white rounded-xl shadow-sm p-5 mb-4 hover:shadow-md transition-shadow">
+      <div key={unit.id} className={`${level > 0 ? 'ml-8 border-l-2 border-[var(--border-soft)] pl-4' : ''}`}>
+        <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-5 mb-4 hover:shadow-md transition-shadow">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
               {hasSubUnits && (
                 <button
                   onClick={() => toggleExpand(unit.id)}
-                  className="mt-1 p-1 hover:bg-gray-100 rounded"
+                  className="mt-1 p-1 hover:bg-[var(--bg-card-2)] rounded"
                 >
                   {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                 </button>
               )}
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold text-gray-900">{unit.name}</h3>
+                  <h3 className="text-lg font-semibold text-[var(--text-main)]">{unit.name}</h3>
                   {level > 0 && (
-                    <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">Alt Birim</span>
+                    <span className="text-xs px-2 py-0.5 bg-[var(--bg-card-2)] text-[var(--accent)] rounded-full">Alt Birim</span>
                   )}
                 </div>
                 {unit.description && (
-                  <p className="text-sm text-gray-500 mt-1">{unit.description}</p>
+                  <p className="text-sm text-[var(--text-dim)] mt-1">{unit.description}</p>
                 )}
               </div>
             </div>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => openCreateModal(unit.id)}
-                className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                className="p-2 text-[var(--text-dim)] hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                 title="Alt Birim Ekle"
               >
                 <Plus size={16} />
               </button>
               <button
                 onClick={() => openEditModal(unit)}
-                className="p-2 text-gray-400 hover:text-[#1e3a8a] hover:bg-blue-50 rounded-lg transition-colors"
+                className="p-2 text-[var(--text-dim)] hover:text-[#1e3a8a] hover:bg-[var(--bg-card-2)] rounded-lg transition-colors"
                 title="Düzenle"
               >
                 <Edit size={16} />
               </button>
               <button
                 onClick={() => handleDelete(unit.id)}
-                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                className="p-2 text-[var(--text-dim)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                 title="Sil"
               >
                 <Trash2 size={16} />
@@ -322,10 +322,10 @@ export default function UnitsPage() {
                 </span>
               ))}
               {parentAdmins.length > 0 && parentAdmins.map(admin => (
-                <span key={`inherited-${admin.id}`} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-200 text-gray-600 text-xs rounded-full" title="Üst birimden miras">
+                <span key={`inherited-${admin.id}`} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-200 text-[var(--text-muted)] text-xs rounded-full" title="Üst birimden miras">
                   <Shield size={12} />
                   {admin.user.firstName} {admin.user.lastName}
-                  <span className="text-gray-400">(miras)</span>
+                  <span className="text-[var(--text-dim)]">(miras)</span>
                 </span>
               ))}
               {unit.admins.length === 0 && parentAdmins.length === 0 && (
@@ -336,7 +336,7 @@ export default function UnitsPage() {
 
           {/* Stats */}
           <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center gap-4 text-sm text-gray-600">
+            <div className="flex items-center gap-4 text-sm text-[var(--text-muted)]">
               <div className="flex items-center gap-1">
                 <Users size={16} />
                 <span>{unit._count.users} Kullanıcı</span>
@@ -380,7 +380,7 @@ export default function UnitsPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Building2 className="text-[#1e3a8a]" size={28} />
-          <h1 className="text-2xl font-bold text-gray-900">Birim Yönetimi</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-main)]">Birim Yönetimi</h1>
         </div>
         <button
           onClick={() => openCreateModal()}
@@ -392,9 +392,9 @@ export default function UnitsPage() {
       </div>
 
       {/* Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-        <h4 className="font-semibold text-blue-800 mb-2">Birim ve Alt Birim Yönetimi</h4>
-        <ul className="text-sm text-blue-700 space-y-1">
+      <div className="bg-[var(--bg-card-2)] border border-blue-200 rounded-xl p-4 mb-6">
+        <h4 className="font-semibold text-[var(--accent)] mb-2">Birim ve Alt Birim Yönetimi</h4>
+        <ul className="text-sm text-[var(--accent)] space-y-1">
           <li>• <strong>Birim</strong> oluşturup içine <strong>Alt Birimler</strong> ekleyebilirsiniz.</li>
           <li>• Her birime <strong>birden fazla Admin</strong> atayabilirsiniz.</li>
           <li>• <strong>Üst birim adminleri</strong>, otomatik olarak tüm alt birimlerin de admini olur (miras).</li>
@@ -408,7 +408,7 @@ export default function UnitsPage() {
       </div>
 
       {units.length === 0 && (
-        <div className="text-center py-12 text-gray-500 bg-white rounded-xl">
+        <div className="text-center py-12 text-[var(--text-dim)] bg-[var(--bg-card)] rounded-xl">
           Henüz birim oluşturulmamış
         </div>
       )}
@@ -416,21 +416,21 @@ export default function UnitsPage() {
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white">
-              <h2 className="text-lg font-semibold text-gray-900">
+          <div className="bg-[var(--bg-card)] rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-[var(--bg-card)]">
+              <h2 className="text-lg font-semibold text-[var(--text-main)]">
                 {editingUnit ? "Birim Düzenle" : formData.parentId ? "Alt Birim Ekle" : "Yeni Birim"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-2 hover:bg-[var(--bg-card-2)] rounded-lg"
               >
                 <X size={20} />
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Birim Adı *</label>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Birim Adı *</label>
                 <input
                   type="text"
                   value={formData.name}
@@ -442,7 +442,7 @@ export default function UnitsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama</label>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Açıklama</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -453,7 +453,7 @@ export default function UnitsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Organizasyon</label>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Organizasyon</label>
                 <input
                   type="text"
                   value={formData.organization}
@@ -464,7 +464,7 @@ export default function UnitsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Üst Birim (Opsiyonel)</label>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Üst Birim (Opsiyonel)</label>
                 <select
                   value={formData.parentId}
                   onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
@@ -477,13 +477,13 @@ export default function UnitsPage() {
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-[var(--text-dim)] mt-1">
                   Seçilirse bu birim, üst birimin alt birimi olur.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
                   <div className="flex items-center gap-2">
                     <Shield size={16} className="text-purple-600" />
                     Birim Adminleri (Birden fazla seçebilirsiniz)
@@ -495,7 +495,7 @@ export default function UnitsPage() {
                     .map((user) => (
                       <label
                         key={user.id}
-                        className={`flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 ${
+                        className={`flex items-center gap-3 p-3 hover:bg-[var(--bg-card-2)] cursor-pointer border-b last:border-b-0 ${
                           formData.adminIds.includes(user.id) ? 'bg-purple-50' : ''
                         }`}
                       >
@@ -503,18 +503,18 @@ export default function UnitsPage() {
                           type="checkbox"
                           checked={formData.adminIds.includes(user.id)}
                           onChange={() => toggleAdmin(user.id)}
-                          className="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                          className="w-4 h-4 text-purple-600 rounded border-[var(--border-soft)] focus:ring-purple-500"
                         />
                         <div>
-                          <p className="font-medium text-gray-900 text-sm">
+                          <p className="font-medium text-[var(--text-main)] text-sm">
                             {user.firstName} {user.lastName}
                           </p>
-                          <p className="text-xs text-gray-500">{user.email}</p>
+                          <p className="text-xs text-[var(--text-dim)]">{user.email}</p>
                         </div>
                       </label>
                     ))}
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
+                <p className="text-xs text-[var(--text-dim)] mt-2">
                   Seçilen kullanıcıların rolü otomatik olarak "Birim Yöneticisi" olarak güncellenecektir.
                   Adminler, bu birimin ve tüm alt birimlerinin yöneticisi olacaktır.
                 </p>
@@ -548,7 +548,7 @@ export default function UnitsPage() {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border rounded-lg hover:bg-[var(--bg-card-2)] transition-colors"
                 >
                   İptal
                 </button>
@@ -568,14 +568,14 @@ export default function UnitsPage() {
       {/* Users Modal */}
       {showUsersModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="bg-[var(--bg-card)] rounded-xl shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-semibold text-gray-900">
+              <h2 className="text-lg font-semibold text-[var(--text-main)]">
                 {showUsersModal.name} - Kullanıcılar
               </h2>
               <button
                 onClick={() => setShowUsersModal(null)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-2 hover:bg-[var(--bg-card-2)] rounded-lg"
               >
                 <X size={20} />
               </button>
@@ -583,19 +583,19 @@ export default function UnitsPage() {
             <div className="p-4 flex-1 overflow-y-auto">
               {/* Current Users */}
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Birimdeki Kullanıcılar</h3>
+                <h3 className="text-sm font-medium text-[var(--text-muted)] mb-2">Birimdeki Kullanıcılar</h3>
                 {showUsersModal.users.length > 0 ? (
                   <div className="space-y-2">
                     {showUsersModal.users.map((user) => (
                       <div
                         key={user.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-[var(--bg-card-2)] rounded-lg"
                       >
                         <div>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-[var(--text-main)]">
                             {user.firstName} {user.lastName}
                           </p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
+                          <p className="text-sm text-[var(--text-dim)]">{user.email}</p>
                         </div>
                         <button
                           onClick={() => handleRemoveUserFromUnit(user.id)}
@@ -607,25 +607,25 @@ export default function UnitsPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">Bu birimde henüz kullanıcı yok</p>
+                  <p className="text-sm text-[var(--text-dim)]">Bu birimde henüz kullanıcı yok</p>
                 )}
               </div>
 
               {/* Add User */}
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Kullanıcı Ekle</h3>
+                <h3 className="text-sm font-medium text-[var(--text-muted)] mb-2">Kullanıcı Ekle</h3>
                 {unassignedUsers.length > 0 ? (
                   <div className="space-y-2">
                     {unassignedUsers.map((user) => (
                       <div
                         key={user.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                        className="flex items-center justify-between p-3 bg-[var(--bg-card-2)] rounded-lg"
                       >
                         <div>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-[var(--text-main)]">
                             {user.firstName} {user.lastName}
                           </p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
+                          <p className="text-sm text-[var(--text-dim)]">{user.email}</p>
                         </div>
                         <button
                           onClick={() => handleAssignUser(user.id, showUsersModal.id)}
@@ -637,7 +637,7 @@ export default function UnitsPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">Atanmamış kullanıcı yok</p>
+                  <p className="text-sm text-[var(--text-dim)]">Atanmamış kullanıcı yok</p>
                 )}
               </div>
             </div>
