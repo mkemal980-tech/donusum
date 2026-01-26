@@ -84,11 +84,15 @@ export default function RecommendationsClient() {
     try {
       const res = await fetch("/api/recommendations/completion");
       if (res.ok) {
-        const data: CompletionRecord[] = await res.json();
+        const data = await res.json();
+        // API artık { completions, scores } formatında döndürüyor
+        const completionList = data.completions || data || [];
         const completionMap: Record<string, CompletionStatus> = {};
-        data.forEach(c => {
-          completionMap[c.recommendationId] = c.status;
-        });
+        if (Array.isArray(completionList)) {
+          completionList.forEach((c: CompletionRecord) => {
+            completionMap[c.recommendationId] = c.status;
+          });
+        }
         setCompletions(completionMap);
       }
     } catch (error) {
@@ -139,6 +143,8 @@ export default function RecommendationsClient() {
       });
 
       if (res.ok) {
+        const data = await res.json();
+        
         setCompletions(prev => ({
           ...prev,
           [recommendationId]: status
@@ -150,7 +156,17 @@ export default function RecommendationsClient() {
           COMPLETED: "Tamamlandı"
         };
         
-        toast.success(`Durum güncellendi: ${statusLabels[status]}`);
+        // Tamamlandıysa kazanılan puanı göster
+        if (status === 'COMPLETED' && data.pointsEarned > 0) {
+          toast.success(`🎉 Öneri tamamlandı! +${data.pointsEarned} puan kazandınız`, {
+            description: data.updatedScores 
+              ? `Yeni skor: ${data.updatedScores.overallScore}/5 (${data.updatedScores.overallPercentage}%)`
+              : undefined,
+            duration: 5000,
+          });
+        } else {
+          toast.success(`Durum güncellendi: ${statusLabels[status]}`);
+        }
       }
     } catch (error) {
       console.error("Error updating status:", error);

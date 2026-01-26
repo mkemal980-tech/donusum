@@ -342,6 +342,32 @@ model UserRecommendationCompletion {
   @@unique([userId, recommendationId])
 }
 
+// Skor Geçmişi - Zaman içindeki gelişimi takip etmek için
+model ScoreHistory {
+  id                  String    @id @default(cuid())
+  userId              String
+  surveyId            String?
+  // Genel Skorlar
+  overallScore        Float     // 1-5 ölçeğinde genel puan
+  overallPercentage   Float     // %0-100 yüzdelik değer
+  // Ironman Skorları
+  velocityScore       Float?
+  enduranceScore      Float?
+  quadrant            String?   // WALKER, SPRINTER, MARATHON_RUNNER, IRONMAN
+  // Meta Veriler
+  completedQuestions  Int       @default(0)
+  totalQuestions      Int       @default(0)
+  completedRecommendations Int  @default(0)
+  // Tetikleyen Olay
+  triggerType         String    // SURVEY_RESPONSE, RECOMMENDATION_COMPLETED, MANUAL_SNAPSHOT
+  triggerEntityId     String?   // İlgili entity ID (öneri veya soru)
+  // Zaman Damgası
+  recordedAt          DateTime  @default(now())
+
+  @@index([userId, recordedAt])
+  @@index([userId, surveyId, recordedAt])
+}
+
 model RoadmapItem {
   id               String         @id @default(cuid())
   userId           String

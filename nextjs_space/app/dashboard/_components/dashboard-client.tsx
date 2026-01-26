@@ -12,6 +12,7 @@ import { ProgressSection } from "./progress-section";
 import { CategoryDashboard } from "./category-dashboard";
 import { IronmanChart } from "@/components/ui/ironman-chart";
 import { KPIDashboard } from "./kpi-dashboard";
+import { ScoreTrendChart } from "./score-trend-chart";
 import { 
   ClipboardList, 
   TrendingUp, 
@@ -1167,6 +1168,9 @@ export default function DashboardClient() {
 
         {/* KPI Dashboard */}
         <KPIDashboard surveyId={selectedSurveyId} />
+
+        {/* Gelişim Trend Grafiği */}
+        <ScoreTrendChart surveyId={selectedSurveyId} />
 
         {/* Overview Cards (Legacy) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
