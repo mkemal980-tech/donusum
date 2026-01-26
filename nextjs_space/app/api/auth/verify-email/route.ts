@@ -1,56 +1,113 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import bcrypt from "bcryptjs";
-import crypto from "crypto";
 
+export const dynamic = "force-dynamic";
+
+// Email doğrulama
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, firstName, lastName, organization, sectorId, subSectorId } = await request.json();
+    const { token } = await request.json();
 
-    if (!email || !password) {
+    if (!token) {
       return NextResponse.json(
-        { error: "E-posta ve şifre gerekli" },
+        { error: "Doğrulama tokeni gerekli" },
         { status: 400 }
       );
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
+    // Token'ı kontrol et
+    const user = await prisma.user.findFirst({
+      where: {
+        emailVerificationToken: token,
+        emailVerificationExpires: {
+          gt: new Date(),
+        },
+      },
     });
 
-    if (existingUser) {
+    if (!user) {
       return NextResponse.json(
-        { error: "Bu e-posta adresi zaten kayıtlı" },
+        { error: "Geçersiz veya süresi dolmuş doğrulama linki" },
         { status: 400 }
       );
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Zaten doğrulanmış mı?
+    if (user.emailVerified) {
+      return NextResponse.json({
+        success: true,
+        message: "Email adresiniz zaten doğrulanmış.",
+      });
+    }
 
-    // Email doğrulama tokeni oluştur
+    // Email'i doğrula
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Email adresiniz başarıyla doğrulandı! Şimdi giriş yapabilirsiniz.",
+    });
+  } catch (error) {
+    console.error("Email doğrulama hatası:", error);
+    return NextResponse.json(
+      { error: "Bir hata oluştu" },
+      { status: 500 }
+    );
+  }
+}
+
+// Yeni doğrulama emaili gönder
+export async function PUT(request: NextRequest) {
+  try {
+    const { email } = await request.json();
+
+    if (!email) {
+      return NextResponse.json(
+        { error: "Email adresi gerekli" },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (!user) {
+      // Güvenlik için kullanıcı bulunamasa bile başarılı mesajı dön
+      return NextResponse.json({
+        success: true,
+        message: "Eğer bu email adresi kayıtlıysa, doğrulama linki gönderildi.",
+      });
+    }
+
+    if (user.emailVerified) {
+      return NextResponse.json({
+        success: true,
+        message: "Email adresiniz zaten doğrulanmış.",
+      });
+    }
+
+    // Yeni token oluştur
+    const crypto = await import("crypto");
     const emailVerificationToken = crypto.randomBytes(32).toString("hex");
     const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 saat
 
-    // Create user
-    const user = await prisma.user.create({
+    await prisma.user.update({
+      where: { id: user.id },
       data: {
-        email: email.toLowerCase(),
-        password: hashedPassword,
-        firstName: firstName || null,
-        lastName: lastName || null,
-        organization: organization || null,
-        sectorId: sectorId || null,
-        subSectorId: subSectorId || null,
-        emailVerified: false,
         emailVerificationToken,
         emailVerificationExpires,
-        isActive: true
-      }
+      },
     });
 
-    // Hoşgeldin ve Email Doğrulama maili gönder
+    // Email gönder
     const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
     const verifyUrl = `${appUrl}/verify-email?token=${emailVerificationToken}`;
     const appName = "Dönüşüm Platformu";
@@ -58,15 +115,15 @@ export async function POST(request: NextRequest) {
     const htmlBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0d1117; padding: 30px; border-radius: 12px;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #0cc1c3; margin: 0;">🎉 Hoş Geldiniz!</h1>
+          <h1 style="color: #0cc1c3; margin: 0;">✉️ Email Doğrulama</h1>
         </div>
         
         <div style="background: #161b22; padding: 25px; border-radius: 8px; border: 1px solid #30363d;">
           <p style="color: #e6edf3; font-size: 16px; margin: 0 0 15px 0;">
-            Merhaba <strong>${firstName || "Değerli Kullanıcı"}</strong>,
+            Merhaba <strong>${user.firstName || "Değerli Kullanıcı"}</strong>,
           </p>
           <p style="color: #8b949e; margin: 0 0 20px 0;">
-            <strong>${appName}</strong>'na kayıt olduğunuz için teşekkür ederiz! Hesabınızı aktifleştirmek için lütfen email adresinizi doğrulayın.
+            Email adresinizi doğrulamak için aşağıdaki butona tıklayın.
           </p>
           
           <div style="text-align: center; margin: 30px 0;">
@@ -82,19 +139,9 @@ export async function POST(request: NextRequest) {
           </div>
         </div>
         
-        <div style="margin-top: 25px; padding: 20px; background: #161b22; border-radius: 8px; border: 1px solid #30363d;">
-          <h3 style="color: #0cc1c3; margin: 0 0 15px 0;">🚀 Platformda Neler Yapabilirsiniz?</h3>
-          <ul style="color: #8b949e; margin: 0; padding-left: 20px;">
-            <li style="margin-bottom: 8px;">Sürdürülebilirlik ve dijital olgunluk anketlerini tamamlayın</li>
-            <li style="margin-bottom: 8px;">Sektörel kıyaslamalarla kendinizi değerlendirin</li>
-            <li style="margin-bottom: 8px;">Kişiselleştirilmiş stratejik öneriler alın</li>
-            <li style="margin-bottom: 8px;">Yol haritanızı oluşturun ve takip edin</li>
-          </ul>
-        </div>
-        
         <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #30363d;">
           <p style="color: #484f58; font-size: 12px; margin: 0;">
-            Bu email otomatik olarak gönderilmiştir. Eğer bu hesabı siz oluşturmadıysanız, bu emaili görmezden gelebilirsiniz.
+            Bu email otomatik olarak gönderilmiştir.
           </p>
         </div>
       </div>
@@ -108,7 +155,7 @@ export async function POST(request: NextRequest) {
           deployment_token: process.env.ABACUSAI_API_KEY,
           app_id: process.env.WEB_APP_ID,
           notification_id: process.env.NOTIF_ID_HOGELDIN_EMAIL_DORULAMA,
-          subject: `${appName}'na Hoş Geldiniz! 🎉 Email Adresinizi Doğrulayın`,
+          subject: `${appName} - Email Doğrulama`,
           body: htmlBody,
           is_html: true,
           recipient_email: user.email,
@@ -119,23 +166,20 @@ export async function POST(request: NextRequest) {
 
       const result = await response.json();
       if (!result.success && !result.notification_disabled) {
-        console.error("Hoşgeldin emaili gönderilemedi:", result);
+        console.error("Doğrulama emaili gönderilemedi:", result);
       }
     } catch (emailError) {
       console.error("Email gönderme hatası:", emailError);
     }
 
     return NextResponse.json({
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      message: "Kayıt başarılı! Lütfen email adresinizi doğrulayın."
+      success: true,
+      message: "Doğrulama linki email adresinize gönderildi.",
     });
   } catch (error) {
-    console.error("Signup error:", error);
+    console.error("Email gönderme hatası:", error);
     return NextResponse.json(
-      { error: "Kayıt sırasında bir hata oluştu" },
+      { error: "Bir hata oluştu" },
       { status: 500 }
     );
   }

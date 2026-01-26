@@ -14,9 +14,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const [showResendVerification, setShowResendVerification] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setShowResendVerification(false);
     setLoading(true);
 
     try {
@@ -28,7 +31,19 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Geçersiz email veya şifre");
+        // Email doğrulama hatası
+        if (result.error === "EMAIL_NOT_VERIFIED" || result.error.includes("EMAIL_NOT_VERIFIED")) {
+          setError("Email adresiniz henüz doğrulanmamış. Lütfen email kutunuzu kontrol edin.");
+          setShowResendVerification(true);
+        }
+        // Hesap devre dışı hatası
+        else if (result.error === "ACCOUNT_DISABLED" || result.error.includes("ACCOUNT_DISABLED")) {
+          setError("Hesabınız devre dışı bırakılmış. Lütfen yönetici ile iletişime geçin.");
+        }
+        // Genel hata
+        else {
+          setError("Geçersiz email veya şifre");
+        }
         setLoading(false);
       } else if (result?.ok) {
         window.location.href = "/dashboard";
@@ -39,6 +54,22 @@ export default function LoginPage() {
     } catch (err) {
       setError("Bir hata oluştu. Lütfen tekrar deneyin.");
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    try {
+      const res = await fetch("/api/auth/verify-email", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        setError("Doğrulama linki email adresinize gönderildi!");
+        setShowResendVerification(false);
+      }
+    } catch {
+      // Güvenlik için hata gösterme
     }
   };
 
@@ -83,15 +114,30 @@ export default function LoginPage() {
               <motion.div 
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="p-4 rounded-lg flex items-center gap-3"
+                className="p-4 rounded-lg"
                 style={{ 
-                  background: 'var(--error-bg)', 
-                  color: 'var(--error)',
-                  border: '1px solid rgba(229, 77, 77, 0.3)'
+                  background: showResendVerification ? 'rgba(12, 193, 195, 0.1)' : 'var(--error-bg)', 
+                  color: showResendVerification ? 'var(--accent)' : 'var(--error)',
+                  border: showResendVerification ? '1px solid rgba(12, 193, 195, 0.3)' : '1px solid rgba(229, 77, 77, 0.3)'
                 }}
               >
-                <AlertCircle size={20} />
-                <span className="text-sm font-medium">{error}</span>
+                <div className="flex items-center gap-3">
+                  <AlertCircle size={20} />
+                  <span className="text-sm font-medium">{error}</span>
+                </div>
+                {showResendVerification && (
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    className="mt-3 w-full py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80"
+                    style={{
+                      backgroundColor: 'var(--accent)',
+                      color: 'var(--bg-deep)',
+                    }}
+                  >
+                    Doğrulama Linkini Tekrar Gönder
+                  </button>
+                )}
               </motion.div>
             )}
 

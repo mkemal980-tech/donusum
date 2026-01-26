@@ -27,7 +27,9 @@ async function main() {
       firstName: 'Admin',
       lastName: 'User',
       organization: 'System',
-      role: 'ADMIN'
+      role: 'ADMIN',
+      emailVerified: true,
+      isActive: true
     }
   });
 
@@ -41,7 +43,9 @@ async function main() {
       password: hashedPassword,
       firstName: 'John',
       lastName: 'Doe',
-      organization: 'Test Corp'
+      organization: 'Test Corp',
+      emailVerified: true,
+      isActive: true
     }
   });
 

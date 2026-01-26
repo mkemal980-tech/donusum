@@ -79,8 +79,8 @@ export async function POST(request: NextRequest) {
           body: htmlBody,
           is_html: true,
           recipient_email: user.email,
-          sender_email: `noreply@${new URL(appUrl).hostname}`,
-          sender_alias: appName,
+          sender_email: "noreply@mail.abacusai.app",
+          sender_alias: "Donusum Platformu",
         }),
       });
 

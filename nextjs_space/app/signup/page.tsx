@@ -32,6 +32,7 @@ export default function SignupPage() {
     subSectorId: ""
   });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loadingSectors, setLoadingSectors] = useState(true);
@@ -105,19 +106,14 @@ export default function SignupPage() {
         return;
       }
 
-      const result = await signIn?.("credentials", {
-        email: formData?.email,
-        password: formData?.password,
-        redirect: false,
-        callbackUrl: "/dashboard"
-      });
-
-      if (result?.error) {
-        setError("Kayıt başarılı ancak giriş yapılamadı");
-        setLoading(false);
-      } else if (result?.ok) {
-        window.location.href = "/dashboard";
-      }
+      // Kayıt başarılı - email doğrulama mesajı göster
+      setSuccess(`🎉 Kayıt başarılı! ${formData.email} adresine doğrulama linki gönderildi. Lütfen email kutunuzu kontrol edin.`);
+      setLoading(false);
+      
+      // 5 saniye sonra login sayfasına yönlendir
+      setTimeout(() => {
+        router.push("/login");
+      }, 5000);
     } catch (err) {
       setError("Bir hata oluştu. Lütfen tekrar deneyin.");
       setLoading(false);
@@ -175,6 +171,34 @@ export default function SignupPage() {
               >
                 <AlertCircle size={20} />
                 <span className="text-sm font-medium">{error}</span>
+              </motion.div>
+            )}
+
+            {success && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-6 rounded-xl text-center"
+                style={{
+                  backgroundColor: "rgba(34, 197, 94, 0.1)",
+                  border: "1px solid rgba(34, 197, 94, 0.3)"
+                }}
+              >
+                <div className="text-4xl mb-3">✉️</div>
+                <p className="text-green-400 font-medium">{success}</p>
+                <p className="text-sm mt-3" style={{ color: "var(--text-muted)" }}>
+                  Giriş sayfasına yönlendiriliyorsunuz...
+                </p>
+                <Link
+                  href="/login"
+                  className="inline-block mt-4 px-6 py-2 rounded-lg text-sm font-medium transition-all"
+                  style={{
+                    backgroundColor: "var(--accent)",
+                    color: "var(--bg-deep)",
+                  }}
+                >
+                  Giriş Sayfasına Git
+                </Link>
               </motion.div>
             )}
 

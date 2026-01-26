@@ -44,24 +44,30 @@ model UnitAdmin {
 }
 
 model User {
-  id                   String            @id @default(cuid())
-  email                String            @unique
-  password             String
-  firstName            String?
-  lastName             String?
-  organization         String?
-  role                 UserRole          @default(USER)
-  unitId               String?
-  sectorId             String?
-  subSectorId          String?
-  passwordResetToken   String?
-  passwordResetExpires DateTime?
+  id                        String            @id @default(cuid())
+  email                     String            @unique
+  password                  String
+  firstName                 String?
+  lastName                  String?
+  organization              String?
+  role                      UserRole          @default(USER)
+  unitId                    String?
+  sectorId                  String?
+  subSectorId               String?
+  passwordResetToken        String?
+  passwordResetExpires      DateTime?
+  // Email Doğrulama
+  emailVerified             Boolean           @default(false)
+  emailVerificationToken    String?
+  emailVerificationExpires  DateTime?
+  // Hesap Aktivasyonu
+  isActive                  Boolean           @default(true)
   // Ironman Target Scores
-  targetVelocity       Float?
-  targetEndurance      Float?
-  targetDate           DateTime?
-  currentScoreDate     DateTime?
-  region               String?           @default("Global")
+  targetVelocity            Float?
+  targetEndurance           Float?
+  targetDate                DateTime?
+  currentScoreDate          DateTime?
+  region                    String?           @default("Global")
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
   assessmentScores     AssessmentScore[]

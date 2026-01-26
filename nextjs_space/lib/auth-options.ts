@@ -47,7 +47,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { email: credentials.email.toLowerCase() }
         });
 
         if (!user) {
@@ -63,6 +63,16 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Email doğrulama kontrolü
+        if (!user.emailVerified) {
+          throw new Error("EMAIL_NOT_VERIFIED");
+        }
+
+        // Hesap aktivasyon kontrolü
+        if (!user.isActive) {
+          throw new Error("ACCOUNT_DISABLED");
+        }
+
         return {
           id: user.id,
           email: user.email,
@@ -71,7 +81,8 @@ export const authOptions: NextAuthOptions = {
           lastName: user.lastName,
           organization: user.organization,
           role: user.role,
-          unitId: user.unitId
+          unitId: user.unitId,
+          emailVerified: user.emailVerified
         };
       }
     })
