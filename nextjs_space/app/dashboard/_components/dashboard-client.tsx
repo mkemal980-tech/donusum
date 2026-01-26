@@ -11,6 +11,7 @@ import { BenchmarkSection } from "./benchmark-section";
 import { ProgressSection } from "./progress-section";
 import { CategoryDashboard } from "./category-dashboard";
 import { IronmanChart } from "@/components/ui/ironman-chart";
+import { KPIDashboard } from "./kpi-dashboard";
 import { 
   ClipboardList, 
   TrendingUp, 
@@ -1164,7 +1165,10 @@ export default function DashboardClient() {
           </motion.div>
         )}
 
-        {/* Overview Cards */}
+        {/* KPI Dashboard */}
+        <KPIDashboard surveyId={selectedSurveyId} />
+
+        {/* Overview Cards (Legacy) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

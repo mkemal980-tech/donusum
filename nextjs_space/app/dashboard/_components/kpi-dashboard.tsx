@@ -1,0 +1,384 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Activity,
+  Target,
+  CheckCircle2,
+  TrendingUp,
+  TrendingDown,
+  Zap,
+  Award,
+  BarChart3,
+  Lightbulb,
+  Calendar,
+  Layers,
+  Gauge,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+} from "lucide-react";
+
+interface KPIData {
+  overview: {
+    totalQuestions: number;
+    answeredQuestions: number;
+    completionPercentage: number;
+    overallScore: number;
+    overallPercentage: number;
+    maturityLevel: {
+      level: number;
+      label: string;
+      color: string;
+    };
+  };
+  ironman: {
+    velocity: number;
+    endurance: number;
+    quadrant: string;
+    quadrantInfo: {
+      title: string;
+      color: string;
+    };
+    velocityVsSector: number | null;
+    enduranceVsSector: number | null;
+  };
+  categories: {
+    total: number;
+    completed: number;
+    stats: Array<{
+      id: string;
+      name: string;
+      total: number;
+      answered: number;
+      percentage: number;
+    }>;
+  };
+  recommendations: {
+    total: number;
+    quickWins: number;
+    projects: number;
+    bigBets: number;
+  };
+  activity: {
+    lastActivityDate: string | null;
+    responsesToday: number;
+  };
+  user: {
+    name: string;
+    organization: string | null;
+    sector: string | null;
+    subSector: string | null;
+  };
+}
+
+interface KPIDashboardProps {
+  surveyId?: string;
+}
+
+export function KPIDashboard({ surveyId }: KPIDashboardProps) {
+  const [data, setData] = useState<KPIData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchKPI = async () => {
+      try {
+        const url = surveyId ? `/api/dashboard/kpi?surveyId=${surveyId}` : '/api/dashboard/kpi';
+        const res = await fetch(url);
+        if (res.ok) {
+          const json = await res.json();
+          setData(json);
+        }
+      } catch (error) {
+        console.error('Error fetching KPI:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchKPI();
+  }, [surveyId]);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          <div key={i} className="bg-[var(--bg-card)] rounded-xl p-4 animate-pulse">
+            <div className="h-4 bg-[var(--bg-card-2)] rounded w-1/2 mb-3"></div>
+            <div className="h-8 bg-[var(--bg-card-2)] rounded w-3/4"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return 'Henüz aktivite yok';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Az önce';
+    if (diffMins < 60) return `${diffMins} dk önce`;
+    if (diffHours < 24) return `${diffHours} saat önce`;
+    if (diffDays < 7) return `${diffDays} gün önce`;
+    return date.toLocaleDateString('tr-TR');
+  };
+
+  const renderTrend = (value: number | null) => {
+    if (value === null) return null;
+    if (value > 0) return <ArrowUpRight size={14} className="text-green-400" />;
+    if (value < 0) return <ArrowDownRight size={14} className="text-red-400" />;
+    return <Minus size={14} className="text-gray-400" />;
+  };
+
+  const kpiCards = [
+    {
+      title: 'Toplam Soru',
+      value: data.overview.totalQuestions,
+      icon: Layers,
+      color: '#6366f1',
+      bgColor: 'rgba(99, 102, 241, 0.1)',
+      subtitle: `${data.categories.total} kategori`,
+    },
+    {
+      title: 'Tamamlanan',
+      value: data.overview.answeredQuestions,
+      icon: CheckCircle2,
+      color: '#22c55e',
+      bgColor: 'rgba(34, 197, 94, 0.1)',
+      subtitle: `%${data.overview.completionPercentage} tamamlandı`,
+      progress: data.overview.completionPercentage,
+    },
+    {
+      title: 'Olgunluk Puanı',
+      value: data.overview.overallScore.toFixed(1),
+      suffix: '/5',
+      icon: Gauge,
+      color: data.overview.maturityLevel.color,
+      bgColor: `${data.overview.maturityLevel.color}20`,
+      subtitle: data.overview.maturityLevel.label,
+    },
+    {
+      title: 'Olgunluk Yüzde',
+      value: data.overview.overallPercentage,
+      suffix: '%',
+      icon: Target,
+      color: '#f59e0b',
+      bgColor: 'rgba(245, 158, 11, 0.1)',
+      subtitle: `Seviye ${data.overview.maturityLevel.level}`,
+    },
+    {
+      title: 'Velocity (Hız)',
+      value: data.ironman.velocity.toFixed(1),
+      suffix: '/5',
+      icon: Zap,
+      color: '#3b82f6',
+      bgColor: 'rgba(59, 130, 246, 0.1)',
+      subtitle: data.ironman.velocityVsSector !== null 
+        ? `Sektöre göre ${data.ironman.velocityVsSector > 0 ? '+' : ''}${data.ironman.velocityVsSector}`
+        : 'Benchmark yok',
+      trend: data.ironman.velocityVsSector,
+    },
+    {
+      title: 'Endurance (Olgunluk)',
+      value: data.ironman.endurance.toFixed(1),
+      suffix: '/5',
+      icon: Activity,
+      color: '#14b8a6',
+      bgColor: 'rgba(20, 184, 166, 0.1)',
+      subtitle: data.ironman.enduranceVsSector !== null 
+        ? `Sektöre göre ${data.ironman.enduranceVsSector > 0 ? '+' : ''}${data.ironman.enduranceVsSector}`
+        : 'Benchmark yok',
+      trend: data.ironman.enduranceVsSector,
+    },
+    {
+      title: 'Ironman Durumu',
+      value: data.ironman.quadrantInfo.title,
+      icon: Award,
+      color: data.ironman.quadrantInfo.color,
+      bgColor: `${data.ironman.quadrantInfo.color}20`,
+      subtitle: 'Mevcut kadran',
+    },
+    {
+      title: 'Toplam Öneri',
+      value: data.recommendations.total,
+      icon: Lightbulb,
+      color: '#f97316',
+      bgColor: 'rgba(249, 115, 22, 0.1)',
+      subtitle: `${data.recommendations.quickWins} Quick Win`,
+    },
+  ];
+
+  return (
+    <div className="space-y-6 mb-8">
+      {/* Ana KPI Kartları */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {kpiCards.map((card, index) => (
+          <motion.div
+            key={card.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-soft)] hover:border-[var(--accent)]/30 transition-all duration-300 hover:shadow-lg"
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: card.bgColor }}
+              >
+                <card.icon size={20} style={{ color: card.color }} />
+              </div>
+              {card.trend !== undefined && renderTrend(card.trend)}
+            </div>
+            
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold text-[var(--text-main)]">{card.value}</span>
+              {card.suffix && <span className="text-sm text-[var(--text-dim)]">{card.suffix}</span>}
+            </div>
+            
+            <p className="text-xs text-[var(--text-muted)] mt-1">{card.title}</p>
+            <p className="text-xs mt-1" style={{ color: card.color }}>{card.subtitle}</p>
+            
+            {card.progress !== undefined && (
+              <div className="mt-2 h-1.5 bg-[var(--bg-card-2)] rounded-full overflow-hidden">
+                <div 
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ 
+                    width: `${card.progress}%`,
+                    backgroundColor: card.color 
+                  }}
+                />
+              </div>
+            )}
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Alt Detay Kartları */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Kategori İlerlemesi */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-soft)]"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-[var(--text-main)] flex items-center gap-2">
+              <BarChart3 size={16} className="text-[var(--accent)]" />
+              Kategori İlerlemesi
+            </h3>
+            <span className="text-xs text-[var(--text-dim)]">
+              {data.categories.completed}/{data.categories.total} tamamlandı
+            </span>
+          </div>
+          
+          <div className="space-y-3">
+            {data.categories.stats.slice(0, 5).map((cat, idx) => (
+              <div key={cat.id}>
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-[var(--text-muted)] truncate max-w-[150px]">{cat.name}</span>
+                  <span className="text-[var(--text-main)] font-medium">{cat.percentage}%</span>
+                </div>
+                <div className="h-1.5 bg-[var(--bg-card-2)] rounded-full overflow-hidden">
+                  <div 
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ 
+                      width: `${cat.percentage}%`,
+                      backgroundColor: cat.percentage === 100 ? '#22c55e' : 
+                        cat.percentage > 50 ? '#3b82f6' : '#f59e0b'
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Öneri Dağılımı */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-soft)]"
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <Lightbulb size={16} className="text-amber-400" />
+            <h3 className="text-sm font-semibold text-[var(--text-main)]">Öneri Dağılımı</h3>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Zap size={16} className="text-green-400" />
+                <span className="text-sm text-[var(--text-muted)]">Quick Wins</span>
+              </div>
+              <span className="text-lg font-bold text-green-400">{data.recommendations.quickWins}</span>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg">
+              <div className="flex items-center gap-2">
+                <BarChart3 size={16} className="text-blue-400" />
+                <span className="text-sm text-[var(--text-muted)]">Projeler</span>
+              </div>
+              <span className="text-lg font-bold text-blue-400">{data.recommendations.projects}</span>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 bg-purple-500/10 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Target size={16} className="text-purple-400" />
+                <span className="text-sm text-[var(--text-muted)]">Big Bets</span>
+              </div>
+              <span className="text-lg font-bold text-purple-400">{data.recommendations.bigBets}</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Aktivite & Bilgi */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-soft)]"
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar size={16} className="text-[var(--accent)]" />
+            <h3 className="text-sm font-semibold text-[var(--text-main)]">Aktivite</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="p-3 bg-[var(--bg-card-2)] rounded-lg">
+              <p className="text-xs text-[var(--text-dim)] mb-1">Son Aktivite</p>
+              <p className="text-sm font-medium text-[var(--text-main)]">
+                {formatDate(data.activity.lastActivityDate)}
+              </p>
+            </div>
+            
+            <div className="p-3 bg-[var(--bg-card-2)] rounded-lg">
+              <p className="text-xs text-[var(--text-dim)] mb-1">Bugün Cevaplanan</p>
+              <p className="text-sm font-medium text-[var(--text-main)]">
+                {data.activity.responsesToday} soru
+              </p>
+            </div>
+            
+            {data.user.sector && (
+              <div className="p-3 bg-[var(--accent)]/10 rounded-lg">
+                <p className="text-xs text-[var(--text-dim)] mb-1">Sektör</p>
+                <p className="text-sm font-medium text-[var(--accent)]">
+                  {data.user.sector}
+                  {data.user.subSector && ` - ${data.user.subSector}`}
+                </p>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
