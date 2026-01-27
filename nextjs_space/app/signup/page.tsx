@@ -5,8 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Building, UserPlus, AlertCircle, Factory, Layers, Sparkles, Sun, Moon } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Mail, Lock, User, Building, UserPlus, AlertCircle, Factory, Layers, Sparkles } from "lucide-react";
 
 interface SubSector {
   id: string;
@@ -37,7 +36,6 @@ export default function SignupPage() {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loadingSectors, setLoadingSectors] = useState(true);
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     const fetchSectors = async () => {
@@ -120,27 +118,15 @@ export default function SignupPage() {
     }
   };
 
-  const inputClasses = "w-full pl-12 pr-4 py-3.5 bg-[var(--bg-secondary)]  border border-[var(--border-light)] rounded-xl text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all duration-200";
-  const selectClasses = "w-full pl-12 pr-4 py-3.5 bg-[var(--bg-secondary)]  border border-[var(--border-light)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent transition-all duration-200 appearance-none cursor-pointer";
+  const inputClasses = "w-full pl-12 pr-4 py-3.5 bg-[var(--bg-card-2)] border border-[var(--border-soft)] rounded-xl text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-all duration-200";
+  const selectClasses = "w-full pl-12 pr-4 py-3.5 bg-[var(--bg-card-2)] border border-[var(--border-soft)] rounded-xl text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent transition-all duration-200 appearance-none cursor-pointer";
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 py-12 bg-[var(--bg-main)]   ">
-      {/* Theme Toggle */}
-      <button
-        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        className="fixed top-6 right-6 z-50 p-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-light)] shadow-lg hover:shadow-xl transition-all duration-300"
-      >
-        {theme === "dark" ? (
-          <Sun className="w-5 h-5 text-yellow-400" />
-        ) : (
-          <Moon className="w-5 h-5 text-[var(--primary)]" />
-        )}
-      </button>
-
+    <div className="min-h-screen flex items-center justify-center p-4 py-12 bg-[var(--bg-main)]">
       {/* Background decorations */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-20 w-72 h-72 bg-[var(--secondary)] rounded-full mix-blend-multiply  filter blur-3xl opacity-20  animate-pulse" />
-        <div className="absolute bottom-20 left-20 w-72 h-72 bg-[var(--primary)] rounded-full mix-blend-multiply  filter blur-3xl opacity-20  animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-20 right-20 w-72 h-72 bg-[var(--accent-bright)] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" />
+        <div className="absolute bottom-20 left-20 w-72 h-72 bg-[var(--accent)] rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
       <motion.div
@@ -153,21 +139,21 @@ export default function SignupPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", duration: 0.6 }}
-            className="w-20 h-20 bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg "
+            className="w-20 h-20 bg-gradient-to-br from-[var(--accent)] to-[var(--blue-main)] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg"
           >
-            <Sparkles className="w-10 h-10 text-white " />
+            <Sparkles className="w-10 h-10 text-white" />
           </motion.div>
-          <h1 className="text-3xl font-bold text-[var(--text-primary)]">Hesap Oluşturun</h1>
-          <p className="text-[var(--text-secondary)] mt-2">Dönüşüm yolculuğunuza başlayın</p>
+          <h1 className="text-3xl font-bold text-[var(--text-main)]">Hesap Oluşturun</h1>
+          <p className="text-[var(--text-muted)] mt-2">Dönüşüm yolculuğunuza başlayın</p>
         </div>
 
-        <div className="bg-[var(--bg-card)] rounded-3xl shadow-xl  p-8 border border-[var(--border-light)]">
+        <div className="bg-[var(--bg-card)] rounded-3xl shadow-xl p-8 border border-[var(--border-soft)]">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
               <motion.div 
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="p-4 bg-[rgba(239,68,68,0.1)]  rounded-xl flex items-center gap-3 text-red-400  border border-red-100 "
+                className="p-4 bg-[var(--error-bg)] rounded-xl flex items-center gap-3 text-[var(--error)] border border-[var(--error)]"
               >
                 <AlertCircle size={20} />
                 <span className="text-sm font-medium">{error}</span>
@@ -178,24 +164,16 @@ export default function SignupPage() {
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="p-6 rounded-xl text-center"
-                style={{
-                  backgroundColor: "rgba(34, 197, 94, 0.1)",
-                  border: "1px solid rgba(34, 197, 94, 0.3)"
-                }}
+                className="p-6 rounded-xl text-center bg-[var(--success-bg)] border border-[var(--success)]"
               >
                 <div className="text-4xl mb-3">✉️</div>
-                <p className="text-green-400 font-medium">{success}</p>
-                <p className="text-sm mt-3" style={{ color: "var(--text-muted)" }}>
+                <p className="text-[var(--success)] font-medium">{success}</p>
+                <p className="text-sm mt-3 text-[var(--text-muted)]">
                   Giriş sayfasına yönlendiriliyorsunuz...
                 </p>
                 <Link
                   href="/login"
-                  className="inline-block mt-4 px-6 py-2 rounded-lg text-sm font-medium transition-all"
-                  style={{
-                    backgroundColor: "var(--accent)",
-                    color: "var(--bg-deep)",
-                  }}
+                  className="inline-block mt-4 px-6 py-2 rounded-lg text-sm font-medium transition-all bg-[var(--accent)] text-[var(--bg-deep)] hover:opacity-90"
                 >
                   Giriş Sayfasına Git
                 </Link>
@@ -204,9 +182,9 @@ export default function SignupPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Ad</label>
+                <label className="block text-sm font-semibold text-[var(--text-main)] mb-2">Ad</label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)]" size={20} />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--accent)]" size={20} />
                   <input
                     type="text"
                     name="firstName"
@@ -219,9 +197,9 @@ export default function SignupPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Soyad</label>
+                <label className="block text-sm font-semibold text-[var(--text-main)] mb-2">Soyad</label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)]" size={20} />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--accent)]" size={20} />
                   <input
                     type="text"
                     name="lastName"
@@ -236,9 +214,9 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Email</label>
+              <label className="block text-sm font-semibold text-[var(--text-main)] mb-2">Email</label>
               <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)]" size={20} />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--accent)]" size={20} />
                 <input
                   type="email"
                   name="email"
@@ -252,9 +230,9 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Organizasyon</label>
+              <label className="block text-sm font-semibold text-[var(--text-main)] mb-2">Organizasyon</label>
               <div className="relative">
-                <Building className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)]" size={20} />
+                <Building className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--accent)]" size={20} />
                 <input
                   type="text"
                   name="organization"
@@ -270,9 +248,9 @@ export default function SignupPage() {
             {!loadingSectors && sectors.length > 0 && (
               <>
                 <div>
-                  <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Sektör</label>
+                  <label className="block text-sm font-semibold text-[var(--text-main)] mb-2">Sektör</label>
                   <div className="relative">
-                    <Factory className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)]" size={20} />
+                    <Factory className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--accent)]" size={20} />
                     <select
                       name="sectorId"
                       value={formData.sectorId}
@@ -291,9 +269,9 @@ export default function SignupPage() {
 
                 {selectedSector && selectedSector.subSectors?.length > 0 && (
                   <div>
-                    <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Alt Sektör</label>
+                    <label className="block text-sm font-semibold text-[var(--text-main)] mb-2">Alt Sektör</label>
                     <div className="relative">
-                      <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)]" size={20} />
+                      <Layers className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--accent)]" size={20} />
                       <select
                         name="subSectorId"
                         value={formData.subSectorId}
@@ -313,9 +291,9 @@ export default function SignupPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Şifre</label>
+                <label className="block text-sm font-semibold text-[var(--text-main)] mb-2">Şifre</label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)]" size={20} />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--accent)]" size={20} />
                   <input
                     type="password"
                     name="password"
@@ -328,9 +306,9 @@ export default function SignupPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Şifre Tekrar</label>
+                <label className="block text-sm font-semibold text-[var(--text-main)] mb-2">Şifre Tekrar</label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--primary)]" size={20} />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--accent)]" size={20} />
                   <input
                     type="password"
                     name="confirmPassword"
@@ -349,20 +327,20 @@ export default function SignupPage() {
               whileTap={{ scale: 0.99 }}
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white  rounded-xl font-semibold hover:from-[var(--primary-light)] hover:to-[var(--secondary-light)] transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg "
+              className="w-full py-3.5 bg-[var(--accent)] text-[var(--bg-deep)] rounded-xl font-semibold hover:opacity-90 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-[var(--accent)]/30"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white  border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-[var(--bg-deep)] border-t-transparent rounded-full animate-spin" />
               ) : (
                 <><UserPlus size={20} /> Kayıt Ol</>
               )}
             </motion.button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-[var(--border-light)] text-center">
-            <p className="text-[var(--text-secondary)]">
+          <div className="mt-8 pt-6 border-t border-[var(--border-soft)] text-center">
+            <p className="text-[var(--text-muted)]">
               Zaten hesabınız var mı?{" "}
-              <Link href="/login" className="text-[var(--primary)] font-semibold hover:text-[var(--primary-light)] transition-colors">
+              <Link href="/login" className="text-[var(--accent)] font-semibold hover:opacity-80 transition-colors">
                 Giriş Yapın
               </Link>
             </p>
