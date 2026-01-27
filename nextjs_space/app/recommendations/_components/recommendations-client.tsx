@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { useTheme } from "next-themes";
 import Header from "@/components/ui/header";
 import RecommendationCard from "@/components/ui/recommendation-card";
 import { BubbleChart } from "@/components/ui/bubble-chart";
@@ -18,9 +17,7 @@ import {
   CheckCircle2,
   Play,
   Circle,
-  BarChart3,
-  Sun,
-  Moon
+  BarChart3
 } from "lucide-react";
 
 type CompletionStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
@@ -50,8 +47,6 @@ interface CompletionRecord {
 }
 
 export default function RecommendationsClient() {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [completions, setCompletions] = useState<Record<string, CompletionStatus>>({});
   const [loading, setLoading] = useState(true);
@@ -63,10 +58,6 @@ export default function RecommendationsClient() {
     costType: "all",
     strategicType: "all"
   });
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const fetchRecommendations = async () => {
     try {
@@ -208,7 +199,7 @@ export default function RecommendationsClient() {
       <div className="min-h-screen bg-[var(--bg-main)]">
         <Header />
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-          <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -225,37 +216,22 @@ export default function RecommendationsClient() {
           className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
         >
           <div>
-            <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2 flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-[var(--text-main)] mb-2 flex items-center gap-3">
               <Lightbulb className="text-[var(--accent)]" />
               Öneriler
             </h1>
-            <p className="text-[var(--text-secondary)]">Değerlendirme sonuçlarınıza göre hazırlanan iyileştirme önerileri</p>
+            <p className="text-[var(--text-muted)]">Değerlendirme sonuçlarınıza göre hazırlanan iyileştirme önerileri</p>
           </div>
           
           <div className="flex items-center gap-3">
-            {/* Theme Toggle */}
-            {mounted && (
-              <button
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-light)] hover:bg-[var(--bg-hover)] transition-colors"
-                title={theme === 'dark' ? 'Açık Tema' : 'Koyu Tema'}
-              >
-                {theme === 'dark' ? (
-                  <Sun size={20} className="text-yellow-400" />
-                ) : (
-                  <Moon size={20} className="text-[var(--text-secondary)]" />
-                )}
-              </button>
-            )}
-            
             {/* View Mode Toggle */}
-            <div className="flex bg-[var(--bg-card)] rounded-lg shadow-sm border border-[var(--border-light)] p-1">
+            <div className="flex bg-[var(--bg-card)] rounded-lg shadow-sm border border-[var(--border-soft)] p-1">
               <button
                 onClick={() => setViewMode('bubble')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
                   viewMode === 'bubble' 
-                    ? 'bg-[var(--primary)] text-white' 
-                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                    ? 'bg-[var(--accent)] text-white' 
+                    : 'text-[var(--text-muted)] hover:bg-[var(--bg-card-2)]'
                 }`}
               >
                 <ScatterChart size={18} />
@@ -265,8 +241,8 @@ export default function RecommendationsClient() {
                 onClick={() => setViewMode('list')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
                   viewMode === 'list' 
-                    ? 'bg-[var(--primary)] text-white' 
-                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+                    ? 'bg-[var(--accent)] text-white' 
+                    : 'text-[var(--text-muted)] hover:bg-[var(--bg-card-2)]'
                 }`}
               >
                 <LayoutGrid size={18} />
@@ -285,16 +261,16 @@ export default function RecommendationsClient() {
         >
           <div 
             onClick={() => setStatusFilter('all')}
-            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-light)] cursor-pointer transition-all hover:shadow-md ${
-              statusFilter === 'all' ? 'ring-2 ring-[var(--primary)] border-[var(--primary)]' : ''
+            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-soft)] cursor-pointer transition-all hover:shadow-md ${
+              statusFilter === 'all' ? 'ring-2 ring-[var(--accent)] border-[var(--accent)]' : ''
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-[var(--bg-hover)] rounded-lg">
+              <div className="p-2 bg-[var(--bg-card-2)] rounded-lg">
                 <BarChart3 size={20} className="text-[var(--primary)]" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-[var(--text-primary)]">{stats.total}</p>
+                <p className="text-2xl font-bold text-[var(--text-main)]">{stats.total}</p>
                 <p className="text-sm text-[var(--text-muted)]">Toplam Öneri</p>
               </div>
             </div>
@@ -302,7 +278,7 @@ export default function RecommendationsClient() {
           
           <div 
             onClick={() => setStatusFilter('NOT_STARTED')}
-            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-light)] cursor-pointer transition-all hover:shadow-md ${
+            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-soft)] cursor-pointer transition-all hover:shadow-md ${
               statusFilter === 'NOT_STARTED' ? 'ring-2 ring-gray-400' : ''
             }`}
           >
@@ -319,7 +295,7 @@ export default function RecommendationsClient() {
           
           <div 
             onClick={() => setStatusFilter('IN_PROGRESS')}
-            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-light)] cursor-pointer transition-all hover:shadow-md ${
+            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-soft)] cursor-pointer transition-all hover:shadow-md ${
               statusFilter === 'IN_PROGRESS' ? 'ring-2 ring-amber-400' : ''
             }`}
           >
@@ -336,7 +312,7 @@ export default function RecommendationsClient() {
           
           <div 
             onClick={() => setStatusFilter('COMPLETED')}
-            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-light)] cursor-pointer transition-all hover:shadow-md ${
+            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-soft)] cursor-pointer transition-all hover:shadow-md ${
               statusFilter === 'COMPLETED' ? 'ring-2 ring-green-400' : ''
             }`}
           >
@@ -357,7 +333,7 @@ export default function RecommendationsClient() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-[var(--bg-card)] rounded-xl shadow-md border border-[var(--border-light)] p-6 mb-8"
+          className="bg-[var(--bg-card)] rounded-xl shadow-md border border-[var(--border-soft)] p-6 mb-8"
         >
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
@@ -367,7 +343,7 @@ export default function RecommendationsClient() {
                 placeholder="Önerilerde ara..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target?.value ?? '')}
-                className="w-full pl-12 pr-4 py-3 bg-[var(--bg-main)] border border-[var(--border-light)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+                className="w-full pl-12 pr-4 py-3 bg-[var(--bg-main)] border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent outline-none text-[var(--text-main)] placeholder:text-[var(--text-muted)]"
               />
             </div>
             
@@ -377,7 +353,7 @@ export default function RecommendationsClient() {
                 <select
                   value={filters?.timeframe ?? 'all'}
                   onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), timeframe: e.target?.value ?? 'all' }))}
-                  className="px-4 py-3 bg-[var(--bg-main)] border border-[var(--border-light)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] outline-none text-[var(--text-primary)]"
+                  className="px-4 py-3 bg-[var(--bg-main)] border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none text-[var(--text-main)]"
                 >
                   <option value="all">Tüm Zaman Dilimleri</option>
                   <option value="SHORT_TERM">Kısa Vade</option>
@@ -391,7 +367,7 @@ export default function RecommendationsClient() {
                 <select
                   value={filters?.costType ?? 'all'}
                   onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), costType: e.target?.value ?? 'all' }))}
-                  className="px-4 py-3 bg-[var(--bg-main)] border border-[var(--border-light)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] outline-none text-[var(--text-primary)]"
+                  className="px-4 py-3 bg-[var(--bg-main)] border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none text-[var(--text-main)]"
                 >
                   <option value="all">Tüm Maliyet Tipleri</option>
                   <option value="CAPEX">CAPEX (Yatırım)</option>
@@ -404,7 +380,7 @@ export default function RecommendationsClient() {
                 <select
                   value={filters?.strategicType ?? 'all'}
                   onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), strategicType: e.target?.value ?? 'all' }))}
-                  className="px-4 py-3 bg-[var(--bg-main)] border border-[var(--border-light)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] outline-none text-[var(--text-primary)]"
+                  className="px-4 py-3 bg-[var(--bg-main)] border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none text-[var(--text-main)]"
                 >
                   <option value="all">Tüm Tipler</option>
                   <option value="QUICK_WIN">Hızlı Kazanım</option>
@@ -442,7 +418,7 @@ export default function RecommendationsClient() {
                 transition={{ delay: 0.2 }}
                 className="mb-10"
               >
-                <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-[rgba(12,193,195,0.1)]0" />
                   Hızlı Kazanımlar ({quickWins?.length ?? 0})
                 </h2>
@@ -473,8 +449,8 @@ export default function RecommendationsClient() {
                 transition={{ delay: 0.3 }}
                 className="mb-10"
               >
-                <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[var(--primary)]" />
+                <h2 className="text-xl font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent)]" />
                   Projeler ({projects?.length ?? 0})
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -504,7 +480,7 @@ export default function RecommendationsClient() {
                 transition={{ delay: 0.4 }}
                 className="mb-10"
               >
-                <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-[var(--accent)]" />
                   Büyük Yatırımlar ({bigBets?.length ?? 0})
                 </h2>
@@ -536,8 +512,8 @@ export default function RecommendationsClient() {
             className="text-center py-16"
           >
             <Lightbulb size={64} className="mx-auto text-[var(--text-muted)] mb-4" />
-            <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">Öneri Bulunamadı</h2>
-            <p className="text-[var(--text-secondary)]">
+            <h2 className="text-xl font-semibold text-[var(--text-main)] mb-2">Öneri Bulunamadı</h2>
+            <p className="text-[var(--text-muted)]">
               {searchTerm || filters?.timeframe !== "all" || filters?.costType !== "all" || filters?.strategicType !== "all" || statusFilter !== "all"
                 ? "Filtrelerinizi değiştirmeyi deneyin"
                 : "Kişisel öneriler almak için anketi tamamlayın"}

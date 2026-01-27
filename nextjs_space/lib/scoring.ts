@@ -249,8 +249,6 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
 }
 
 export async function getRecommendationsForUser(userId: string) {
-  const { categoryScores, subLevelScores, subCategoryScores } = await calculateUserScore(userId);
-  
   // Kullanıcının tüm anket cevaplarını getir
   const userResponses = await prisma.surveyResponse.findMany({
     where: { userId },
@@ -259,6 +257,13 @@ export async function getRecommendationsForUser(userId: string) {
       value: true
     }
   });
+  
+  // Eğer kullanıcının hiç anket cevabı yoksa, boş dizi döndür
+  if (!userResponses || userResponses.length === 0) {
+    return [];
+  }
+  
+  const { categoryScores, subLevelScores, subCategoryScores } = await calculateUserScore(userId);
   
   // Cevapları questionId -> value map'ine dönüştür
   const userAnswerMap = new Map<string, string>();
