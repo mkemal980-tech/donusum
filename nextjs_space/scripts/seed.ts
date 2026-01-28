@@ -16,6 +16,10 @@ async function main() {
   await prisma.subLevel.deleteMany();
   await prisma.subCategory.deleteMany();
   await prisma.category.deleteMany();
+  await prisma.benchmark.deleteMany();
+  await prisma.sectorCategoryWeight.deleteMany();
+  await prisma.userSurveyAssignment.deleteMany();
+  await prisma.survey.deleteMany();
   await prisma.user.deleteMany();
 
   // Create admin user
@@ -50,6 +54,18 @@ async function main() {
   });
 
   console.log('Created test user');
+
+  // Create default survey
+  const defaultSurvey = await prisma.survey.create({
+    data: {
+      name: 'Sürdürülebilirlik',
+      description: 'ESG ve sürdürülebilirlik değerlendirmesi',
+      isActive: true,
+      order: 1
+    }
+  });
+
+  console.log('Created default survey:', defaultSurvey.name);
 
   // Create survey structure
   const categories = [
@@ -242,7 +258,8 @@ async function main() {
       data: {
         name: categoryData.name,
         description: categoryData.description,
-        order: categoryData.order
+        order: categoryData.order,
+        surveyId: defaultSurvey.id  // ✅ Ankete bağla
       }
     });
 
