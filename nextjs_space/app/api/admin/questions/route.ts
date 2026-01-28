@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { text, type, options, order, requiresEvidence, subLevelId, subCategoryId, weight, axisType } = body;
+    const { text, type, options, conditionalOptions, order, requiresEvidence, subLevelId, subCategoryId, weight, axisType } = body;
 
     // En az biri gerekli: subLevelId veya subCategoryId
     if (!subLevelId && !subCategoryId) {
@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
         text, 
         type: type || 'SCALE', 
         options, 
+        conditionalOptions,  // Kademeli puanlama seçenekleri
         order: order || 1, 
         requiresEvidence: requiresEvidence || false,
         subLevelId: subLevelId || null,
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, text, type, options, order, requiresEvidence, weight, axisType } = body;
+    const { id, text, type, options, conditionalOptions, order, requiresEvidence, weight, axisType } = body;
 
     const question = await prisma.question.update({
       where: { id },
@@ -44,6 +45,7 @@ export async function PUT(request: NextRequest) {
         text, 
         type, 
         options, 
+        conditionalOptions,  // Kademeli puanlama seçenekleri
         order, 
         requiresEvidence, 
         weight: weight || 1.0,

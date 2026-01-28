@@ -239,21 +239,22 @@ model IronmanBenchmark {
 }
 
 model Question {
-  id               String           @id @default(cuid())
-  text             String
-  type             QuestionType     @default(SCALE)
-  options          Json?
-  weight           Float            @default(1.0)
-  requiresEvidence Boolean          @default(false)
-  order            Int              @default(0)
-  axisType         AxisType         @default(VELOCITY)  // Ironman için: VELOCITY (Hız) veya ENDURANCE (Olgunluk)
-  subLevelId       String?
-  subCategoryId    String?
-  createdAt        DateTime         @default(now())
-  subLevel         SubLevel?        @relation("SubLevelQuestions", fields: [subLevelId], references: [id], onDelete: Cascade)
-  subCategory      SubCategory?     @relation("SubCategoryQuestions", fields: [subCategoryId], references: [id], onDelete: Cascade)
-  responses        SurveyResponse[]
-  recommendations  Recommendation[]
+  id                 String           @id @default(cuid())
+  text               String
+  type               QuestionType     @default(SCALE)
+  options            Json?
+  conditionalOptions Json?            // CONDITIONAL_CHOICE için: { thresholdQuestion, yesLabel, noLabel, options: [{ label, value, score }] }
+  weight             Float            @default(1.0)
+  requiresEvidence   Boolean          @default(false)
+  order              Int              @default(0)
+  axisType           AxisType         @default(VELOCITY)  // Ironman için: VELOCITY (Hız) veya ENDURANCE (Olgunluk)
+  subLevelId         String?
+  subCategoryId      String?
+  createdAt          DateTime         @default(now())
+  subLevel           SubLevel?        @relation("SubLevelQuestions", fields: [subLevelId], references: [id], onDelete: Cascade)
+  subCategory        SubCategory?     @relation("SubCategoryQuestions", fields: [subCategoryId], references: [id], onDelete: Cascade)
+  responses          SurveyResponse[]
+  recommendations    Recommendation[]
 }
 
 model SurveyResponse {
@@ -394,6 +395,7 @@ enum QuestionType {
   SCALE
   YES_NO
   MULTIPLE_CHOICE
+  CONDITIONAL_CHOICE  // Kademeli puanlama: İlk evet/hayır, sonra çoklu seçim
 }
 
 enum CostType {

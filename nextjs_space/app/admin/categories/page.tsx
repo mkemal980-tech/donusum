@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Save, X, FileText, Layers, Upload, Download, AlertCircle, CheckCircle } from "lucide-react";
+import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Save, X, FileText, Layers, Upload, Download, AlertCircle, CheckCircle, Activity } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
 interface Question {
   id: string;
   text: string;
-  type: 'SCALE' | 'YES_NO' | 'MULTIPLE_CHOICE';
+  type: 'SCALE' | 'YES_NO' | 'MULTIPLE_CHOICE' | 'CONDITIONAL_CHOICE';
   requiresEvidence: boolean;
   options: any[];
+  conditionalOptions?: any;  // Kademeli puanlama için
   order: number;
   weight: number;
   axisType: 'VELOCITY' | 'ENDURANCE';  // Ironman için: Hız veya Olgunluk
@@ -51,6 +52,7 @@ const questionTypes = [
   { value: 'SCALE', label: 'Ölçek (1-5)' },
   { value: 'YES_NO', label: 'Evet/Hayır' },
   { value: 'MULTIPLE_CHOICE', label: 'Çoktan Seçmeli' },
+  { value: 'CONDITIONAL_CHOICE', label: 'Kademeli Puanlama (Evet/Hayır → Çoklu Seçim)' },
 ];
 
 export default function CategoriesPage() {
@@ -317,6 +319,17 @@ export default function CategoriesPage() {
       if (type === 'question' && editItem.type === 'MULTIPLE_CHOICE' && editItem.options) {
         initialData.optionsText = editItem.options.map((o: any) => `${o.value}|${o.label}|${o.score}`).join('\n');
       }
+      if (type === 'question' && editItem.type === 'CONDITIONAL_CHOICE' && editItem.conditionalOptions) {
+        const condOpts = editItem.conditionalOptions;
+        initialData.thresholdQuestion = condOpts.thresholdQuestion || editItem.text;
+        initialData.yesLabel = condOpts.yesLabel || 'Evet';
+        initialData.noLabel = condOpts.noLabel || 'Hayır';
+        if (condOpts.options && Array.isArray(condOpts.options)) {
+          initialData.conditionalOptionsText = condOpts.options
+            .map((o: any) => `${o.label}|${o.score}`)
+            .join('\n');
+        }
+      }
       setFormData(initialData);
     } else {
       if (type === 'question') {
@@ -381,6 +394,34 @@ export default function CategoriesPage() {
           { value: 'no', label: 'Hayır', score: data.noScore || 1 }
         ];
       }
+      if (data.type === 'CONDITIONAL_CHOICE') {
+        // Conditional options'ı JSON formatına çevir
+        const conditionalOpts = {
+          thresholdQuestion: data.thresholdQuestion || data.text || '',
+          yesLabel: data.yesLabel || 'Evet',
+          noLabel: data.noLabel || 'Hayır',
+          options: []
+        };
+        
+        if (data.conditionalOptionsText) {
+          conditionalOpts.options = data.conditionalOptionsText.split('\n')
+            .filter((l: string) => l.trim())
+            .map((line: string, idx: number) => {
+              const [label, score] = line.split('|');
+              return {
+                value: `option_${idx + 1}`,
+                label: label?.trim() || '',
+                score: parseFloat(score) || 0
+              };
+            });
+        }
+        
+        data.conditionalOptions = conditionalOpts;
+        delete data.conditionalOptionsText;
+        delete data.thresholdQuestion;
+        delete data.yesLabel;
+        delete data.noLabel;
+      }
       delete data.yesScore;
       delete data.noScore;
     }
@@ -403,9 +444,17 @@ export default function CategoriesPage() {
             <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded">Kanıt Gerekli</span>
           )}
         </div>
-        {question.options && question.options.length > 0 && question.type !== 'SCALE' && (
+        {question.options && question.options.length > 0 && question.type !== 'SCALE' && question.type !== 'CONDITIONAL_CHOICE' && (
           <div className="mt-2 text-xs text-[var(--text-dim)]">
             Şıklar: {question.options.map((opt: any) => `${opt.label}(${opt.score}p)`).join(', ')}
+          </div>
+        )}
+        {question.type === 'CONDITIONAL_CHOICE' && question.conditionalOptions && (
+          <div className="mt-2 text-xs text-[var(--text-dim)]">
+            <p className="font-medium text-[var(--accent)]">Kademeli: {(question.conditionalOptions as any).thresholdQuestion}</p>
+            {(question.conditionalOptions as any).options && (question.conditionalOptions as any).options.length > 0 && (
+              <p className="mt-1">Alt seçenekler: {(question.conditionalOptions as any).options.map((opt: any) => `${opt.label}(${opt.score}p)`).join(', ')}</p>
+            )}
           </div>
         )}
       </div>
@@ -804,6 +853,62 @@ export default function CategoriesPage() {
                           onChange={(e) => setFormData({ ...formData, noScore: parseInt(e.target.value) })}
                           className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                         />
+                      </div>
+                    </div>
+                  )}
+                  {formData.type === 'CONDITIONAL_CHOICE' && (
+                    <div className="space-y-4 p-4 bg-[var(--bg-card-2)] rounded-lg border border-[var(--border-soft)]">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Activity className="w-5 h-5 text-[var(--accent)]" />
+                        <h4 className="font-medium text-[var(--text-main)]">Kademeli Puanlama Ayarları</h4>
+                      </div>
+                      <p className="text-xs text-[var(--text-dim)] mb-3">
+                        Önce evet/hayır sorusu sorulur. "Evet" seçilirse alt seçenekler gösterilir ve kullanıcı birden fazla seçenek işaretleyebilir. Toplam puan = seçilen seçeneklerin puanlarının toplamı.
+                      </p>
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Eşik Sorusu (Ana Soru)</label>
+                        <input
+                          type="text"
+                          value={formData.thresholdQuestion || formData.text || ''}
+                          onChange={(e) => setFormData({ ...formData, thresholdQuestion: e.target.value })}
+                          placeholder="Örn: ISO Belgeniz var mı?"
+                          className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Evet Etiketi</label>
+                          <input
+                            type="text"
+                            value={formData.yesLabel || 'Evet'}
+                            onChange={(e) => setFormData({ ...formData, yesLabel: e.target.value })}
+                            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Hayır Etiketi</label>
+                          <input
+                            type="text"
+                            value={formData.noLabel || 'Hayır'}
+                            onChange={(e) => setFormData({ ...formData, noLabel: e.target.value })}
+                            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">
+                          Alt Seçenekler (her satırda: etiket|puan)
+                        </label>
+                        <textarea
+                          value={formData.conditionalOptionsText || ''}
+                          onChange={(e) => setFormData({ ...formData, conditionalOptionsText: e.target.value })}
+                          className="w-full p-3 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+                          rows={6}
+                          placeholder={`ISO 9001|5\nISO 14001|10\nISO 27001|15\nISO 45001|20`}
+                        />
+                        <p className="text-xs text-[var(--text-dim)] mt-1">
+                          Format: Her satırda bir seçenek. Etiket ve puan "|" ile ayrılmalı.
+                        </p>
                       </div>
                     </div>
                   )}

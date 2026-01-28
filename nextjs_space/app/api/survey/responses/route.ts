@@ -66,11 +66,33 @@ export async function POST(request: NextRequest) {
     if (question?.type === 'SCALE') {
       score = parseFloat(value) || 0;
     } else if (question?.type === 'YES_NO') {
-      score = value === 'yes' ? 5 : 1;
+      const options = question?.options as any[];
+      const selected = options?.find((o: any) => o?.value === value);
+      score = selected?.score ?? (value === 'yes' ? 5 : 1);
     } else if (question?.type === 'MULTIPLE_CHOICE') {
       const options = question?.options as any[];
       const selected = options?.find((o: any) => o?.value === value);
       score = selected?.score ?? 0;
+    } else if (question?.type === 'CONDITIONAL_CHOICE') {
+      // Parse value: { threshold: 'yes'|'no', selected: string[] }
+      try {
+        const parsedValue = JSON.parse(value);
+        if (parsedValue.threshold === 'no') {
+          // "Hayır" seçildi, puan 0
+          score = 0;
+        } else if (parsedValue.threshold === 'yes' && parsedValue.selected) {
+          // "Evet" seçildi, seçilen alt seçeneklerin puanlarını topla
+          const condOpts = question?.conditionalOptions as any;
+          const subOptions = condOpts?.options || [];
+          score = parsedValue.selected.reduce((total: number, selectedValue: string) => {
+            const option = subOptions.find((o: any) => o.value === selectedValue);
+            return total + (option?.score || 0);
+          }, 0);
+        }
+      } catch (e) {
+        console.error('Error parsing conditional choice value:', e);
+        score = 0;
+      }
     }
 
     const response = await prisma.surveyResponse.upsert({

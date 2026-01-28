@@ -9,6 +9,7 @@ interface Question {
   text: string;
   type: string;
   options?: any[] | null;
+  conditionalOptions?: any;
   requiresEvidence: boolean;
 }
 
@@ -126,6 +127,106 @@ export default function SurveyQuestion({
                 {option?.label ?? option?.value ?? ''}
               </button>
             ))}
+          </div>
+        );
+
+      case "CONDITIONAL_CHOICE":
+        const condOpts = q?.conditionalOptions || {};
+        const thresholdQuestion = condOpts.thresholdQuestion || q?.text;
+        const yesLabel = condOpts.yesLabel || 'Evet';
+        const noLabel = condOpts.noLabel || 'Hayır';
+        const subOptions = condOpts.options || [];
+        
+        // Parse value: { threshold: 'yes'|'no', selected: string[] }
+        let parsedValue = { threshold: '', selected: [] as string[] };
+        try {
+          if (value) {
+            parsedValue = JSON.parse(value);
+          }
+        } catch {
+          // Ignore parse errors
+        }
+
+        const handleThresholdChange = (choice: string) => {
+          if (choice === 'no') {
+            // If "no" is selected, reset and save 0 score
+            onAnswer?.(q?.id, JSON.stringify({ threshold: 'no', selected: [] }));
+          } else {
+            // If "yes" is selected, keep previous selections if any
+            onAnswer?.(q?.id, JSON.stringify({ threshold: 'yes', selected: parsedValue.selected || [] }));
+          }
+        };
+
+        const handleOptionToggle = (optionValue: string) => {
+          const currentSelected = parsedValue.selected || [];
+          const newSelected = currentSelected.includes(optionValue)
+            ? currentSelected.filter(v => v !== optionValue)
+            : [...currentSelected, optionValue];
+          onAnswer?.(q?.id, JSON.stringify({ threshold: 'yes', selected: newSelected }));
+        };
+
+        return (
+          <div className="space-y-4">
+            {/* Threshold Question */}
+            <div>
+              <p className="text-sm font-medium text-[var(--text-muted)] mb-3">{thresholdQuestion}</p>
+              <div className="flex gap-4">
+                {[{ value: 'yes', label: yesLabel }, { value: 'no', label: noLabel }].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => handleThresholdChange(option.value)}
+                    className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+                      parsedValue.threshold === option.value
+                        ? "bg-[var(--accent)] text-white shadow-lg"
+                        : "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--border-soft)]"
+                    }`}
+                  >
+                    {option.value === "yes" ? <Check className="inline mr-2" size={18} /> : null}
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sub Options (only shown if "yes" is selected) */}
+            {parsedValue.threshold === 'yes' && subOptions.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-2 pt-4 border-t border-[var(--border-soft)]"
+              >
+                <p className="text-sm font-medium text-[var(--text-muted)] mb-2">
+                  Lütfen sahip olduklarınızı seçin (birden fazla seçilebilir):
+                </p>
+                {subOptions.map((option: any) => {
+                  const isSelected = parsedValue.selected.includes(option.value);
+                  return (
+                    <button
+                      key={option.value}
+                      onClick={() => handleOptionToggle(option.value)}
+                      className={`w-full p-4 rounded-lg text-left transition-all flex items-center justify-between ${
+                        isSelected
+                          ? "bg-[var(--accent)] text-white shadow-lg"
+                          : "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--border-soft)]"
+                      }`}
+                    >
+                      <span className="flex items-center gap-3">
+                        <span className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                          isSelected ? "border-white bg-white/20" : "border-[var(--border-soft)]"
+                        }`}>
+                          {isSelected && <Check size={14} />}
+                        </span>
+                        {option.label}
+                      </span>
+                      <span className={`text-sm font-medium ${isSelected ? "text-white/90" : "text-[var(--accent)]"}`}>
+                        +{option.score}p
+                      </span>
+                    </button>
+                  );
+                })}
+              </motion.div>
+            )}
           </div>
         );
 
