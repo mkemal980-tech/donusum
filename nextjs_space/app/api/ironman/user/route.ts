@@ -28,27 +28,27 @@ const getQuadrant = (velocity: number, endurance: number) => {
 // Kadran açıklamaları
 const quadrantInfo: Record<string, { title: string; titleEn: string; description: string; color: string }> = {
   IRONMAN: {
-    title: 'Iron Man',
+    title: 'Demir Adam',
     titleEn: 'Iron Man',
-    description: 'Iron Man companies have both strong velocity and endurance. You are able to take quick action while maintaining sustainable policies and processes.',
+    description: 'Demir Adam şirketleri hem güçlü hıza hem de dayanıklılığa sahiptir. Sürdürülebilir politikalar ve süreçler koruyarak hızlı aksiyon alabilirsiniz.',
     color: '#22c55e',
   },
   SPRINTER: {
     title: 'Sprinter',
     titleEn: 'Sprinter',
-    description: 'Sprinter companies have strong velocity but lack endurance. You take quick action but need to develop sustainable policies and documentation.',
+    description: 'Sprinter şirketleri güçlü hıza sahip ancak dayanıklılıktan yoksundur. Hızlı aksiyon alıyorsunuz ancak sürdürülebilir politikalar ve dokümantasyon geliştirmelisiniz.',
     color: '#f59e0b',
   },
   MARATHON_RUNNER: {
-    title: 'Marathon Runner',
+    title: 'Maraton Koşucusu',
     titleEn: 'Marathon Runner',
-    description: 'Marathon Runner companies have strong endurance but lack velocity. Your policies are solid but you need to speed up your actions.',
+    description: 'Maraton Koşucusu şirketleri güçlü dayanıklılığa sahip ancak hızdan yoksundur. Politikalarınız sağlam ancak aksiyonlarınızı hızlandırmalısınız.',
     color: '#3b82f6',
   },
   WALKER: {
-    title: 'Walker',
+    title: 'Yaya',
     titleEn: 'Walker',
-    description: 'Walker companies doesn\'t have strong velocity and endurance yet. If you are in this area of the graph, it means you may be vulnerable under turbulent inner or outer conditions.',
+    description: 'Yaya şirketleri henüz güçlü hıza ve dayanıklılığa sahip değildir. Bu grafiğin bu bölgesindeyseniz, türbülanslı iç veya dış koşullar altında savunmasız olabilirsiniz.',
     color: '#ef4444',
   },
 };

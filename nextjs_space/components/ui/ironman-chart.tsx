@@ -187,12 +187,12 @@ export function IronmanChart() {
     ctx.textAlign = 'center';
     
     ctx.fillStyle = '#94a3b8';
-    ctx.fillText('Walker', padding + chartSize / 4, padding + chartSize - 12);
+    ctx.fillText('Yaya', padding + chartSize / 4, padding + chartSize - 12);
     ctx.fillText('Sprinter', padding + chartSize * 3 / 4, padding + chartSize - 12);
-    ctx.fillText('Marathon Runner', padding + chartSize / 4, padding + 18);
+    ctx.fillText('Maraton Koşucusu', padding + chartSize / 4, padding + 18);
     
     ctx.fillStyle = '#6366f1';
-    ctx.fillText('Iron Man', padding + chartSize * 3 / 4, padding + 18);
+    ctx.fillText('Demir Adam', padding + chartSize * 3 / 4, padding + 18);
 
     // Helper function to convert score to position
     const scoreToPos = (score: number, axis: 'x' | 'y') => {
@@ -295,7 +295,7 @@ export function IronmanChart() {
           {/* Left: Scatter Plot */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Ironman Analysis</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Ironman Analizi</h3>
               <button className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
@@ -309,19 +309,19 @@ export function IronmanChart() {
             <div className="flex flex-wrap justify-center gap-4 mt-4 text-xs text-gray-500">
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-pink-500" />
-                <span>Your current ({data.current.date})</span>
+                <span>Mevcut durumunuz ({data.current.date})</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-blue-500" />
-                <span>Your target ({data.target.date})</span>
+                <span>Hedefiniz ({data.target.date})</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-blue-300" />
-                <span>Other companies (current - {data.current.date})</span>
+                <span>Diğer şirketler (mevcut - {data.current.date})</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-6 border-t-2 border-dashed border-indigo-400" />
-                <span>Reference line (Iron Man)</span>
+                <span>Referans çizgisi (Iron Man)</span>
               </div>
             </div>
           </div>
@@ -330,12 +330,12 @@ export function IronmanChart() {
           <div className="space-y-4">
             {/* Benchmark Bar Chart */}
             <div className="bg-gray-50 rounded-xl p-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-4">Benchmark of Ironman Analysis</h4>
+              <h4 className="text-sm font-semibold text-gray-700 mb-4">Ironman Analizi Kıyaslaması</h4>
               
               {/* Velocity Benchmark */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-600">Velocity</span>
+                  <span className="text-xs font-medium text-gray-600">Hız</span>
                 </div>
                 <div className="relative h-6 bg-gray-200 rounded-full overflow-hidden">
                   {/* Scale markers */}
@@ -387,7 +387,7 @@ export function IronmanChart() {
               {/* Endurance Benchmark */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-600">Endurance</span>
+                  <span className="text-xs font-medium text-gray-600">Dayanıklılık</span>
                 </div>
                 <div className="relative h-6 bg-gray-200 rounded-full overflow-hidden">
                   <div className="absolute inset-0 flex justify-between px-1 text-[10px] text-gray-400 items-center z-10">
@@ -439,19 +439,19 @@ export function IronmanChart() {
               <div className="flex flex-wrap gap-3 text-[10px] text-gray-500 mt-3">
                 <div className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-pink-400" />
-                  <span>Your Current</span>
+                  <span>Mevcut</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                  <span>Your Target</span>
+                  <span>Hedef</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-purple-400" />
-                  <span>Ind. Avg. Current</span>
+                  <span>Sektör Ort. Mevcut</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-purple-700" />
-                  <span>Ind. Avg. Target</span>
+                  <span>Sektör Ort. Hedef</span>
                 </div>
               </div>
             </div>
@@ -468,13 +468,13 @@ export function IronmanChart() {
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <div className="flex items-center gap-2 mb-2">
                     <Building2 className="w-4 h-4 text-gray-400" />
-                    <span className="text-xs font-medium text-gray-700">Industry</span>
+                    <span className="text-xs font-medium text-gray-700">Sektör</span>
                   </div>
                   <p className="text-xs text-gray-600">{data.company.industry}</p>
                   
                   <div className="flex items-center gap-2 mt-3 mb-2">
                     <Globe className="w-4 h-4 text-gray-400" />
-                    <span className="text-xs font-medium text-gray-700">Region</span>
+                    <span className="text-xs font-medium text-gray-700">Bölge</span>
                   </div>
                   <p className="text-xs text-gray-600">{data.company.region}</p>
                 </div>
@@ -483,18 +483,18 @@ export function IronmanChart() {
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <div className="flex items-center gap-2 mb-3">
                     <Target className="w-4 h-4 text-gray-400" />
-                    <span className="text-xs font-medium text-gray-700">Score</span>
+                    <span className="text-xs font-medium text-gray-700">Puan</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <p className="text-gray-500">Current ({data.current.date})</p>
-                      <p className="text-gray-700">Velocity: {data.current.velocity.toFixed(1)}</p>
-                      <p className="text-gray-700">Endurance: {data.current.endurance.toFixed(1)}</p>
+                      <p className="text-gray-500">Mevcut ({data.current.date})</p>
+                      <p className="text-gray-700">Hız: {data.current.velocity.toFixed(1)}</p>
+                      <p className="text-gray-700">Dayanıklılık: {data.current.endurance.toFixed(1)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Target ({data.target.date})</p>
-                      <p className="text-gray-700">Velocity: {data.target.velocity.toFixed(1)}</p>
-                      <p className="text-gray-700">Endurance: {data.target.endurance.toFixed(1)}</p>
+                      <p className="text-gray-500">Hedef ({data.target.date})</p>
+                      <p className="text-gray-700">Hız: {data.target.velocity.toFixed(1)}</p>
+                      <p className="text-gray-700">Dayanıklılık: {data.target.endurance.toFixed(1)}</p>
                     </div>
                   </div>
                 </div>
@@ -502,7 +502,7 @@ export function IronmanChart() {
 
               {/* Select to Compare */}
               <div className="bg-gray-50 rounded-xl p-4 flex flex-col items-center justify-center text-center">
-                <p className="text-sm text-gray-400 mb-4">Select to compare</p>
+                <p className="text-sm text-gray-400 mb-4">Karşılaştırmak için seçin</p>
                 <button className="w-16 h-16 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors">
                   <Plus className="w-8 h-8" />
                 </button>
