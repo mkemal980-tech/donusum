@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -18,6 +19,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Minus,
+  ClipboardList,
+  ArrowRight,
 } from "lucide-react";
 
 interface KPIData {
@@ -114,6 +117,9 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
 
   if (!data) return null;
 
+  // Boş state kontrolü - hiç veri yoksa
+  const hasNoData = data.overview.answeredQuestions === 0;
+
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return 'Henüz aktivite yok';
     const date = new Date(dateStr);
@@ -136,6 +142,65 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
     if (value < 0) return <ArrowDownRight size={14} className="text-red-400" />;
     return <Minus size={14} className="text-gray-400" />;
   };
+
+  const router = useRouter();
+
+  // Boş State UI - Hiç anket cevabı yoksa
+  if (hasNoData) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <div className="bg-[var(--bg-card)] rounded-2xl border border-[var(--border-soft)] p-12 text-center">
+          <div className="max-w-md mx-auto">
+            {/* Icon */}
+            <div className="w-20 h-20 mx-auto mb-6 bg-[var(--accent)]/10 rounded-full flex items-center justify-center">
+              <ClipboardList size={40} className="text-[var(--accent)]" />
+            </div>
+            
+            {/* Başlık */}
+            <h3 className="text-2xl font-bold text-[var(--text-main)] mb-3">
+              Değerlendirmeye Başlayın
+            </h3>
+            
+            {/* Açıklama */}
+            <p className="text-[var(--text-muted)] mb-8 leading-relaxed">
+              Henüz hiç soru cevaplanmadı. Kuruluşunuzun olgunluk seviyesini değerlendirmek ve 
+              kişiselleştirilmiş öneriler almak için anketi tamamlamaya başlayın.
+            </p>
+            
+            {/* İstatistikler */}
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              <div className="bg-[var(--bg-card-2)] rounded-xl p-4">
+                <p className="text-sm text-[var(--text-dim)] mb-1">Toplam Soru</p>
+                <p className="text-2xl font-bold text-[var(--accent)]">{data.overview.totalQuestions}</p>
+              </div>
+              <div className="bg-[var(--bg-card-2)] rounded-xl p-4">
+                <p className="text-sm text-[var(--text-dim)] mb-1">Kategori</p>
+                <p className="text-2xl font-bold text-[var(--accent)]">{data.categories.total}</p>
+              </div>
+            </div>
+            
+            {/* CTA Button */}
+            <button
+              onClick={() => router.push('/survey')}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-bright)] text-white px-8 py-4 rounded-xl font-semibold hover:shadow-lg hover:shadow-[var(--accent)]/20 transition-all duration-300 group"
+            >
+              <span>Ankete Başla</span>
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+            
+            {/* Alt Bilgi */}
+            <p className="text-xs text-[var(--text-dim)] mt-6">
+              💡 İpucu: Tüm soruları cevaplamak yaklaşık 15-20 dakika sürer
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   const kpiCards = [
     {

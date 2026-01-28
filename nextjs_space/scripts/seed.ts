@@ -340,6 +340,83 @@ async function main() {
   }
 
   console.log('Created recommendations');
+
+  // ============================================
+  // TEST KULLANICISI İÇİN ÖRNEK ANKET CEVAPLARI
+  // ============================================
+  
+  // Test kullanıcısını al (cmkhjzaa70000x50t7n7fsjxo olması lazım)
+  const testUser = await prisma.user.findUnique({
+    where: { email: 'john@doe.com' }
+  });
+
+  if (testUser) {
+    console.log('Creating sample survey responses for test user...');
+
+    // Tüm soruları al (kategori bağımsız)
+    const allQuestions = await prisma.question.findMany({
+      take: 15, // İlk 15 soruyu cevapla
+      include: {
+        subLevel: true,
+        subCategory: true
+      }
+    });
+
+    console.log(`Found ${allQuestions.length} questions to answer`);
+
+    // Her soru için rastgele bir skor ata (2-5 arası, VELOCITY ve ENDURANCE dengesine dikkat et)
+    const surveyResponses = [];
+    for (let i = 0; i < allQuestions.length; i++) {
+      const question = allQuestions[i];
+      
+      // Velocity sorularına biraz daha yüksek puan verelim (hız odaklı)
+      // Endurance sorularına biraz daha düşük (olgunluk geliştirilmeli)
+      let score: number;
+      
+      if (question.axisType === 'VELOCITY') {
+        // Velocity: 3-5 arası (hız yüksek)
+        score = Math.floor(Math.random() * 3) + 3; // 3, 4, veya 5
+      } else {
+        // Endurance: 2-4 arası (olgunluk orta)
+        score = Math.floor(Math.random() * 3) + 2; // 2, 3, veya 4
+      }
+
+      surveyResponses.push({
+        userId: testUser.id,
+        questionId: question.id,
+        score: score,
+        value: question.type === 'YES_NO' ? (score >= 3 ? 'evet' : 'hayir') : score.toString(),
+        updatedAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000) // Son 7 gün içinde
+      });
+    }
+
+    // Toplu olarak oluştur
+    await prisma.surveyResponse.createMany({
+      data: surveyResponses
+    });
+
+    console.log(`Created ${surveyResponses.length} sample survey responses`);
+    
+    // Velocity ve Endurance ortalamaları
+    const velocityResponses = surveyResponses.filter(r => {
+      const q = allQuestions.find(q => q.id === r.questionId);
+      return q?.axisType === 'VELOCITY';
+    });
+    const enduranceResponses = surveyResponses.filter(r => {
+      const q = allQuestions.find(q => q.id === r.questionId);
+      return q?.axisType === 'ENDURANCE';
+    });
+    
+    const avgVelocity = velocityResponses.length > 0 
+      ? (velocityResponses.reduce((sum, r) => sum + r.score, 0) / velocityResponses.length).toFixed(1)
+      : '0';
+    const avgEndurance = enduranceResponses.length > 0
+      ? (enduranceResponses.reduce((sum, r) => sum + r.score, 0) / enduranceResponses.length).toFixed(1)
+      : '0';
+    
+    console.log(`Average Velocity: ${avgVelocity}/5, Average Endurance: ${avgEndurance}/5`);
+  }
+
   console.log('Seed completed successfully!');
 }
 
