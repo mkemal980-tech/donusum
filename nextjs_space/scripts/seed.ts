@@ -3,8 +3,41 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
+// Güvenlik kontrolü: Mevcut verileri kontrol et
+async function checkExistingData() {
+  const counts = {
+    categories: await prisma.category.count(),
+    questions: await prisma.question.count(),
+    responses: await prisma.surveyResponse.count(),
+    users: await prisma.user.count()
+  };
+  
+  console.log('\n📊 Mevcut Veritabanı Durumu:');
+  console.log(`   - Kategoriler: ${counts.categories}`);
+  console.log(`   - Sorular: ${counts.questions}`);
+  console.log(`   - Cevaplar: ${counts.responses}`);
+  console.log(`   - Kullanıcılar: ${counts.users}`);
+  
+  // Eğer önemli kullanıcı verileri varsa uyar
+  if (counts.responses > 100 || counts.users > 10) {
+    console.log('\n⚠️  UYARI: Veritabanında önemli miktarda kullanıcı verisi var!');
+    console.log('   Seed işlemi bu verileri SİLECEKTİR.');
+    console.log('   Devam etmek için FORCE_SEED=true environment variable kullanın.\n');
+    
+    if (process.env.FORCE_SEED !== 'true') {
+      throw new Error('Seed işlemi iptal edildi. FORCE_SEED=true ile tekrar deneyin.');
+    }
+    console.log('   FORCE_SEED=true algılandı, devam ediliyor...\n');
+  }
+  
+  return counts;
+}
+
 async function main() {
   console.log('Starting seed...');
+  
+  // Önce mevcut verileri kontrol et
+  await checkExistingData();
 
   // Clear existing data
   await prisma.roadmapItem.deleteMany();

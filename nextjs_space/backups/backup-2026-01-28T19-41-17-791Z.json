@@ -1,0 +1,2032 @@
+{
+  "surveys": [
+    {
+      "id": "cmkyfe41r0002s7er29h12x0n",
+      "name": "Sürdürülebilirlik",
+      "description": "ESG ve sürdürülebilirlik değerlendirmesi",
+      "isActive": true,
+      "order": 1,
+      "createdAt": "2026-01-28T19:35:59.488Z",
+      "updatedAt": "2026-01-28T19:35:59.488Z"
+    }
+  ],
+  "categories": [
+    {
+      "id": "cmkyfe41t0004s7er89kpyrpr",
+      "name": "Environmental Sustainability",
+      "description": "Assess your environmental impact and sustainability practices",
+      "order": 1,
+      "createdAt": "2026-01-28T19:35:59.490Z",
+      "surveyId": "cmkyfe41r0002s7er29h12x0n"
+    },
+    {
+      "id": "cmkyfe42n0010s7ergmfq5rc2",
+      "name": "Social Responsibility",
+      "description": "Evaluate social impact and stakeholder engagement",
+      "order": 2,
+      "createdAt": "2026-01-28T19:35:59.519Z",
+      "surveyId": "cmkyfe41r0002s7er29h12x0n"
+    },
+    {
+      "id": "cmkyfe435001os7era3489gtt",
+      "name": "Governance & Ethics",
+      "description": "Assess governance structures and ethical practices",
+      "order": 3,
+      "createdAt": "2026-01-28T19:35:59.538Z",
+      "surveyId": "cmkyfe41r0002s7er29h12x0n"
+    },
+    {
+      "id": "cmkyfe43o002cs7eriq2yy4dy",
+      "name": "Digital Transformation",
+      "description": "Evaluate digital maturity and technology adoption",
+      "order": 4,
+      "createdAt": "2026-01-28T19:35:59.557Z",
+      "surveyId": "cmkyfe41r0002s7er29h12x0n"
+    }
+  ],
+  "subCategories": [
+    {
+      "id": "cmkyfe441002ss7er3k4qmnpb",
+      "name": "Process Automation",
+      "description": null,
+      "order": 2,
+      "categoryId": "cmkyfe43o002cs7eriq2yy4dy",
+      "createdAt": "2026-01-28T19:35:59.569Z",
+      "hasSubLevels": true
+    },
+    {
+      "id": "cmkyfe41v0006s7er0421u021",
+      "name": "Carbon Management",
+      "description": null,
+      "order": 1,
+      "categoryId": "cmkyfe41t0004s7er89kpyrpr",
+      "createdAt": "2026-01-28T19:35:59.492Z",
+      "hasSubLevels": true
+    },
+    {
+      "id": "cmkyfe42c000ms7er2kl30jxg",
+      "name": "Resource Efficiency",
+      "description": null,
+      "order": 2,
+      "categoryId": "cmkyfe41t0004s7er89kpyrpr",
+      "createdAt": "2026-01-28T19:35:59.508Z",
+      "hasSubLevels": true
+    },
+    {
+      "id": "cmkyfe42o0012s7erc3g3lhxa",
+      "name": "Employee Wellbeing",
+      "description": null,
+      "order": 1,
+      "categoryId": "cmkyfe42n0010s7ergmfq5rc2",
+      "createdAt": "2026-01-28T19:35:59.521Z",
+      "hasSubLevels": true
+    },
+    {
+      "id": "cmkyfe42z001gs7ere3aswz3y",
+      "name": "Community Impact",
+      "description": null,
+      "order": 2,
+      "categoryId": "cmkyfe42n0010s7ergmfq5rc2",
+      "createdAt": "2026-01-28T19:35:59.531Z",
+      "hasSubLevels": true
+    },
+    {
+      "id": "cmkyfe437001qs7erthjrjzps",
+      "name": "Corporate Governance",
+      "description": null,
+      "order": 1,
+      "categoryId": "cmkyfe435001os7era3489gtt",
+      "createdAt": "2026-01-28T19:35:59.539Z",
+      "hasSubLevels": true
+    },
+    {
+      "id": "cmkyfe43i0024s7er4sz4uj2k",
+      "name": "Ethics & Compliance",
+      "description": null,
+      "order": 2,
+      "categoryId": "cmkyfe435001os7era3489gtt",
+      "createdAt": "2026-01-28T19:35:59.551Z",
+      "hasSubLevels": true
+    },
+    {
+      "id": "cmkyfe43q002es7er0aw9xcn5",
+      "name": "Data & Analytics",
+      "description": null,
+      "order": 1,
+      "categoryId": "cmkyfe43o002cs7eriq2yy4dy",
+      "createdAt": "2026-01-28T19:35:59.558Z",
+      "hasSubLevels": true
+    }
+  ],
+  "subLevels": [
+    {
+      "id": "cmkyfe41x0008s7eru6fyght3",
+      "name": "Emissions Tracking",
+      "description": null,
+      "order": 1,
+      "subCategoryId": "cmkyfe41v0006s7er0421u021",
+      "createdAt": "2026-01-28T19:35:59.494Z",
+      "axisType": "VELOCITY"
+    },
+    {
+      "id": "cmkyfe427000gs7er40phcdmu",
+      "name": "Reduction Initiatives",
+      "description": null,
+      "order": 2,
+      "subCategoryId": "cmkyfe41v0006s7er0421u021",
+      "createdAt": "2026-01-28T19:35:59.503Z",
+      "axisType": "VELOCITY"
+    },
+    {
+      "id": "cmkyfe42d000os7erefi38xip",
+      "name": "Energy Management",
+      "description": null,
+      "order": 1,
+      "subCategoryId": "cmkyfe42c000ms7er2kl30jxg",
+      "createdAt": "2026-01-28T19:35:59.509Z",
+      "axisType": "VELOCITY"
+    },
+    {
+      "id": "cmkyfe42h000us7er1aovchqt",
+      "name": "Waste & Circularity",
+      "description": null,
+      "order": 2,
+      "subCategoryId": "cmkyfe42c000ms7er2kl30jxg",
+      "createdAt": "2026-01-28T19:35:59.514Z",
+      "axisType": "VELOCITY"
+    },
+    {
+      "id": "cmkyfe42q0014s7erd6ldfhmc",
+      "name": "Health & Safety",
+      "description": null,
+      "order": 1,
+      "subCategoryId": "cmkyfe42o0012s7erc3g3lhxa",
+      "createdAt": "2026-01-28T19:35:59.522Z",
+      "axisType": "VELOCITY"
+    },
+    {
+      "id": "cmkyfe42u001as7erhuxq1mnw",
+      "name": "Diversity & Inclusion",
+      "description": null,
+      "order": 2,
+      "subCategoryId": "cmkyfe42o0012s7erc3g3lhxa",
+      "createdAt": "2026-01-28T19:35:59.527Z",
+      "axisType": "VELOCITY"
+    },
+    {
+      "id": "cmkyfe431001is7ereds6g701",
+      "name": "Local Engagement",
+      "description": null,
+      "order": 1,
+      "subCategoryId": "cmkyfe42z001gs7ere3aswz3y",
+      "createdAt": "2026-01-28T19:35:59.533Z",
+      "axisType": "VELOCITY"
+    },
+    {
+      "id": "cmkyfe439001ss7erphhi3m08",
+      "name": "Board Oversight",
+      "description": null,
+      "order": 1,
+      "subCategoryId": "cmkyfe437001qs7erthjrjzps",
+      "createdAt": "2026-01-28T19:35:59.541Z",
+      "axisType": "VELOCITY"
+    },
+    {
+      "id": "cmkyfe43e001ys7er7ht25mb6",
+      "name": "Risk Management",
+      "description": null,
+      "order": 2,
+      "subCategoryId": "cmkyfe437001qs7erthjrjzps",
+      "createdAt": "2026-01-28T19:35:59.546Z",
+      "axisType": "VELOCITY"
+    },
+    {
+      "id": "cmkyfe43k0026s7erkwvvwa0a",
+      "name": "Business Ethics",
+      "description": null,
+      "order": 1,
+      "subCategoryId": "cmkyfe43i0024s7er4sz4uj2k",
+      "createdAt": "2026-01-28T19:35:59.552Z",
+      "axisType": "VELOCITY"
+    },
+    {
+      "id": "cmkyfe43s002gs7erqpq6gw4x",
+      "name": "Data Infrastructure",
+      "description": null,
+      "order": 1,
+      "subCategoryId": "cmkyfe43q002es7er0aw9xcn5",
+      "createdAt": "2026-01-28T19:35:59.560Z",
+      "axisType": "VELOCITY"
+    },
+    {
+      "id": "cmkyfe43w002ms7erg7785ld5",
+      "name": "Advanced Analytics",
+      "description": null,
+      "order": 2,
+      "subCategoryId": "cmkyfe43q002es7er0aw9xcn5",
+      "createdAt": "2026-01-28T19:35:59.564Z",
+      "axisType": "VELOCITY"
+    },
+    {
+      "id": "cmkyfe442002us7ernhohs91y",
+      "name": "Workflow Automation",
+      "description": null,
+      "order": 1,
+      "subCategoryId": "cmkyfe441002ss7er3k4qmnpb",
+      "createdAt": "2026-01-28T19:35:59.571Z",
+      "axisType": "VELOCITY"
+    }
+  ],
+  "questions": [
+    {
+      "id": "cmkyfe420000as7erdixnk0nj",
+      "text": "How mature is your carbon emissions measurement and tracking system?",
+      "type": "SCALE",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 1,
+      "subLevelId": "cmkyfe41x0008s7eru6fyght3",
+      "createdAt": "2026-01-28T19:35:59.496Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe423000cs7ergq95toys",
+      "text": "Do you have Scope 1, 2, and 3 emissions calculated?",
+      "type": "YES_NO",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": true,
+      "order": 2,
+      "subLevelId": "cmkyfe41x0008s7eru6fyght3",
+      "createdAt": "2026-01-28T19:35:59.499Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe425000es7erp0pug8nt",
+      "text": "How frequently do you report on emissions?",
+      "type": "MULTIPLE_CHOICE",
+      "options": [
+        {
+          "label": "Never",
+          "score": 1,
+          "value": "never"
+        },
+        {
+          "label": "Annually",
+          "score": 3,
+          "value": "annually"
+        },
+        {
+          "label": "Quarterly",
+          "score": 4,
+          "value": "quarterly"
+        },
+        {
+          "label": "Monthly",
+          "score": 5,
+          "value": "monthly"
+        }
+      ],
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 3,
+      "subLevelId": "cmkyfe41x0008s7eru6fyght3",
+      "createdAt": "2026-01-28T19:35:59.501Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe428000is7erv8c2bp4o",
+      "text": "Rate your carbon reduction initiative maturity",
+      "type": "SCALE",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 1,
+      "subLevelId": "cmkyfe427000gs7er40phcdmu",
+      "createdAt": "2026-01-28T19:35:59.505Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe42a000ks7erdtif4hym",
+      "text": "Do you have science-based targets?",
+      "type": "YES_NO",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": true,
+      "order": 2,
+      "subLevelId": "cmkyfe427000gs7er40phcdmu",
+      "createdAt": "2026-01-28T19:35:59.507Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe42e000qs7ermrwcyte1",
+      "text": "How effectively do you manage energy consumption?",
+      "type": "SCALE",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 1,
+      "subLevelId": "cmkyfe42d000os7erefi38xip",
+      "createdAt": "2026-01-28T19:35:59.511Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe42g000ss7eryxpx2tnu",
+      "text": "What percentage of energy comes from renewable sources?",
+      "type": "MULTIPLE_CHOICE",
+      "options": [
+        {
+          "label": "0-25%",
+          "score": 1,
+          "value": "0-25"
+        },
+        {
+          "label": "26-50%",
+          "score": 2,
+          "value": "26-50"
+        },
+        {
+          "label": "51-75%",
+          "score": 4,
+          "value": "51-75"
+        },
+        {
+          "label": "76-100%",
+          "score": 5,
+          "value": "76-100"
+        }
+      ],
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 2,
+      "subLevelId": "cmkyfe42d000os7erefi38xip",
+      "createdAt": "2026-01-28T19:35:59.512Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe42j000ws7eryuevy2ud",
+      "text": "Rate your waste reduction and circularity practices",
+      "type": "SCALE",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 1,
+      "subLevelId": "cmkyfe42h000us7er1aovchqt",
+      "createdAt": "2026-01-28T19:35:59.515Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe42k000ys7er0vt00nm4",
+      "text": "Do you have a circular economy strategy?",
+      "type": "YES_NO",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": true,
+      "order": 2,
+      "subLevelId": "cmkyfe42h000us7er1aovchqt",
+      "createdAt": "2026-01-28T19:35:59.517Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe42r0016s7erazoh64v1",
+      "text": "How mature are your health and safety programs?",
+      "type": "SCALE",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 1,
+      "subLevelId": "cmkyfe42q0014s7erd6ldfhmc",
+      "createdAt": "2026-01-28T19:35:59.524Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe42t0018s7erzdwlut9w",
+      "text": "Do you have ISO 45001 or equivalent certification?",
+      "type": "YES_NO",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": true,
+      "order": 2,
+      "subLevelId": "cmkyfe42q0014s7erd6ldfhmc",
+      "createdAt": "2026-01-28T19:35:59.525Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe42w001cs7ernqsrrye1",
+      "text": "Rate your D&I program maturity",
+      "type": "SCALE",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 1,
+      "subLevelId": "cmkyfe42u001as7erhuxq1mnw",
+      "createdAt": "2026-01-28T19:35:59.528Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe42x001es7erv1aplyae",
+      "text": "Do you have measurable D&I targets?",
+      "type": "YES_NO",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 2,
+      "subLevelId": "cmkyfe42u001as7erhuxq1mnw",
+      "createdAt": "2026-01-28T19:35:59.530Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe432001ks7er4bqcd9rh",
+      "text": "How effectively do you engage with local communities?",
+      "type": "SCALE",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 1,
+      "subLevelId": "cmkyfe431001is7ereds6g701",
+      "createdAt": "2026-01-28T19:35:59.535Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe434001ms7errmfgmdok",
+      "text": "Do you have formal community engagement programs?",
+      "type": "YES_NO",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": true,
+      "order": 2,
+      "subLevelId": "cmkyfe431001is7ereds6g701",
+      "createdAt": "2026-01-28T19:35:59.536Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe43a001us7erfmsnpvhr",
+      "text": "How effective is board oversight of ESG matters?",
+      "type": "SCALE",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 1,
+      "subLevelId": "cmkyfe439001ss7erphhi3m08",
+      "createdAt": "2026-01-28T19:35:59.543Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe43c001ws7erp8u2hdc9",
+      "text": "Does your board have ESG expertise?",
+      "type": "YES_NO",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 2,
+      "subLevelId": "cmkyfe439001ss7erphhi3m08",
+      "createdAt": "2026-01-28T19:35:59.544Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe43f0020s7erd5wvk0ku",
+      "text": "Rate your ESG risk management maturity",
+      "type": "SCALE",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 1,
+      "subLevelId": "cmkyfe43e001ys7er7ht25mb6",
+      "createdAt": "2026-01-28T19:35:59.548Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe43h0022s7ero9fvtkfk",
+      "text": "Do you have climate risk assessments (TCFD)?",
+      "type": "YES_NO",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": true,
+      "order": 2,
+      "subLevelId": "cmkyfe43e001ys7er7ht25mb6",
+      "createdAt": "2026-01-28T19:35:59.549Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe43l0028s7erglf2velt",
+      "text": "How robust are your business ethics policies?",
+      "type": "SCALE",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 1,
+      "subLevelId": "cmkyfe43k0026s7erkwvvwa0a",
+      "createdAt": "2026-01-28T19:35:59.554Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe43n002as7erx3y29iic",
+      "text": "Do you have anti-corruption training for all employees?",
+      "type": "YES_NO",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 2,
+      "subLevelId": "cmkyfe43k0026s7erkwvvwa0a",
+      "createdAt": "2026-01-28T19:35:59.555Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe43t002is7er6lx6dumq",
+      "text": "How mature is your data infrastructure?",
+      "type": "SCALE",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 1,
+      "subLevelId": "cmkyfe43s002gs7erqpq6gw4x",
+      "createdAt": "2026-01-28T19:35:59.562Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe43u002ks7ervzsmjce4",
+      "text": "Do you have a centralized data platform?",
+      "type": "YES_NO",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 2,
+      "subLevelId": "cmkyfe43s002gs7erqpq6gw4x",
+      "createdAt": "2026-01-28T19:35:59.563Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe43x002os7ery0gby5ha",
+      "text": "Rate your AI/ML adoption maturity",
+      "type": "SCALE",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 1,
+      "subLevelId": "cmkyfe43w002ms7erg7785ld5",
+      "createdAt": "2026-01-28T19:35:59.566Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe43z002qs7erj39segs7",
+      "text": "Are predictive analytics used for decision-making?",
+      "type": "YES_NO",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 2,
+      "subLevelId": "cmkyfe43w002ms7erg7785ld5",
+      "createdAt": "2026-01-28T19:35:59.567Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe443002ws7erl9wovn9e",
+      "text": "How mature is your workflow automation?",
+      "type": "SCALE",
+      "options": null,
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 1,
+      "subLevelId": "cmkyfe442002us7ernhohs91y",
+      "createdAt": "2026-01-28T19:35:59.572Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    },
+    {
+      "id": "cmkyfe445002ys7ervhqp58fv",
+      "text": "What percentage of processes are automated?",
+      "type": "MULTIPLE_CHOICE",
+      "options": [
+        {
+          "label": "0-20%",
+          "score": 1,
+          "value": "0-20"
+        },
+        {
+          "label": "21-40%",
+          "score": 2,
+          "value": "21-40"
+        },
+        {
+          "label": "41-60%",
+          "score": 3,
+          "value": "41-60"
+        },
+        {
+          "label": "61-80%",
+          "score": 4,
+          "value": "61-80"
+        },
+        {
+          "label": "81-100%",
+          "score": 5,
+          "value": "81-100"
+        }
+      ],
+      "weight": 1,
+      "requiresEvidence": false,
+      "order": 2,
+      "subLevelId": "cmkyfe442002us7ernhohs91y",
+      "createdAt": "2026-01-28T19:35:59.573Z",
+      "subCategoryId": null,
+      "axisType": "VELOCITY",
+      "conditionalOptions": null
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "cmkyfe449002zs7er8lq4gizt",
+      "title": "LED Lighting Retrofit",
+      "description": "Replace traditional lighting with LED alternatives across facilities for immediate energy savings",
+      "categoryId": "cmkyfe41t0004s7er89kpyrpr",
+      "costType": "CAPEX",
+      "timeframe": "SHORT_TERM",
+      "strategicType": "QUICK_WIN",
+      "estimatedImpact": 3,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 1,
+      "createdAt": "2026-01-28T19:35:59.577Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44b0030s7erx2beuizb",
+      "title": "Employee Sustainability Training",
+      "description": "Launch awareness programs to engage employees in daily sustainability practices",
+      "categoryId": "cmkyfe41t0004s7er89kpyrpr",
+      "costType": "OPEX",
+      "timeframe": "SHORT_TERM",
+      "strategicType": "QUICK_WIN",
+      "estimatedImpact": 2,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 2,
+      "createdAt": "2026-01-28T19:35:59.579Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44d0031s7ercwyh1hja",
+      "title": "Waste Segregation Program",
+      "description": "Implement comprehensive waste sorting and recycling across all locations",
+      "categoryId": "cmkyfe41t0004s7er89kpyrpr",
+      "costType": "OPEX",
+      "timeframe": "SHORT_TERM",
+      "strategicType": "QUICK_WIN",
+      "estimatedImpact": 2,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 3,
+      "createdAt": "2026-01-28T19:35:59.581Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44e0032s7er448kcje1",
+      "title": "Carbon Accounting Platform",
+      "description": "Deploy enterprise carbon tracking software for Scope 1, 2, and 3 emissions",
+      "categoryId": "cmkyfe41t0004s7er89kpyrpr",
+      "costType": "CAPEX",
+      "timeframe": "MEDIUM_TERM",
+      "strategicType": "PROJECT",
+      "estimatedImpact": 5,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 4,
+      "createdAt": "2026-01-28T19:35:59.583Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44g0033s7eryil2l1d2",
+      "title": "Renewable Energy PPA",
+      "description": "Negotiate power purchase agreements for renewable energy sourcing",
+      "categoryId": "cmkyfe41t0004s7er89kpyrpr",
+      "costType": "OPEX",
+      "timeframe": "MEDIUM_TERM",
+      "strategicType": "PROJECT",
+      "estimatedImpact": 8,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 5,
+      "createdAt": "2026-01-28T19:35:59.585Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44i0034s7er7b10ou1b",
+      "title": "Supply Chain Sustainability Audit",
+      "description": "Comprehensive ESG assessment of key suppliers with improvement plans",
+      "categoryId": "cmkyfe41t0004s7er89kpyrpr",
+      "costType": "OPEX",
+      "timeframe": "MEDIUM_TERM",
+      "strategicType": "PROJECT",
+      "estimatedImpact": 4,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 6,
+      "createdAt": "2026-01-28T19:35:59.586Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44k0035s7er5numt089",
+      "title": "Net Zero Strategy",
+      "description": "Develop and implement comprehensive net-zero roadmap with science-based targets",
+      "categoryId": "cmkyfe41t0004s7er89kpyrpr",
+      "costType": "CAPEX",
+      "timeframe": "LONG_TERM",
+      "strategicType": "BIG_BET",
+      "estimatedImpact": 15,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 7,
+      "createdAt": "2026-01-28T19:35:59.589Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44m0036s7er89rxl8f3",
+      "title": "Circular Economy Transformation",
+      "description": "Redesign products and processes for full circularity",
+      "categoryId": "cmkyfe41t0004s7er89kpyrpr",
+      "costType": "CAPEX",
+      "timeframe": "LONG_TERM",
+      "strategicType": "BIG_BET",
+      "estimatedImpact": 12,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 8,
+      "createdAt": "2026-01-28T19:35:59.591Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44n0037s7erqxz8x3qe",
+      "title": "D&I Dashboard",
+      "description": "Create transparency dashboard tracking diversity metrics across organization",
+      "categoryId": "cmkyfe42n0010s7ergmfq5rc2",
+      "costType": "OPEX",
+      "timeframe": "SHORT_TERM",
+      "strategicType": "QUICK_WIN",
+      "estimatedImpact": 2,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 9,
+      "createdAt": "2026-01-28T19:35:59.592Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44p0038s7er69ko684u",
+      "title": "Mental Health Resources",
+      "description": "Expand employee assistance programs with mental health support",
+      "categoryId": "cmkyfe42n0010s7ergmfq5rc2",
+      "costType": "OPEX",
+      "timeframe": "SHORT_TERM",
+      "strategicType": "QUICK_WIN",
+      "estimatedImpact": 3,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 10,
+      "createdAt": "2026-01-28T19:35:59.594Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44r0039s7erxx6kyexn",
+      "title": "Community Investment Program",
+      "description": "Structured program for community grants and volunteering",
+      "categoryId": "cmkyfe42n0010s7ergmfq5rc2",
+      "costType": "OPEX",
+      "timeframe": "MEDIUM_TERM",
+      "strategicType": "PROJECT",
+      "estimatedImpact": 4,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 11,
+      "createdAt": "2026-01-28T19:35:59.595Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44t003as7erc4cxlx0m",
+      "title": "ISO 45001 Certification",
+      "description": "Achieve occupational health and safety management certification",
+      "categoryId": "cmkyfe42n0010s7ergmfq5rc2",
+      "costType": "CAPEX",
+      "timeframe": "MEDIUM_TERM",
+      "strategicType": "PROJECT",
+      "estimatedImpact": 5,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 12,
+      "createdAt": "2026-01-28T19:35:59.597Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44v003bs7er5txgp8bx",
+      "title": "ESG Policy Updates",
+      "description": "Review and strengthen ESG policies and procedures",
+      "categoryId": "cmkyfe435001os7era3489gtt",
+      "costType": "OPEX",
+      "timeframe": "SHORT_TERM",
+      "strategicType": "QUICK_WIN",
+      "estimatedImpact": 2,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 13,
+      "createdAt": "2026-01-28T19:35:59.599Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44w003cs7erribu4fuv",
+      "title": "Ethics Hotline Enhancement",
+      "description": "Upgrade whistleblower channels with anonymous reporting options",
+      "categoryId": "cmkyfe435001os7era3489gtt",
+      "costType": "OPEX",
+      "timeframe": "SHORT_TERM",
+      "strategicType": "QUICK_WIN",
+      "estimatedImpact": 2,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 14,
+      "createdAt": "2026-01-28T19:35:59.601Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44y003ds7erlf572h76",
+      "title": "TCFD Reporting Implementation",
+      "description": "Implement Task Force on Climate-related Financial Disclosures framework",
+      "categoryId": "cmkyfe435001os7era3489gtt",
+      "costType": "OPEX",
+      "timeframe": "MEDIUM_TERM",
+      "strategicType": "PROJECT",
+      "estimatedImpact": 6,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 15,
+      "createdAt": "2026-01-28T19:35:59.602Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe44z003es7erz5hn0jnj",
+      "title": "Board ESG Committee",
+      "description": "Establish dedicated board committee for ESG oversight",
+      "categoryId": "cmkyfe435001os7era3489gtt",
+      "costType": "OPEX",
+      "timeframe": "MEDIUM_TERM",
+      "strategicType": "PROJECT",
+      "estimatedImpact": 4,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 16,
+      "createdAt": "2026-01-28T19:35:59.604Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe451003fs7erfvkrtumu",
+      "title": "RPA Pilot Project",
+      "description": "Implement robotic process automation for high-volume repetitive tasks",
+      "categoryId": "cmkyfe43o002cs7eriq2yy4dy",
+      "costType": "CAPEX",
+      "timeframe": "SHORT_TERM",
+      "strategicType": "QUICK_WIN",
+      "estimatedImpact": 3,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 17,
+      "createdAt": "2026-01-28T19:35:59.605Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe452003gs7er0z0flktd",
+      "title": "Cloud Migration Quick Wins",
+      "description": "Migrate non-critical workloads to cloud for immediate efficiency gains",
+      "categoryId": "cmkyfe43o002cs7eriq2yy4dy",
+      "costType": "OPEX",
+      "timeframe": "SHORT_TERM",
+      "strategicType": "QUICK_WIN",
+      "estimatedImpact": 2,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 18,
+      "createdAt": "2026-01-28T19:35:59.607Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe454003hs7er9hszcl64",
+      "title": "Data Lake Implementation",
+      "description": "Build centralized data platform for enterprise analytics",
+      "categoryId": "cmkyfe43o002cs7eriq2yy4dy",
+      "costType": "CAPEX",
+      "timeframe": "MEDIUM_TERM",
+      "strategicType": "PROJECT",
+      "estimatedImpact": 7,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 19,
+      "createdAt": "2026-01-28T19:35:59.608Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe455003is7erzvuxyd0p",
+      "title": "ESG Data Integration",
+      "description": "Automate ESG data collection from operational systems",
+      "categoryId": "cmkyfe43o002cs7eriq2yy4dy",
+      "costType": "CAPEX",
+      "timeframe": "MEDIUM_TERM",
+      "strategicType": "PROJECT",
+      "estimatedImpact": 5,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 20,
+      "createdAt": "2026-01-28T19:35:59.610Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe457003js7ergqh1rjyv",
+      "title": "AI-Powered Sustainability Platform",
+      "description": "Deploy AI/ML for predictive sustainability analytics and optimization",
+      "categoryId": "cmkyfe43o002cs7eriq2yy4dy",
+      "costType": "CAPEX",
+      "timeframe": "LONG_TERM",
+      "strategicType": "BIG_BET",
+      "estimatedImpact": 10,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 21,
+      "createdAt": "2026-01-28T19:35:59.611Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    },
+    {
+      "id": "cmkyfe458003ks7erov7xf5tr",
+      "title": "Digital Twin for Operations",
+      "description": "Create digital twin models for optimizing resource consumption",
+      "categoryId": "cmkyfe43o002cs7eriq2yy4dy",
+      "costType": "CAPEX",
+      "timeframe": "LONG_TERM",
+      "strategicType": "BIG_BET",
+      "estimatedImpact": 12,
+      "minScoreThreshold": 0,
+      "maxScoreThreshold": 100,
+      "order": 22,
+      "createdAt": "2026-01-28T19:35:59.613Z",
+      "subLevelId": null,
+      "capexLevel": 1,
+      "opexLevel": 1,
+      "xPosition": 5,
+      "yPosition": 5,
+      "subCategoryId": null,
+      "questionId": null,
+      "triggerOptions": null,
+      "points": 0.5,
+      "videoUrl": null
+    }
+  ],
+  "sectors": [
+    {
+      "id": "cmkq27afv0000rqogsg2i9i47",
+      "name": "Tarım, Ormancılık, Balıkçılık",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.763Z",
+      "naicsCode": "11"
+    },
+    {
+      "id": "cmkq27agd000brqog3ow57at5",
+      "name": "Madencilik, Petrol ve Gaz",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.781Z",
+      "naicsCode": "21"
+    },
+    {
+      "id": "cmkq27agl000irqogltubzzt0",
+      "name": "Kamu Hizmetleri (Utilities)",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.790Z",
+      "naicsCode": "22"
+    },
+    {
+      "id": "cmkq27agp000lrqog1ititkvc",
+      "name": "İnşaat",
+      "order": 4,
+      "createdAt": "2026-01-22T23:04:36.794Z",
+      "naicsCode": "23"
+    },
+    {
+      "id": "cmkq27agx000srqog88dqif8j",
+      "name": "İmalat (Sanayi)",
+      "order": 5,
+      "createdAt": "2026-01-22T23:04:36.801Z",
+      "naicsCode": "31-33"
+    },
+    {
+      "id": "cmkq27ahi001drqogxdbj7sbm",
+      "name": "Toptan Ticaret",
+      "order": 6,
+      "createdAt": "2026-01-22T23:04:36.822Z",
+      "naicsCode": "42"
+    },
+    {
+      "id": "cmkq27ahp001krqogvn6bg05r",
+      "name": "Perakende Ticaret",
+      "order": 7,
+      "createdAt": "2026-01-22T23:04:36.829Z",
+      "naicsCode": "44-45"
+    },
+    {
+      "id": "cmkq27ai1001vrqogq4yulwph",
+      "name": "Ulaştırma ve Depolama",
+      "order": 8,
+      "createdAt": "2026-01-22T23:04:36.841Z",
+      "naicsCode": "48-49"
+    },
+    {
+      "id": "cmkq27aig002arqog0b6gh1ai",
+      "name": "Bilgi ve İletişim",
+      "order": 9,
+      "createdAt": "2026-01-22T23:04:36.857Z",
+      "naicsCode": "51"
+    },
+    {
+      "id": "cmkq27ais002lrqogtuxx6otn",
+      "name": "Finans ve Sigorta",
+      "order": 10,
+      "createdAt": "2026-01-22T23:04:36.868Z",
+      "naicsCode": "52"
+    },
+    {
+      "id": "cmkq27aj2002wrqogsbekrlqt",
+      "name": "Gayrimenkul ve Kiralama",
+      "order": 11,
+      "createdAt": "2026-01-22T23:04:36.879Z",
+      "naicsCode": "53"
+    },
+    {
+      "id": "cmkq27aj90033rqogp61v85x7",
+      "name": "Mesleki ve Teknik Hizmetler",
+      "order": 12,
+      "createdAt": "2026-01-22T23:04:36.886Z",
+      "naicsCode": "54"
+    },
+    {
+      "id": "cmkq27ajd0036rqogk1spagdt",
+      "name": "Şirket ve Teşebbüs Yönetimi",
+      "order": 13,
+      "createdAt": "2026-01-22T23:04:36.889Z",
+      "naicsCode": "55"
+    },
+    {
+      "id": "cmkq27ajg0039rqoguu2cj1ns",
+      "name": "İdari Destek ve Atık Yönetimi",
+      "order": 14,
+      "createdAt": "2026-01-22T23:04:36.892Z",
+      "naicsCode": "56"
+    },
+    {
+      "id": "cmkq27ajl003erqog8fjbboo6",
+      "name": "Eğitim Hizmetleri",
+      "order": 15,
+      "createdAt": "2026-01-22T23:04:36.898Z",
+      "naicsCode": "61"
+    },
+    {
+      "id": "cmkq27ajp003hrqog4pu3fejg",
+      "name": "Sağlık ve Sosyal Yardım",
+      "order": 16,
+      "createdAt": "2026-01-22T23:04:36.901Z",
+      "naicsCode": "62"
+    },
+    {
+      "id": "cmkq27ajx003qrqogohvd87z5",
+      "name": "Sanat, Eğlence ve Rekreasyon",
+      "order": 17,
+      "createdAt": "2026-01-22T23:04:36.909Z",
+      "naicsCode": "71"
+    },
+    {
+      "id": "cmkq27ak4003xrqog3g7ykj0v",
+      "name": "Konaklama ve Yiyecek",
+      "order": 18,
+      "createdAt": "2026-01-22T23:04:36.917Z",
+      "naicsCode": "72"
+    },
+    {
+      "id": "cmkq27ak90042rqogynexbrw9",
+      "name": "Diğer Hizmetler",
+      "order": 19,
+      "createdAt": "2026-01-22T23:04:36.922Z",
+      "naicsCode": "81"
+    },
+    {
+      "id": "cmkq27akg0049rqogaalmovbs",
+      "name": "Kamu Yönetimi",
+      "order": 20,
+      "createdAt": "2026-01-22T23:04:36.929Z",
+      "naicsCode": "92"
+    }
+  ],
+  "subSectors": [
+    {
+      "id": "cmkq27afz0002rqogbvy5cqkl",
+      "name": "[111] Bitkisel Üretim",
+      "sectorId": "cmkq27afv0000rqogsg2i9i47",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.767Z"
+    },
+    {
+      "id": "cmkq27ag30004rqogvcvmspm9",
+      "name": "[112] Hayvansal Üretim",
+      "sectorId": "cmkq27afv0000rqogsg2i9i47",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.771Z"
+    },
+    {
+      "id": "cmkq27ag50006rqogzu7089nq",
+      "name": "[113] Ormancılık ve Tomrukçuluk",
+      "sectorId": "cmkq27afv0000rqogsg2i9i47",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.774Z"
+    },
+    {
+      "id": "cmkq27ag80008rqog5tnq70gu",
+      "name": "[114] Balıkçılık ve Avcılık",
+      "sectorId": "cmkq27afv0000rqogsg2i9i47",
+      "order": 4,
+      "createdAt": "2026-01-22T23:04:36.776Z"
+    },
+    {
+      "id": "cmkq27aga000arqogf1vk8iwp",
+      "name": "[115] Tarım/Ormancılık Destek Hizmetleri",
+      "sectorId": "cmkq27afv0000rqogsg2i9i47",
+      "order": 5,
+      "createdAt": "2026-01-22T23:04:36.778Z"
+    },
+    {
+      "id": "cmkq27age000drqogxdxi6c6x",
+      "name": "[211] Petrol ve Gaz Çıkarımı",
+      "sectorId": "cmkq27agd000brqog3ow57at5",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.783Z"
+    },
+    {
+      "id": "cmkq27agh000frqogk76hyb5q",
+      "name": "[212] Madencilik (Petrol/Gaz Hariç)",
+      "sectorId": "cmkq27agd000brqog3ow57at5",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.785Z"
+    },
+    {
+      "id": "cmkq27agj000hrqoggrfeg27d",
+      "name": "[213] Madencilik Destek Faaliyetleri",
+      "sectorId": "cmkq27agd000brqog3ow57at5",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.787Z"
+    },
+    {
+      "id": "cmkq27agn000krqog8lh9kq6z",
+      "name": "[221] Elektrik, Gaz ve Su Tedariki",
+      "sectorId": "cmkq27agl000irqogltubzzt0",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.792Z"
+    },
+    {
+      "id": "cmkq27agr000nrqogfl5iujav",
+      "name": "[236] Bina İnşaatı",
+      "sectorId": "cmkq27agp000lrqog1ititkvc",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.795Z"
+    },
+    {
+      "id": "cmkq27agt000prqogyffaegve",
+      "name": "[237] Ağır ve Sivil Mühendislik",
+      "sectorId": "cmkq27agp000lrqog1ititkvc",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.797Z"
+    },
+    {
+      "id": "cmkq27agv000rrqoge6gqazlc",
+      "name": "[238] Özel Ticari Müteahhitler",
+      "sectorId": "cmkq27agp000lrqog1ititkvc",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.799Z"
+    },
+    {
+      "id": "cmkq27agy000urqogyqor77lz",
+      "name": "[311] Gıda",
+      "sectorId": "cmkq27agx000srqog88dqif8j",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.803Z"
+    },
+    {
+      "id": "cmkq27ah0000wrqoger4zir4h",
+      "name": "[312] İçecek ve Tütün",
+      "sectorId": "cmkq27agx000srqog88dqif8j",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.805Z"
+    },
+    {
+      "id": "cmkq27ah3000yrqoghux6fiv6",
+      "name": "[313] Tekstil Fabrikaları",
+      "sectorId": "cmkq27agx000srqog88dqif8j",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.807Z"
+    },
+    {
+      "id": "cmkq27ah40010rqogqxh1jy89",
+      "name": "[315] Giyim",
+      "sectorId": "cmkq27agx000srqog88dqif8j",
+      "order": 4,
+      "createdAt": "2026-01-22T23:04:36.809Z"
+    },
+    {
+      "id": "cmkq27ah60012rqogi7eemd6y",
+      "name": "[325] Kimyasal",
+      "sectorId": "cmkq27agx000srqog88dqif8j",
+      "order": 5,
+      "createdAt": "2026-01-22T23:04:36.811Z"
+    },
+    {
+      "id": "cmkq27ah80014rqogqdpkn0b8",
+      "name": "[326] Plastik ve Kauçuk",
+      "sectorId": "cmkq27agx000srqog88dqif8j",
+      "order": 6,
+      "createdAt": "2026-01-22T23:04:36.813Z"
+    },
+    {
+      "id": "cmkq27aha0016rqogscelnlef",
+      "name": "[331] Ana Metal",
+      "sectorId": "cmkq27agx000srqog88dqif8j",
+      "order": 7,
+      "createdAt": "2026-01-22T23:04:36.815Z"
+    },
+    {
+      "id": "cmkq27ahc0018rqogkwft486o",
+      "name": "[333] Makine",
+      "sectorId": "cmkq27agx000srqog88dqif8j",
+      "order": 8,
+      "createdAt": "2026-01-22T23:04:36.816Z"
+    },
+    {
+      "id": "cmkq27ahe001arqogbc3hx5m7",
+      "name": "[334] Bilgisayar ve Elektronik",
+      "sectorId": "cmkq27agx000srqog88dqif8j",
+      "order": 9,
+      "createdAt": "2026-01-22T23:04:36.818Z"
+    },
+    {
+      "id": "cmkq27ahg001crqogxqh9qnb1",
+      "name": "[336] Ulaşım Ekipmanları",
+      "sectorId": "cmkq27agx000srqog88dqif8j",
+      "order": 10,
+      "createdAt": "2026-01-22T23:04:36.820Z"
+    },
+    {
+      "id": "cmkq27ahj001frqogtg0if39r",
+      "name": "[423] Dayanıklı Tüketim Malları",
+      "sectorId": "cmkq27ahi001drqogxdbj7sbm",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.824Z"
+    },
+    {
+      "id": "cmkq27ahl001hrqogn8glbfan",
+      "name": "[424] Dayanıksız Tüketim Malları",
+      "sectorId": "cmkq27ahi001drqogxdbj7sbm",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.826Z"
+    },
+    {
+      "id": "cmkq27ahn001jrqogksnqlf1b",
+      "name": "[425] Toptan Satış Temsilcileri ve Brokerlar",
+      "sectorId": "cmkq27ahi001drqogxdbj7sbm",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.827Z"
+    },
+    {
+      "id": "cmkq27ahq001mrqog8iu91wg2",
+      "name": "[441] Motorlu Taşıtlar",
+      "sectorId": "cmkq27ahp001krqogvn6bg05r",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.831Z"
+    },
+    {
+      "id": "cmkq27ahs001orqogve8f93kp",
+      "name": "[444] Yapı Malzemeleri ve Bahçe Ekipmanları",
+      "sectorId": "cmkq27ahp001krqogvn6bg05r",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.833Z"
+    },
+    {
+      "id": "cmkq27ahv001qrqog4gp3h023",
+      "name": "[445] Gıda ve İçecek Mağazaları",
+      "sectorId": "cmkq27ahp001krqogvn6bg05r",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.835Z"
+    },
+    {
+      "id": "cmkq27ahx001srqogb1ty24pd",
+      "name": "[452] Genel Mağazalar",
+      "sectorId": "cmkq27ahp001krqogvn6bg05r",
+      "order": 4,
+      "createdAt": "2026-01-22T23:04:36.837Z"
+    },
+    {
+      "id": "cmkq27ahz001urqogudqapa11",
+      "name": "[454] Mağaza Dışı Perakende",
+      "sectorId": "cmkq27ahp001krqogvn6bg05r",
+      "order": 5,
+      "createdAt": "2026-01-22T23:04:36.839Z"
+    },
+    {
+      "id": "cmkq27ai3001xrqogipw2hd4b",
+      "name": "[481] Havayolu",
+      "sectorId": "cmkq27ai1001vrqogq4yulwph",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.843Z"
+    },
+    {
+      "id": "cmkq27ai5001zrqogyib2ey18",
+      "name": "[482] Demiryolu",
+      "sectorId": "cmkq27ai1001vrqogq4yulwph",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.845Z"
+    },
+    {
+      "id": "cmkq27ai70021rqog9sdk4vj3",
+      "name": "[484] Karayolu Nakliyesi",
+      "sectorId": "cmkq27ai1001vrqogq4yulwph",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.847Z"
+    },
+    {
+      "id": "cmkq27ai90023rqogeqok6fjf",
+      "name": "[485] Yolcu Taşımacılığı",
+      "sectorId": "cmkq27ai1001vrqogq4yulwph",
+      "order": 4,
+      "createdAt": "2026-01-22T23:04:36.849Z"
+    },
+    {
+      "id": "cmkq27aib0025rqogze3vnz5n",
+      "name": "[486] Boru Hattı",
+      "sectorId": "cmkq27ai1001vrqogq4yulwph",
+      "order": 5,
+      "createdAt": "2026-01-22T23:04:36.851Z"
+    },
+    {
+      "id": "cmkq27aid0027rqogox25x3a5",
+      "name": "[492] Kurye ve Paket Servisi",
+      "sectorId": "cmkq27ai1001vrqogq4yulwph",
+      "order": 6,
+      "createdAt": "2026-01-22T23:04:36.853Z"
+    },
+    {
+      "id": "cmkq27aif0029rqog16w7wqb3",
+      "name": "[493] Depolama",
+      "sectorId": "cmkq27ai1001vrqogq4yulwph",
+      "order": 7,
+      "createdAt": "2026-01-22T23:04:36.855Z"
+    },
+    {
+      "id": "cmkq27aii002crqog2ykakfyg",
+      "name": "[511] Yayıncılık (Yazılım dahil)",
+      "sectorId": "cmkq27aig002arqog0b6gh1ai",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.858Z"
+    },
+    {
+      "id": "cmkq27aik002erqog5dp1vqpe",
+      "name": "[512] Film ve Ses Kaydı",
+      "sectorId": "cmkq27aig002arqog0b6gh1ai",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.860Z"
+    },
+    {
+      "id": "cmkq27aim002grqogls4jpq5l",
+      "name": "[515] Yayıncılık (TV/Radyo)",
+      "sectorId": "cmkq27aig002arqog0b6gh1ai",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.863Z"
+    },
+    {
+      "id": "cmkq27aio002irqognfgzqoiy",
+      "name": "[517] Telekomünikasyon",
+      "sectorId": "cmkq27aig002arqog0b6gh1ai",
+      "order": 4,
+      "createdAt": "2026-01-22T23:04:36.865Z"
+    },
+    {
+      "id": "cmkq27aiq002krqognswqyqve",
+      "name": "[518] Veri İşleme ve Hosting",
+      "sectorId": "cmkq27aig002arqog0b6gh1ai",
+      "order": 5,
+      "createdAt": "2026-01-22T23:04:36.866Z"
+    },
+    {
+      "id": "cmkq27ait002nrqogpkpe1h9x",
+      "name": "[521] Merkez Bankacılığı",
+      "sectorId": "cmkq27ais002lrqogtuxx6otn",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.870Z"
+    },
+    {
+      "id": "cmkq27aiv002prqog4q8vwqbf",
+      "name": "[522] Kredi Aracılığı",
+      "sectorId": "cmkq27ais002lrqogtuxx6otn",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.872Z"
+    },
+    {
+      "id": "cmkq27aix002rrqogfegd25lo",
+      "name": "[523] Menkul Kıymetler ve Yatırım",
+      "sectorId": "cmkq27ais002lrqogtuxx6otn",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.873Z"
+    },
+    {
+      "id": "cmkq27aiz002trqogw291uyq2",
+      "name": "[524] Sigorta Faaliyetleri",
+      "sectorId": "cmkq27ais002lrqogtuxx6otn",
+      "order": 4,
+      "createdAt": "2026-01-22T23:04:36.875Z"
+    },
+    {
+      "id": "cmkq27aj1002vrqog5mjqlc2v",
+      "name": "[525] Fonlar ve Diğer Finansal Araçlar",
+      "sectorId": "cmkq27ais002lrqogtuxx6otn",
+      "order": 5,
+      "createdAt": "2026-01-22T23:04:36.877Z"
+    },
+    {
+      "id": "cmkq27aj4002yrqog9unt3cvg",
+      "name": "[531] Gayrimenkul",
+      "sectorId": "cmkq27aj2002wrqogsbekrlqt",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.880Z"
+    },
+    {
+      "id": "cmkq27aj60030rqog4z0s4end",
+      "name": "[532] Kiralama ve Leasing",
+      "sectorId": "cmkq27aj2002wrqogsbekrlqt",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.882Z"
+    },
+    {
+      "id": "cmkq27aj70032rqog5j3z8tip",
+      "name": "[533] Maddi Olmayan Varlıkların Lisanslanması",
+      "sectorId": "cmkq27aj2002wrqogsbekrlqt",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.884Z"
+    },
+    {
+      "id": "cmkq27ajb0035rqogwlnqx2hu",
+      "name": "[541] Hukuk, Muhasebe, Mimarlık, Mühendislik, Tasarım, Bilgisayar Sistemleri, Ar-Ge ve Reklamcılık",
+      "sectorId": "cmkq27aj90033rqogp61v85x7",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.887Z"
+    },
+    {
+      "id": "cmkq27aje0038rqogzomrnryz",
+      "name": "[551] Holdingler ve Şirket Yönetim Merkezleri",
+      "sectorId": "cmkq27ajd0036rqogk1spagdt",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.890Z"
+    },
+    {
+      "id": "cmkq27ajh003brqogdv9u5wgj",
+      "name": "[561] İdari ve Destek Hizmetleri",
+      "sectorId": "cmkq27ajg0039rqoguu2cj1ns",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.894Z"
+    },
+    {
+      "id": "cmkq27ajj003drqogk0vtivhx",
+      "name": "[562] Atık Yönetimi ve İyileştirme Hizmetleri",
+      "sectorId": "cmkq27ajg0039rqoguu2cj1ns",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.896Z"
+    },
+    {
+      "id": "cmkq27ajn003grqogvgh9zk0i",
+      "name": "[611] Okullar, Kolejler, Üniversiteler ve Eğitim Merkezleri",
+      "sectorId": "cmkq27ajl003erqog8fjbboo6",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.899Z"
+    },
+    {
+      "id": "cmkq27ajq003jrqog752n5tqa",
+      "name": "[621] Ayakta Sağlık Hizmetleri",
+      "sectorId": "cmkq27ajp003hrqog4pu3fejg",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.902Z"
+    },
+    {
+      "id": "cmkq27ajs003lrqogtucbuytx",
+      "name": "[622] Hastaneler",
+      "sectorId": "cmkq27ajp003hrqog4pu3fejg",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.904Z"
+    },
+    {
+      "id": "cmkq27ajt003nrqogxj5dna88",
+      "name": "[623] Bakım Evleri",
+      "sectorId": "cmkq27ajp003hrqog4pu3fejg",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.906Z"
+    },
+    {
+      "id": "cmkq27ajv003prqog5221xp2j",
+      "name": "[624] Sosyal Yardım",
+      "sectorId": "cmkq27ajp003hrqog4pu3fejg",
+      "order": 4,
+      "createdAt": "2026-01-22T23:04:36.908Z"
+    },
+    {
+      "id": "cmkq27ajy003srqogm6bsb2sk",
+      "name": "[711] Gösteri Sanatları ve Spor",
+      "sectorId": "cmkq27ajx003qrqogohvd87z5",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.911Z"
+    },
+    {
+      "id": "cmkq27ak0003urqogu9d0j5ld",
+      "name": "[712] Müzeler ve Tarihi Yerler",
+      "sectorId": "cmkq27ajx003qrqogohvd87z5",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.913Z"
+    },
+    {
+      "id": "cmkq27ak2003wrqog5an4kbkm",
+      "name": "[713] Eğlence ve Kumar",
+      "sectorId": "cmkq27ajx003qrqogohvd87z5",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.915Z"
+    },
+    {
+      "id": "cmkq27ak6003zrqog10ll1ale",
+      "name": "[721] Konaklama",
+      "sectorId": "cmkq27ak4003xrqog3g7ykj0v",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.918Z"
+    },
+    {
+      "id": "cmkq27ak70041rqog26o2zj1b",
+      "name": "[722] Yiyecek Hizmetleri ve İçki Mekanları",
+      "sectorId": "cmkq27ak4003xrqog3g7ykj0v",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.920Z"
+    },
+    {
+      "id": "cmkq27akb0044rqoglvxilnub",
+      "name": "[811] Tamir ve Bakım",
+      "sectorId": "cmkq27ak90042rqogynexbrw9",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.923Z"
+    },
+    {
+      "id": "cmkq27akd0046rqog3f79xhdt",
+      "name": "[812] Kişisel Hizmetler",
+      "sectorId": "cmkq27ak90042rqogynexbrw9",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.925Z"
+    },
+    {
+      "id": "cmkq27ake0048rqognqw3uheq",
+      "name": "[813] Sivil Toplum ve Dini Kuruluşlar",
+      "sectorId": "cmkq27ak90042rqogynexbrw9",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.927Z"
+    },
+    {
+      "id": "cmkq27aki004brqoggla9hbg5",
+      "name": "[921] Genel Yönetim",
+      "sectorId": "cmkq27akg0049rqogaalmovbs",
+      "order": 1,
+      "createdAt": "2026-01-22T23:04:36.930Z"
+    },
+    {
+      "id": "cmkq27akj004drqogm9af5syn",
+      "name": "[922] Adalet ve Güvenlik",
+      "sectorId": "cmkq27akg0049rqogaalmovbs",
+      "order": 2,
+      "createdAt": "2026-01-22T23:04:36.932Z"
+    },
+    {
+      "id": "cmkq27akl004frqog7atv6d4a",
+      "name": "[926] Ekonomik Programların Yönetimi",
+      "sectorId": "cmkq27akg0049rqogaalmovbs",
+      "order": 3,
+      "createdAt": "2026-01-22T23:04:36.933Z"
+    }
+  ],
+  "benchmarks": [],
+  "ironmanBenchmarks": [
+    {
+      "id": "cmkq2w0fd000bo00884qyvdfo",
+      "sectorId": "cmkq27afv0000rqogsg2i9i47",
+      "subSectorId": "cmkq27afz0002rqogbvy5cqkl",
+      "velocityAverage": 2.5,
+      "velocityBest": 4.5,
+      "enduranceAverage": 2.5,
+      "enduranceBest": 4.5,
+      "createdAt": "2026-01-22T23:23:50.186Z",
+      "updatedAt": "2026-01-22T23:23:50.186Z",
+      "enduranceAverageTarget": 3,
+      "velocityAverageTarget": 3
+    }
+  ],
+  "sectorCategoryWeights": [],
+  "users": [
+    {
+      "id": "cmkyfe3zr0000s7erfod54y9v",
+      "email": "admin@test.com",
+      "firstName": "Admin",
+      "lastName": "User",
+      "organization": "System",
+      "role": "ADMIN",
+      "sectorId": null,
+      "subSectorId": null,
+      "isActive": true,
+      "createdAt": "2026-01-28T19:35:59.415Z"
+    },
+    {
+      "id": "cmkyfe41p0001s7ersi44bzux",
+      "email": "john@doe.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "organization": "Test Corp",
+      "role": "USER",
+      "sectorId": null,
+      "subSectorId": null,
+      "isActive": true,
+      "createdAt": "2026-01-28T19:35:59.486Z"
+    }
+  ],
+  "surveyResponses": [
+    {
+      "id": "cmkyfe45d003ls7erhjs0dmxc",
+      "value": "5",
+      "score": 5,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe420000as7erdixnk0nj",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-22T18:31:14.380Z"
+    },
+    {
+      "id": "cmkyfe45d003ms7erlgda102x",
+      "value": "evet",
+      "score": 5,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe423000cs7ergq95toys",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-23T20:58:26.261Z"
+    },
+    {
+      "id": "cmkyfe45d003ns7erm8q2k21p",
+      "value": "4",
+      "score": 4,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe425000es7erp0pug8nt",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-28T15:02:14.001Z"
+    },
+    {
+      "id": "cmkyfe45e003os7erjtxle59g",
+      "value": "5",
+      "score": 5,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe428000is7erv8c2bp4o",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-23T22:59:21.987Z"
+    },
+    {
+      "id": "cmkyfe45e003ps7erdt6qfsxx",
+      "value": "evet",
+      "score": 3,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe42a000ks7erdtif4hym",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-24T05:54:08.358Z"
+    },
+    {
+      "id": "cmkyfe45e003qs7er0ir546p0",
+      "value": "3",
+      "score": 3,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe42e000qs7ermrwcyte1",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-28T05:14:41.299Z"
+    },
+    {
+      "id": "cmkyfe45e003rs7er9iem1gqa",
+      "value": "5",
+      "score": 5,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe42g000ss7eryxpx2tnu",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-28T16:03:33.322Z"
+    },
+    {
+      "id": "cmkyfe45e003ss7erp2oem969",
+      "value": "3",
+      "score": 3,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe42j000ws7eryuevy2ud",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-24T13:50:48.699Z"
+    },
+    {
+      "id": "cmkyfe45e003ts7erdoxlj946",
+      "value": "evet",
+      "score": 4,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe42k000ys7er0vt00nm4",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-23T16:38:46.383Z"
+    },
+    {
+      "id": "cmkyfe45e003us7eruype9we6",
+      "value": "5",
+      "score": 5,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe42r0016s7erazoh64v1",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-26T10:36:34.488Z"
+    },
+    {
+      "id": "cmkyfe45e003vs7er69j9bgg5",
+      "value": "evet",
+      "score": 5,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe42t0018s7erzdwlut9w",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-22T01:56:37.994Z"
+    },
+    {
+      "id": "cmkyfe45e003ws7ervztyf79a",
+      "value": "4",
+      "score": 4,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe42w001cs7ernqsrrye1",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-22T07:48:01.893Z"
+    },
+    {
+      "id": "cmkyfe45e003xs7eri87uk7fq",
+      "value": "evet",
+      "score": 5,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe42x001es7erv1aplyae",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-25T00:39:17.939Z"
+    },
+    {
+      "id": "cmkyfe45e003ys7er5jrmgexd",
+      "value": "4",
+      "score": 4,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe432001ks7er4bqcd9rh",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-28T19:25:25.295Z"
+    },
+    {
+      "id": "cmkyfe45e003zs7erm24nltxb",
+      "value": "evet",
+      "score": 4,
+      "userId": "cmkyfe41p0001s7ersi44bzux",
+      "questionId": "cmkyfe434001ms7errmfgmdok",
+      "createdAt": "2026-01-28T19:35:59.618Z",
+      "updatedAt": "2026-01-25T04:13:57.103Z"
+    }
+  ]
+}
