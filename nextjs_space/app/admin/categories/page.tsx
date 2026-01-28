@@ -904,10 +904,10 @@ export default function CategoriesPage() {
                           onChange={(e) => setFormData({ ...formData, conditionalOptionsText: e.target.value })}
                           className="w-full p-3 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                           rows={6}
-                          placeholder={`ISO 9001|5\nISO 14001|10\nISO 27001|15\nISO 45001|20`}
+                          placeholder={`ISO 9001|5\nISO 14001|10.5\nISO 27001|15.75\nISO 45001|20`}
                         />
                         <p className="text-xs text-[var(--text-dim)] mt-1">
-                          Format: Her satırda bir seçenek. Etiket ve puan "|" ile ayrılmalı.
+                          Format: Her satırda bir seçenek. Etiket ve puan "|" ile ayrılmalı. <strong>Ondalık sayı desteklenir</strong> (örn: 10.5, 15.75)
                         </p>
                       </div>
                     </div>

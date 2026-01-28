@@ -77,10 +77,10 @@ export default function SurveyQuestion({
                 <button
                   key={num}
                   onClick={() => onAnswer?.(q?.id, String(num))}
-                  className={`flex-1 py-4 rounded-lg font-semibold text-lg transition-all ${
+                  className={`flex-1 py-4 rounded-lg font-semibold text-lg transition-all border-2 ${
                     value === String(num)
-                      ? "bg-[var(--accent)] text-white shadow-lg scale-105"
-                      : "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--border-soft)]"
+                      ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-[0_0_20px_rgba(12,193,195,0.6)] scale-105 ring-2 ring-[var(--accent)]/30"
+                      : "bg-[var(--bg-card-2)] text-[var(--text-muted)] border-[var(--border-soft)] hover:bg-[var(--border-soft)] hover:border-[var(--accent)]/50"
                   }`}
                 >
                   {num}

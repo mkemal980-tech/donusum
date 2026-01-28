@@ -61,7 +61,11 @@ export async function GET(request: NextRequest) {
               kanit_gerekli: 'FALSE',
               secenekler: '',
               evet_puani: '',
-              hayir_puani: ''
+              hayir_puani: '',
+              esik_sorusu: '',
+              evet_etiketi: '',
+              hayir_etiketi: '',
+              alt_secenekler: ''
             });
           }
         } else {
@@ -78,7 +82,11 @@ export async function GET(request: NextRequest) {
             kanit_gerekli: 'FALSE',
             secenekler: '',
             evet_puani: '',
-            hayir_puani: ''
+            hayir_puani: '',
+            esik_sorusu: '',
+            evet_etiketi: '',
+            hayir_etiketi: '',
+            alt_secenekler: ''
           });
         }
       }
@@ -98,7 +106,11 @@ export async function GET(request: NextRequest) {
         kanit_gerekli: '',
         secenekler: '',
         evet_puani: '',
-        hayir_puani: ''
+        hayir_puani: '',
+        esik_sorusu: '',
+        evet_etiketi: '',
+        hayir_etiketi: '',
+        alt_secenekler: ''
       },
       {
         kategori_adi: survey.categories[0]?.name || 'Örnek Kategori',
@@ -112,7 +124,11 @@ export async function GET(request: NextRequest) {
         kanit_gerekli: 'FALSE',
         secenekler: '',
         evet_puani: 5,
-        hayir_puani: 1
+        hayir_puani: 1,
+        esik_sorusu: '',
+        evet_etiketi: '',
+        hayir_etiketi: '',
+        alt_secenekler: ''
       },
       {
         kategori_adi: survey.categories[0]?.name || 'Örnek Kategori',
@@ -126,7 +142,11 @@ export async function GET(request: NextRequest) {
         kanit_gerekli: 'TRUE',
         secenekler: '',
         evet_puani: '',
-        hayir_puani: ''
+        hayir_puani: '',
+        esik_sorusu: '',
+        evet_etiketi: '',
+        hayir_etiketi: '',
+        alt_secenekler: ''
       },
       {
         kategori_adi: survey.categories[0]?.name || 'Örnek Kategori',
@@ -140,7 +160,29 @@ export async function GET(request: NextRequest) {
         kanit_gerekli: 'FALSE',
         secenekler: 'yok|Hayır, takip yok|1\nbasit|Basit takip|2\ndetayli|Detaylı takip|4\nentegre|Entegre sistem|5',
         evet_puani: '',
-        hayir_puani: ''
+        hayir_puani: '',
+        esik_sorusu: '',
+        evet_etiketi: '',
+        hayir_etiketi: '',
+        alt_secenekler: ''
+      },
+      {
+        kategori_adi: survey.categories[0]?.name || 'Örnek Kategori',
+        alt_kategori_adi: survey.categories[0]?.subCategories[0]?.name || 'Örnek Alt Kategori',
+        alt_seviye_adi: survey.categories[0]?.subCategories[0]?.subLevels?.[0]?.name || '',
+        soru_metni: 'Örnek: ISO sertifikalarınız var mı?',
+        soru_tipi: 'KADEMELI_PUANLAMA',
+        soru_agirligi: 2,
+        ironman_ekseni: 'ENDURANCE',
+        sira: 4,
+        kanit_gerekli: 'FALSE',
+        secenekler: '',
+        evet_puani: '',
+        hayir_puani: '',
+        esik_sorusu: 'ISO sertifikalarınız var mı?',
+        evet_etiketi: 'Evet, var',
+        hayir_etiketi: 'Hayır, yok',
+        alt_secenekler: 'ISO 9001|5\nISO 14001|10.5\nISO 27001|15.75\nISO 45001|20'
       }
     ];
     
@@ -155,7 +197,7 @@ export async function GET(request: NextRequest) {
       { wch: 25 }, // alt_kategori_adi
       { wch: 25 }, // alt_seviye_adi
       { wch: 60 }, // soru_metni
-      { wch: 18 }, // soru_tipi
+      { wch: 22 }, // soru_tipi
       { wch: 15 }, // soru_agirligi
       { wch: 18 }, // ironman_ekseni
       { wch: 8 },  // sira
@@ -163,6 +205,10 @@ export async function GET(request: NextRequest) {
       { wch: 45 }, // secenekler
       { wch: 12 }, // evet_puani
       { wch: 12 }, // hayir_puani
+      { wch: 50 }, // esik_sorusu
+      { wch: 15 }, // evet_etiketi
+      { wch: 15 }, // hayir_etiketi
+      { wch: 45 }, // alt_secenekler
     ];
     
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sorular');
@@ -206,14 +252,18 @@ export async function GET(request: NextRequest) {
       { Kolon: 'alt_kategori_adi', Açıklama: 'Alt kategori adı - Anket Yapısı sayfasından kopyalayın (zorunlu)', Örnek: 'Emisyon Yönetimi' },
       { Kolon: 'alt_seviye_adi', Açıklama: 'Alt seviye adı - varsa doldurun, yoksa boş bırakın', Örnek: 'Ölçüm ve İzleme' },
       { Kolon: 'soru_metni', Açıklama: 'Soru metni (zorunlu)', Örnek: 'Kuruluşunuz...' },
-      { Kolon: 'soru_tipi', Açıklama: 'COKTAN_SECMELI, OLCEK_1_5, EVET_HAYIR (zorunlu)', Örnek: 'EVET_HAYIR' },
-      { Kolon: 'soru_agirligi', Açıklama: 'Puan çarpanı - sayı (zorunlu)', Örnek: '1' },
+      { Kolon: 'soru_tipi', Açıklama: 'COKTAN_SECMELI, OLCEK_1_5, EVET_HAYIR, KADEMELI_PUANLAMA (zorunlu)', Örnek: 'EVET_HAYIR' },
+      { Kolon: 'soru_agirligi', Açıklama: 'Puan çarpanı - sayı, ondalık desteklenir (zorunlu)', Örnek: '1.5' },
       { Kolon: 'ironman_ekseni', Açıklama: 'VELOCITY veya ENDURANCE (zorunlu)', Örnek: 'VELOCITY' },
       { Kolon: 'sira', Açıklama: 'Sıra numarası (opsiyonel)', Örnek: '1' },
       { Kolon: 'kanit_gerekli', Açıklama: 'TRUE veya FALSE (opsiyonel)', Örnek: 'FALSE' },
       { Kolon: 'secenekler', Açıklama: 'COKTAN_SECMELI için: deger|etiket|puan formatı, her seçenek yeni satırda', Örnek: 'dusuk|Düşük|1\norta|Orta|3' },
-      { Kolon: 'evet_puani', Açıklama: 'EVET_HAYIR için: Evet cevabının puanı', Örnek: '5' },
-      { Kolon: 'hayir_puani', Açıklama: 'EVET_HAYIR için: Hayır cevabının puanı', Örnek: '1' },
+      { Kolon: 'evet_puani', Açıklama: 'EVET_HAYIR için: Evet cevabının puanı (ondalık desteklenir)', Örnek: '5' },
+      { Kolon: 'hayir_puani', Açıklama: 'EVET_HAYIR için: Hayır cevabının puanı (ondalık desteklenir)', Örnek: '1' },
+      { Kolon: 'esik_sorusu', Açıklama: 'KADEMELI_PUANLAMA için: İlk evet/hayır sorusu', Örnek: 'ISO sertifikalarınız var mı?' },
+      { Kolon: 'evet_etiketi', Açıklama: 'KADEMELI_PUANLAMA için: Evet seçeneği etiketi', Örnek: 'Evet, var' },
+      { Kolon: 'hayir_etiketi', Açıklama: 'KADEMELI_PUANLAMA için: Hayır seçeneği etiketi', Örnek: 'Hayır, yok' },
+      { Kolon: 'alt_secenekler', Açıklama: 'KADEMELI_PUANLAMA için: etiket|puan formatı, her seçenek yeni satırda, ondalık desteklenir', Örnek: 'ISO 9001|5\nISO 14001|10.5' },
     ];
     
     const instructionsSheet = XLSX.utils.json_to_sheet(instructionsData);

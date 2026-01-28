@@ -9,7 +9,7 @@ interface QuestionRow {
   alt_kategori_adi: string;
   alt_seviye_adi?: string;
   soru_metni: string;
-  soru_tipi: 'COKTAN_SECMELI' | 'OLCEK_1_5' | 'EVET_HAYIR';
+  soru_tipi: 'COKTAN_SECMELI' | 'OLCEK_1_5' | 'EVET_HAYIR' | 'KADEMELI_PUANLAMA';
   soru_agirligi: number;
   ironman_ekseni: 'VELOCITY' | 'ENDURANCE';
   sira?: number;
@@ -17,6 +17,10 @@ interface QuestionRow {
   secenekler?: string;
   evet_puani?: number;
   hayir_puani?: number;
+  esik_sorusu?: string;
+  evet_etiketi?: string;
+  hayir_etiketi?: string;
+  alt_secenekler?: string;
 }
 
 interface ValidationError {
@@ -24,11 +28,12 @@ interface ValidationError {
   message: string;
 }
 
-function mapQuestionType(type: string): 'SCALE' | 'YES_NO' | 'MULTIPLE_CHOICE' {
+function mapQuestionType(type: string): 'SCALE' | 'YES_NO' | 'MULTIPLE_CHOICE' | 'CONDITIONAL_CHOICE' {
   switch (type) {
     case 'OLCEK_1_5': return 'SCALE';
     case 'EVET_HAYIR': return 'YES_NO';
     case 'COKTAN_SECMELI': return 'MULTIPLE_CHOICE';
+    case 'KADEMELI_PUANLAMA': return 'CONDITIONAL_CHOICE';
     default: return 'SCALE';
   }
 }
@@ -44,6 +49,23 @@ function parseOptions(optionsStr: string): any[] {
         value: parts[0].trim(),
         label: parts[1].trim(),
         score: parseFloat(parts[2].trim()) || 0
+      };
+    }
+    return null;
+  }).filter(Boolean);
+}
+
+function parseConditionalOptions(optionsStr: string): any[] {
+  if (!optionsStr || typeof optionsStr !== 'string') return [];
+  
+  const lines = optionsStr.split('\n').filter(line => line.trim());
+  return lines.map((line, idx) => {
+    const parts = line.split('|');
+    if (parts.length >= 2) {
+      return {
+        value: `option_${idx + 1}`,
+        label: parts[0].trim(),
+        score: parseFloat(parts[1].trim()) || 0
       };
     }
     return null;
@@ -72,7 +94,7 @@ function validateRow(row: QuestionRow, rowNumber: number): ValidationError[] {
     errors.push({ row: rowNumber, message: 'soru_metni boş olamaz' });
   }
   
-  const validTypes = ['COKTAN_SECMELI', 'OLCEK_1_5', 'EVET_HAYIR'];
+  const validTypes = ['COKTAN_SECMELI', 'OLCEK_1_5', 'EVET_HAYIR', 'KADEMELI_PUANLAMA'];
   if (!row.soru_tipi || !validTypes.includes(row.soru_tipi.toString().toUpperCase())) {
     errors.push({ row: rowNumber, message: `soru_tipi geçerli değil (${validTypes.join(', ')})` });
   }
@@ -106,6 +128,20 @@ function validateRow(row: QuestionRow, rowNumber: number): ValidationError[] {
     }
     if (row.hayir_puani === undefined || row.hayir_puani === null || isNaN(Number(row.hayir_puani))) {
       errors.push({ row: rowNumber, message: 'Evet/Hayır seçilmiş ama hayir_puani boş veya sayı değil' });
+    }
+  }
+  
+  if (type === 'KADEMELI_PUANLAMA') {
+    if (!row.esik_sorusu || row.esik_sorusu.toString().trim() === '') {
+      errors.push({ row: rowNumber, message: 'Kademeli puanlama için esik_sorusu boş olamaz' });
+    }
+    if (!row.alt_secenekler || row.alt_secenekler.toString().trim() === '') {
+      errors.push({ row: rowNumber, message: 'Kademeli puanlama için alt_secenekler boş olamaz' });
+    } else {
+      const options = parseConditionalOptions(row.alt_secenekler.toString());
+      if (options.length === 0) {
+        errors.push({ row: rowNumber, message: 'Kademeli puanlama alt seçenek formatı hatalı (etiket|puan)' });
+      }
     }
   }
   
@@ -248,6 +284,7 @@ export async function POST(request: NextRequest) {
       try {
         const type = mapQuestionType(row.soru_tipi.toString().toUpperCase());
         let options: any[] = [];
+        let conditionalOptions: any = null;
         
         if (type === 'MULTIPLE_CHOICE') {
           options = parseOptions(row.secenekler?.toString() || '');
@@ -256,6 +293,13 @@ export async function POST(request: NextRequest) {
             { value: 'evet', label: 'Evet', score: Number(row.evet_puani) || 5 },
             { value: 'hayir', label: 'Hayır', score: Number(row.hayir_puani) || 1 }
           ];
+        } else if (type === 'CONDITIONAL_CHOICE') {
+          conditionalOptions = {
+            thresholdQuestion: row.esik_sorusu?.toString().trim() || row.soru_metni.toString().trim(),
+            yesLabel: row.evet_etiketi?.toString().trim() || 'Evet',
+            noLabel: row.hayir_etiketi?.toString().trim() || 'Hayır',
+            options: parseConditionalOptions(row.alt_secenekler?.toString() || '')
+          };
         }
         
         const question = await prisma.question.create({
@@ -263,6 +307,7 @@ export async function POST(request: NextRequest) {
             text: row.soru_metni.toString().trim(),
             type,
             options,
+            conditionalOptions,
             order: row.sira ? Number(row.sira) : index,
             requiresEvidence: row.kanit_gerekli?.toString().toUpperCase() === 'TRUE',
             subLevelId,
