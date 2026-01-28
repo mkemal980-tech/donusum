@@ -133,15 +133,27 @@ const parseQuestionOptions = (question: Question): { value: string; label: strin
   
   if (question.type === 'MULTIPLE_CHOICE' && question.options) {
     try {
-      // options format: "değer|etiket|puan" per line
-      const lines = question.options.split('\n').filter(line => line.trim());
-      return lines.map(line => {
-        const parts = line.split('|');
-        return {
-          value: parts[0]?.trim() || line,
-          label: parts[1]?.trim() || parts[0]?.trim() || line,
-        };
-      });
+      // Options JSON array formatında olabilir: [{ value, label, score }]
+      if (Array.isArray(question.options)) {
+        return question.options.map((opt: { value: string; label: string }) => ({
+          value: opt.value || '',
+          label: opt.label || opt.value || '',
+        }));
+      }
+      
+      // String formatı: "değer|etiket|puan" per line (eski format)
+      if (typeof question.options === 'string') {
+        const lines = question.options.split('\n').filter((line: string) => line.trim());
+        return lines.map((line: string) => {
+          const parts = line.split('|');
+          return {
+            value: parts[0]?.trim() || line,
+            label: parts[1]?.trim() || parts[0]?.trim() || line,
+          };
+        });
+      }
+      
+      return [];
     } catch {
       return [];
     }
