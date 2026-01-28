@@ -134,16 +134,25 @@ export default function CategoriesPage() {
     };
     
     try {
-      await fetch(endpoints[type], {
+      const response = await fetch(endpoints[type], {
         method: data.id ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(`Hata: ${errorData.error || 'Kaydetme başarısız oldu'}`);
+        console.error('Save error:', errorData);
+        return;
+      }
+      
       fetchCategories();
       setShowModal(null);
       setFormData({});
     } catch (error) {
       console.error('Error saving:', error);
+      alert('Kaydetme sırasında bir hata oluştu. Lütfen tekrar deneyin.');
     }
   };
 
@@ -365,6 +374,40 @@ export default function CategoriesPage() {
     const { type, parentId, editItem, parentData } = showModal;
     const isEdit = !!editItem;
     
+    // Validasyon kontrolleri
+    if (type === 'category' && !formData.name?.trim()) {
+      alert('Kategori adı boş olamaz!');
+      return;
+    }
+    if (type === 'subcategory' && !formData.name?.trim()) {
+      alert('Alt kategori adı boş olamaz!');
+      return;
+    }
+    if (type === 'sublevel' && !formData.name?.trim()) {
+      alert('Alt seviye adı boş olamaz!');
+      return;
+    }
+    if (type === 'question') {
+      if (!formData.text?.trim()) {
+        alert('Soru metni boş olamaz!');
+        return;
+      }
+      if (formData.type === 'MULTIPLE_CHOICE' && !formData.optionsText?.trim()) {
+        alert('Çoktan seçmeli sorular için şıklar girilmelidir!');
+        return;
+      }
+      if (formData.type === 'CONDITIONAL_CHOICE') {
+        if (!formData.thresholdQuestion?.trim() && !formData.text?.trim()) {
+          alert('Kademeli puanlama için eşik sorusu girilmelidir!');
+          return;
+        }
+        if (!formData.conditionalOptionsText?.trim()) {
+          alert('Kademeli puanlama için alt seçenekler girilmelidir!');
+          return;
+        }
+      }
+    }
+    
     let data = { ...formData };
     if (type === 'category' && !isEdit) {
       data.surveyId = selectedSurveyId || null;
@@ -425,6 +468,15 @@ export default function CategoriesPage() {
       delete data.yesScore;
       delete data.noScore;
     }
+    
+    // Debug için veriyi yazdır
+    console.log('Saving question with data:', {
+      type,
+      data,
+      parentId: showModal.parentId,
+      parentData: showModal.parentData
+    });
+    
     handleSave(type, data);
   };
 
