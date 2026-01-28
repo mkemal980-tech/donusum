@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, DollarSign, Target, Plus, Check, TrendingUp, Play, CheckCircle2, Circle, MoreHorizontal, Video, ExternalLink } from "lucide-react";
+import { Clock, DollarSign, Target, Plus, Check, TrendingUp, Play, CheckCircle2, Circle, MoreHorizontal, Video, ExternalLink, Sparkles } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 type CompletionStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
@@ -18,6 +18,9 @@ interface RecommendationCardProps {
     estimatedImpact: number;
     isInRoadmap?: boolean;
     completionStatus?: CompletionStatus;
+    // AI zenginleştirme alanları
+    aiPriority?: number;
+    aiNote?: string;
   };
   onAddToRoadmap?: (id: string) => void;
   onStatusChange?: (id: string, status: CompletionStatus) => void;
@@ -141,11 +144,31 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
         </div>
       </div>
 
+      {/* AI Öncelik Badge */}
+      {rec?.aiPriority && (
+        <div className="flex items-center gap-2 mb-2">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+            <Sparkles size={12} />
+            #{rec.aiPriority} Öncelik
+          </span>
+        </div>
+      )}
+
       <h3 className={`text-lg font-semibold mb-3 ${currentStatus === 'COMPLETED' ? 'text-[var(--accent)]' : 'text-[var(--text-main)]'}`}>
         {rec?.title ?? 'Başlıksız'}
       </h3>
       
       <p className="text-[var(--text-muted)] text-sm mb-4 line-clamp-2">{rec?.description ?? ''}</p>
+      
+      {/* AI Kişisel Not */}
+      {rec?.aiNote && (
+        <div className="mb-4 p-3 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+          <div className="flex items-start gap-2">
+            <Sparkles size={14} className="text-purple-400 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-purple-300 italic">{rec.aiNote}</p>
+          </div>
+        </div>
+      )}
       
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="flex items-center gap-2 text-sm text-[var(--text-dim)]">

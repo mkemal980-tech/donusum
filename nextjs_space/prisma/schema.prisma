@@ -139,6 +139,7 @@ model Survey {
   categories            Category[]
   sectorCategoryWeights SectorCategoryWeight[]
   userAssignments       UserSurveyAssignment[]
+  aiRecommendationCache AIRecommendationCache[]
 }
 
 model UserSurveyAssignment {
@@ -400,4 +401,17 @@ enum RoadmapStatus {
   COMPLETED
   CANCELLED
   NOT_STARTED
+}
+
+
+// AI Recommendation Cache - Batch + Cache yaklaşımı için
+model AIRecommendationCache {
+  id              String   @id @default(cuid())
+  profileHash     String   @unique  // Sektör + puan profili hash'i
+  surveyId        String
+  recommendations Json     // AI sonuçları: [{id, priority, note}]
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime // TTL - 24 saat sonra
+
+  survey          Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 }
