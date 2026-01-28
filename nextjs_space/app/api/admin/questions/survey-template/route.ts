@@ -274,15 +274,45 @@ export async function GET(request: NextRequest) {
     ];
     XLSX.utils.book_append_sheet(workbook, instructionsSheet, 'Açıklamalar');
     
-    // Convert to buffer
-    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    // Convert to buffer with proper encoding
+    const buffer = XLSX.write(workbook, { 
+      type: 'buffer', 
+      bookType: 'xlsx',
+      compression: true 
+    });
     
-    const safeSurveyName = survey.name.replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ\s]/g, '').substring(0, 30);
+    // Create safe ASCII filename - transliterate Turkish chars
+    const turkishToAscii: { [key: string]: string } = {
+      'ç': 'c', 'Ç': 'C',
+      'ğ': 'g', 'Ğ': 'G',
+      'ı': 'i', 'İ': 'I',
+      'ö': 'o', 'Ö': 'O',
+      'ş': 's', 'Ş': 'S',
+      'ü': 'u', 'Ü': 'U'
+    };
+    
+    let safeSurveyName = survey.name;
+    // Replace Turkish chars
+    Object.keys(turkishToAscii).forEach(turkChar => {
+      safeSurveyName = safeSurveyName.replace(new RegExp(turkChar, 'g'), turkishToAscii[turkChar]);
+    });
+    
+    // Clean filename - only ASCII alphanumeric and underscore
+    safeSurveyName = safeSurveyName
+      .replace(/[^a-zA-Z0-9]/g, '_')  // Replace all non-ASCII-alphanumeric with underscore
+      .replace(/_+/g, '_')  // Replace multiple underscores with single
+      .replace(/^_|_$/g, '')  // Remove leading/trailing underscores
+      .substring(0, 30);
+    
+    const filename = `${safeSurveyName}_soru_sablonu.xlsx`;
     
     return new NextResponse(buffer, {
+      status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="${safeSurveyName}_soru_sablonu.xlsx"`
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Length': buffer.length.toString(),
+        'Cache-Control': 'no-cache'
       }
     });
     

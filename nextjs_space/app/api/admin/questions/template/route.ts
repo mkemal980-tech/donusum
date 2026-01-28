@@ -83,13 +83,23 @@ export async function GET() {
     ];
     XLSX.utils.book_append_sheet(workbook, instructionsSheet, 'Açıklamalar');
     
-    // Convert to buffer
-    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    // Convert to buffer with proper encoding
+    const buffer = XLSX.write(workbook, { 
+      type: 'buffer', 
+      bookType: 'xlsx',
+      compression: true 
+    });
+    
+    // Safe filename
+    const filename = 'soru_yukleme_sablonu.xlsx';
     
     return new NextResponse(buffer, {
+      status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': 'attachment; filename="soru_yukleme_sablonu.xlsx"'
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Length': buffer.length.toString(),
+        'Cache-Control': 'no-cache'
       }
     });
     
