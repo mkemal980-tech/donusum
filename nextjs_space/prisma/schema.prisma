@@ -1,37 +1,28 @@
 generator client {
-    provider = "prisma-client-js"
-    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
-    output = "/home/ubuntu/transformation_platform/nextjs_space/node_modules/.prisma/client"
+  provider      = "prisma-client-js"
+  output        = "/home/ubuntu/transformation_platform/nextjs_space/node_modules/.prisma/client"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-// Kullanıcı Rolleri
-enum UserRole {
-  USER          // Sadece anketi yanıtlayabilir
-  UNIT_MANAGER  // Kendi birimindeki kullanıcıları yönetebilir
-  ADMIN         // Tüm sistemi yönetebilir
-}
-
-// Birim Modeli - Lokasyon/Departman yönetimi
 model Unit {
-  id             String      @id @default(cuid())
-  name           String
-  description    String?
-  organization   String?
-  parentId       String?     // Üst Birim ID (Alt Birim için)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  parent         Unit?       @relation("UnitHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  subUnits       Unit[]      @relation("UnitHierarchy")
-  users          User[]      @relation("UnitUsers")
-  admins         UnitAdmin[] // Çoklu Admin ilişkisi
+  id           String      @id @default(cuid())
+  name         String
+  description  String?
+  organization String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  parentId     String?
+  parent       Unit?       @relation("UnitHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  subUnits     Unit[]      @relation("UnitHierarchy")
+  admins       UnitAdmin[]
+  users        User[]      @relation("UnitUsers")
 }
 
-// Birim Admin İlişkisi - Çoklu admin desteği
 model UnitAdmin {
   id        String   @id @default(cuid())
   unitId    String
@@ -44,84 +35,81 @@ model UnitAdmin {
 }
 
 model User {
-  id                        String            @id @default(cuid())
-  email                     String            @unique
+  id                        String                         @id @default(cuid())
+  email                     String                         @unique
   password                  String
   firstName                 String?
   lastName                  String?
   organization              String?
-  role                      UserRole          @default(USER)
-  unitId                    String?
+  createdAt                 DateTime                       @default(now())
+  updatedAt                 DateTime                       @updatedAt
   sectorId                  String?
   subSectorId               String?
-  passwordResetToken        String?
   passwordResetExpires      DateTime?
-  // Email Doğrulama
-  emailVerified             Boolean           @default(false)
-  emailVerificationToken    String?
-  emailVerificationExpires  DateTime?
-  // Hesap Aktivasyonu
-  isActive                  Boolean           @default(true)
-  // Ironman Target Scores
-  targetVelocity            Float?
-  targetEndurance           Float?
-  targetDate                DateTime?
+  passwordResetToken        String?
+  role                      UserRole                       @default(USER)
+  unitId                    String?
   currentScoreDate          DateTime?
-  region                    String?           @default("Global")
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
-  assessmentScores     AssessmentScore[]
-  uploadedDocuments    Document[]
-  roadmapItems         RoadmapItem[]
-  surveyResponses      SurveyResponse[]
-  sector               Sector?           @relation(fields: [sectorId], references: [id])
-  subSector            SubSector?        @relation(fields: [subSectorId], references: [id])
-  unit                 Unit?             @relation("UnitUsers", fields: [unitId], references: [id])
-  adminOfUnits         UnitAdmin[]       // Kullanıcının admin olduğu birimler
+  region                    String?                        @default("Global")
+  targetDate                DateTime?
+  targetEndurance           Float?
+  targetVelocity            Float?
+  emailVerificationExpires  DateTime?
+  emailVerificationToken    String?
+  emailVerified             Boolean                        @default(false)
+  isActive                  Boolean                        @default(true)
+  assessmentScores          AssessmentScore[]
+  uploadedDocuments         Document[]
+  roadmapItems              RoadmapItem[]
+  surveyResponses           SurveyResponse[]
+  adminOfUnits              UnitAdmin[]
+  sector                    Sector?                        @relation(fields: [sectorId], references: [id])
+  subSector                 SubSector?                     @relation(fields: [subSectorId], references: [id])
+  unit                      Unit?                          @relation("UnitUsers", fields: [unitId], references: [id])
   recommendationCompletions UserRecommendationCompletion[]
-  surveyAssignments    UserSurveyAssignment[]
+  surveyAssignments         UserSurveyAssignment[]
 }
 
 model Sector {
-  id                 String              @id @default(cuid())
-  name               String              @unique
-  naicsCode          String?             // NAICS sektör kodu (örn: 11, 21, 22, ...)
-  order              Int                 @default(0)
-  createdAt          DateTime            @default(now())
-  subSectors         SubSector[]
-  users              User[]
-  benchmarks         Benchmark[]
-  ironmanBenchmarks  IronmanBenchmark[]
+  id                String             @id @default(cuid())
+  name              String             @unique
+  order             Int                @default(0)
+  createdAt         DateTime           @default(now())
+  naicsCode         String?
+  benchmarks        Benchmark[]
+  ironmanBenchmarks IronmanBenchmark[]
+  subSectors        SubSector[]
+  users             User[]
 }
 
 model SubSector {
-  id                String              @id @default(cuid())
+  id                String             @id @default(cuid())
   name              String
   sectorId          String
-  order             Int                 @default(0)
-  createdAt         DateTime            @default(now())
-  sector            Sector              @relation(fields: [sectorId], references: [id], onDelete: Cascade)
-  users             User[]
+  order             Int                @default(0)
+  createdAt         DateTime           @default(now())
   benchmarks        Benchmark[]
   ironmanBenchmarks IronmanBenchmark[]
+  sector            Sector             @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  users             User[]
 
   @@unique([sectorId, name])
 }
 
 model Benchmark {
-  id            String     @id @default(cuid())
-  surveyId      String
-  sectorId      String
-  subSectorId   String?
-  level         BenchmarkLevel @default(OVERALL)
-  targetId      String?
-  bestScore     Float      @default(0)
-  averageScore  Float      @default(0)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  survey        Survey     @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  sector        Sector     @relation(fields: [sectorId], references: [id], onDelete: Cascade)
-  subSector     SubSector? @relation(fields: [subSectorId], references: [id], onDelete: Cascade)
+  id           String         @id @default(cuid())
+  sectorId     String
+  subSectorId  String?
+  level        BenchmarkLevel @default(OVERALL)
+  targetId     String?
+  bestScore    Float          @default(0)
+  averageScore Float          @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  surveyId     String
+  sector       Sector         @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  subSector    SubSector?     @relation(fields: [subSectorId], references: [id], onDelete: Cascade)
+  survey       Survey         @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 
   @@unique([surveyId, sectorId, subSectorId, level, targetId])
 }
@@ -129,23 +117,16 @@ model Benchmark {
 model SectorCategoryWeight {
   id         String   @id @default(cuid())
   sectorId   String
-  surveyId   String
   categoryId String
   weight     Float    @default(1.0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  surveyId   String
   survey     Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 
   @@unique([sectorId, surveyId, categoryId])
 }
 
-enum BenchmarkLevel {
-  OVERALL
-  CATEGORY
-  SUBCATEGORY
-}
-
-// Yeni Survey modeli - Çoklu anket desteği
 model Survey {
   id                    String                 @id @default(cuid())
   name                  String
@@ -154,22 +135,21 @@ model Survey {
   order                 Int                    @default(0)
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
+  benchmarks            Benchmark[]
   categories            Category[]
   sectorCategoryWeights SectorCategoryWeight[]
   userAssignments       UserSurveyAssignment[]
-  benchmarks            Benchmark[]
 }
 
-// Kullanıcı-Anket Atama Modeli
 model UserSurveyAssignment {
   id         String   @id @default(cuid())
   userId     String
   surveyId   String
   assignedAt DateTime @default(now())
-  assignedBy String?  // Admin ID
+  assignedBy String?
   isActive   Boolean  @default(true)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   survey     Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, surveyId])
 }
@@ -179,8 +159,8 @@ model Category {
   name          String
   description   String?
   order         Int           @default(0)
-  surveyId      String?
   createdAt     DateTime      @default(now())
+  surveyId      String?
   survey        Survey?       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   subCategories SubCategory[]
 }
@@ -191,12 +171,12 @@ model SubCategory {
   description     String?
   order           Int              @default(0)
   categoryId      String
-  hasSubLevels    Boolean          @default(true)
   createdAt       DateTime         @default(now())
-  category        Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  subLevels       SubLevel[]
+  hasSubLevels    Boolean          @default(true)
   questions       Question[]       @relation("SubCategoryQuestions")
   recommendations Recommendation[]
+  category        Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  subLevels       SubLevel[]
 }
 
 model SubLevel {
@@ -205,35 +185,27 @@ model SubLevel {
   description     String?
   order           Int              @default(0)
   subCategoryId   String
-  axisType        AxisType         @default(VELOCITY)
   createdAt       DateTime         @default(now())
+  axisType        AxisType         @default(VELOCITY)
   questions       Question[]       @relation("SubLevelQuestions")
   recommendations Recommendation[]
   subCategory     SubCategory      @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
 }
 
-// Ironman Analiz için Eksen Tipi
-enum AxisType {
-  VELOCITY    // X ekseni - Hız/Aksiyon
-  ENDURANCE   // Y ekseni - Olgunluk/Sürdürülebilirlik
-}
-
-// Ironman Benchmark - Sektör bazlı velocity/endurance değerleri
 model IronmanBenchmark {
-  id                      String     @id @default(cuid())
-  sectorId                String
-  subSectorId             String?
-  velocityAverage         Float      @default(2.5)
-  velocityBest            Float      @default(4.5)
-  enduranceAverage        Float      @default(2.5)
-  enduranceBest           Float      @default(4.5)
-  // Industry Average Targets (for next year projections)
-  velocityAverageTarget   Float      @default(3.0)
-  enduranceAverageTarget  Float      @default(3.0)
-  createdAt               DateTime   @default(now())
-  updatedAt               DateTime   @updatedAt
-  sector                  Sector     @relation(fields: [sectorId], references: [id], onDelete: Cascade)
-  subSector               SubSector? @relation(fields: [subSectorId], references: [id], onDelete: Cascade)
+  id                     String     @id @default(cuid())
+  sectorId               String
+  subSectorId            String?
+  velocityAverage        Float      @default(2.5)
+  velocityBest           Float      @default(4.5)
+  enduranceAverage       Float      @default(2.5)
+  enduranceBest          Float      @default(4.5)
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+  enduranceAverageTarget Float      @default(3.0)
+  velocityAverageTarget  Float      @default(3.0)
+  sector                 Sector     @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  subSector              SubSector? @relation(fields: [subSectorId], references: [id], onDelete: Cascade)
 
   @@unique([sectorId, subSectorId])
 }
@@ -243,18 +215,18 @@ model Question {
   text               String
   type               QuestionType     @default(SCALE)
   options            Json?
-  conditionalOptions Json?            // CONDITIONAL_CHOICE için: { thresholdQuestion, yesLabel, noLabel, options: [{ label, value, score }] }
   weight             Float            @default(1.0)
   requiresEvidence   Boolean          @default(false)
   order              Int              @default(0)
-  axisType           AxisType         @default(VELOCITY)  // Ironman için: VELOCITY (Hız) veya ENDURANCE (Olgunluk)
   subLevelId         String?
-  subCategoryId      String?
   createdAt          DateTime         @default(now())
-  subLevel           SubLevel?        @relation("SubLevelQuestions", fields: [subLevelId], references: [id], onDelete: Cascade)
+  subCategoryId      String?
+  axisType           AxisType         @default(VELOCITY)
+  conditionalOptions Json?
   subCategory        SubCategory?     @relation("SubCategoryQuestions", fields: [subCategoryId], references: [id], onDelete: Cascade)
-  responses          SurveyResponse[]
+  subLevel           SubLevel?        @relation("SubLevelQuestions", fields: [subLevelId], references: [id], onDelete: Cascade)
   recommendations    Recommendation[]
+  responses          SurveyResponse[]
 }
 
 model SurveyResponse {
@@ -295,43 +267,33 @@ model AssessmentScore {
 }
 
 model Recommendation {
-  id                String        @id @default(cuid())
+  id                String                         @id @default(cuid())
   title             String
   description       String
-  videoUrl          String?       // Vimeo veya YouTube video linki - "Nasıl Yapılır Öğrenin"
   categoryId        String?
-  subCategoryId     String?       // Alt kategoriye direkt bağlantı
+  costType          CostType                       @default(OPEX)
+  timeframe         Timeframe                      @default(MEDIUM_TERM)
+  strategicType     StrategicType                  @default(PROJECT)
+  estimatedImpact   Float                          @default(0)
+  minScoreThreshold Float                          @default(0)
+  maxScoreThreshold Float                          @default(100)
+  order             Int                            @default(0)
+  createdAt         DateTime                       @default(now())
   subLevelId        String?
-  // Soru-Cevap Bazlı Tetikleme
-  questionId        String?       // Bağlı soru
-  triggerOptions    String?       // JSON: Tetikleyici cevaplar (örn: ["yok", "planliyoruz"])
-  // Gelişim Skoru için Puan
-  points            Float         @default(0.5)  // Öneri tamamlandığında eklenecek puan (0-5 arası)
-  costType          CostType      @default(OPEX)
-  timeframe         Timeframe     @default(MEDIUM_TERM)
-  strategicType     StrategicType @default(PROJECT)
-  estimatedImpact   Float         @default(0)
-  minScoreThreshold Float         @default(0)
-  maxScoreThreshold Float         @default(100)
-  order             Int           @default(0)
-  // Bubble Chart için yeni alanlar
-  xPosition         Float         @default(5)   // X ekseni: 1-10 (Kaynak → Önem → Aciliyet)
-  yPosition         Float         @default(5)   // Y ekseni: 1-10 (Öncelik puanı)
-  capexLevel        Int           @default(1)   // CAPEX maliyeti: 1-5 ($ işaretleri)
-  opexLevel         Int           @default(1)   // Yıllık OPEX maliyeti: 1-5 ($ işaretleri)
-  createdAt         DateTime      @default(now())
+  capexLevel        Int                            @default(1)
+  opexLevel         Int                            @default(1)
+  xPosition         Float                          @default(5)
+  yPosition         Float                          @default(5)
+  subCategoryId     String?
+  questionId        String?
+  triggerOptions    String?
+  points            Float                          @default(0.5)
+  videoUrl          String?
+  question          Question?                      @relation(fields: [questionId], references: [id])
+  subCategory       SubCategory?                   @relation(fields: [subCategoryId], references: [id])
+  subLevel          SubLevel?                      @relation(fields: [subLevelId], references: [id])
   roadmapItems      RoadmapItem[]
-  question          Question?     @relation(fields: [questionId], references: [id], onDelete: SetNull)
-  subCategory       SubCategory?  @relation(fields: [subCategoryId], references: [id], onDelete: SetNull)
-  subLevel          SubLevel?     @relation(fields: [subLevelId], references: [id], onDelete: SetNull)
   completions       UserRecommendationCompletion[]
-}
-
-// Kullanıcının öneri tamamlama durumunu takip eden model
-enum CompletionStatus {
-  NOT_STARTED     // Başlanmadı
-  IN_PROGRESS     // Devam Ediyor
-  COMPLETED       // Tamamlandı
 }
 
 model UserRecommendationCompletion {
@@ -339,37 +301,31 @@ model UserRecommendationCompletion {
   userId           String
   recommendationId String
   status           CompletionStatus @default(NOT_STARTED)
-  notes            String?          // Kullanıcı notları
+  notes            String?
   completedAt      DateTime?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
-  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   recommendation   Recommendation   @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, recommendationId])
 }
 
-// Skor Geçmişi - Zaman içindeki gelişimi takip etmek için
 model ScoreHistory {
-  id                  String    @id @default(cuid())
-  userId              String
-  surveyId            String?
-  // Genel Skorlar
-  overallScore        Float     // 1-5 ölçeğinde genel puan
-  overallPercentage   Float     // %0-100 yüzdelik değer
-  // Ironman Skorları
-  velocityScore       Float?
-  enduranceScore      Float?
-  quadrant            String?   // WALKER, SPRINTER, MARATHON_RUNNER, IRONMAN
-  // Meta Veriler
-  completedQuestions  Int       @default(0)
-  totalQuestions      Int       @default(0)
-  completedRecommendations Int  @default(0)
-  // Tetikleyen Olay
-  triggerType         String    // SURVEY_RESPONSE, RECOMMENDATION_COMPLETED, MANUAL_SNAPSHOT
-  triggerEntityId     String?   // İlgili entity ID (öneri veya soru)
-  // Zaman Damgası
-  recordedAt          DateTime  @default(now())
+  id                       String   @id @default(cuid())
+  userId                   String
+  surveyId                 String?
+  overallScore             Float
+  overallPercentage        Float
+  velocityScore            Float?
+  enduranceScore           Float?
+  quadrant                 String?
+  completedQuestions       Int      @default(0)
+  totalQuestions           Int      @default(0)
+  completedRecommendations Int      @default(0)
+  triggerType              String
+  triggerEntityId          String?
+  recordedAt               DateTime @default(now())
 
   @@index([userId, recordedAt])
   @@index([userId, surveyId, recordedAt])
@@ -391,11 +347,34 @@ model RoadmapItem {
   @@unique([userId, recommendationId])
 }
 
+enum UserRole {
+  USER
+  UNIT_MANAGER
+  ADMIN
+}
+
+enum BenchmarkLevel {
+  OVERALL
+  CATEGORY
+  SUBCATEGORY
+}
+
+enum AxisType {
+  VELOCITY
+  ENDURANCE
+}
+
+enum CompletionStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
 enum QuestionType {
   SCALE
   YES_NO
   MULTIPLE_CHOICE
-  CONDITIONAL_CHOICE  // Kademeli puanlama: İlk evet/hayır, sonra çoklu seçim
+  CONDITIONAL_CHOICE
 }
 
 enum CostType {
@@ -416,9 +395,9 @@ enum StrategicType {
 }
 
 enum RoadmapStatus {
-  NOT_STARTED   // Başlanmadı - Skora katkı: 0
-  IN_PROGRESS   // Devam Ediyor - Skora katkı: %50
-  COMPLETED     // Tamamlandı - Skora katkı: %100
-  PLANNED       // Planlandı (eski durum)
-  CANCELLED     // İptal
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NOT_STARTED
 }
