@@ -67,7 +67,36 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 });
+      // Kullanıcı bulunamadığında varsayılan değerler döndür
+      return NextResponse.json({
+        current: {
+          velocity: 1.0,
+          endurance: 1.0,
+          date: new Date().toLocaleDateString('en-US', { month: '2-digit', year: 'numeric' }).replace('/', '/'),
+          quadrant: 'WALKER',
+          quadrantInfo: quadrantInfo['WALKER'],
+        },
+        target: {
+          velocity: 3.0,
+          endurance: 3.0,
+          date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: '2-digit', year: 'numeric' }).replace('/', '/'),
+        },
+        benchmark: {
+          current: { velocity: 2.5, endurance: 2.5 },
+          target: { velocity: 3.0, endurance: 3.0 },
+        },
+        company: {
+          name: 'Bilinmeyen',
+          industry: 'Belirtilmemiş',
+          region: 'Global',
+        },
+        stats: {
+          totalQuestions: 0,
+          answeredQuestions: 0,
+          velocityQuestions: 0,
+          enduranceQuestions: 0,
+        },
+      });
     }
 
     // Kullanıcının tüm cevaplarını al

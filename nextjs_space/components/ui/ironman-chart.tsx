@@ -23,14 +23,14 @@ interface IronmanData {
     date: string;
   };
   benchmark: {
-    velocityAverage: number;
-    velocityBest: number;
-    enduranceAverage: number;
-    enduranceBest: number;
-    velocityAverageTarget: number;
-    enduranceAverageTarget: number;
-    sectorName: string;
-    subSectorName: string | null;
+    current: {
+      velocity: number;
+      endurance: number;
+    };
+    target: {
+      velocity: number;
+      endurance: number;
+    };
   } | null;
   company: {
     name: string;
@@ -38,9 +38,10 @@ interface IronmanData {
     region: string;
   };
   stats: {
-    velocityQuestionCount: number;
-    enduranceQuestionCount: number;
-    totalResponses: number;
+    totalQuestions: number;
+    answeredQuestions: number;
+    velocityQuestions: number;
+    enduranceQuestions: number;
   };
 }
 
@@ -344,45 +345,41 @@ export function IronmanChart() {
                   <span className="text-xs font-medium text-gray-600">Hız</span>
                 </div>
                 <div className="relative h-6 bg-gray-200 rounded-full overflow-hidden">
-                  {/* Scale markers */}
-                  <div className="absolute inset-0 flex justify-between px-1 text-[10px] text-gray-400 items-center z-10">
-                    <span>1.0</span><span>2.0</span><span>3.0</span><span>4.0</span><span>5.0</span>
-                  </div>
                   {/* Your Current - Pink */}
                   <div 
-                    className="absolute h-6 flex items-center justify-end pr-1"
-                    style={{ width: `${(data.current.velocity / 5) * 100}%` }}
+                    className="absolute h-6 flex items-center justify-end pr-1 z-10"
+                    style={{ width: `${((data.current?.velocity ?? 1) / 5) * 100}%` }}
                   >
                     <div className="bg-pink-400 h-5 rounded-full flex items-center justify-center px-2 text-[10px] text-white font-medium min-w-[32px]">
-                      {data.current.velocity.toFixed(1)}
+                      {(data.current?.velocity ?? 1).toFixed(1)}
                     </div>
                   </div>
                   {/* Your Target - Blue */}
                   <div 
-                    className="absolute h-6 flex items-center"
-                    style={{ left: `${(data.target.velocity / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                    className="absolute h-6 flex items-center z-10"
+                    style={{ left: `${((data.target?.velocity ?? 3) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                   >
                     <div className="bg-blue-500 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
-                      {data.target.velocity.toFixed(1)}
+                      {(data.target?.velocity ?? 3).toFixed(1)}
                     </div>
                   </div>
                   {/* Industry Avg - Purple */}
                   {data.benchmark && (
                     <>
                       <div 
-                        className="absolute h-6 flex items-center"
-                        style={{ left: `${(data.benchmark.velocityAverage / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                        className="absolute h-6 flex items-center z-10"
+                        style={{ left: `${((data.benchmark.current?.velocity ?? 2.5) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
-                        <div className="bg-purple-400 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
-                          {data.benchmark.velocityAverage.toFixed(1)}
+                        <div className="bg-purple-500 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                          {(data.benchmark.current?.velocity ?? 2.5).toFixed(1)}
                         </div>
                       </div>
                       <div 
-                        className="absolute h-6 flex items-center"
-                        style={{ left: `${(data.benchmark.velocityBest / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                        className="absolute h-6 flex items-center z-10"
+                        style={{ left: `${((data.benchmark.target?.velocity ?? 3.0) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
                         <div className="bg-purple-700 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
-                          {data.benchmark.velocityBest.toFixed(1)}
+                          {(data.benchmark.target?.velocity ?? 3.0).toFixed(1)}
                         </div>
                       </div>
                     </>
@@ -396,44 +393,41 @@ export function IronmanChart() {
                   <span className="text-xs font-medium text-gray-600">Dayanıklılık</span>
                 </div>
                 <div className="relative h-6 bg-gray-200 rounded-full overflow-hidden">
-                  <div className="absolute inset-0 flex justify-between px-1 text-[10px] text-gray-400 items-center z-10">
-                    <span>1.0</span><span>2.0</span><span>3.0</span><span>4.0</span><span>5.0</span>
-                  </div>
                   {/* Your Current - Pink */}
                   <div 
-                    className="absolute h-6 flex items-center justify-end pr-1"
-                    style={{ width: `${(data.current.endurance / 5) * 100}%` }}
+                    className="absolute h-6 flex items-center justify-end pr-1 z-10"
+                    style={{ width: `${((data.current?.endurance ?? 1) / 5) * 100}%` }}
                   >
                     <div className="bg-pink-400 h-5 rounded-full flex items-center justify-center px-2 text-[10px] text-white font-medium min-w-[32px]">
-                      {data.current.endurance.toFixed(1)}
+                      {(data.current?.endurance ?? 1).toFixed(1)}
                     </div>
                   </div>
                   {/* Your Target - Blue */}
                   <div 
-                    className="absolute h-6 flex items-center"
-                    style={{ left: `${(data.target.endurance / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                    className="absolute h-6 flex items-center z-10"
+                    style={{ left: `${((data.target?.endurance ?? 3) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                   >
                     <div className="bg-blue-500 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
-                      {data.target.endurance.toFixed(1)}
+                      {(data.target?.endurance ?? 3).toFixed(1)}
                     </div>
                   </div>
                   {/* Industry Avg - Purple */}
                   {data.benchmark && (
                     <>
                       <div 
-                        className="absolute h-6 flex items-center"
-                        style={{ left: `${(data.benchmark.enduranceAverage / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                        className="absolute h-6 flex items-center z-10"
+                        style={{ left: `${((data.benchmark.current?.endurance ?? 2.5) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
-                        <div className="bg-purple-400 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
-                          {data.benchmark.enduranceAverage.toFixed(1)}
+                        <div className="bg-purple-500 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                          {(data.benchmark.current?.endurance ?? 2.5).toFixed(1)}
                         </div>
                       </div>
                       <div 
-                        className="absolute h-6 flex items-center"
-                        style={{ left: `${(data.benchmark.enduranceBest / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                        className="absolute h-6 flex items-center z-10"
+                        style={{ left: `${((data.benchmark.target?.endurance ?? 3.0) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
                         <div className="bg-purple-700 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
-                          {data.benchmark.enduranceBest.toFixed(1)}
+                          {(data.benchmark.target?.endurance ?? 3.0).toFixed(1)}
                         </div>
                       </div>
                     </>

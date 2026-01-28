@@ -1,259 +1,358 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { toast } from "sonner";
-import { 
-  Download, 
-  FileSpreadsheet, 
-  Users, 
-  Lightbulb, 
-  FolderTree, 
-  Factory,
-  FileText,
-  CheckCircle,
-  Loader2
-} from "lucide-react";
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { toast } from 'sonner';
+import {
+  Download,
+  Database,
+  FileJson,
+  FileSpreadsheet,
+  Loader2,
+  Check,
+  AlertCircle
+} from 'lucide-react';
 
-interface Survey {
+interface TableOption {
   id: string;
   name: string;
+  description: string;
+  selected: boolean;
 }
 
-interface Sector {
-  id: string;
-  name: string;
-}
+export default function ExportPage(): JSX.Element {
+  const [loading, setLoading] = useState<boolean>(false);
+  const [format, setFormat] = useState<'json' | 'csv'>('json');
+  const [selectedTable, setSelectedTable] = useState<string>('users');
+  const [includePasswords, setIncludePasswords] = useState<boolean>(false);
+  const [tables, setTables] = useState<TableOption[]>([
+    { id: 'users', name: 'Kullanıcılar', description: 'Tüm kullanıcı verileri', selected: true },
+    { id: 'sectors', name: 'Sektörler', description: 'Sektör ve alt sektörler', selected: true },
+    { id: 'surveys', name: 'Anketler', description: 'Anket yapıları', selected: true },
+    { id: 'categories', name: 'Kategoriler', description: 'Kategori hiyerarşisi', selected: true },
+    { id: 'subCategories', name: 'Alt Kategoriler', description: 'Alt kategori verileri', selected: true },
+    { id: 'subLevels', name: 'Alt Seviyeler', description: 'Alt seviye verileri', selected: true },
+    { id: 'questions', name: 'Sorular', description: 'Tüm anket soruları', selected: true },
+    { id: 'recommendations', name: 'Öneriler', description: 'Öneri verileri', selected: true },
+    { id: 'benchmarks', name: 'Benchmarklar', description: 'Karşılaştırma verileri', selected: true },
+    { id: 'ironmanBenchmarks', name: 'Ironman Benchmarklar', description: 'Velocity/Endurance verileri', selected: true },
+    { id: 'surveyResponses', name: 'Anket Yanıtları', description: 'Kullanıcı yanıtları', selected: true },
+    { id: 'roadmapItems', name: 'Yol Haritası', description: 'Roadmap öğeleri', selected: true },
+    { id: 'scoreHistory', name: 'Puan Geçmişi', description: 'Puan değişimleri', selected: true },
+    { id: 'sectorCategoryWeights', name: 'Sektör Ağırlıkları', description: 'Kategori ağırlıkları', selected: true },
+    { id: 'documents', name: 'Belgeler', description: 'Yüklenen dosyalar (metadata)', selected: true },
+    { id: 'units', name: 'Birimler', description: 'Organizasyon birimleri', selected: true },
+    { id: 'userSurveyAssignments', name: 'Anket Atamaları', description: 'Kullanıcı-anket ilişkileri', selected: true }
+  ]);
 
-type ExportType = 'survey-responses' | 'user-scores' | 'recommendations' | 'categories' | 'sectors';
+  const toggleTable = (id: string): void => {
+    setTables(prev =>
+      prev.map(t => (t.id === id ? { ...t, selected: !t.selected } : t))
+    );
+  };
 
-const exportOptions: { type: ExportType; label: string; description: string; icon: any; color: string }[] = [
-  { 
-    type: 'survey-responses', 
-    label: 'Anket Cevapları', 
-    description: 'Tüm kullanıcı cevaplarını detaylı olarak dışa aktar',
-    icon: FileSpreadsheet,
-    color: 'bg-[var(--bg-card-2)]0'
-  },
-  { 
-    type: 'user-scores', 
-    label: 'Kullanıcı Puanları', 
-    description: 'Kullanıcıların olgunluk puanlarını ve seviyelerini dışa aktar',
-    icon: Users,
-    color: 'bg-[rgba(12,193,195,0.1)]0'
-  },
-  { 
-    type: 'recommendations', 
-    label: 'Öneriler', 
-    description: 'Tüm önerileri ve detaylarını dışa aktar',
-    icon: Lightbulb,
-    color: 'bg-[rgba(139,92,246,0.1)]0'
-  },
-  { 
-    type: 'categories', 
-    label: 'Kategoriler & Sorular', 
-    description: 'Anket yapısını, kategorileri ve soruları dışa aktar',
-    icon: FolderTree,
-    color: 'bg-orange-500'
-  },
-  { 
-    type: 'sectors', 
-    label: 'Sektörler', 
-    description: 'Sektör ve alt sektör listesini dışa aktar',
-    icon: Factory,
-    color: 'bg-[var(--bg-card-2)]0'
-  }
-];
+  const selectAll = (): void => {
+    setTables(prev => prev.map(t => ({ ...t, selected: true })));
+  };
 
-export default function ExportPage() {
-  const [surveys, setSurveys] = useState<Survey[]>([]);
-  const [sectors, setSectors] = useState<Sector[]>([]);
-  const [selectedSurvey, setSelectedSurvey] = useState<string>('');
-  const [selectedSector, setSelectedSector] = useState<string>('');
-  const [exporting, setExporting] = useState<ExportType | null>(null);
+  const selectNone = (): void => {
+    setTables(prev => prev.map(t => ({ ...t, selected: false })));
+  };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [surveysRes, sectorsRes] = await Promise.all([
-          fetch('/api/admin/surveys'),
-          fetch('/api/admin/sectors')
-        ]);
+  const handleExport = async (): Promise<void> => {
+    const selectedTables = tables.filter(t => t.selected).map(t => t.id);
 
-        if (surveysRes.ok) {
-          const data = await surveysRes.json();
-          setSurveys(data ?? []);
-        }
+    if (selectedTables.length === 0) {
+      toast.error('En az bir tablo seçmelisiniz');
+      return;
+    }
 
-        if (sectorsRes.ok) {
-          const data = await sectorsRes.json();
-          setSectors(data ?? []);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  const handleExport = async (type: ExportType) => {
-    setExporting(type);
+    setLoading(true);
 
     try {
-      let url = `/api/admin/export?type=${type}`;
+      const params = new URLSearchParams();
+      params.set('format', format);
       
-      // Filtreler
-      if (selectedSurvey && (type === 'survey-responses' || type === 'recommendations' || type === 'categories')) {
-        url += `&surveyId=${selectedSurvey}`;
-      }
-      if (selectedSector && type === 'user-scores') {
-        url += `&sectorId=${selectedSector}`;
+      if (format === 'csv') {
+        params.set('table', selectedTable);
+      } else {
+        if (selectedTables.length === tables.length) {
+          params.set('tables', 'all');
+        } else {
+          params.set('tables', selectedTables.join(','));
+        }
       }
 
-      const res = await fetch(url);
+      if (includePasswords) {
+        params.set('includePasswords', 'true');
+      }
 
-      if (!res.ok) {
-        throw new Error('Export failed');
+      const response = await fetch(`/api/admin/export?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error('Export başarısız');
       }
 
       // Dosyayı indir
-      const blob = await res.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `export_${new Date().toISOString().split('T')[0]}.${format}`;
+      
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) {
+          filename = match[1];
+        }
+      }
+
+      const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = downloadUrl;
-      
-      // Dosya adını header'dan al
-      const contentDisposition = res.headers.get('Content-Disposition');
-      const filename = contentDisposition?.split('filename="')[1]?.replace('"', '') || `${type}.csv`;
+      a.href = url;
       a.download = filename;
-      
       document.body.appendChild(a);
       a.click();
+      window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      window.URL.revokeObjectURL(downloadUrl);
 
-      toast.success('Veri başarıyla dışa aktarıldı', {
-        description: filename
-      });
+      toast.success('Veriler başarıyla dışa aktarıldı');
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Dışa aktarma başarısız oldu');
+      toast.error('Dışa aktarma sırasında hata oluştu');
     } finally {
-      setExporting(null);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-[var(--accent)] rounded-xl flex items-center justify-center">
-          <Download className="text-white" size={24} />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Veri Dışa Aktarma</h1>
-          <p className="text-[var(--text-dim)]">Platform verilerini CSV formatında dışa aktarın</p>
-        </div>
-      </div>
-
-      {/* Filtreler */}
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-6">
-        <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
-          <FileText size={20} className="text-[var(--accent)]" />
-          Filtreler (Opsiyonel)
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
-              Anket Seçin
-            </label>
-            <select
-              value={selectedSurvey}
-              onChange={(e) => setSelectedSurvey(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none bg-[var(--bg-card)]"
-            >
-              <option value="">Tüm Anketler</option>
-              {surveys.map(survey => (
-                <option key={survey.id} value={survey.id}>{survey.name}</option>
-              ))}
-            </select>
-            <p className="text-xs text-[var(--text-dim)] mt-1">Anket cevapları, öneriler ve kategoriler için geçerli</p>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-3 rounded-xl bg-[var(--accent)]/20">
+            <Database className="h-6 w-6 text-[var(--accent)]" />
           </div>
-          
           <div>
-            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
-              Sektör Seçin
-            </label>
-            <select
-              value={selectedSector}
-              onChange={(e) => setSelectedSector(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none bg-[var(--bg-card)]"
-            >
-              <option value="">Tüm Sektörler</option>
-              {sectors.map(sector => (
-                <option key={sector.id} value={sector.id}>{sector.name}</option>
-              ))}
-            </select>
-            <p className="text-xs text-[var(--text-dim)] mt-1">Kullanıcı puanları için geçerli</p>
+            <h1 className="text-2xl font-bold text-[var(--text-main)]">Veri Dışa Aktarma</h1>
+            <p className="text-[var(--text-muted)]">Veritabanı verilerini JSON veya CSV formatında indirin</p>
           </div>
         </div>
       </div>
 
-      {/* Export Kartları */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {exportOptions.map((option) => {
-          const Icon = option.icon;
-          const isExporting = exporting === option.type;
-          
-          return (
-            <div
-              key={option.type}
-              className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-            >
-              <div className={`${option.color} px-6 py-4`}>
-                <Icon className="text-white" size={32} />
-              </div>
-              <div className="p-6">
-                <h3 className="text-lg font-semibold text-[var(--text-main)] mb-2">{option.label}</h3>
-                <p className="text-[var(--text-dim)] text-sm mb-4">{option.description}</p>
-                
-                <button
-                  onClick={() => handleExport(option.type)}
-                  disabled={isExporting}
-                  className="w-full flex items-center justify-center gap-2 bg-[var(--accent)] text-white px-4 py-2.5 rounded-lg hover:bg-[var(--accent)]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Sol Panel - Format Seçimi */}
+        <div className="lg:col-span-1 space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]"
+          >
+            <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4">Format Seçimi</h2>
+            
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setFormat('json')}
+                className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
+                  format === 'json'
+                    ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                    : 'border-[var(--border-soft)] bg-[var(--bg-card-2)] hover:border-[var(--accent)]/50'
+                }`}
+              >
+                <FileJson className={`h-6 w-6 ${format === 'json' ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`} />
+                <div className="text-left">
+                  <div className={`font-medium ${format === 'json' ? 'text-[var(--accent)]' : 'text-[var(--text-main)]'}`}>JSON</div>
+                  <div className="text-sm text-[var(--text-muted)]">Tüm veriler, ilişkiler dahil</div>
+                </div>
+                {format === 'json' && <Check className="h-5 w-5 text-[var(--accent)] ml-auto" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFormat('csv')}
+                className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
+                  format === 'csv'
+                    ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                    : 'border-[var(--border-soft)] bg-[var(--bg-card-2)] hover:border-[var(--accent)]/50'
+                }`}
+              >
+                <FileSpreadsheet className={`h-6 w-6 ${format === 'csv' ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`} />
+                <div className="text-left">
+                  <div className={`font-medium ${format === 'csv' ? 'text-[var(--accent)]' : 'text-[var(--text-main)]'}`}>CSV</div>
+                  <div className="text-sm text-[var(--text-muted)]">Tek tablo, Excel uyumlu</div>
+                </div>
+                {format === 'csv' && <Check className="h-5 w-5 text-[var(--accent)] ml-auto" />}
+              </button>
+            </div>
+
+            {format === 'csv' && (
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
+                  Dışa Aktarılacak Tablo
+                </label>
+                <select
+                  value={selectedTable}
+                  onChange={(e) => setSelectedTable(e.target.value)}
+                  className="w-full p-3 rounded-lg bg-[var(--bg-card-2)] border border-[var(--border-soft)] text-[var(--text-main)]"
                 >
-                  {isExporting ? (
-                    <>
-                      <Loader2 className="animate-spin" size={18} />
-                      Dışa Aktarılıyor...
-                    </>
-                  ) : (
-                    <>
-                      <Download size={18} />
-                      CSV Olarak İndir
-                    </>
-                  )}
+                  {tables.map(table => (
+                    <option key={table.id} value={table.id}>
+                      {table.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Güvenlik Seçeneği */}
+            <div className="mt-4 p-4 rounded-lg bg-[var(--bg-card-2)] border border-[var(--border-soft)]">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includePasswords}
+                  onChange={(e) => setIncludePasswords(e.target.checked)}
+                  className="w-4 h-4 rounded border-[var(--border-soft)] text-[var(--accent)] focus:ring-[var(--accent)]"
+                />
+                <div>
+                  <div className="font-medium text-[var(--text-main)]">Şifreleri Dahil Et</div>
+                  <div className="text-xs text-[var(--text-muted)]">
+                    Hash&apos;lenmiş şifreler dahil edilir (migrasyon için)
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            {/* Uyarı */}
+            <div className="mt-4 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-yellow-200">
+                  <strong>Dikkat:</strong> Dışa aktarılan veriler hassas bilgiler içerebilir. Güvenli bir şekilde saklayın.
+                </div>
+              </div>
+            </div>
+
+            {/* Export Butonu */}
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={loading}
+              className="w-full mt-4 py-3 px-4 rounded-lg bg-[var(--accent)] text-[var(--bg-deep)] font-medium hover:bg-[var(--accent-bright)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Dışa Aktarılıyor...
+                </>
+              ) : (
+                <>
+                  <Download className="h-5 w-5" />
+                  Dışa Aktar
+                </>
+              )}
+            </button>
+          </motion.div>
+        </div>
+
+        {/* Sağ Panel - Tablo Seçimi (Sadece JSON için) */}
+        {format === 'json' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="lg:col-span-2 p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-[var(--text-main)]">Tablolar</h2>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={selectAll}
+                  className="px-3 py-1.5 text-sm rounded-lg bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                >
+                  Tümünü Seç
+                </button>
+                <button
+                  type="button"
+                  onClick={selectNone}
+                  className="px-3 py-1.5 text-sm rounded-lg bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                >
+                  Hiçbirini Seçme
                 </button>
               </div>
             </div>
-          );
-        })}
-      </div>
 
-      {/* Bilgi Kutusu */}
-      <div className="bg-[var(--bg-card-2)] border border-blue-200 rounded-xl p-6">
-        <div className="flex items-start gap-3">
-          <CheckCircle className="text-[var(--blue-main)] mt-0.5" size={20} />
-          <div>
-            <h3 className="font-semibold text-[var(--accent)] mb-1">CSV Formatı Hakkında</h3>
-            <ul className="text-sm text-[var(--accent)] space-y-1">
-              <li>• Dosyalar UTF-8 BOM ile kodlanır, Excel&apos;de Türkçe karakterler doğru görünür</li>
-              <li>• CSV dosyaları Microsoft Excel, Google Sheets ve diğer tablo programlarında açılabilir</li>
-              <li>• Filtreleri kullanarak belirli anket veya sektöre ait verileri dışa aktarabilirsiniz</li>
-              <li>• Büyük veri setleri için dışa aktarma birkaç saniye sürebilir</li>
-            </ul>
-          </div>
-        </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {tables.map(table => (
+                <button
+                  key={table.id}
+                  type="button"
+                  onClick={() => toggleTable(table.id)}
+                  className={`p-4 rounded-lg border-2 transition-all text-left ${
+                    table.selected
+                      ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                      : 'border-[var(--border-soft)] bg-[var(--bg-card-2)] hover:border-[var(--accent)]/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className={`font-medium ${table.selected ? 'text-[var(--accent)]' : 'text-[var(--text-main)]'}`}>
+                        {table.name}
+                      </div>
+                      <div className="text-sm text-[var(--text-muted)]">{table.description}</div>
+                    </div>
+                    {table.selected && <Check className="h-5 w-5 text-[var(--accent)]" />}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-4 p-4 rounded-lg bg-[var(--bg-card-2)] border border-[var(--border-soft)]">
+              <div className="text-sm text-[var(--text-muted)]">
+                <strong className="text-[var(--text-main)]">
+                  {tables.filter(t => t.selected).length}
+                </strong> tablo seçildi
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* CSV için bilgi paneli */}
+        {format === 'csv' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="lg:col-span-2 p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]"
+          >
+            <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4">CSV Formatı Hakkında</h2>
+            
+            <div className="space-y-4 text-[var(--text-muted)]">
+              <p>
+                CSV formatı tek bir tabloyu düz metin olarak dışa aktarır. Excel, Google Sheets
+                ve diğer tablo programlarıyla uyumludur.
+              </p>
+              
+              <div className="p-4 rounded-lg bg-[var(--bg-card-2)] border border-[var(--border-soft)]">
+                <h3 className="font-medium text-[var(--text-main)] mb-2">Özellikler:</h3>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>UTF-8 karakter kodlaması</li>
+                  <li>Virgül ayraçlı format</li>
+                  <li>İlk satır başlık içerir</li>
+                  <li>JSON alanları noktalı virgül ile ayrılmış</li>
+                </ul>
+              </div>
+
+              <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-blue-200">
+                    <strong>İpucu:</strong> Tüm verileri ilişkileriyle birlikte almak için JSON formatını tercih edin.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   );
