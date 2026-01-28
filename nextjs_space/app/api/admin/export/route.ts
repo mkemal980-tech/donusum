@@ -134,12 +134,22 @@ export async function GET(request: NextRequest) {
               score = parseInt(r.value) || 0;
               maxScore += 5 * weight;
             } else if (question.type === 'YES_NO') {
+              // Options array formatında: [{ value: 'yes', label: 'Evet', score: 5 }, ...]
               const options = question.options as any;
-              score = r.value === 'Evet' ? (options?.yesScore ?? 5) : (options?.noScore ?? 1);
+              if (Array.isArray(options)) {
+                const selected = options.find((o: any) => o.value === r.value);
+                score = selected?.score ?? (r.value === 'yes' ? 5 : 1);
+              } else if (options) {
+                // Eski format desteği (yesScore/noScore)
+                score = r.value === 'yes' ? (options.yesScore ?? 5) : (options.noScore ?? 1);
+              } else {
+                // Fallback
+                score = r.value === 'yes' ? 5 : 1;
+              }
               maxScore += 5 * weight;
             } else if (question.type === 'MULTIPLE_CHOICE') {
               const options = question.options as any[];
-              const selected = options?.find(o => o.value === r.value);
+              const selected = options?.find((o: any) => o.value === r.value);
               score = selected?.score ?? 0;
               maxScore += 5 * weight;
             }
