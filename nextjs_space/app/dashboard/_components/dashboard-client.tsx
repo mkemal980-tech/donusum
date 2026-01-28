@@ -262,18 +262,18 @@ export default function DashboardClient() {
       const lowestCategories = sortedCategories.slice(0, 3);
       const highestCategories = sortedCategories.slice(-3).reverse();
 
-      // HTML içeriği - Profesyonel Rapor Formatı
+      // HTML içeriği - Modern Corporate Report
       const htmlContent = `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="UTF-8">
           <style>
-            @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Open+Sans:wght@400;600;700&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
             
             @page {
               size: A4;
-              margin: 20mm 25mm;
+              margin: 15mm 20mm;
             }
             
             @page :first {
@@ -283,175 +283,233 @@ export default function DashboardClient() {
             * { margin: 0; padding: 0; box-sizing: border-box; }
             
             body { 
-              font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif; 
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
               background: #ffffff;
-              color: #1f2937;
-              line-height: 1.7;
-              font-size: 11pt;
+              color: #334155;
+              line-height: 1.6;
+              font-size: 10pt;
+              -webkit-font-smoothing: antialiased;
             }
             
             h1, h2, h3 {
-              font-family: 'Merriweather', Georgia, serif;
-              color: #111827;
+              font-family: 'Inter', sans-serif;
+              color: #0f172a;
+              font-weight: 700;
+              letter-spacing: -0.02em;
             }
             
-            /* ========== KAPAK SAYFASI ========== */
+            /* ========== KAPAK SAYFASI - MODERN MINIMAL ========== */
             .cover-page {
               height: 297mm;
-              background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+              background: #ffffff;
+              position: relative;
+              page-break-after: always;
+              padding: 0;
+            }
+            
+            .cover-header {
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              height: 60mm;
+              background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            }
+            
+            .cover-content {
+              position: absolute;
+              top: 60mm;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              padding: 40mm 30mm;
               display: flex;
               flex-direction: column;
-              justify-content: center;
-              align-items: center;
-              text-align: center;
-              color: white;
-              padding: 40mm;
-              page-break-after: always;
+              justify-content: space-between;
             }
             
             .cover-logo {
-              width: 80px;
-              height: 80px;
-              background: linear-gradient(135deg, #22d3ee 0%, #0ea5e9 100%);
-              border-radius: 20px;
+              width: 60px;
+              height: 60px;
+              background: #0ea5e9;
+              border-radius: 12px;
               display: flex;
               align-items: center;
               justify-content: center;
-              font-size: 36px;
-              font-weight: 700;
-              color: #0f172a;
-              margin-bottom: 40px;
-              box-shadow: 0 20px 60px rgba(34, 211, 238, 0.3);
+              font-size: 28px;
+              font-weight: 800;
+              color: white;
+              margin-bottom: 24px;
             }
             
             .cover-title {
-              font-size: 32pt;
-              font-weight: 700;
-              margin-bottom: 16px;
-              letter-spacing: -0.5px;
+              font-size: 42pt;
+              font-weight: 800;
+              margin-bottom: 12px;
+              line-height: 1.1;
+              color: #0f172a;
             }
             
             .cover-subtitle {
               font-size: 14pt;
-              color: #94a3b8;
-              margin-bottom: 60px;
-              font-weight: 400;
+              color: #64748b;
+              margin-bottom: 40px;
+              font-weight: 500;
             }
             
             .cover-company {
-              font-size: 24pt;
-              font-weight: 600;
-              color: #22d3ee;
-              margin-bottom: 8px;
+              font-size: 28pt;
+              font-weight: 700;
+              color: #0ea5e9;
+              margin-bottom: 48px;
             }
             
-            .cover-meta {
-              font-size: 11pt;
-              color: #64748b;
-              margin-top: 80px;
+            .cover-meta-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+              margin-bottom: 40px;
             }
             
             .cover-meta-item {
-              margin-bottom: 8px;
+              background: #f8fafc;
+              padding: 16px 20px;
+              border-radius: 8px;
+              border-left: 3px solid #0ea5e9;
+            }
+            
+            .cover-meta-label {
+              font-size: 8pt;
+              color: #94a3b8;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin-bottom: 4px;
+              font-weight: 600;
+            }
+            
+            .cover-meta-value {
+              font-size: 11pt;
+              color: #0f172a;
+              font-weight: 600;
             }
             
             .cover-badge {
-              display: inline-block;
-              background: rgba(34, 211, 238, 0.15);
-              border: 1px solid rgba(34, 211, 238, 0.3);
-              color: #22d3ee;
-              padding: 12px 32px;
-              border-radius: 30px;
+              display: inline-flex;
+              align-items: center;
+              gap: 8px;
+              background: #0f172a;
+              color: white;
+              padding: 14px 28px;
+              border-radius: 8px;
               font-size: 12pt;
-              font-weight: 600;
-              margin-top: 40px;
+              font-weight: 700;
+              margin-top: auto;
             }
             
-            /* ========== İÇERİK SAYFALARI ========== */
+            .cover-badge-dot {
+              width: 10px;
+              height: 10px;
+              border-radius: 50%;
+              background: #22d3ee;
+            }
+            
+            /* ========== İÇERİK SAYFALARI - CLEAN LAYOUT ========== */
             .content-page {
               padding: 0;
               page-break-after: always;
             }
             
             .page-header {
-              border-bottom: 2px solid #e5e7eb;
-              padding-bottom: 12px;
-              margin-bottom: 24px;
+              border-bottom: 1px solid #e2e8f0;
+              padding-bottom: 16px;
+              margin-bottom: 32px;
               display: flex;
               justify-content: space-between;
-              align-items: center;
+              align-items: baseline;
             }
             
             .page-header-title {
-              font-size: 10pt;
-              color: #6b7280;
+              font-size: 8pt;
+              color: #94a3b8;
               text-transform: uppercase;
-              letter-spacing: 1px;
+              letter-spacing: 1.5px;
+              font-weight: 600;
             }
             
             .page-header-company {
-              font-size: 10pt;
-              color: #0ea5e9;
+              font-size: 9pt;
+              color: #0f172a;
               font-weight: 600;
             }
             
             .section-title {
-              font-size: 18pt;
+              font-size: 22pt;
               color: #0f172a;
-              margin-bottom: 20px;
-              padding-bottom: 12px;
-              border-bottom: 3px solid #0ea5e9;
-              display: inline-block;
+              margin-bottom: 8px;
+              font-weight: 800;
+            }
+            
+            .section-subtitle {
+              font-size: 11pt;
+              color: #64748b;
+              margin-bottom: 28px;
+              font-weight: 400;
             }
             
             .section-intro {
-              font-size: 11pt;
-              color: #4b5563;
+              font-size: 10pt;
+              color: #64748b;
               margin-bottom: 24px;
-              line-height: 1.8;
-            }
-            
-            /* Özet Kutusu */
-            .summary-box {
-              background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-              border-left: 4px solid #0ea5e9;
-              padding: 20px 24px;
-              margin-bottom: 28px;
-              border-radius: 0 8px 8px 0;
-            }
-            
-            .summary-box h3 {
-              font-size: 12pt;
-              color: #0369a1;
-              margin-bottom: 12px;
-            }
-            
-            .summary-box p {
-              font-size: 11pt;
-              color: #1e40af;
               line-height: 1.7;
             }
             
-            /* KPI Grid */
+            /* Özet Kutusu - Modern Highlight */
+            .summary-box {
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-left: 4px solid #0ea5e9;
+              padding: 24px 28px;
+              margin-bottom: 32px;
+              border-radius: 8px;
+            }
+            
+            .summary-box h3 {
+              font-size: 11pt;
+              color: #0f172a;
+              margin-bottom: 12px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            .summary-box p {
+              font-size: 10pt;
+              color: #475569;
+              line-height: 1.8;
+            }
+            
+            /* KPI Grid - Minimal Cards */
             .kpi-grid {
               display: grid;
               grid-template-columns: repeat(4, 1fr);
               gap: 16px;
-              margin-bottom: 28px;
+              margin-bottom: 32px;
             }
             
             .kpi-card {
-              background: #f8fafc;
+              background: white;
               border: 1px solid #e2e8f0;
-              border-radius: 12px;
-              padding: 20px;
+              border-radius: 8px;
+              padding: 24px 20px;
               text-align: center;
+              transition: all 0.2s;
             }
             
             .kpi-value {
-              font-size: 28pt;
-              font-weight: 700;
+              font-size: 32pt;
+              font-weight: 800;
               color: #0f172a;
+              line-height: 1;
             }
             
             .kpi-value.highlight {
@@ -459,158 +517,169 @@ export default function DashboardClient() {
             }
             
             .kpi-label {
-              font-size: 9pt;
-              color: #64748b;
+              font-size: 8pt;
+              color: #94a3b8;
               text-transform: uppercase;
-              letter-spacing: 0.5px;
-              margin-top: 4px;
+              letter-spacing: 1px;
+              margin-top: 8px;
+              font-weight: 600;
             }
             
-            /* Tablo Stili */
+            /* Tablo Stili - Clean & Modern */
             .data-table {
               width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 24px;
-              font-size: 10pt;
+              border-collapse: separate;
+              border-spacing: 0;
+              margin-bottom: 32px;
+              font-size: 9pt;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              overflow: hidden;
             }
             
             .data-table th {
-              background: #0f172a;
-              color: white;
-              padding: 12px 16px;
+              background: #f8fafc;
+              color: #64748b;
+              padding: 14px 18px;
               text-align: left;
-              font-weight: 600;
-              font-size: 9pt;
+              font-weight: 700;
+              font-size: 8pt;
               text-transform: uppercase;
-              letter-spacing: 0.5px;
+              letter-spacing: 1px;
+              border-bottom: 2px solid #e2e8f0;
             }
             
             .data-table td {
-              padding: 12px 16px;
-              border-bottom: 1px solid #e5e7eb;
+              padding: 14px 18px;
+              border-bottom: 1px solid #f1f5f9;
+              color: #334155;
             }
             
-            .data-table tr:nth-child(even) {
-              background: #f9fafb;
+            .data-table tbody tr:last-child td {
+              border-bottom: none;
             }
             
             .data-table tr:hover {
-              background: #f0f9ff;
+              background: #fafbfc;
             }
             
-            /* Seviye Badge */
+            /* Seviye Badge - Refined */
             .level-badge {
               display: inline-block;
-              padding: 4px 12px;
-              border-radius: 20px;
-              font-size: 9pt;
-              font-weight: 600;
+              padding: 5px 14px;
+              border-radius: 6px;
+              font-size: 8pt;
+              font-weight: 700;
+              letter-spacing: 0.5px;
             }
             
-            .level-badge.baslangic { background: #fef2f2; color: #dc2626; }
-            .level-badge.farkindalik { background: #fff7ed; color: #ea580c; }
-            .level-badge.gelisen { background: #fefce8; color: #ca8a04; }
-            .level-badge.olgun { background: #f0fdf4; color: #16a34a; }
-            .level-badge.lider { background: #eff6ff; color: #2563eb; }
+            .level-badge.baslangic { background: #fee2e2; color: #991b1b; }
+            .level-badge.farkindalik { background: #fed7aa; color: #9a3412; }
+            .level-badge.gelisen { background: #fef08a; color: #854d0e; }
+            .level-badge.olgun { background: #bbf7d0; color: #166534; }
+            .level-badge.lider { background: #bfdbfe; color: #1e40af; }
             
-            /* Progress Bar */
+            /* Progress Bar - Minimal */
             .progress-bar {
-              height: 8px;
-              background: #e5e7eb;
-              border-radius: 4px;
+              height: 6px;
+              background: #f1f5f9;
+              border-radius: 3px;
               overflow: hidden;
             }
             
             .progress-fill {
               height: 100%;
-              border-radius: 4px;
+              border-radius: 3px;
               transition: width 0.3s;
             }
             
-            .progress-fill.low { background: linear-gradient(90deg, #ef4444, #f87171); }
-            .progress-fill.medium { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
-            .progress-fill.high { background: linear-gradient(90deg, #22c55e, #4ade80); }
+            .progress-fill.low { background: #ef4444; }
+            .progress-fill.medium { background: #f59e0b; }
+            .progress-fill.high { background: #10b981; }
             
-            /* Öneri Kartları */
+            /* Öneri Kartları - Card Design */
             .recommendation-grid {
               display: grid;
               grid-template-columns: 1fr;
-              gap: 16px;
-              margin-bottom: 24px;
+              gap: 14px;
+              margin-bottom: 28px;
             }
             
             .rec-card {
-              background: #ffffff;
-              border: 1px solid #e5e7eb;
-              border-radius: 12px;
-              padding: 16px 20px;
-              border-left: 4px solid;
+              background: white;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              padding: 18px 22px;
+              border-left: 3px solid;
             }
             
-            .rec-card.quick-win { border-left-color: #22c55e; }
+            .rec-card.quick-win { border-left-color: #10b981; }
             .rec-card.project { border-left-color: #f59e0b; }
             .rec-card.big-bet { border-left-color: #ef4444; }
             
             .rec-header {
               display: flex;
               align-items: center;
-              gap: 12px;
-              margin-bottom: 8px;
+              gap: 14px;
+              margin-bottom: 10px;
             }
             
             .rec-type {
-              font-size: 8pt;
-              font-weight: 700;
+              font-size: 7pt;
+              font-weight: 800;
               text-transform: uppercase;
-              letter-spacing: 0.5px;
-              padding: 3px 10px;
-              border-radius: 4px;
+              letter-spacing: 1px;
+              padding: 4px 12px;
+              border-radius: 5px;
+              white-space: nowrap;
             }
             
-            .rec-type.quick-win { background: #dcfce7; color: #166534; }
-            .rec-type.project { background: #fef3c7; color: #92400e; }
-            .rec-type.big-bet { background: #fee2e2; color: #991b1b; }
+            .rec-type.quick-win { background: #d1fae5; color: #065f46; }
+            .rec-type.project { background: #fef3c7; color: #78350f; }
+            .rec-type.big-bet { background: #fee2e2; color: #7f1d1d; }
             
             .rec-title {
               font-size: 11pt;
-              font-weight: 600;
-              color: #1f2937;
+              font-weight: 700;
+              color: #0f172a;
             }
             
             .rec-desc {
-              font-size: 10pt;
-              color: #6b7280;
+              font-size: 9pt;
+              color: #64748b;
               line-height: 1.6;
             }
             
             .rec-meta {
               display: flex;
-              gap: 20px;
-              margin-top: 10px;
-              font-size: 9pt;
-              color: #9ca3af;
+              gap: 18px;
+              margin-top: 12px;
+              font-size: 8pt;
+              color: #94a3b8;
             }
             
-            /* İki Sütun Layout */
+            /* İki Sütun Layout - Card Style */
             .two-column {
               display: grid;
               grid-template-columns: 1fr 1fr;
-              gap: 24px;
-              margin-bottom: 24px;
+              gap: 16px;
+              margin-bottom: 28px;
             }
             
             .column-box {
-              background: #f8fafc;
-              border-radius: 12px;
-              padding: 20px;
+              background: white;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              padding: 22px 24px;
             }
             
             .column-box h4 {
-              font-size: 11pt;
-              color: #374151;
-              margin-bottom: 16px;
-              padding-bottom: 8px;
-              border-bottom: 1px solid #e5e7eb;
+              font-size: 10pt;
+              color: #0f172a;
+              margin-bottom: 18px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
             }
             
             .column-list {
@@ -618,30 +687,35 @@ export default function DashboardClient() {
             }
             
             .column-list li {
-              padding: 10px 0;
-              border-bottom: 1px solid #e5e7eb;
+              padding: 11px 0;
+              border-bottom: 1px solid #f1f5f9;
               display: flex;
               justify-content: space-between;
               align-items: center;
+              font-size: 9pt;
+              color: #475569;
             }
             
             .column-list li:last-child {
               border-bottom: none;
             }
             
-            /* Ironman Bölümü */
+            /* Ironman Bölümü - Minimal Dark */
             .ironman-section {
-              background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-              border-radius: 12px;
-              padding: 24px;
+              background: #0f172a;
+              border-radius: 8px;
+              padding: 28px 32px;
               color: white;
-              margin-bottom: 24px;
+              margin-bottom: 28px;
             }
             
             .ironman-section h4 {
-              font-size: 12pt;
+              font-size: 11pt;
               color: #22d3ee;
-              margin-bottom: 16px;
+              margin-bottom: 20px;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
             }
             
             .ironman-grid {
@@ -652,38 +726,47 @@ export default function DashboardClient() {
             }
             
             .ironman-stat {
-              background: rgba(255,255,255,0.05);
+              background: rgba(255,255,255,0.03);
+              border: 1px solid rgba(255,255,255,0.08);
               border-radius: 8px;
-              padding: 16px;
+              padding: 18px;
             }
             
             .ironman-value {
-              font-size: 24pt;
-              font-weight: 700;
+              font-size: 28pt;
+              font-weight: 800;
             }
             
             .ironman-value.velocity { color: #fbbf24; }
             .ironman-value.endurance { color: #60a5fa; }
-            .ironman-value.quadrant { color: #22d3ee; font-size: 14pt; }
+            .ironman-value.quadrant { color: #22d3ee; font-size: 13pt; }
             
             .ironman-label {
-              font-size: 9pt;
+              font-size: 8pt;
               color: #94a3b8;
-              margin-top: 4px;
+              margin-top: 8px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+              font-weight: 600;
             }
             
-            /* Sayfa Altı */
+            /* Sayfa Numarası Footer */
             .page-footer {
               position: fixed;
-              bottom: 20mm;
-              left: 25mm;
-              right: 25mm;
-              border-top: 1px solid #e5e7eb;
-              padding-top: 12px;
+              bottom: 15mm;
+              left: 20mm;
+              right: 20mm;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 10px;
               display: flex;
               justify-content: space-between;
-              font-size: 9pt;
-              color: #9ca3af;
+              font-size: 8pt;
+              color: #94a3b8;
+            }
+            
+            /* Utility Classes */
+            .no-break {
+              page-break-inside: avoid;
             }
             
             /* Print ayarları */
@@ -693,21 +776,48 @@ export default function DashboardClient() {
           </style>
         </head>
         <body>
-          <!-- ========== KAPAK SAYFASI ========== -->
+          <!-- ========== KAPAK SAYFASI - MODERN ========== -->
           <div class="cover-page">
-            <div class="cover-logo">${companyName.charAt(0).toUpperCase()}</div>
-            <div class="cover-title">Dönüşüm Olgunluk<br/>Değerlendirme Raporu</div>
-            <div class="cover-subtitle">${surveyName}</div>
-            <div class="cover-company">${companyName}</div>
-            <div class="cover-badge">${maturity.label} Seviyesi</div>
-            <div class="cover-meta">
-              <div class="cover-meta-item"><strong>Sektör:</strong> ${sectorName}${subSectorName ? ` / ${subSectorName}` : ''}</div>
-              <div class="cover-meta-item"><strong>Değerlendiren:</strong> ${userName}</div>
-              <div class="cover-meta-item"><strong>Rapor Tarihi:</strong> ${reportDate}</div>
+            <div class="cover-header"></div>
+            <div class="cover-content">
+              <div>
+                <div class="cover-logo">${companyName.charAt(0).toUpperCase()}</div>
+                <div class="cover-title">Dönüşüm Olgunluk<br/>Raporu</div>
+                <div class="cover-subtitle">${surveyName}</div>
+                <div class="cover-company">${companyName}</div>
+              </div>
+              
+              <div>
+                <div class="cover-meta-grid">
+                  <div class="cover-meta-item">
+                    <div class="cover-meta-label">Sektör</div>
+                    <div class="cover-meta-value">${sectorName}</div>
+                  </div>
+                  <div class="cover-meta-item">
+                    <div class="cover-meta-label">Rapor Tarihi</div>
+                    <div class="cover-meta-value">${reportDate}</div>
+                  </div>
+                  ${subSectorName ? `
+                  <div class="cover-meta-item">
+                    <div class="cover-meta-label">Alt Sektör</div>
+                    <div class="cover-meta-value">${subSectorName}</div>
+                  </div>
+                  ` : ''}
+                  <div class="cover-meta-item">
+                    <div class="cover-meta-label">Değerlendiren</div>
+                    <div class="cover-meta-value">${userName}</div>
+                  </div>
+                </div>
+                
+                <div class="cover-badge">
+                  <span class="cover-badge-dot"></span>
+                  ${maturity.label} Seviyesi
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- ========== YÖNETİCİ ÖZETİ ========== -->
+          <!-- ========== YÖNETİCİ ÖZETİ - MODERN ========== -->
           <div class="content-page">
             <div class="page-header">
               <span class="page-header-title">Yönetici Özeti</span>
@@ -715,16 +825,15 @@ export default function DashboardClient() {
             </div>
             
             <h2 class="section-title">Yönetici Özeti</h2>
+            <p class="section-subtitle">Değerlendirme Sonuçlarının Özet Sunumu</p>
             
             <div class="summary-box">
               <h3>Genel Değerlendirme</h3>
               <p>
-                ${companyName}, gerçekleştirilen ${surveyName} değerlendirmesi sonucunda 
-                <strong>${categoryCount} ana kategori</strong> üzerinden analiz edilmiştir. 
-                Değerlendirme sonucunda kuruluşunuz <strong>%${overallPercentage.toFixed(0)}</strong> tamamlanma oranıyla 
-                <strong>"${maturity.label}"</strong> olgunluk seviyesine ulaşmıştır. 
-                Toplam <strong>${recommendations.length} öneri</strong> belirlenmiş olup, bunların 
-                ${quickWinCount} tanesi hızlı kazanım, ${projectCount} tanesi proje ve ${bigBetCount} tanesi stratejik yatırım niteliğindedir.
+                ${companyName}, ${surveyName} kapsamında ${categoryCount} ana kategori üzerinden değerlendirilmiştir. 
+                Değerlendirme sonucunda <strong>"${maturity.label}"</strong> olgunluk seviyesinde konumlanmıştır 
+                (%${overallPercentage.toFixed(0)} tamamlanma). Toplam ${recommendations.length} öneri tespit edilmiştir: 
+                ${quickWinCount} hızlı kazanım, ${projectCount} proje, ${bigBetCount} stratejik yatırım.
               </p>
             </div>
             
@@ -748,24 +857,24 @@ export default function DashboardClient() {
             </div>
             
             <div class="two-column">
-              <div class="column-box" style="background: #fef2f2;">
-                <h4 style="color: #dc2626;">⚠️ Gelişim Gerektiren Alanlar</h4>
+              <div class="column-box">
+                <h4>⚠ Gelişim Gerektiren Alanlar</h4>
                 <ul class="column-list">
                   ${lowestCategories.length > 0 ? lowestCategories.map(([id, data]: any) => `
                     <li>
-                      <span>${data?.name ?? 'Kategori'}</span>
-                      <span style="color: #dc2626; font-weight: 600;">${data?.percentage?.toFixed(0) ?? 0}%</span>
+                      <span style="font-weight: 600;">${data?.name ?? 'Kategori'}</span>
+                      <span style="color: #ef4444; font-weight: 700;">${data?.percentage?.toFixed(0) ?? 0}%</span>
                     </li>
                   `).join('') : '<li><span>Veri yok</span></li>'}
                 </ul>
               </div>
-              <div class="column-box" style="background: #f0fdf4;">
-                <h4 style="color: #16a34a;">✓ Güçlü Alanlar</h4>
+              <div class="column-box">
+                <h4>✓ Güçlü Alanlar</h4>
                 <ul class="column-list">
                   ${highestCategories.length > 0 ? highestCategories.map(([id, data]: any) => `
                     <li>
-                      <span>${data?.name ?? 'Kategori'}</span>
-                      <span style="color: #16a34a; font-weight: 600;">${data?.percentage?.toFixed(0) ?? 0}%</span>
+                      <span style="font-weight: 600;">${data?.name ?? 'Kategori'}</span>
+                      <span style="color: #10b981; font-weight: 700;">${data?.percentage?.toFixed(0) ?? 0}%</span>
                     </li>
                   `).join('') : '<li><span>Veri yok</span></li>'}
                 </ul>
@@ -793,18 +902,19 @@ export default function DashboardClient() {
             ` : ''}
           </div>
 
-          <!-- ========== KATEGORİ ANALİZİ ========== -->
+          <!-- ========== KATEGORİ ANALİZİ - MODERN ========== -->
           <div class="content-page">
             <div class="page-header">
               <span class="page-header-title">Kategori Analizi</span>
               <span class="page-header-company">${companyName}</span>
             </div>
             
-            <h2 class="section-title">Kategori Bazlı Performans</h2>
+            <h2 class="section-title">Kategori Performansı</h2>
+            <p class="section-subtitle">Detaylı Kategori ve Alt Kategori Analizleri</p>
             
             <p class="section-intro">
-              Aşağıdaki tablo, değerlendirme kapsamındaki tüm kategorilerdeki performansınızı göstermektedir. 
-              Her kategori için mevcut puan, hedef puan ve olgunluk seviyesi belirtilmiştir.
+              Aşağıdaki tablo değerlendirme kapsamındaki tüm kategorilerin performansını göstermektedir. 
+              Her kategori için mevcut puan, ilerleme ve olgunluk seviyesi belirtilmiştir.
             </p>
             
             <table class="data-table">
@@ -892,18 +1002,19 @@ export default function DashboardClient() {
           </div>
 
           ${recommendations.length > 0 ? `
-          <!-- ========== ÖNERİLER ========== -->
+          <!-- ========== ÖNERİLER - MODERN ========== -->
           <div class="content-page">
             <div class="page-header">
-              <span class="page-header-title">Öneriler ve Eylem Planı</span>
+              <span class="page-header-title">Stratejik Öneriler</span>
               <span class="page-header-company">${companyName}</span>
             </div>
             
-            <h2 class="section-title">Stratejik Öneriler</h2>
+            <h2 class="section-title">Eylem Planı</h2>
+            <p class="section-subtitle">Önceliklendirilmiş Stratejik Öneriler</p>
             
             <p class="section-intro">
-              Değerlendirme sonucunda belirlenen öneriler, stratejik önem ve uygulama kolaylığına göre sınıflandırılmıştır. 
-              Hızlı kazanımlar kısa vadede uygulanabilirken, büyük yatırımlar uzun vadeli planlama gerektirir.
+              Değerlendirme sonucunda belirlenen öneriler stratejik öneme ve uygulama kolaylığına göre 
+              sınıflandırılmıştır. Hızlı kazanımlar kısa vadede, büyük yatırımlar uzun vadede planlanmalıdır.
             </p>
             
             <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px;">
@@ -954,53 +1065,54 @@ export default function DashboardClient() {
           </div>
           ` : ''}
 
-          <!-- ========== SONUÇ ========== -->
+          <!-- ========== SONUÇ - MODERN ========== -->
           <div class="content-page" style="page-break-after: auto;">
             <div class="page-header">
-              <span class="page-header-title">Sonuç ve Değerlendirme</span>
+              <span class="page-header-title">Sonuç ve Öneriler</span>
               <span class="page-header-company">${companyName}</span>
             </div>
             
             <h2 class="section-title">Sonuç</h2>
+            <p class="section-subtitle">Değerlendirme Özeti ve Gelecek Adımlar</p>
             
             <div class="summary-box">
               <h3>Değerlendirme Özeti</h3>
               <p>
-                ${companyName} için gerçekleştirilen bu değerlendirme, kuruluşun dönüşüm yolculuğundaki mevcut konumunu 
-                ortaya koymaktadır. <strong>"${maturity.label}"</strong> seviyesinde bulunan kuruluşun, belirlenen öneriler 
-                doğrultusunda sistematik bir iyileştirme yaklaşımı benimsemesi önerilmektedir.
+                ${companyName}, mevcut değerlendirme çerçevesinde <strong>"${maturity.label}"</strong> olgunluk 
+                seviyesinde konumlanmaktadır. Belirlenen ${recommendations.length} öneri doğrultusunda 
+                sistematik bir iyileştirme yaklaşımı benimsenmesi önerilmektedir.
               </p>
             </div>
             
             <div class="two-column">
               <div class="column-box">
-                <h4>📈 Öncelikli Eylemler</h4>
+                <h4>Öncelikli Eylemler</h4>
                 <ul class="column-list">
-                  <li>Hızlı kazanımları 3 ay içinde tamamlayın</li>
-                  <li>Proje önceliklerini belirleyin</li>
-                  <li>Büyük yatırımlar için bütçe planlayın</li>
-                  <li>İlerlemeyi düzenli olarak ölçün</li>
+                  <li>Hızlı kazanımları 0-3 ay içinde uygulayın</li>
+                  <li>Proje önceliklerini netleştirin</li>
+                  <li>Bütçe ve kaynak planlaması yapın</li>
+                  <li>İlerlemeyi düzenli izleyin ve raporlayın</li>
                 </ul>
               </div>
               <div class="column-box">
-                <h4>🎯 Hedefler</h4>
+                <h4>Zaman Çizelgesi Önerisi</h4>
                 <ul class="column-list">
-                  <li>6 ay sonra: Farkındalık seviyesine ulaşın</li>
-                  <li>12 ay sonra: Gelişen seviyesine yükselin</li>
-                  <li>24 ay sonra: Olgun seviyeyi hedefleyin</li>
+                  <li><strong>0-6 ay:</strong> Hızlı kazanımlar ve temel projeler</li>
+                  <li><strong>6-12 ay:</strong> Orta ölçekli projeler</li>
+                  <li><strong>12-24 ay:</strong> Stratejik yatırımlar</li>
                 </ul>
               </div>
             </div>
             
-            <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-top: 24px; text-align: center;">
-              <p style="font-size: 10pt; color: #6b7280; margin-bottom: 8px;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 28px; margin-top: 32px; text-align: center;">
+              <p style="font-size: 9pt; color: #64748b; margin-bottom: 12px;">
                 Bu rapor ${reportDate} tarihinde
               </p>
-              <p style="font-size: 12pt; color: #0ea5e9; font-weight: 600;">
+              <p style="font-size: 14pt; color: #0ea5e9; font-weight: 700; letter-spacing: -0.02em;">
                 Dönüşüm Platformu
               </p>
-              <p style="font-size: 10pt; color: #6b7280; margin-top: 8px;">
-                tarafından otomatik olarak oluşturulmuştur.
+              <p style="font-size: 9pt; color: #64748b; margin-top: 12px;">
+                tarafından otomatik olarak oluşturulmuştur
               </p>
             </div>
           </div>
