@@ -71,10 +71,16 @@ export function IronmanChart() {
     const fetchData = async () => {
       try {
         const res = await fetch('/api/ironman/user');
+        if (!res.ok) {
+          // API hatası durumunda data null kalacak, fallback UI gösterilecek
+          setData(null);
+          return;
+        }
         const json = await res.json();
         setData(json);
       } catch (error) {
         console.error('Error fetching ironman data:', error);
+        setData(null);
       } finally {
         setLoading(false);
       }
@@ -276,10 +282,10 @@ export function IronmanChart() {
     );
   }
 
-  if (!data) {
+  if (!data || !data.current || !data.target) {
     return (
       <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-        <p className="text-gray-500 text-center">Ironman verileri yüklenemedi</p>
+        <p className="text-gray-500 text-center">Ironman verileri yüklenemedi veya eksik</p>
       </div>
     );
   }
@@ -309,15 +315,15 @@ export function IronmanChart() {
             <div className="flex flex-wrap justify-center gap-4 mt-4 text-xs text-gray-500">
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-pink-500" />
-                <span>Mevcut durumunuz ({data.current.date})</span>
+                <span>Mevcut durumunuz ({data.current?.date || '-'})</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-blue-500" />
-                <span>Hedefiniz ({data.target.date})</span>
+                <span>Hedefiniz ({data.target?.date || '-'})</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-blue-300" />
-                <span>Diğer şirketler (mevcut - {data.current.date})</span>
+                <span>Diğer şirketler (mevcut - {data.current?.date || '-'})</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="w-6 border-t-2 border-dashed border-indigo-400" />
@@ -487,14 +493,14 @@ export function IronmanChart() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <p className="text-gray-500">Mevcut ({data.current.date})</p>
-                      <p className="text-gray-700">Hız: {data.current.velocity.toFixed(1)}</p>
-                      <p className="text-gray-700">Dayanıklılık: {data.current.endurance.toFixed(1)}</p>
+                      <p className="text-gray-500">Mevcut ({data.current?.date || '-'})</p>
+                      <p className="text-gray-700">Hız: {data.current?.velocity?.toFixed(1) || '0.0'}</p>
+                      <p className="text-gray-700">Dayanıklılık: {data.current?.endurance?.toFixed(1) || '0.0'}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Hedef ({data.target.date})</p>
-                      <p className="text-gray-700">Hız: {data.target.velocity.toFixed(1)}</p>
-                      <p className="text-gray-700">Dayanıklılık: {data.target.endurance.toFixed(1)}</p>
+                      <p className="text-gray-500">Hedef ({data.target?.date || '-'})</p>
+                      <p className="text-gray-700">Hız: {data.target?.velocity?.toFixed(1) || '0.0'}</p>
+                      <p className="text-gray-700">Dayanıklılık: {data.target?.endurance?.toFixed(1) || '0.0'}</p>
                     </div>
                   </div>
                 </div>
