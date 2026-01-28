@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense, lazy } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Header from "@/components/ui/header";
 import ScoreCard from "@/components/ui/score-card";
 import ProgressBar from "@/components/ui/progress-bar";
 import { MaturityLevelBar } from "@/components/ui/maturity-level-bar";
-import { BenchmarkSection } from "./benchmark-section";
 import { ProgressSection } from "./progress-section";
-import { CategoryDashboard } from "./category-dashboard";
-import { IronmanChart } from "@/components/ui/ironman-chart";
-import { KPIDashboard } from "./kpi-dashboard";
 import { ScoreTrendChart } from "./score-trend-chart";
+
+// Lazy load heavy components
+const BenchmarkSection = lazy(() => import("./benchmark-section").then(mod => ({ default: mod.BenchmarkSection })));
+const CategoryDashboard = lazy(() => import("./category-dashboard").then(mod => ({ default: mod.CategoryDashboard })));
+const IronmanChart = lazy(() => import("@/components/ui/ironman-chart").then(mod => ({ default: mod.IronmanChart })));
+const KPIDashboard = lazy(() => import("./kpi-dashboard").then(mod => ({ default: mod.KPIDashboard })));
 import { 
   ClipboardList, 
   TrendingUp, 
@@ -114,135 +116,83 @@ export default function DashboardClient() {
   const router = useRouter();
   const dashboardRef = useRef<HTMLDivElement>(null);
   
-  // Fetch user profile
+  // OPTIMIZED: Tek seferde surveys + ilk survey datasını çek
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const res = await fetch("/api/user/profile");
-        if (res.ok) {
-          const data = await res.json();
-          setUserProfile(data);
-        }
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-      }
-    };
-    fetchUserProfile();
-  }, []);
-
-  // Fetch assigned surveys for this user
-  useEffect(() => {
-    const fetchSurveys = async () => {
-      try {
-        const res = await fetch("/api/survey/assigned");
-        if (res.ok) {
-          const data = await res.json();
-          const activeSurveys = (data ?? []).filter((s: Survey) => s.isActive);
-          setSurveys(activeSurveys);
-          if (activeSurveys.length > 0 && !selectedSurveyId) {
-            setSelectedSurveyId(activeSurveys[0].id);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching surveys:", error);
-      }
-    };
-    fetchSurveys();
-  }, []);
-
-  // Fetch dashboard data when survey changes
-  useEffect(() => {
-    if (!selectedSurveyId) return;
-    
-    const fetchData = async () => {
+    const initializeDashboard = async () => {
       setLoading(true);
       try {
-        const surveyParam = selectedSurveyId ? `?surveyId=${selectedSurveyId}` : '';
+        // 1. Önce surveys'i çek
+        const surveyRes = await fetch("/api/survey/assigned");
+        if (!surveyRes.ok) {
+          setLoading(false);
+          return;
+        }
+
+        const surveyData = await surveyRes.json();
+        const activeSurveys = (surveyData ?? []).filter((s: Survey) => s.isActive);
+        setSurveys(activeSurveys);
+
+        if (activeSurveys.length === 0) {
+          setLoading(false);
+          return;
+        }
+
+        // 2. İlk survey'i seç ve hemen unified API'den tüm verileri çek
+        const firstSurveyId = activeSurveys[0].id;
+        setSelectedSurveyId(firstSurveyId);
+
+        const dashboardRes = await fetch(`/api/dashboard/unified?surveyId=${firstSurveyId}`);
         
-        const [scoreRes, responsesRes, structureRes, recommendationsRes] = await Promise.all([
-          fetch(`/api/survey/score${surveyParam}`),
-          fetch(`/api/survey/responses${surveyParam}`),
-          fetch(`/api/survey/structure${surveyParam}`),
-          fetch(`/api/recommendations${surveyParam}`)
-        ]);
-
-        let userResponses: SurveyResponse[] = [];
-        if (responsesRes.ok) {
-          const resp = await responsesRes.json();
-          userResponses = resp ?? [];
-          setResponses(userResponses);
+        if (dashboardRes.status === 401) {
+          // Session expired, redirect to login
+          window.location.href = '/login';
+          return;
         }
-
-        if (scoreRes.ok) {
-          const score = await scoreRes.json();
-          setScoreData(score);
+        
+        if (dashboardRes.ok) {
+          const data = await dashboardRes.json();
+          
+          // Tüm state'leri tek seferde set et
+          setUserProfile(data.userProfile);
+          setScoreData({ totalScore: data.score.totalScore, categoryScores: {} });
+          setResponses(data.responses);
+          setTotalQuestions(data.score.totalQuestions);
+          setCategoryStats(data.categoryStats);
         }
+      } catch (error) {
+        console.error("Error initializing dashboard:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        // Öneri verilerini al
-        let recommendations: any[] = [];
-        if (recommendationsRes.ok) {
-          const recData = await recommendationsRes.json();
-          recommendations = recData ?? [];
+    initializeDashboard();
+  }, []);
+
+  // Survey değiştiğinde sadece dashboard datasını güncelle
+  useEffect(() => {
+    if (!selectedSurveyId || surveys.length === 0) return;
+    
+    // İlk yüklemede zaten fetch ediliyor, tekrar etmeyelim
+    if (loading) return;
+
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        const dashboardRes = await fetch(`/api/dashboard/unified?surveyId=${selectedSurveyId}`);
+        
+        if (dashboardRes.status === 401) {
+          window.location.href = '/login';
+          return;
         }
-
-        if (structureRes.ok) {
-          const structure = await structureRes.json();
-          let count = 0;
-          const stats: CategoryStats[] = [];
+        
+        if (dashboardRes.ok) {
+          const data = await dashboardRes.json();
           
-          // Kullanıcının cevapladığı question ID'leri
-          const answeredQuestionIds = new Set(userResponses.map((r: SurveyResponse) => r.questionId));
-          
-          // Düzeltilmiş soru sayısı hesabı - hasSubLevels kontrolü
-          (structure ?? []).forEach((cat: any) => {
-            let catTotalQuestions = 0;
-            let catAnsweredQuestions = 0;
-            const catQuestionIds: string[] = [];
-            
-            (cat?.subCategories ?? []).forEach((sub: any) => {
-              if (sub?.hasSubLevels === false) {
-                // Sorular doğrudan alt kategoride
-                const questions = sub?.questions ?? [];
-                catTotalQuestions += questions.length;
-                questions.forEach((q: any) => {
-                  catQuestionIds.push(q.id);
-                  if (answeredQuestionIds.has(q.id)) {
-                    catAnsweredQuestions++;
-                  }
-                });
-                count += questions.length;
-              } else {
-                // Sorular alt seviyelerde
-                (sub?.subLevels ?? []).forEach((level: any) => {
-                  const questions = level?.questions ?? [];
-                  catTotalQuestions += questions.length;
-                  questions.forEach((q: any) => {
-                    catQuestionIds.push(q.id);
-                    if (answeredQuestionIds.has(q.id)) {
-                      catAnsweredQuestions++;
-                    }
-                  });
-                  count += questions.length;
-                });
-              }
-            });
-            
-            // Kategori için öneri sayısını hesapla
-            const catRecommendationCount = recommendations.filter((rec: any) => 
-              rec.categoryId === cat.id
-            ).length;
-            
-            stats.push({
-              id: cat.id,
-              name: cat.name,
-              answeredQuestions: catAnsweredQuestions,
-              totalQuestions: catTotalQuestions,
-              recommendationCount: catRecommendationCount
-            });
-          });
-          
-          setTotalQuestions(count);
-          setCategoryStats(stats);
+          setScoreData({ totalScore: data.score.totalScore, categoryScores: {} });
+          setResponses(data.responses);
+          setTotalQuestions(data.score.totalQuestions);
+          setCategoryStats(data.categoryStats);
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -251,7 +201,7 @@ export default function DashboardClient() {
       }
     };
 
-    fetchData();
+    fetchDashboardData();
   }, [selectedSurveyId]);
 
   const completedQuestions = responses?.length ?? 0;
@@ -1167,7 +1117,9 @@ export default function DashboardClient() {
         )}
 
         {/* KPI Dashboard */}
-        <KPIDashboard surveyId={selectedSurveyId} />
+        <Suspense fallback={<ComponentSkeleton height="300px" />}>
+          <KPIDashboard surveyId={selectedSurveyId} />
+        </Suspense>
 
         {/* Gelişim Trend Grafiği */}
         <ScoreTrendChart surveyId={selectedSurveyId} />
@@ -1335,7 +1287,9 @@ export default function DashboardClient() {
           transition={{ delay: 0.6 }}
           className="mb-8"
         >
-          <BenchmarkSection />
+          <Suspense fallback={<ComponentSkeleton height="400px" />}>
+            <BenchmarkSection />
+          </Suspense>
         </motion.div>
 
         {/* Progress Benchmark Section */}
@@ -1355,7 +1309,9 @@ export default function DashboardClient() {
           transition={{ delay: 0.62 }}
           className="mb-8"
         >
-          <IronmanChart />
+          <Suspense fallback={<ComponentSkeleton height="600px" />}>
+            <IronmanChart />
+          </Suspense>
         </motion.div>
 
         {/* Category Analysis Section */}
@@ -1374,7 +1330,9 @@ export default function DashboardClient() {
               <p className="text-sm text-[var(--text-secondary)]">Seviyelendirme ve GAP Analizi</p>
             </div>
           </div>
-          <CategoryDashboard surveyId={selectedSurveyId} />
+          <Suspense fallback={<ComponentSkeleton height="500px" />}>
+            <CategoryDashboard surveyId={selectedSurveyId} />
+          </Suspense>
         </motion.div>
 
         {/* Quick Actions */}
@@ -1421,6 +1379,25 @@ export default function DashboardClient() {
           </button>
         </motion.div>
       </main>
+    </div>
+  );
+}
+
+// Skeleton Loader Component
+function ComponentSkeleton({ height = "400px" }: { height?: string }) {
+  return (
+    <div 
+      className="bg-[var(--bg-card)] rounded-2xl shadow-lg border border-[var(--border-soft)] animate-pulse"
+      style={{ height }}
+    >
+      <div className="p-6 space-y-4">
+        <div className="h-6 bg-[var(--bg-card-2)] rounded w-1/3"></div>
+        <div className="space-y-3">
+          <div className="h-4 bg-[var(--bg-card-2)] rounded"></div>
+          <div className="h-4 bg-[var(--bg-card-2)] rounded w-5/6"></div>
+          <div className="h-4 bg-[var(--bg-card-2)] rounded w-4/6"></div>
+        </div>
+      </div>
     </div>
   );
 }
