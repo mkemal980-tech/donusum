@@ -18,6 +18,10 @@ export async function GET(request: NextRequest) {
         survey: {
           select: { id: true, name: true }
         },
+        // Doğrudan kategoriye bağlı sorular (alt kategori olmadan)
+        questions: {
+          orderBy: { order: 'asc' }
+        },
         subCategories: {
           orderBy: { order: 'asc' },
           include: {

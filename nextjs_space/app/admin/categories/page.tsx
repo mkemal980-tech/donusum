@@ -41,6 +41,7 @@ interface Category {
   surveyId: string | null;
   survey?: { id: string; name: string } | null;
   subCategories: SubCategory[];
+  questions: Question[];  // Doğrudan kategoriye bağlı sorular
 }
 
 interface Survey {
@@ -416,12 +417,19 @@ export default function CategoriesPage() {
     if (type === 'sublevel' && !isEdit) data.subCategoryId = parentId;
     if (type === 'question') {
       if (!isEdit) {
-        if (parentData?.isSubCategory) {
+        if (parentData?.isCategory) {
+          // Doğrudan kategoriye bağlı soru
+          data.categoryId = parentId;
+          data.subCategoryId = null;
+          data.subLevelId = null;
+        } else if (parentData?.isSubCategory) {
           data.subCategoryId = parentId;
           data.subLevelId = null;
+          data.categoryId = null;
         } else {
           data.subLevelId = parentId;
           data.subCategoryId = null;
+          data.categoryId = null;
         }
       }
       if (data.optionsText) {
@@ -619,9 +627,43 @@ export default function CategoriesPage() {
               </div>
             </div>
 
-            {/* SubCategories */}
+            {/* Category Content */}
             {expanded[`cat-${category.id}`] && (
               <div className="p-4 space-y-3">
+                {/* Doğrudan Kategoriye Bağlı Sorular */}
+                {(category.questions?.length > 0 || category.subCategories?.length === 0) && (
+                  <div className="border border-[var(--accent)]/30 rounded-lg overflow-hidden mb-4">
+                    <div className="flex items-center justify-between p-3 bg-[rgba(12,193,195,0.15)]">
+                      <div className="flex items-center gap-2">
+                        <FileText size={16} className="text-[var(--accent)]" />
+                        <span className="font-medium text-[var(--accent)]">Kategori Soruları</span>
+                        <span className="text-[var(--text-dim)] text-sm">({category.questions?.length || 0} soru)</span>
+                      </div>
+                      <button
+                        onClick={() => openModal('question', category.id, undefined, { isCategory: true })}
+                        className="flex items-center gap-1 px-3 py-1 bg-[var(--accent)] text-white rounded hover:bg-[var(--accent-dark)] text-sm"
+                      >
+                        <Plus size={14} />
+                        Soru Ekle
+                      </button>
+                    </div>
+                    {category.questions?.length > 0 && (
+                      <div className="p-3 space-y-2">
+                        {category.questions.map((question, idx) => renderQuestion(question, idx, category.id, { isCategory: true }))}
+                      </div>
+                    )}
+                    {(!category.questions || category.questions.length === 0) && (
+                      <p className="text-[var(--text-dim)] text-center py-3 text-sm">Alt kategori olmadan doğrudan soru ekleyebilirsiniz</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Alt Kategoriler */}
+                {category.subCategories?.length > 0 && (
+                  <div className="border-t border-[var(--border-soft)] pt-3">
+                    <p className="text-xs text-[var(--text-dim)] mb-2 uppercase tracking-wider">Alt Kategoriler</p>
+                  </div>
+                )}
                 {category.subCategories?.map((subCat) => (
                   <div key={subCat.id} className="border rounded-lg overflow-hidden">
                     <div className="flex items-center justify-between p-3 bg-[rgba(139,92,246,0.15)]">

@@ -164,6 +164,7 @@ model Category {
   surveyId      String?
   survey        Survey?       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   subCategories SubCategory[]
+  questions     Question[]    @relation("CategoryQuestions")
 }
 
 model SubCategory {
@@ -222,8 +223,10 @@ model Question {
   subLevelId         String?
   createdAt          DateTime         @default(now())
   subCategoryId      String?
+  categoryId         String?
   axisType           AxisType         @default(VELOCITY)
   conditionalOptions Json?
+  category           Category?        @relation("CategoryQuestions", fields: [categoryId], references: [id], onDelete: Cascade)
   subCategory        SubCategory?     @relation("SubCategoryQuestions", fields: [subCategoryId], references: [id], onDelete: Cascade)
   subLevel           SubLevel?        @relation("SubLevelQuestions", fields: [subLevelId], references: [id], onDelete: Cascade)
   recommendations    Recommendation[]

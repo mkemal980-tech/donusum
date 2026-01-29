@@ -28,6 +28,7 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
   const allCategories = await prisma.category.findMany({
     where: surveyId ? { surveyId } : undefined,
     include: {
+      questions: true,  // Doğrudan kategoriye bağlı sorular
       subCategories: {
         include: {
           subLevels: {
@@ -45,6 +46,7 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
     include: {
       question: {
         include: {
+          category: true,  // Doğrudan kategoriye bağlı sorular için
           subLevel: {
             include: {
               subCategory: {
@@ -72,6 +74,11 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
   // Tüm kategorileri ve alt yapıları varsayılan değerlerle ekle
   for (const category of allCategories) {
     let catMaxScore = 0;
+    
+    // Doğrudan kategoriye bağlı sorular
+    const categoryQuestions = (category as any).questions || [];
+    const categoryDirectMaxScore = categoryQuestions.reduce((sum: number, q: any) => sum + (5 * q.weight), 0);
+    catMaxScore += categoryDirectMaxScore;
     
     for (const subCat of category.subCategories) {
       let subCatMaxScore = 0;
@@ -137,9 +144,14 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
     let category = null;
     let subLevel = question?.subLevel;
     let subCategory = question?.subCategory;
+    const directCategory = (question as any)?.category;
 
+    // Soru doğrudan kategoriye bağlıysa
+    if (directCategory) {
+      category = directCategory;
+    }
     // Soru subLevel'e bağlıysa
-    if (subLevel) {
+    else if (subLevel) {
       category = subLevel?.subCategory?.category;
       subCategory = subLevel?.subCategory;
     } 

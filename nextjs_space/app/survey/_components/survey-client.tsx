@@ -49,6 +49,7 @@ interface Category {
   name: string;
   description?: string;
   subCategories: SubCategory[];
+  questions: Question[];  // Doğrudan kategoriye bağlı sorular
 }
 
 interface Response {
@@ -150,9 +151,13 @@ export default function SurveyClient() {
     ? (currentSubLevel?.questions ?? [])
     : (currentSubCategory?.questions ?? []);
 
-  // Toplam soru sayısı
+  // Toplam soru sayısı (kategori soruları dahil)
   const totalQuestions = categories?.reduce((total, cat) => {
-    return total + (cat?.subCategories ?? []).reduce((subTotal, sub) => {
+    // Doğrudan kategoriye bağlı sorular
+    const categoryQuestionCount = cat?.questions?.length ?? 0;
+    
+    // Alt kategori soruları
+    const subCategoryQuestionCount = (cat?.subCategories ?? []).reduce((subTotal, sub) => {
       if (sub?.hasSubLevels) {
         return subTotal + (sub?.subLevels ?? []).reduce((levelTotal, level) => {
           return levelTotal + (level?.questions?.length ?? 0);
@@ -161,6 +166,8 @@ export default function SurveyClient() {
         return subTotal + (sub?.questions?.length ?? 0);
       }
     }, 0);
+    
+    return total + categoryQuestionCount + subCategoryQuestionCount;
   }, 0) ?? 0;
 
   const answeredQuestions = Object.keys(responses ?? {}).length;

@@ -6,11 +6,11 @@ import { prisma } from "@/lib/db";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { text, type, options, conditionalOptions, order, requiresEvidence, subLevelId, subCategoryId, weight, axisType } = body;
+    const { text, type, options, conditionalOptions, order, requiresEvidence, subLevelId, subCategoryId, categoryId, weight, axisType } = body;
 
-    // En az biri gerekli: subLevelId veya subCategoryId
-    if (!subLevelId && !subCategoryId) {
-      return NextResponse.json({ error: "subLevelId veya subCategoryId gerekli" }, { status: 400 });
+    // En az biri gerekli: categoryId, subCategoryId veya subLevelId
+    if (!categoryId && !subLevelId && !subCategoryId) {
+      return NextResponse.json({ error: "categoryId, subCategoryId veya subLevelId gerekli" }, { status: 400 });
     }
 
     const question = await prisma.question.create({
@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
         conditionalOptions,  // Kademeli puanlama seçenekleri
         order: order || 1, 
         requiresEvidence: requiresEvidence || false,
+        categoryId: categoryId || null,      // Doğrudan kategoriye bağlı sorular
         subLevelId: subLevelId || null,
         subCategoryId: subCategoryId || null,
         weight: weight || 1.0,
