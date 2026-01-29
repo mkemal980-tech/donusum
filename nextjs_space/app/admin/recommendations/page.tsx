@@ -623,10 +623,10 @@ export default function RecommendationsPage() {
               {/* Hedef Alan Seçimi - Kademeli */}
               <div className="p-4 bg-[rgba(99,102,241,0.1)] rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
-                  <FolderTree size={18} className="text-indigo-400" />
-                  <label className="text-sm font-medium text-indigo-400">Hedef Alan Seçimi</label>
+                  <FolderTree size={18} className="text-[var(--blue-main)]" />
+                  <label className="text-sm font-medium text-[var(--blue-main)]">Hedef Alan Seçimi</label>
                 </div>
-                <p className="text-xs text-indigo-400 mb-4">
+                <p className="text-xs text-[var(--blue-main)] mb-4">
                   Öneri hangi alana ait olacak? Anket → Kategori → Alt Kategori sırasıyla seçim yapın.
                 </p>
                 
@@ -871,10 +871,10 @@ export default function RecommendationsPage() {
               </div>
 
               {/* Bubble Chart Ayarları */}
-              <div className="p-4 bg-[rgba(139,92,246,0.1)] rounded-lg">
+              <div className="p-4 bg-[var(--accent)]/10 rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
-                  <Target size={18} className="text-purple-400" />
-                  <label className="text-sm font-medium text-purple-800">Bubble Chart Konumu</label>
+                  <Target size={18} className="text-[var(--accent)]" />
+                  <label className="text-sm font-medium text-[var(--text-main)]">Bubble Chart Konumu</label>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -890,7 +890,7 @@ export default function RecommendationsPage() {
                     />
                     <div className="flex justify-between text-xs text-[var(--text-dim)]">
                       <span>Düşük</span>
-                      <span className="font-semibold text-purple-400">{formData.xPosition || 5}</span>
+                      <span className="font-semibold text-[var(--accent)]">{formData.xPosition || 5}</span>
                       <span>Yüksek</span>
                     </div>
                   </div>
@@ -907,7 +907,7 @@ export default function RecommendationsPage() {
                     />
                     <div className="flex justify-between text-xs text-[var(--text-dim)]">
                       <span>Düşük</span>
-                      <span className="font-semibold text-purple-400">{formData.yPosition || 5}</span>
+                      <span className="font-semibold text-[var(--accent)]">{formData.yPosition || 5}</span>
                       <span>Yüksek</span>
                     </div>
                   </div>

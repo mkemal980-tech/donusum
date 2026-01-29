@@ -201,10 +201,10 @@ export default function IronmanBenchmarksPage() {
           <div className="bg-[rgba(239,68,68,0.15)] text-[var(--error)] p-2 rounded text-center">
             <strong>Walker</strong><br />Düşük Hız + Düşük Olgunluk
           </div>
-          <div className="bg-[rgba(251,146,60,0.15)] text-orange-400 p-2 rounded text-center">
+          <div className="bg-[var(--warning-bg)] text-[var(--warning)] p-2 rounded text-center">
             <strong>Sprinter</strong><br />Yüksek Hız + Düşük Olgunluk
           </div>
-          <div className="bg-[rgba(139,92,246,0.15)] text-purple-400 p-2 rounded text-center">
+          <div className="bg-[var(--accent)]/15 text-[var(--accent)] p-2 rounded text-center">
             <strong>Marathon Runner</strong><br />Düşük Hız + Yüksek Olgunluk
           </div>
           <div className="bg-[rgba(12,193,195,0.15)] text-[var(--accent)] p-2 rounded text-center">
@@ -224,9 +224,9 @@ export default function IronmanBenchmarksPage() {
                 <th className="px-4 py-3 text-center text-sm font-semibold text-[var(--blue-main)]">V. Ort.</th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-[var(--blue-main)]">V. Best</th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-[var(--blue-main)]">V. Target</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-teal-400">E. Ort.</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-teal-400">E. Best</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-teal-400">E. Target</th>
+                <th className="px-4 py-3 text-center text-sm font-semibold text-[var(--accent)]">E. Ort.</th>
+                <th className="px-4 py-3 text-center text-sm font-semibold text-[var(--accent)]">E. Best</th>
+                <th className="px-4 py-3 text-center text-sm font-semibold text-[var(--accent)]">E. Target</th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-[var(--text-muted)]">Işlemler</th>
               </tr>
             </thead>
@@ -265,12 +265,12 @@ export default function IronmanBenchmarksPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-teal-100 text-teal-600 font-semibold text-sm">
+                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent)]/15 text-[var(--accent)] font-semibold text-sm">
                       {benchmark.enduranceAverage.toFixed(1)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-teal-200 text-teal-700 font-semibold text-sm">
+                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent)]/20 text-[var(--accent)] font-semibold text-sm">
                       {benchmark.enduranceBest.toFixed(1)}
                     </span>
                   </td>
@@ -423,20 +423,20 @@ export default function IronmanBenchmarksPage() {
                       max="5"
                       value={formData.velocityAverageTarget}
                       onChange={(e) => setFormData({ ...formData, velocityAverageTarget: parseFloat(e.target.value) })}
-                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] text-sm"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Endurance Değerleri */}
-              <div className="p-4 bg-teal-50 rounded-lg">
-                <h3 className="font-semibold text-teal-700 mb-3 flex items-center gap-2">
+              <div className="p-4 bg-[var(--accent)]/10 rounded-lg">
+                <h3 className="font-semibold text-[var(--accent)] mb-3 flex items-center gap-2">
                   <Target size={16} /> Endurance (Olgunluk) Değerleri
                 </h3>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-teal-600 mb-1">Sektör Ort.</label>
+                    <label className="block text-xs font-medium text-[var(--accent)] mb-1">Sektör Ort.</label>
                     <input
                       type="number"
                       step="0.1"
@@ -444,11 +444,11 @@ export default function IronmanBenchmarksPage() {
                       max="5"
                       value={formData.enduranceAverage}
                       onChange={(e) => setFormData({ ...formData, enduranceAverage: parseFloat(e.target.value) })}
-                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-teal-500 text-sm"
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] text-sm"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-teal-600 mb-1">Sektör En İyi</label>
+                    <label className="block text-xs font-medium text-[var(--accent)] mb-1">Sektör En İyi</label>
                     <input
                       type="number"
                       step="0.1"
@@ -456,7 +456,7 @@ export default function IronmanBenchmarksPage() {
                       max="5"
                       value={formData.enduranceBest}
                       onChange={(e) => setFormData({ ...formData, enduranceBest: parseFloat(e.target.value) })}
-                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-teal-500 text-sm"
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] text-sm"
                     />
                   </div>
                   <div>
@@ -468,7 +468,7 @@ export default function IronmanBenchmarksPage() {
                       max="5"
                       value={formData.enduranceAverageTarget}
                       onChange={(e) => setFormData({ ...formData, enduranceAverageTarget: parseFloat(e.target.value) })}
-                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] text-sm"
                     />
                   </div>
                 </div>

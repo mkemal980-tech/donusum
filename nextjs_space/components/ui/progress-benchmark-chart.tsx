@@ -59,7 +59,7 @@ export function ProgressBenchmarkChart({
             initial={{ width: 0 }}
             animate={{ width: `${surveyPercent}%` }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="absolute top-1/2 -translate-y-1/2 h-5 bg-gradient-to-r from-fuchsia-500 to-violet-500 rounded-l-full flex items-center justify-end pr-1"
+            className="absolute top-1/2 -translate-y-1/2 h-5 bg-gradient-to-r from-[var(--accent)] to-[var(--blue-main)] rounded-l-full flex items-center justify-end pr-1"
             style={{ minWidth: item.surveyScore > 0 ? '30px' : '0' }}
           >
             <span className="text-[10px] font-bold text-white drop-shadow">
@@ -90,7 +90,7 @@ export function ProgressBenchmarkChart({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
             className={`text-sm font-bold ${
-              hasProgress ? 'text-emerald-500' : 'text-[var(--muted-foreground)]'
+              hasProgress ? 'text-[var(--success)]' : 'text-[var(--muted-foreground)]'
             }`}
           >
             {hasProgress ? `+${item.delta.toFixed(2)}` : '+0.00'}
@@ -105,14 +105,14 @@ export function ProgressBenchmarkChart({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Target className="text-violet-400" size={24} />
+          <Target className="text-[var(--accent)]" size={24} />
           <h3 className="text-lg font-semibold">{title}</h3>
         </div>
         
         {/* Overall Summary */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-500 flex items-center justify-center text-sm font-bold text-white shadow-lg">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--blue-main)] flex items-center justify-center text-sm font-bold text-white shadow-lg">
               {overall.surveyScore.toFixed(2)}
             </div>
             <TrendingUp size={20} className="text-[var(--muted-foreground)]" />
@@ -144,7 +144,7 @@ export function ProgressBenchmarkChart({
       {/* Legend */}
       <div className="flex items-center justify-center gap-8 mt-4 pt-4 border-t border-[var(--border)]">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-gradient-to-r from-fuchsia-500 to-violet-500" />
+          <div className="w-4 h-4 rounded bg-gradient-to-r from-[var(--accent)] to-[var(--blue-main)]" />
           <span className="text-sm text-[var(--muted-foreground)]">Anket</span>
         </div>
         <div className="flex items-center gap-2">

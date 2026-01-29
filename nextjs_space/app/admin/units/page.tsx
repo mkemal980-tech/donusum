@@ -309,14 +309,14 @@ export default function UnitsPage() {
           </div>
 
           {/* Admins */}
-          <div className="mt-4 p-3 bg-[rgba(139,92,246,0.1)] rounded-lg">
+          <div className="mt-4 p-3 bg-[var(--accent)]/10 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
-              <Shield className="text-purple-400" size={18} />
-              <span className="text-sm font-medium text-purple-400">Birim Adminleri</span>
+              <Shield className="text-[var(--accent)]" size={18} />
+              <span className="text-sm font-medium text-[var(--accent)]">Birim Adminleri</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {unit.admins.map(admin => (
-                <span key={admin.id} className="inline-flex items-center gap-1 px-2 py-1 bg-purple-200 text-purple-800 text-xs rounded-full">
+                <span key={admin.id} className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--accent)]/20 text-[var(--text-main)] text-xs rounded-full">
                   <Crown size={12} />
                   {admin.user.firstName} {admin.user.lastName}
                 </span>
@@ -329,7 +329,7 @@ export default function UnitsPage() {
                 </span>
               ))}
               {unit.admins.length === 0 && parentAdmins.length === 0 && (
-                <span className="text-xs text-purple-400">Admin atanmamış</span>
+                <span className="text-xs text-[var(--accent)]">Admin atanmamış</span>
               )}
             </div>
           </div>
@@ -485,7 +485,7 @@ export default function UnitsPage() {
               <div>
                 <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
                   <div className="flex items-center gap-2">
-                    <Shield size={16} className="text-purple-400" />
+                    <Shield size={16} className="text-[var(--accent)]" />
                     Birim Adminleri (Birden fazla seçebilirsiniz)
                   </div>
                 </label>
@@ -496,14 +496,14 @@ export default function UnitsPage() {
                       <label
                         key={user.id}
                         className={`flex items-center gap-3 p-3 hover:bg-[var(--bg-card-2)] cursor-pointer border-b last:border-b-0 ${
-                          formData.adminIds.includes(user.id) ? 'bg-[rgba(139,92,246,0.1)]' : ''
+                          formData.adminIds.includes(user.id) ? 'bg-[var(--accent)]/10' : ''
                         }`}
                       >
                         <input
                           type="checkbox"
                           checked={formData.adminIds.includes(user.id)}
                           onChange={() => toggleAdmin(user.id)}
-                          className="w-4 h-4 text-purple-400 rounded border-[var(--border-soft)] focus:ring-purple-500"
+                          className="w-4 h-4 text-[var(--accent)] rounded border-[var(--border-soft)] focus:ring-[var(--accent)]"
                         />
                         <div>
                           <p className="font-medium text-[var(--text-main)] text-sm">
@@ -521,13 +521,13 @@ export default function UnitsPage() {
               </div>
 
               {formData.adminIds.length > 0 && (
-                <div className="p-3 bg-[rgba(139,92,246,0.1)] rounded-lg">
-                  <p className="text-sm text-purple-400 font-medium mb-2">Seçilen Adminler ({formData.adminIds.length}):</p>
+                <div className="p-3 bg-[var(--accent)]/10 rounded-lg">
+                  <p className="text-sm text-[var(--accent)] font-medium mb-2">Seçilen Adminler ({formData.adminIds.length}):</p>
                   <div className="flex flex-wrap gap-2">
                     {formData.adminIds.map(id => {
                       const user = allUsers.find(u => u.id === id);
                       return user ? (
-                        <span key={id} className="inline-flex items-center gap-1 px-2 py-1 bg-purple-200 text-purple-800 text-xs rounded-full">
+                        <span key={id} className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--accent)]/20 text-[var(--text-main)] text-xs rounded-full">
                           <Crown size={12} />
                           {user.firstName} {user.lastName}
                           <button

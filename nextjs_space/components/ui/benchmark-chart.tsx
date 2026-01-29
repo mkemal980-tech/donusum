@@ -60,7 +60,7 @@ export function BenchmarkChart({
             initial={{ width: 0 }}
             animate={{ width: `${bestPercent - avgPercent}%` }}
             transition={{ duration: 0.8, delay: 0.3 }}
-            className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-gray-300 via-blue-300 to-purple-400 rounded-full"
+            className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-[var(--ui-passive)] via-[var(--blue-light)] to-[var(--accent)] rounded-full"
             style={{ left: `${avgPercent}%` }}
           />
 

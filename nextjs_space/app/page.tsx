@@ -90,7 +90,7 @@ export default function LandingPage() {
     {
       icon: Leaf,
       title: "Sürdürülebilirlik Olgunluğu",
-      color: "from-green-500 to-emerald-600",
+      color: "from-[var(--success)] to-[var(--accent)]",
       description:
         "Çevresel, sosyal ve yönetişim (ESG) kriterlerinde organizasyonunuzun olgunluk seviyesini ölçün.",
       examples: [
@@ -104,7 +104,7 @@ export default function LandingPage() {
     {
       icon: Cpu,
       title: "Dijital Olgunluk",
-      color: "from-blue-500 to-indigo-600",
+      color: "from-blue-500 to-[var(--blue-dark)]",
       description:
         "Dijital dönüşüm yolculuğunuzda nerede olduğunuzu ve nasıl ilerleyebileceğinizi keşfedin.",
       examples: [

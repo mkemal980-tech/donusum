@@ -285,7 +285,7 @@ export default function SectorsPage() {
                   {sector.subSectors.map((sub) => (
                     <div key={sub.id} className="flex items-center justify-between py-2 px-3 bg-[var(--bg-card)] rounded-lg">
                       <div className="flex items-center gap-2">
-                        <Layers size={16} className="text-purple-400" />
+                        <Layers size={16} className="text-[var(--accent)]" />
                         {editingSubSector === sub.id ? (
                           <div className="flex items-center gap-2">
                             <input
@@ -325,7 +325,7 @@ export default function SectorsPage() {
 
                   {showNewSubSector === sector.id ? (
                     <div className="flex items-center gap-2 py-2 px-3 bg-[var(--bg-card)] rounded-lg">
-                      <Layers size={16} className="text-purple-400" />
+                      <Layers size={16} className="text-[var(--accent)]" />
                       <input
                         type="text"
                         value={newSubSectorName}
@@ -344,7 +344,7 @@ export default function SectorsPage() {
                   ) : (
                     <button
                       onClick={() => setShowNewSubSector(sector.id)}
-                      className="flex items-center gap-2 py-2 px-3 text-purple-400 hover:bg-[rgba(139,92,246,0.1)] rounded-lg w-full"
+                      className="flex items-center gap-2 py-2 px-3 text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-lg w-full"
                     >
                       <Plus size={16} />
                       Alt Sektör Ekle

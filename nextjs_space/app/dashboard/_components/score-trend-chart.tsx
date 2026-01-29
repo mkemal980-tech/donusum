@@ -340,7 +340,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
             {progress.quadrantProgress.start && progress.quadrantProgress.end && (
               <div className={`p-4 rounded-lg border ${
                 progress.quadrantProgress.improved 
-                  ? 'bg-purple-500/10 border-purple-500/20' 
+                  ? 'bg-[var(--accent)]/100/10 border-[var(--accent)]/20' 
                   : 'bg-[var(--bg-card-2)] border-transparent'
               }`}>
                 <div className="text-sm text-[var(--text-muted)] mb-2">Kadran Durumu</div>
@@ -350,12 +350,12 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
                   </span>
                   <span className="text-[var(--accent)]">→</span>
                   <span className={`font-medium ${
-                    progress.quadrantProgress.improved ? 'text-purple-400' : 'text-[var(--text-main)]'
+                    progress.quadrantProgress.improved ? 'text-[var(--accent)]' : 'text-[var(--text-main)]'
                   }`}>
                     {quadrantLabels[progress.quadrantProgress.end] || progress.quadrantProgress.end}
                   </span>
                   {progress.quadrantProgress.improved && (
-                    <TrendingUp size={14} className="text-purple-400" />
+                    <TrendingUp size={14} className="text-[var(--accent)]" />
                   )}
                 </div>
               </div>

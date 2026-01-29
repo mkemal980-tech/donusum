@@ -183,7 +183,7 @@ export default function DocumentsPage() {
         </div>
         <div className="flex items-center gap-2 bg-[rgba(6,182,212,0.15)]  px-4 py-2 rounded-lg">
           <FileText className="text-[var(--accent-cyan)] " size={20} />
-          <span className="font-semibold text-cyan-700 ">{documents.length} dosya</span>
+          <span className="font-semibold text-[var(--accent)] ">{documents.length} dosya</span>
         </div>
       </div>
 
@@ -202,7 +202,7 @@ export default function DocumentsPage() {
               placeholder="Dosya adı veya kullanıcı ara..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-[var(--border-soft)]  rounded-lg bg-[var(--bg-card)]  text-[var(--text-main)]  focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-[var(--border-soft)]  rounded-lg bg-[var(--bg-card)]  text-[var(--text-main)]  focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
             />
           </div>
 
@@ -210,7 +210,7 @@ export default function DocumentsPage() {
           <select
             value={selectedUnit}
             onChange={(e) => setSelectedUnit(e.target.value)}
-            className="px-4 py-2 border border-[var(--border-soft)]  rounded-lg bg-[var(--bg-card)]  text-[var(--text-main)]  focus:ring-2 focus:ring-cyan-500"
+            className="px-4 py-2 border border-[var(--border-soft)]  rounded-lg bg-[var(--bg-card)]  text-[var(--text-main)]  focus:ring-2 focus:ring-[var(--accent)]"
           >
             <option value="">Tüm Birimler</option>
             {units.map((unit) => (
@@ -222,7 +222,7 @@ export default function DocumentsPage() {
           <select
             value={selectedUser}
             onChange={(e) => setSelectedUser(e.target.value)}
-            className="px-4 py-2 border border-[var(--border-soft)]  rounded-lg bg-[var(--bg-card)]  text-[var(--text-main)]  focus:ring-2 focus:ring-cyan-500"
+            className="px-4 py-2 border border-[var(--border-soft)]  rounded-lg bg-[var(--bg-card)]  text-[var(--text-main)]  focus:ring-2 focus:ring-[var(--accent)]"
           >
             <option value="">Tüm Kullanıcılar</option>
             {users.map((user) => (

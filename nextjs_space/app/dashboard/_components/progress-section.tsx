@@ -54,11 +54,11 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
     return (
       <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-xl p-6">
         <div className="flex items-center gap-3 mb-4">
-          <Target className="text-violet-400" size={24} />
+          <Target className="text-[var(--accent)]" size={24} />
           <h3 className="text-lg font-semibold text-[var(--foreground)]">Benchmark</h3>
         </div>
         <div className="flex items-center justify-center h-48">
-          <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -68,7 +68,7 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
     return (
       <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-xl p-6">
         <div className="flex items-center gap-3 mb-4">
-          <Target className="text-violet-400" size={24} />
+          <Target className="text-[var(--accent)]" size={24} />
           <h3 className="text-lg font-semibold text-[var(--foreground)]">Benchmark</h3>
         </div>
         <div className="text-center py-8 text-[var(--muted-foreground)]">
@@ -99,13 +99,13 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
     <div className="space-y-4">
       {/* Info Box */}
       {hasDelta && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 flex items-start gap-3">
-          <TrendingUp className="text-emerald-400 mt-0.5 flex-shrink-0" size={20} />
+        <div className="bg-[var(--success-bg)] border border-[var(--success)]/30 rounded-xl p-4 flex items-start gap-3">
+          <TrendingUp className="text-[var(--success)] mt-0.5 flex-shrink-0" size={20} />
           <div>
-            <p className="font-medium text-emerald-400">Gelişim Kaydedildi!</p>
-            <p className="text-sm text-emerald-300">
+            <p className="font-medium text-[var(--success)]">Gelişim Kaydedildi!</p>
+            <p className="text-sm text-[var(--success)]">
               Önerileri tamamlayarak skorunuzu <span className="font-bold">+{data.overall.delta.toFixed(2)}</span> puan artırdınız.
-              <Link href="/roadmap" className="underline ml-1 hover:text-emerald-200">Yol haritasına git →</Link>
+              <Link href="/roadmap" className="underline ml-1 hover:text-[var(--success)]">Yol haritasına git →</Link>
             </p>
           </div>
         </div>

@@ -253,9 +253,9 @@ export default function SurveyQuestion({
           </p>
           
           {isUploading ? (
-            <div className="flex items-center justify-center p-6 bg-[rgba(139,92,246,0.1)] rounded-lg border-2 border-purple-200">
-              <Loader2 className="animate-spin text-purple-400 mr-2" size={20} />
-              <span className="text-purple-400 text-sm">Dosya yükleniyor...</span>
+            <div className="flex items-center justify-center p-6 bg-[var(--accent)]/10 rounded-lg border-2 border-[var(--accent)]/30">
+              <Loader2 className="animate-spin text-[var(--accent)] mr-2" size={20} />
+              <span className="text-[var(--accent)] text-sm">Dosya yükleniyor...</span>
             </div>
           ) : uploadedFile ? (
             <div className="flex items-center justify-between p-3 bg-[rgba(12,193,195,0.1)] rounded-lg border border-[var(--accent)]">
@@ -279,7 +279,7 @@ export default function SurveyQuestion({
               onClick={() => fileInputRef.current?.click()}
               className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
                 dragActive
-                  ? "border-[#a78bfa] bg-[rgba(139,92,246,0.1)]"
+                  ? "border-[#a78bfa] bg-[var(--accent)]/10"
                   : "border-[var(--border-soft)] hover:border-[#a78bfa] hover:bg-[var(--bg-card-2)]"
               }`}
             >

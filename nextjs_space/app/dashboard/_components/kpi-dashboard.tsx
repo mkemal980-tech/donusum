@@ -395,12 +395,12 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
               <span className="text-lg font-bold text-[var(--blue-main)]">{data.recommendations.projects}</span>
             </div>
             
-            <div className="flex items-center justify-between p-3 bg-purple-500/10 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-[var(--accent)]/100/10 rounded-lg">
               <div className="flex items-center gap-2">
-                <Target size={16} className="text-purple-400" />
+                <Target size={16} className="text-[var(--accent)]" />
                 <span className="text-sm text-[var(--text-muted)]">Big Bets</span>
               </div>
-              <span className="text-lg font-bold text-purple-400">{data.recommendations.bigBets}</span>
+              <span className="text-lg font-bold text-[var(--accent)]">{data.recommendations.bigBets}</span>
             </div>
           </div>
         </motion.div>

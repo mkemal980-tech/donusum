@@ -57,7 +57,7 @@ const roleLabels: Record<string, string> = {
 
 const roleColors: Record<string, string> = {
   USER: "bg-[var(--bg-card-2)] text-[var(--text-muted)]",
-  UNIT_MANAGER: "bg-[rgba(139,92,246,0.15)] text-purple-400",
+  UNIT_MANAGER: "bg-[var(--accent)]/15 text-[var(--accent)]",
   ADMIN: "bg-[var(--bg-card-2)] text-[var(--accent)]",
 };
 
@@ -353,8 +353,8 @@ export default function UsersPage() {
         </div>
         <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[rgba(139,92,246,0.15)] rounded-lg flex items-center justify-center">
-              <Building2 className="text-purple-400" size={20} />
+            <div className="w-10 h-10 bg-[var(--accent)]/15 rounded-lg flex items-center justify-center">
+              <Building2 className="text-[var(--accent)]" size={20} />
             </div>
             <div>
               <p className="text-sm text-[var(--text-dim)]">Birim Yöneticisi</p>

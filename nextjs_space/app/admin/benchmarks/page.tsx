@@ -405,7 +405,7 @@ export default function BenchmarksPage() {
                     <td className="px-4 py-3 text-sm">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         b.level === "OVERALL" ? "bg-[var(--bg-card-2)] text-[var(--accent)]" :
-                        b.level === "CATEGORY" ? "bg-[rgba(139,92,246,0.15)] text-purple-400" :
+                        b.level === "CATEGORY" ? "bg-[var(--accent)]/15 text-[var(--accent)]" :
                         "bg-[rgba(12,193,195,0.15)] text-[var(--accent)]"
                       }`}>
                         {b.level === "OVERALL" ? "Genel" : b.level === "CATEGORY" ? "Kategori" : "Alt Kategori"}
@@ -413,7 +413,7 @@ export default function BenchmarksPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-[var(--text-muted)]">{getTargetName(b)}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className="px-2 py-1 bg-[rgba(139,92,246,0.15)] text-purple-400 rounded font-medium">{b.bestScore.toFixed(1)}</span>
+                      <span className="px-2 py-1 bg-[var(--accent)]/15 text-[var(--accent)] rounded font-medium">{b.bestScore.toFixed(1)}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className="px-2 py-1 bg-[var(--bg-card-2)] text-[var(--text-muted)] rounded font-medium">{b.averageScore.toFixed(1)}</span>

@@ -342,7 +342,7 @@ export default function RecommendationsClient() {
                 <button
                   onClick={handleAIEnhance}
                   disabled={aiLoading}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-bright)] text-white rounded-lg shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
                 >
                   {aiLoading ? (
                     <Loader2 size={18} className="animate-spin" />
@@ -428,7 +428,7 @@ export default function RecommendationsClient() {
           <div 
             onClick={() => setStatusFilter('IN_PROGRESS')}
             className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-soft)] cursor-pointer transition-all hover:shadow-md ${
-              statusFilter === 'IN_PROGRESS' ? 'ring-2 ring-amber-400' : ''
+              statusFilter === 'IN_PROGRESS' ? 'ring-2 ring-[var(--warning)]' : ''
             }`}
           >
             <div className="flex items-center gap-3">

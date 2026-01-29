@@ -711,24 +711,24 @@ export default function CategoriesPage() {
                 )}
                 {category.subCategories?.map((subCat) => (
                   <div key={subCat.id} className="border rounded-lg overflow-hidden">
-                    <div className="flex items-center justify-between p-3 bg-[rgba(139,92,246,0.15)]">
+                    <div className="flex items-center justify-between p-3 bg-[var(--accent)]/15">
                       <div className="flex items-center gap-3 cursor-pointer" onClick={() => toggleExpand(`sub-${subCat.id}`)}>
                         {expanded[`sub-${subCat.id}`] ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                        <span className="font-medium text-purple-800">{subCat.name}</span>
+                        <span className="font-medium text-[var(--text-main)]">{subCat.name}</span>
                         {subCat.hasSubLevels ? (
-                          <span className="text-purple-400 text-sm">({subCat.subLevels?.length || 0} alt seviye)</span>
+                          <span className="text-[var(--text-muted)] text-sm">({subCat.subLevels?.length || 0} alt seviye)</span>
                         ) : (
-                          <span className="text-purple-400 text-sm">({subCat.questions?.length || 0} soru)</span>
+                          <span className="text-[var(--text-muted)] text-sm">({subCat.questions?.length || 0} soru)</span>
                         )}
                         {!subCat.hasSubLevels && (
-                          <span className="text-xs px-2 py-0.5 bg-[rgba(245,158,11,0.15)] text-[var(--warning)] rounded">Doğrudan Sorular</span>
+                          <span className="text-xs px-2 py-0.5 bg-[var(--accent)]/15 text-[var(--accent)] rounded">Doğrudan Sorular</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
                         {subCat.hasSubLevels ? (
                           <button 
                             onClick={() => openModal('sublevel', subCat.id)} 
-                            className="p-1.5 hover:bg-purple-200 rounded text-purple-400" 
+                            className="p-1.5 hover:bg-[var(--bg-card-2)] rounded text-[var(--text-muted)]" 
                             title="Alt Seviye Ekle"
                           >
                             <Plus size={16} />
@@ -737,7 +737,7 @@ export default function CategoriesPage() {
                           <>
                             <button 
                               onClick={() => openModal('question', subCat.id, undefined, { isSubCategory: true })} 
-                              className="p-1.5 hover:bg-purple-200 rounded text-purple-400" 
+                              className="p-1.5 hover:bg-[var(--bg-card-2)] rounded text-[var(--text-muted)]" 
                               title="Soru Ekle"
                             >
                               <Plus size={16} />
@@ -753,7 +753,7 @@ export default function CategoriesPage() {
                         )}
                         <button 
                           onClick={() => openModal('subcategory', category.id, subCat)} 
-                          className="p-1.5 hover:bg-purple-200 rounded text-purple-400" 
+                          className="p-1.5 hover:bg-[var(--bg-card-2)] rounded text-[var(--text-muted)]" 
                           title="Düzenle"
                         >
                           <Edit size={16} />
@@ -779,8 +779,8 @@ export default function CategoriesPage() {
                                 <div className="flex items-center justify-between p-3 bg-[rgba(99,102,241,0.1)]">
                                   <div className="flex items-center gap-3 cursor-pointer" onClick={() => toggleExpand(`level-${subLevel.id}`)}>
                                     {expanded[`level-${subLevel.id}`] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                                    <span className="font-medium text-indigo-400">{subLevel.name}</span>
-                                    <span className="text-indigo-400 text-sm">({subLevel.questions?.length || 0} soru)</span>
+                                    <span className="font-medium text-[var(--blue-main)]">{subLevel.name}</span>
+                                    <span className="text-[var(--blue-main)] text-sm">({subLevel.questions?.length || 0} soru)</span>
                                     <span className={`text-xs px-2 py-0.5 rounded ${
                                       subLevel.axisType === 'VELOCITY' 
                                         ? 'bg-[var(--bg-card-2)] text-[var(--accent)]' 
@@ -792,7 +792,7 @@ export default function CategoriesPage() {
                                   <div className="flex items-center gap-2">
                                     <button 
                                       onClick={() => openModal('question', subLevel.id, undefined, { isSubCategory: false })} 
-                                      className="p-1.5 hover:bg-[rgba(99,102,241,0.15)] rounded text-indigo-400" 
+                                      className="p-1.5 hover:bg-[var(--blue-main)]/15 rounded text-[var(--blue-main)]" 
                                       title="Soru Ekle"
                                     >
                                       <Plus size={16} />
@@ -806,7 +806,7 @@ export default function CategoriesPage() {
                                     </button>
                                     <button 
                                       onClick={() => openModal('sublevel', subCat.id, subLevel)} 
-                                      className="p-1.5 hover:bg-[rgba(99,102,241,0.15)] rounded text-indigo-400" 
+                                      className="p-1.5 hover:bg-[var(--blue-main)]/15 rounded text-[var(--blue-main)]" 
                                       title="Düzenle"
                                     >
                                       <Edit size={16} />
@@ -930,7 +930,7 @@ export default function CategoriesPage() {
                         onClick={() => setFormData({ ...formData, axisType: 'VELOCITY' })}
                         className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
                           (!formData.axisType || formData.axisType === 'VELOCITY')
-                            ? 'bg-orange-500 text-white shadow-md'
+                            ? 'bg-[var(--accent)] text-white shadow-md'
                             : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--bg-card-2)]'
                         }`}
                       >
@@ -1090,7 +1090,7 @@ export default function CategoriesPage() {
                       className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                     />
                   </div>
-                  <div className="p-4 bg-[rgba(245,158,11,0.1)] border border-[var(--warning)]/50 rounded-lg">
+                  <div className="p-4 bg-[var(--accent)]/10 border border-[var(--warning)]/50 rounded-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <Layers size={20} className="text-[var(--warning)]" />
                       <span className="font-medium text-[var(--warning)]">Alt Seviye Yapısı</span>
@@ -1276,7 +1276,7 @@ export default function CategoriesPage() {
 
               {/* Results */}
               {bulkUploadResult && (
-                <div className={`p-4 rounded-lg border ${bulkUploadResult.success ? 'bg-emerald-50 border-emerald-200' : 'bg-[rgba(239,68,68,0.1)] border-[var(--error)]/50'}`}>
+                <div className={`p-4 rounded-lg border ${bulkUploadResult.success ? 'bg-[var(--success-bg)] border-[var(--success)]' : 'bg-[rgba(239,68,68,0.1)] border-[var(--error)]/50'}`}>
                   <h3 className={`font-medium mb-3 flex items-center gap-2 ${bulkUploadResult.success ? 'text-[var(--success)]' : 'text-[var(--error)]'}`}>
                     {bulkUploadResult.success ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
                     Yükleme Sonucu
@@ -1289,7 +1289,7 @@ export default function CategoriesPage() {
                         <div className="text-xs text-[var(--text-dim)]">Toplam Satır</div>
                       </div>
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-                        <div className="text-lg font-bold text-emerald-600">{bulkUploadResult.summary.successCount}</div>
+                        <div className="text-lg font-bold text-[var(--success)]">{bulkUploadResult.summary.successCount}</div>
                         <div className="text-xs text-[var(--text-dim)]">Başarılı</div>
                       </div>
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
@@ -1350,7 +1350,7 @@ export default function CategoriesPage() {
               </button>
             </div>
 
-            <div className="bg-[rgba(245,158,11,0.1)] border border-[var(--warning)]/50 rounded-lg p-3 mb-4">
+            <div className="bg-[var(--accent)]/10 border border-[var(--warning)]/50 rounded-lg p-3 mb-4">
               <p className="text-sm text-[var(--warning)]">
                 <strong>Seçili Anket:</strong> {surveys.find(s => s.id === selectedSurveyId)?.name}
               </p>
@@ -1407,7 +1407,7 @@ export default function CategoriesPage() {
 
               {/* Results */}
               {surveyBulkUploadResult && (
-                <div className={`p-4 rounded-lg border ${surveyBulkUploadResult.success ? 'bg-emerald-50 border-emerald-200' : 'bg-[rgba(239,68,68,0.1)] border-[var(--error)]/50'}`}>
+                <div className={`p-4 rounded-lg border ${surveyBulkUploadResult.success ? 'bg-[var(--success-bg)] border-[var(--success)]' : 'bg-[rgba(239,68,68,0.1)] border-[var(--error)]/50'}`}>
                   <h3 className={`font-medium mb-3 flex items-center gap-2 ${surveyBulkUploadResult.success ? 'text-[var(--success)]' : 'text-[var(--error)]'}`}>
                     {surveyBulkUploadResult.success ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
                     Yükleme Sonucu
@@ -1420,7 +1420,7 @@ export default function CategoriesPage() {
                         <div className="text-xs text-[var(--text-dim)]">Toplam Satır</div>
                       </div>
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-                        <div className="text-lg font-bold text-emerald-600">{surveyBulkUploadResult.summary.successCount}</div>
+                        <div className="text-lg font-bold text-[var(--success)]">{surveyBulkUploadResult.summary.successCount}</div>
                         <div className="text-xs text-[var(--text-dim)]">Başarılı</div>
                       </div>
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">

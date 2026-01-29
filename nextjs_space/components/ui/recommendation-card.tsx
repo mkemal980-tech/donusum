@@ -34,7 +34,7 @@ const timeframeLabels: Record<string, string> = {
 
 const strategicColors: Record<string, string> = {
   QUICK_WIN: "bg-[rgba(12,193,195,0.15)] text-[var(--accent)]",
-  BIG_BET: "bg-[rgba(139,92,246,0.15)] text-purple-400",
+  BIG_BET: "bg-[var(--accent)]/15 text-[var(--accent)]",
   PROJECT: "bg-[rgba(46,134,255,0.15)] text-[var(--blue-main)]"
 };
 
@@ -147,7 +147,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
       {/* AI Öncelik Badge */}
       {rec?.aiPriority && (
         <div className="flex items-center gap-2 mb-2">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-[var(--accent)] to-[var(--accent-bright)] text-white">
             <Sparkles size={12} />
             #{rec.aiPriority} Öncelik
           </span>
@@ -162,10 +162,10 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
       
       {/* AI Kişisel Not */}
       {rec?.aiNote && (
-        <div className="mb-4 p-3 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+        <div className="mb-4 p-3 rounded-lg bg-gradient-to-r from-[var(--accent)]/10 to-[var(--accent-bright)]/10 border border-[var(--accent)]/20">
           <div className="flex items-start gap-2">
-            <Sparkles size={14} className="text-purple-400 mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-purple-300 italic">{rec.aiNote}</p>
+            <Sparkles size={14} className="text-[var(--accent)] mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-[var(--accent)] italic">{rec.aiNote}</p>
           </div>
         </div>
       )}
@@ -195,7 +195,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
           href={rec.videoUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full py-2.5 mb-3 rounded-lg font-medium bg-gradient-to-r from-red-500 to-pink-500 text-white hover:from-red-600 hover:to-pink-600 transition-all shadow-sm hover:shadow-md"
+          className="flex items-center justify-center gap-2 w-full py-2.5 mb-3 rounded-lg font-medium bg-gradient-to-r from-[var(--error)] to-[var(--accent-bright)] text-white hover:from-[var(--error)] hover:to-[var(--accent)] transition-all shadow-sm hover:shadow-md"
         >
           <Video size={18} />
           <span>Nasıl Yapılır Öğrenin!</span>
