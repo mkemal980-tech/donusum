@@ -83,7 +83,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-[rgba(239,68,68,0.1)] border border-red-500/50 rounded-lg flex items-center gap-2 text-red-400">
+          <div className="mb-4 p-3 bg-[rgba(239,68,68,0.1)] border border-[var(--error)]/50 rounded-lg flex items-center gap-2 text-[var(--error)]">
             <AlertCircle size={18} />
             {error}
           </div>

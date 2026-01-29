@@ -435,7 +435,7 @@ export default function UsersPage() {
                     </button>
                     <button
                       onClick={() => handleDelete(user.id)}
-                      className="p-2 text-[var(--text-dim)] hover:text-red-500 hover:bg-[rgba(239,68,68,0.1)] rounded-lg transition-colors"
+                      className="p-2 text-[var(--text-dim)] hover:text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)] rounded-lg transition-colors"
                       title="Sil"
                     >
                       <Trash2 size={16} />
@@ -657,7 +657,7 @@ export default function UsersPage() {
                         </div>
                         <button
                           onClick={() => handleRemoveAssignment(assignment.surveyId)}
-                          className="p-2 text-red-500 hover:bg-[rgba(239,68,68,0.15)] rounded-lg transition-colors"
+                          className="p-2 text-[var(--error)] hover:bg-[rgba(239,68,68,0.15)] rounded-lg transition-colors"
                           title="Atamayı Kaldır"
                         >
                           <Trash2 size={16} />
@@ -681,7 +681,7 @@ export default function UsersPage() {
                     {unassignedSurveys.map((survey) => (
                       <div
                         key={survey.id}
-                        className="flex items-center justify-between p-3 bg-[var(--bg-card-2)] border border-[var(--border-soft)] rounded-lg hover:bg-[var(--bg-card-2)] hover:border-blue-200 transition-colors"
+                        className="flex items-center justify-between p-3 bg-[var(--bg-card-2)] border border-[var(--border-soft)] rounded-lg hover:bg-[var(--bg-card-2)] hover:border-[var(--blue-main)] transition-colors"
                       >
                         <div className="flex items-center gap-3">
                           <FileText size={18} className="text-[var(--text-dim)]" />

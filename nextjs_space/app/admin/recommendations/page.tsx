@@ -96,8 +96,8 @@ const timeframes = [
 
 const strategicTypes = [
   { value: 'QUICK_WIN', label: 'Hızlı Kazanım', color: 'bg-[rgba(12,193,195,0.15)] text-[var(--accent)]' },
-  { value: 'PROJECT', label: 'Proje', color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'BIG_BET', label: 'Büyük Yatırım', color: 'bg-[rgba(239,68,68,0.15)] text-red-400' },
+  { value: 'PROJECT', label: 'Proje', color: 'bg-[var(--warning-bg)] text-[var(--warning)]' },
+  { value: 'BIG_BET', label: 'Büyük Yatırım', color: 'bg-[rgba(239,68,68,0.15)] text-[var(--error)]' },
 ];
 
 const DollarIndicator = ({ level, max = 5 }: { level: number; max?: number }) => (
@@ -533,7 +533,7 @@ export default function RecommendationsPage() {
                         <span className="text-xs text-[var(--text-dim)]">{triggerInfo.optionsCount} şık</span>
                       </div>
                     ) : (
-                      <span className="px-2 py-1 bg-[rgba(245,158,11,0.15)] text-amber-400 rounded text-xs">
+                      <span className="px-2 py-1 bg-[rgba(245,158,11,0.15)] text-[var(--warning)] rounded text-xs">
                         Puan Aralığı: %{rec.minScoreThreshold}-{rec.maxScoreThreshold}
                       </span>
                     )}
@@ -553,7 +553,7 @@ export default function RecommendationsPage() {
                     <button onClick={() => openModal(rec)} className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]">
                       <Edit size={18} />
                     </button>
-                    <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-[rgba(239,68,68,0.15)] rounded text-red-400">
+                    <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-[rgba(239,68,68,0.15)] rounded text-[var(--error)]">
                       <Trash2 size={18} />
                     </button>
                   </td>
@@ -840,7 +840,7 @@ export default function RecommendationsPage() {
               )}
 
               {/* Gelişim Skoru Puanı */}
-              <div className="p-4 bg-[var(--bg-card-2)] rounded-lg border-2 border-blue-200">
+              <div className="p-4 bg-[var(--bg-card-2)] rounded-lg border-2 border-[var(--blue-main)]">
                 <div className="flex items-center gap-2 mb-3">
                   <TrendingUp size={18} className="text-[var(--accent)]" />
                   <label className="text-sm font-medium text-[var(--accent)]">Gelişim Skoru Puanı</label>

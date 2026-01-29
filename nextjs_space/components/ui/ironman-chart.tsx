@@ -275,9 +275,9 @@ export function IronmanChart() {
 
   if (loading || !mounted) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+      <div className="bg-[var(--bg-card)] rounded-2xl shadow-sm p-6 border border-[var(--border-soft)]">
         <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-[var(--blue-main)] border-t-transparent rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -285,8 +285,8 @@ export function IronmanChart() {
 
   if (!data || !data.current || !data.target) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-        <p className="text-gray-500 text-center">Ironman verileri yüklenemedi veya eksik</p>
+      <div className="bg-[var(--bg-card)] rounded-2xl shadow-sm p-6 border border-[var(--border-soft)]">
+        <p className="text-[var(--text-muted)] text-center">Ironman verileri yüklenemedi veya eksik</p>
       </div>
     );
   }
@@ -295,16 +295,16 @@ export function IronmanChart() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100"
+      className="bg-[var(--bg-card)] rounded-2xl shadow-sm overflow-hidden border border-[var(--border-soft)]"
     >
       <div className="p-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: Scatter Plot */}
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Ironman Analizi</h3>
-              <button className="p-1.5 rounded-full hover:bg-gray-100 transition-colors">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <h3 className="text-lg font-semibold text-[var(--text-dim)]">Ironman Analizi</h3>
+              <button className="p-1.5 rounded-full hover:bg-[var(--bg-card-2)] transition-colors">
+                <svg className="w-4 h-4 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                 </svg>
               </button>
@@ -313,17 +313,17 @@ export function IronmanChart() {
             <canvas ref={canvasRef} className="mx-auto" />
             
             {/* Legend */}
-            <div className="flex flex-wrap justify-center gap-4 mt-4 text-xs text-gray-500">
+            <div className="flex flex-wrap justify-center gap-4 mt-4 text-xs text-[var(--text-muted)]">
               <div className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-full bg-pink-500" />
                 <span>Mevcut durumunuz ({data.current?.date || '-'})</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-blue-500" />
+                <span className="w-3 h-3 rounded-full bg-[var(--info-bg)]0" />
                 <span>Hedefiniz ({data.target?.date || '-'})</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-blue-300" />
+                <span className="w-3 h-3 rounded-full bg-[var(--blue-light)]" />
                 <span>Diğer şirketler (mevcut - {data.current?.date || '-'})</span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -336,15 +336,15 @@ export function IronmanChart() {
           {/* Right: Benchmark & Info */}
           <div className="space-y-4">
             {/* Benchmark Bar Chart */}
-            <div className="bg-gray-50 rounded-xl p-4">
-              <h4 className="text-sm font-semibold text-gray-700 mb-4">Ironman Analizi Kıyaslaması</h4>
+            <div className="bg-[var(--bg-card-2)] rounded-xl p-4">
+              <h4 className="text-sm font-semibold text-[var(--text-dim)] mb-4">Ironman Analizi Kıyaslaması</h4>
               
               {/* Velocity Benchmark */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-600">Hız</span>
+                  <span className="text-xs font-medium text-[var(--text-dim)]">Hız</span>
                 </div>
-                <div className="relative h-6 bg-gray-200 rounded-full overflow-hidden">
+                <div className="relative h-6 bg-[var(--bg-card-2)] rounded-full overflow-hidden">
                   {/* Your Current - Pink */}
                   <div 
                     className="absolute h-6 flex items-center justify-end pr-1 z-10"
@@ -359,7 +359,7 @@ export function IronmanChart() {
                     className="absolute h-6 flex items-center z-10"
                     style={{ left: `${((data.target?.velocity ?? 3) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                   >
-                    <div className="bg-blue-500 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                    <div className="bg-[var(--info-bg)]0 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
                       {(data.target?.velocity ?? 3).toFixed(1)}
                     </div>
                   </div>
@@ -390,9 +390,9 @@ export function IronmanChart() {
               {/* Endurance Benchmark */}
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-600">Dayanıklılık</span>
+                  <span className="text-xs font-medium text-[var(--text-dim)]">Dayanıklılık</span>
                 </div>
-                <div className="relative h-6 bg-gray-200 rounded-full overflow-hidden">
+                <div className="relative h-6 bg-[var(--bg-card-2)] rounded-full overflow-hidden">
                   {/* Your Current - Pink */}
                   <div 
                     className="absolute h-6 flex items-center justify-end pr-1 z-10"
@@ -407,7 +407,7 @@ export function IronmanChart() {
                     className="absolute h-6 flex items-center z-10"
                     style={{ left: `${((data.target?.endurance ?? 3) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                   >
-                    <div className="bg-blue-500 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                    <div className="bg-[var(--info-bg)]0 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
                       {(data.target?.endurance ?? 3).toFixed(1)}
                     </div>
                   </div>
@@ -436,13 +436,13 @@ export function IronmanChart() {
               </div>
 
               {/* Legend */}
-              <div className="flex flex-wrap gap-3 text-[10px] text-gray-500 mt-3">
+              <div className="flex flex-wrap gap-3 text-[10px] text-[var(--text-muted)] mt-3">
                 <div className="flex items-center gap-1">
                   <span className="w-2.5 h-2.5 rounded-full bg-pink-400" />
                   <span>Mevcut</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[var(--info-bg)]0" />
                   <span>Hedef</span>
                 </div>
                 <div className="flex items-center gap-1">
@@ -459,51 +459,51 @@ export function IronmanChart() {
             {/* Quadrant Info & Company Details */}
             <div className="grid grid-cols-2 gap-4">
               {/* Quadrant Info */}
-              <div className="bg-gray-50 rounded-xl p-4">
-                <h4 className="text-sm font-bold text-gray-800 mb-2">{data.current.quadrantInfo.title}</h4>
-                <p className="text-xs text-gray-600 leading-relaxed">
+              <div className="bg-[var(--bg-card-2)] rounded-xl p-4">
+                <h4 className="text-sm font-bold text-[var(--text-dim)] mb-2">{data.current.quadrantInfo.title}</h4>
+                <p className="text-xs text-[var(--text-dim)] leading-relaxed">
                   {data.current.quadrantInfo.description}
                 </p>
                 
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="mt-4 pt-4 border-t border-[var(--border-soft)]">
                   <div className="flex items-center gap-2 mb-2">
-                    <Building2 className="w-4 h-4 text-gray-400" />
-                    <span className="text-xs font-medium text-gray-700">Sektör</span>
+                    <Building2 className="w-4 h-4 text-[var(--text-muted)]" />
+                    <span className="text-xs font-medium text-[var(--text-dim)]">Sektör</span>
                   </div>
-                  <p className="text-xs text-gray-600">{data.company.industry}</p>
+                  <p className="text-xs text-[var(--text-dim)]">{data.company.industry}</p>
                   
                   <div className="flex items-center gap-2 mt-3 mb-2">
-                    <Globe className="w-4 h-4 text-gray-400" />
-                    <span className="text-xs font-medium text-gray-700">Bölge</span>
+                    <Globe className="w-4 h-4 text-[var(--text-muted)]" />
+                    <span className="text-xs font-medium text-[var(--text-dim)]">Bölge</span>
                   </div>
-                  <p className="text-xs text-gray-600">{data.company.region}</p>
+                  <p className="text-xs text-[var(--text-dim)]">{data.company.region}</p>
                 </div>
 
                 {/* Score Summary */}
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="mt-4 pt-4 border-t border-[var(--border-soft)]">
                   <div className="flex items-center gap-2 mb-3">
-                    <Target className="w-4 h-4 text-gray-400" />
-                    <span className="text-xs font-medium text-gray-700">Puan</span>
+                    <Target className="w-4 h-4 text-[var(--text-muted)]" />
+                    <span className="text-xs font-medium text-[var(--text-dim)]">Puan</span>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <p className="text-gray-500">Mevcut ({data.current?.date || '-'})</p>
-                      <p className="text-gray-700">Hız: {data.current?.velocity?.toFixed(1) || '0.0'}</p>
-                      <p className="text-gray-700">Dayanıklılık: {data.current?.endurance?.toFixed(1) || '0.0'}</p>
+                      <p className="text-[var(--text-muted)]">Mevcut ({data.current?.date || '-'})</p>
+                      <p className="text-[var(--text-dim)]">Hız: {data.current?.velocity?.toFixed(1) || '0.0'}</p>
+                      <p className="text-[var(--text-dim)]">Dayanıklılık: {data.current?.endurance?.toFixed(1) || '0.0'}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Hedef ({data.target?.date || '-'})</p>
-                      <p className="text-gray-700">Hız: {data.target?.velocity?.toFixed(1) || '0.0'}</p>
-                      <p className="text-gray-700">Dayanıklılık: {data.target?.endurance?.toFixed(1) || '0.0'}</p>
+                      <p className="text-[var(--text-muted)]">Hedef ({data.target?.date || '-'})</p>
+                      <p className="text-[var(--text-dim)]">Hız: {data.target?.velocity?.toFixed(1) || '0.0'}</p>
+                      <p className="text-[var(--text-dim)]">Dayanıklılık: {data.target?.endurance?.toFixed(1) || '0.0'}</p>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Select to Compare */}
-              <div className="bg-gray-50 rounded-xl p-4 flex flex-col items-center justify-center text-center">
-                <p className="text-sm text-gray-400 mb-4">Karşılaştırmak için seçin</p>
-                <button className="w-16 h-16 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-colors">
+              <div className="bg-[var(--bg-card-2)] rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                <p className="text-sm text-[var(--text-muted)] mb-4">Karşılaştırmak için seçin</p>
+                <button className="w-16 h-16 rounded-full border-2 border-dashed border-[var(--border-soft)] flex items-center justify-center text-[var(--text-muted)] hover:border-[var(--blue-main)] hover:text-[var(--blue-main)] transition-colors">
                   <Plus className="w-8 h-8" />
                 </button>
               </div>

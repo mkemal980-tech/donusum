@@ -208,7 +208,7 @@ export default function SurveyClient() {
       toast.error("Dosya boyutu çok büyük", {
         description: "Maksimum dosya boyutu 10MB olmalıdır.",
         duration: 5000,
-        icon: <XCircle className="text-red-500" size={20} />
+        icon: <XCircle className="text-[var(--error)]" size={20} />
       });
       setUploading(null);
       return;
@@ -229,7 +229,7 @@ export default function SurveyClient() {
         toast.error("Dosya yükleme başarısız", {
           description: "Sunucu bağlantısı kurulamadı. Lütfen tekrar deneyin.",
           duration: 5000,
-          icon: <XCircle className="text-red-500" size={20} />
+          icon: <XCircle className="text-[var(--error)]" size={20} />
         });
         return;
       }
@@ -254,7 +254,7 @@ export default function SurveyClient() {
         toast.error("Dosya yüklenemedi", {
           description: "Depolama alanına erişilemiyor. Lütfen tekrar deneyin.",
           duration: 5000,
-          icon: <XCircle className="text-red-500" size={20} />
+          icon: <XCircle className="text-[var(--error)]" size={20} />
         });
         return;
       }
@@ -286,7 +286,7 @@ export default function SurveyClient() {
       toast.error("Yükleme hatası", {
         description: "Beklenmeyen bir hata oluştu. İnternet bağlantınızı kontrol edin.",
         duration: 5000,
-        icon: <XCircle className="text-red-500" size={20} />
+        icon: <XCircle className="text-[var(--error)]" size={20} />
       });
     } finally {
       setUploading(null);
@@ -413,8 +413,8 @@ export default function SurveyClient() {
         <Header />
         <div className="max-w-[800px] mx-auto px-6 py-16">
           <div className="bg-[var(--bg-card)] rounded-2xl shadow-lg p-8 text-center">
-            <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <AlertCircle size={40} className="text-yellow-600" />
+            <div className="w-20 h-20 bg-[var(--warning-bg)] rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle size={40} className="text-[var(--warning)]" />
             </div>
             <h2 className="text-2xl font-bold text-[var(--text-main)] mb-3">Henüz Anket Atanmadı</h2>
             <p className="text-[var(--text-muted)] mb-6">
@@ -601,7 +601,7 @@ export default function SurveyClient() {
               ) : (
                 <button
                   onClick={handleComplete}
-                  className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-dark)] text-white rounded-lg font-medium hover:bg-green-700 transition-colors shadow-md"
+                  className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-dark)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors shadow-md"
                 >
                   Anketi Tamamla
                   <Check size={20} />

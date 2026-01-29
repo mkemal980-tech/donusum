@@ -91,7 +91,7 @@ function ResetPasswordForm() {
           className="bg-[var(--bg-card)] rounded-2xl shadow-2xl p-8 w-full max-w-md text-center"
         >
           <div className="w-16 h-16 bg-[rgba(239,68,68,0.15)] rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="text-red-400" size={32} />
+            <AlertCircle className="text-[var(--error)]" size={32} />
           </div>
           <h2 className="text-2xl font-bold text-[var(--text-main)] mb-2">Geçersiz Link</h2>
           <p className="text-[var(--text-muted)] mb-6">
@@ -126,7 +126,7 @@ function ResetPasswordForm() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-[rgba(239,68,68,0.1)] border border-red-500/50 rounded-lg flex items-center gap-2 text-red-400">
+          <div className="mb-4 p-3 bg-[rgba(239,68,68,0.1)] border border-[var(--error)]/50 rounded-lg flex items-center gap-2 text-[var(--error)]">
             <AlertCircle size={18} />
             {error}
           </div>

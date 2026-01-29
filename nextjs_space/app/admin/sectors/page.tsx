@@ -272,7 +272,7 @@ export default function SectorsPage() {
                 </button>
                 <button
                   onClick={() => handleDeleteSector(sector.id)}
-                  className="p-2 text-red-400 hover:bg-[rgba(239,68,68,0.1)] rounded-lg"
+                  className="p-2 text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)] rounded-lg"
                 >
                   <Trash2 size={18} />
                 </button>
@@ -315,7 +315,7 @@ export default function SectorsPage() {
                         </button>
                         <button
                           onClick={() => handleDeleteSubSector(sub.id)}
-                          className="p-1 text-red-400 hover:bg-[rgba(239,68,68,0.1)] rounded"
+                          className="p-1 text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)] rounded"
                         >
                           <Trash2 size={16} />
                         </button>

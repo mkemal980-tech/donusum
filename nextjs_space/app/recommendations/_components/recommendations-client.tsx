@@ -433,10 +433,10 @@ export default function RecommendationsClient() {
           >
             <div className="flex items-center gap-3">
               <div className="p-2 bg-[rgba(245,158,11,0.15)] rounded-lg">
-                <Play size={20} className="text-amber-400" />
+                <Play size={20} className="text-[var(--warning)]" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-amber-400">{stats.inProgress}</p>
+                <p className="text-2xl font-bold text-[var(--warning)]">{stats.inProgress}</p>
                 <p className="text-sm text-[var(--text-muted)]">Devam Ediyor</p>
               </div>
             </div>

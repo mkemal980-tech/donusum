@@ -139,7 +139,7 @@ function VerifyEmailContent() {
                 className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: "rgba(34, 197, 94, 0.1)" }}
               >
-                <CheckCircle2 className="w-10 h-10 text-green-500" />
+                <CheckCircle2 className="w-10 h-10 text-[var(--success)]" />
               </div>
               <h2
                 className="text-xl font-semibold mb-2"
@@ -174,7 +174,7 @@ function VerifyEmailContent() {
                 className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
                 style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
               >
-                <XCircle className="w-10 h-10 text-red-500" />
+                <XCircle className="w-10 h-10 text-[var(--error)]" />
               </div>
               <h2
                 className="text-xl font-semibold mb-2"
@@ -230,7 +230,7 @@ function VerifyEmailContent() {
                   className="p-4 rounded-lg"
                   style={{ backgroundColor: "rgba(34, 197, 94, 0.1)" }}
                 >
-                  <p className="text-sm text-green-500">
+                  <p className="text-sm text-[var(--success)]">
                     ✅ Eğer email adresi kayıtlıysa, doğrulama linki gönderildi.
                   </p>
                 </div>
@@ -301,7 +301,7 @@ function VerifyEmailContent() {
                   className="p-4 rounded-lg"
                   style={{ backgroundColor: "rgba(34, 197, 94, 0.1)" }}
                 >
-                  <p className="text-sm text-green-500">
+                  <p className="text-sm text-[var(--success)]">
                     ✅ Eğer email adresi kayıtlıysa, doğrulama linki gönderildi.
                   </p>
                 </div>

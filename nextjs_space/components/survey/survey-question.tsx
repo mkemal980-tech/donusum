@@ -213,7 +213,7 @@ export default function SurveyQuestion({
                     >
                       <span className="flex items-center gap-3">
                         <span className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                          isSelected ? "border-white bg-white/20" : "border-[var(--border-soft)]"
+                          isSelected ? "border-white bg-[var(--bg-card)]/20" : "border-[var(--border-soft)]"
                         }`}>
                           {isSelected && <Check size={14} />}
                         </span>
@@ -264,7 +264,7 @@ export default function SurveyQuestion({
               </span>
               <button 
                 onClick={() => onRemoveFile?.(q?.id)}
-                className="text-[var(--text-dim)] hover:text-red-500 transition-colors p-1 rounded hover:bg-[rgba(239,68,68,0.1)]"
+                className="text-[var(--text-dim)] hover:text-[var(--error)] transition-colors p-1 rounded hover:bg-[rgba(239,68,68,0.1)]"
                 title="Dosyayı kaldır"
               >
                 <X size={16} />

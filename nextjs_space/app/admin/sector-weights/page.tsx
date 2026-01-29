@@ -206,7 +206,7 @@ export default function SectorWeightsPage() {
         </div>
 
         {selectedSurvey && !selectedSector && (
-          <p className="mt-4 text-amber-400 text-sm">Şimdi sektör seçin.</p>
+          <p className="mt-4 text-[var(--warning)] text-sm">Şimdi sektör seçin.</p>
         )}
       </div>
 
@@ -274,7 +274,7 @@ export default function SectorWeightsPage() {
                 <span className="font-semibold text-[var(--text-main)]">Toplam:</span>
                 <span
                   className={`text-lg font-bold ${
-                    isValidTotal ? "text-[var(--accent)]" : "text-red-400"
+                    isValidTotal ? "text-[var(--accent)]" : "text-[var(--error)]"
                   }`}
                 >
                   {(totalWeight * 100).toFixed(1)}%
@@ -282,11 +282,11 @@ export default function SectorWeightsPage() {
                 {isValidTotal ? (
                   <CheckCircle className="text-[var(--accent)]" size={20} />
                 ) : (
-                  <AlertCircle className="text-red-400" size={20} />
+                  <AlertCircle className="text-[var(--error)]" size={20} />
                 )}
               </div>
               {!isValidTotal && (
-                <p className="text-sm text-red-400">Toplam ağırlık 100% olmalıdır</p>
+                <p className="text-sm text-[var(--error)]">Toplam ağırlık 100% olmalıdır</p>
               )}
             </div>
           </div>
@@ -297,7 +297,7 @@ export default function SectorWeightsPage() {
               className={`mt-4 p-4 rounded-lg ${
                 message.type === "success"
                   ? "bg-[rgba(12,193,195,0.1)] text-[var(--accent)]"
-                  : "bg-[rgba(239,68,68,0.1)] text-red-400"
+                  : "bg-[rgba(239,68,68,0.1)] text-[var(--error)]"
               }`}
             >
               {message.text}
@@ -324,13 +324,13 @@ export default function SectorWeightsPage() {
 
       {/* Empty State */}
       {selectedSector && selectedSurvey && filteredCategories.length === 0 && (
-        <div className="bg-[rgba(245,158,11,0.1)] border border-amber-500/50 rounded-xl p-6 text-center">
-          <p className="text-amber-400">Bu ankete ait kategori bulunamadı.</p>
+        <div className="bg-[rgba(245,158,11,0.1)] border border-[var(--warning)]/50 rounded-xl p-6 text-center">
+          <p className="text-[var(--warning)]">Bu ankete ait kategori bulunamadı.</p>
         </div>
       )}
 
       {/* Info Box */}
-      <div className="bg-[var(--bg-card-2)] border border-blue-200 rounded-xl p-6">
+      <div className="bg-[var(--bg-card-2)] border border-[var(--blue-main)] rounded-xl p-6">
         <h3 className="font-semibold text-[var(--accent)] mb-2">Nasıl Çalışır?</h3>
         <ul className="text-sm text-[var(--text-muted)] space-y-2">
           <li>• Önce anketi, sonra sektörü seçin.</li>

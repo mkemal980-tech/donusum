@@ -138,9 +138,9 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
 
   const renderTrend = (value: number | null) => {
     if (value === null) return null;
-    if (value > 0) return <ArrowUpRight size={14} className="text-green-400" />;
-    if (value < 0) return <ArrowDownRight size={14} className="text-red-400" />;
-    return <Minus size={14} className="text-gray-400" />;
+    if (value > 0) return <ArrowUpRight size={14} className="text-[var(--success)]" />;
+    if (value < 0) return <ArrowDownRight size={14} className="text-[var(--error)]" />;
+    return <Minus size={14} className="text-[var(--text-muted)]" />;
   };
 
   const router = useRouter();
@@ -374,25 +374,25 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
           className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-soft)]"
         >
           <div className="flex items-center gap-2 mb-4">
-            <Lightbulb size={16} className="text-amber-400" />
+            <Lightbulb size={16} className="text-[var(--warning)]" />
             <h3 className="text-sm font-semibold text-[var(--text-main)]">Öneri Dağılımı</h3>
           </div>
           
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-green-500/10 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-[var(--success-bg)]0/10 rounded-lg">
               <div className="flex items-center gap-2">
-                <Zap size={16} className="text-green-400" />
+                <Zap size={16} className="text-[var(--success)]" />
                 <span className="text-sm text-[var(--text-muted)]">Quick Wins</span>
               </div>
-              <span className="text-lg font-bold text-green-400">{data.recommendations.quickWins}</span>
+              <span className="text-lg font-bold text-[var(--success)]">{data.recommendations.quickWins}</span>
             </div>
             
-            <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-[var(--info-bg)]0/10 rounded-lg">
               <div className="flex items-center gap-2">
-                <BarChart3 size={16} className="text-blue-400" />
+                <BarChart3 size={16} className="text-[var(--blue-main)]" />
                 <span className="text-sm text-[var(--text-muted)]">Projeler</span>
               </div>
-              <span className="text-lg font-bold text-blue-400">{data.recommendations.projects}</span>
+              <span className="text-lg font-bold text-[var(--blue-main)]">{data.recommendations.projects}</span>
             </div>
             
             <div className="flex items-center justify-between p-3 bg-purple-500/10 rounded-lg">

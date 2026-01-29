@@ -421,7 +421,7 @@ export default function BenchmarksPage() {
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => handleDelete(b.id)}
-                        className="p-1 text-red-400 hover:bg-[rgba(239,68,68,0.1)] rounded transition-colors"
+                        className="p-1 text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)] rounded transition-colors"
                       >
                         <Trash2 size={18} />
                       </button>

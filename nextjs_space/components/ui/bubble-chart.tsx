@@ -391,7 +391,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
                               <Clock size={12} />
                               {timeframeLabels[rec.timeframe]}
                             </span>
-                            <span className="px-2 py-1 bg-[rgba(245,158,11,0.15)] text-amber-400 rounded text-xs font-medium flex items-center gap-1">
+                            <span className="px-2 py-1 bg-[rgba(245,158,11,0.15)] text-[var(--warning)] rounded text-xs font-medium flex items-center gap-1">
                               <TrendingUp size={12} />
                               Etki: {rec.estimatedImpact}
                             </span>

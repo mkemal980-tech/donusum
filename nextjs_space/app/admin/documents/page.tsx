@@ -315,7 +315,7 @@ export default function DocumentsPage() {
                       )}
                       <button
                         onClick={() => handleDelete(doc.id)}
-                        className="p-2 text-red-400  hover:bg-[rgba(239,68,68,0.15)]  rounded-lg transition-colors"
+                        className="p-2 text-[var(--error)]  hover:bg-[rgba(239,68,68,0.15)]  rounded-lg transition-colors"
                         title="Sil"
                       >
                         <Trash2 size={18} />

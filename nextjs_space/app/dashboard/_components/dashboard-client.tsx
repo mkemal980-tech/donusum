@@ -1354,8 +1354,8 @@ export default function DashboardClient() {
                     </span>
                     <span className="text-[var(--text-muted)]">|</span>
                     <span className="flex items-center gap-1">
-                      <Lightbulb size={12} className="text-amber-400" />
-                      <span className="font-semibold text-amber-400 ">{cat.recommendationCount}</span>
+                      <Lightbulb size={12} className="text-[var(--warning)]" />
+                      <span className="font-semibold text-[var(--warning)] ">{cat.recommendationCount}</span>
                     </span>
                   </div>
                 </div>

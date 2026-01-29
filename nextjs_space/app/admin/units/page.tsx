@@ -300,7 +300,7 @@ export default function UnitsPage() {
               </button>
               <button
                 onClick={() => handleDelete(unit.id)}
-                className="p-2 text-[var(--text-dim)] hover:text-red-500 hover:bg-[rgba(239,68,68,0.1)] rounded-lg transition-colors"
+                className="p-2 text-[var(--text-dim)] hover:text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)] rounded-lg transition-colors"
                 title="Sil"
               >
                 <Trash2 size={16} />
@@ -392,7 +392,7 @@ export default function UnitsPage() {
       </div>
 
       {/* Info */}
-      <div className="bg-[var(--bg-card-2)] border border-blue-200 rounded-xl p-4 mb-6">
+      <div className="bg-[var(--bg-card-2)] border border-[var(--blue-main)] rounded-xl p-4 mb-6">
         <h4 className="font-semibold text-[var(--accent)] mb-2">Birim ve Alt Birim Yönetimi</h4>
         <ul className="text-sm text-[var(--accent)] space-y-1">
           <li>• <strong>Birim</strong> oluşturup içine <strong>Alt Birimler</strong> ekleyebilirsiniz.</li>
@@ -533,7 +533,7 @@ export default function UnitsPage() {
                           <button
                             type="button"
                             onClick={() => toggleAdmin(id)}
-                            className="ml-1 hover:text-red-400"
+                            className="ml-1 hover:text-[var(--error)]"
                           >
                             <X size={12} />
                           </button>
@@ -599,7 +599,7 @@ export default function UnitsPage() {
                         </div>
                         <button
                           onClick={() => handleRemoveUserFromUnit(user.id)}
-                          className="text-sm text-red-400 hover:underline"
+                          className="text-sm text-[var(--error)] hover:underline"
                         >
                           Çıkar
                         </button>

@@ -200,9 +200,9 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
 
   const renderTrendIcon = (change: number | null) => {
     if (change === null) return null;
-    if (change > 0) return <TrendingUp size={16} className="text-green-400" />;
-    if (change < 0) return <TrendingDown size={16} className="text-red-400" />;
-    return <Minus size={16} className="text-gray-400" />;
+    if (change > 0) return <TrendingUp size={16} className="text-[var(--success)]" />;
+    if (change < 0) return <TrendingDown size={16} className="text-[var(--error)]" />;
+    return <Minus size={16} className="text-[var(--text-muted)]" />;
   };
 
   const quadrantLabels: Record<string, string> = {
@@ -309,7 +309,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
                 <span className="text-sm text-[var(--text-dim)]">/5</span>
                 {progress.overallScore.change !== 0 && (
                   <span className={`text-sm font-medium ${
-                    progress.overallScore.change > 0 ? 'text-green-400' : 'text-red-400'
+                    progress.overallScore.change > 0 ? 'text-[var(--success)]' : 'text-[var(--error)]'
                   }`}>
                     {progress.overallScore.change > 0 ? '+' : ''}{progress.overallScore.change.toFixed(1)}
                   </span>
@@ -321,13 +321,13 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
             </div>
 
             {/* Tamamlanan Öneriler */}
-            <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+            <div className="p-4 bg-[var(--success-bg)]0/10 rounded-lg border border-[var(--success)]/20">
               <div className="flex items-center gap-2 mb-2">
-                <Award size={16} className="text-green-400" />
+                <Award size={16} className="text-[var(--success)]" />
                 <span className="text-sm text-[var(--text-muted)]">Tamamlanan Öneriler</span>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-green-400">
+                <span className="text-2xl font-bold text-[var(--success)]">
                   +{progress.recommendations.completed}
                 </span>
                 <span className="text-sm text-[var(--text-dim)]">

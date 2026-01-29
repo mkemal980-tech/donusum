@@ -53,7 +53,7 @@ const statusConfig: Record<CompletionStatus, { label: string; color: string; bgC
   },
   IN_PROGRESS: { 
     label: "Devam Ediyor", 
-    color: "text-amber-400", 
+    color: "text-[var(--warning)]", 
     bgColor: "bg-[rgba(245,158,11,0.15)]",
     icon: Play 
   },
@@ -99,7 +99,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
         currentStatus === 'COMPLETED' 
           ? 'border-[var(--accent)] bg-[rgba(12,193,195,0.05)]' 
           : currentStatus === 'IN_PROGRESS' 
-            ? 'border-amber-500/50 bg-[rgba(245,158,11,0.05)]' 
+            ? 'border-[var(--warning)]/50 bg-[rgba(245,158,11,0.05)]' 
             : 'border-[var(--border-soft)]'
       }`}
     >
@@ -184,7 +184,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
           <span>+{rec?.estimatedImpact ?? 0}% etki</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-[var(--text-dim)]">
-          <Target size={14} className="text-amber-400" />
+          <Target size={14} className="text-[var(--warning)]" />
           <span>Puan artışı</span>
         </div>
       </div>

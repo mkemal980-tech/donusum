@@ -165,7 +165,7 @@ export default function SurveyAssignmentsPage() {
 
       {message && (
         <div className={`p-4 rounded-lg ${
-          message.type === "success" ? "bg-[rgba(12,193,195,0.1)] text-[var(--accent)] border border-[var(--accent)]" : "bg-[rgba(239,68,68,0.1)] text-red-400 border border-red-500/50"
+          message.type === "success" ? "bg-[rgba(12,193,195,0.1)] text-[var(--accent)] border border-[var(--accent)]" : "bg-[rgba(239,68,68,0.1)] text-[var(--error)] border border-[var(--error)]/50"
         }`}>
           {message.text}
           <button onClick={() => setMessage(null)} className="float-right font-bold">×</button>
@@ -215,7 +215,7 @@ export default function SurveyAssignmentsPage() {
               ))}
             </select>
             {selectedUserId && availableSurveysForUser.length === 0 && (
-              <p className="text-sm text-amber-400 mt-1">Bu kullanıcıya atanabilecek aktif anket kalmadı</p>
+              <p className="text-sm text-[var(--warning)] mt-1">Bu kullanıcıya atanabilecek aktif anket kalmadı</p>
             )}
           </div>
           
@@ -318,7 +318,7 @@ export default function SurveyAssignmentsPage() {
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => handleRemove(assignment.id)}
-                        className="p-2 text-red-400 hover:bg-[rgba(239,68,68,0.1)] rounded-lg transition-colors"
+                        className="p-2 text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)] rounded-lg transition-colors"
                         title="Atamayı Kaldır"
                       >
                         <Trash2 className="w-4 h-4" />

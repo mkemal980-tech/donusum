@@ -222,10 +222,10 @@ export default function ExportPage(): JSX.Element {
             </div>
 
             {/* Uyarı */}
-            <div className="mt-4 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
+            <div className="mt-4 p-4 rounded-lg bg-[var(--warning-bg)]0/10 border border-[var(--warning)]/30">
               <div className="flex items-start gap-2">
-                <AlertCircle className="h-5 w-5 text-yellow-500 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-yellow-200">
+                <AlertCircle className="h-5 w-5 text-[var(--warning)] mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-[var(--warning)]">
                   <strong>Dikkat:</strong> Dışa aktarılan veriler hassas bilgiler içerebilir. Güvenli bir şekilde saklayın.
                 </div>
               </div>
@@ -342,10 +342,10 @@ export default function ExportPage(): JSX.Element {
                 </ul>
               </div>
 
-              <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
+              <div className="p-4 rounded-lg bg-[var(--info-bg)]0/10 border border-[var(--blue-main)]/30">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm text-blue-200">
+                  <AlertCircle className="h-5 w-5 text-[var(--blue-main)] mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-[var(--blue-light)]">
                     <strong>İpucu:</strong> Tüm verileri ilişkileriyle birlikte almak için JSON formatını tercih edin.
                   </div>
                 </div>
