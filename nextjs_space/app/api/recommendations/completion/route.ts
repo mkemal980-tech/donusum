@@ -164,7 +164,8 @@ export async function GET() {
   try {
     const userId = await getUserId();
 
-    const completions = await prisma.userRecommendationCompletion.findMany({
+    // RoadmapItem tablosundan oku (yol haritası ile senkronize)
+    const roadmapItems = await prisma.roadmapItem.findMany({
       where: { userId },
       include: {
         recommendation: {
@@ -183,6 +184,17 @@ export async function GET() {
         }
       }
     });
+
+    // RoadmapItem formatını completions formatına dönüştür
+    const completions = roadmapItems.map(item => ({
+      id: item.id,
+      userId: item.userId,
+      recommendationId: item.recommendationId,
+      status: item.status,
+      notes: null,
+      completedAt: item.status === 'COMPLETED' ? item.updatedAt : null,
+      recommendation: item.recommendation
+    }));
 
     // Mevcut skorları da döndür
     const scores = await calculateUserScores(userId);
@@ -214,8 +226,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
-    // Önceki durumu kontrol et
-    const previousCompletion = await prisma.userRecommendationCompletion.findUnique({
+    // Önceki durumu kontrol et (RoadmapItem'dan)
+    const previousItem = await prisma.roadmapItem.findUnique({
       where: {
         userId_recommendationId: {
           userId,
@@ -224,10 +236,11 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    const wasCompleted = previousCompletion?.status === 'COMPLETED';
+    const wasCompleted = previousItem?.status === 'COMPLETED';
     const isNowCompleted = status === 'COMPLETED';
 
-    const completion = await prisma.userRecommendationCompletion.upsert({
+    // RoadmapItem tablosunu güncelle (yol haritası ile senkronize)
+    const roadmapItem = await prisma.roadmapItem.upsert({
       where: {
         userId_recommendationId: {
           userId,
@@ -237,14 +250,10 @@ export async function POST(request: NextRequest) {
       create: {
         userId,
         recommendationId: recommendationId,
-        status: status || 'NOT_STARTED',
-        notes: notes || null,
-        completedAt: status === 'COMPLETED' ? new Date() : null
+        status: status || 'NOT_STARTED'
       },
       update: {
-        status: status || 'NOT_STARTED',
-        notes: notes !== undefined ? notes : undefined,
-        completedAt: status === 'COMPLETED' ? new Date() : null
+        status: status || 'NOT_STARTED'
       },
       include: {
         recommendation: {
@@ -263,6 +272,17 @@ export async function POST(request: NextRequest) {
         }
       }
     });
+
+    // Formatı completion formatına dönüştür
+    const completion = {
+      id: roadmapItem.id,
+      userId: roadmapItem.userId,
+      recommendationId: roadmapItem.recommendationId,
+      status: roadmapItem.status,
+      notes: notes || null, // notes'u istek'ten al
+      completedAt: roadmapItem.status === 'COMPLETED' ? roadmapItem.updatedAt : null,
+      recommendation: roadmapItem.recommendation
+    };
 
     // Eğer yeni tamamlandıysa, skor geçmişine kayıt ekle
     let updatedScores = null;
