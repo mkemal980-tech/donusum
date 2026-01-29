@@ -180,11 +180,17 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Öneriler - categoryId üzerinden filtrele
+    // Öneriler - tüm bağlantı yollarını kontrol et (categoryId, subCategoryId, subLevelId)
     const categoryIds = categories.map(c => c.id);
     const recommendations = await prisma.recommendation.findMany({
       where: surveyId && categoryIds.length > 0 
-        ? { categoryId: { in: categoryIds } } 
+        ? {
+            OR: [
+              { categoryId: { in: categoryIds } },
+              { subCategory: { categoryId: { in: categoryIds } } },
+              { subLevel: { subCategory: { categoryId: { in: categoryIds } } } }
+            ]
+          }
         : {},
     });
 
