@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef, Suspense, lazy } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import Header from "@/components/ui/header";
 import ScoreCard from "@/components/ui/score-card";
 import ProgressBar from "@/components/ui/progress-bar";
@@ -10,11 +11,51 @@ import { MaturityLevelBar } from "@/components/ui/maturity-level-bar";
 import { ProgressSection } from "./progress-section";
 import { ScoreTrendChart } from "./score-trend-chart";
 
-// Lazy load heavy components
-const BenchmarkSection = lazy(() => import("./benchmark-section").then(mod => ({ default: mod.BenchmarkSection })));
-const CategoryDashboard = lazy(() => import("./category-dashboard").then(mod => ({ default: mod.CategoryDashboard })));
-const IronmanChart = lazy(() => import("@/components/ui/ironman-chart").then(mod => ({ default: mod.IronmanChart })));
-const KPIDashboard = lazy(() => import("./kpi-dashboard").then(mod => ({ default: mod.KPIDashboard })));
+// Error fallback component for chunk loading failures
+const ChunkErrorFallback = ({ componentName }: { componentName: string }) => (
+  <div className="p-6 bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] text-center">
+    <p className="text-[var(--text-muted)]">{componentName} yüklenemedi.</p>
+    <button 
+      onClick={() => window.location.reload()} 
+      className="mt-2 px-4 py-2 bg-[var(--accent)] text-[var(--bg-deep)] rounded-lg text-sm"
+    >
+      Sayfayı Yenile
+    </button>
+  </div>
+);
+
+// Dynamic imports with Next.js - more reliable than React.lazy
+const BenchmarkSection = dynamic(
+  () => import("./benchmark-section").then(mod => mod.BenchmarkSection),
+  { 
+    loading: () => <div className="animate-pulse bg-[var(--bg-card-2)] rounded-xl h-[400px]" />,
+    ssr: false
+  }
+);
+
+const CategoryDashboard = dynamic(
+  () => import("./category-dashboard").then(mod => mod.CategoryDashboard),
+  { 
+    loading: () => <div className="animate-pulse bg-[var(--bg-card-2)] rounded-xl h-[600px]" />,
+    ssr: false
+  }
+);
+
+const IronmanChart = dynamic(
+  () => import("@/components/ui/ironman-chart").then(mod => mod.IronmanChart),
+  { 
+    loading: () => <div className="animate-pulse bg-[var(--bg-card-2)] rounded-xl h-[500px]" />,
+    ssr: false
+  }
+);
+
+const KPIDashboard = dynamic(
+  () => import("./kpi-dashboard").then(mod => mod.KPIDashboard),
+  { 
+    loading: () => <div className="animate-pulse bg-[var(--bg-card-2)] rounded-xl h-[300px]" />,
+    ssr: false
+  }
+);
 import { 
   ClipboardList, 
   TrendingUp, 
