@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { getRecommendationsForUser } from "@/lib/scoring";
 
-const TEST_USER_ID = "cmkhjzaa70000x50t7n7fsjxo";
+const TEST_USER_ID = "cmkzye325000tmo085fruemez";
 
 async function getUserId() {
   try {

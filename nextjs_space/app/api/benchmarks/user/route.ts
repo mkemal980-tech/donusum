@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { calculateUserScore } from "@/lib/scoring";
 
 // Test user ID for development
-const TEST_USER_ID = "cmkhjzaa70000x50t7n7fsjxo";
+const TEST_USER_ID = "cmkzye325000tmo085fruemez";
 
 export async function GET(request: NextRequest) {
   try {

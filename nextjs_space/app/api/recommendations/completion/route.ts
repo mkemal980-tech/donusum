@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-const TEST_USER_ID = "cmkhjzaa70000x50t7n7fsjxo";
+const TEST_USER_ID = "cmkzye325000tmo085fruemez";
 
 interface SessionUser {
   id: string;

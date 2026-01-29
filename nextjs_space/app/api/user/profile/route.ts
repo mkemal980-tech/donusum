@@ -6,7 +6,7 @@ import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 
 // Test mode için varsayılan kullanıcı ID
-const TEST_USER_ID = "cmkhjzaa70000x50t7n7fsjxo";
+const TEST_USER_ID = "cmkzye325000tmo085fruemez";
 
 export async function GET() {
   try {

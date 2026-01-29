@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db';
 export const dynamic = 'force-dynamic';
 
 // Test kullanıcı ID (geliştirme için)
-const TEST_USER_ID = 'cmkhjzaa70000x50t7n7fsjxo';
+const TEST_USER_ID = 'cmkzye325000tmo085fruemez';
 
 /**
  * Digitopia-Style Ironman Analysis API
