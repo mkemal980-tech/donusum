@@ -56,6 +56,37 @@ const questionTypes = [
   { value: 'CONDITIONAL_CHOICE', label: 'Kademeli Puanlama (Evet/Hayır → Çoklu Seçim)' },
 ];
 
+// Helper function to safely parse options (handles both JSON string and array)
+const parseOptions = (options: any): any[] => {
+  if (!options) return [];
+  if (Array.isArray(options)) return options;
+  if (typeof options === 'string') {
+    try {
+      const parsed = JSON.parse(options);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+// Helper to safely parse conditionalOptions
+const parseConditionalOptions = (conditionalOptions: any): any => {
+  if (!conditionalOptions) return null;
+  if (typeof conditionalOptions === 'object' && !Array.isArray(conditionalOptions)) {
+    return conditionalOptions;
+  }
+  if (typeof conditionalOptions === 'string') {
+    try {
+      return JSON.parse(conditionalOptions);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
+
 export default function CategoriesPage() {
   const searchParams = useSearchParams();
   const surveyIdFromUrl = searchParams.get('surveyId');
@@ -321,23 +352,28 @@ export default function CategoriesPage() {
     if (editItem) {
       let initialData = { ...editItem };
       if (type === 'question' && editItem.type === 'YES_NO' && editItem.options) {
-        const yesOpt = editItem.options.find((o: any) => o.value === 'yes');
-        const noOpt = editItem.options.find((o: any) => o.value === 'no');
+        const parsedOpts = parseOptions(editItem.options);
+        const yesOpt = parsedOpts.find((o: any) => o.value === 'yes');
+        const noOpt = parsedOpts.find((o: any) => o.value === 'no');
         initialData.yesScore = yesOpt?.score || 5;
         initialData.noScore = noOpt?.score || 1;
       }
       if (type === 'question' && editItem.type === 'MULTIPLE_CHOICE' && editItem.options) {
-        initialData.optionsText = editItem.options.map((o: any) => `${o.value}|${o.label}|${o.score}`).join('\n');
+        const parsedOpts = parseOptions(editItem.options);
+        initialData.optionsText = parsedOpts.map((o: any) => `${o.value}|${o.label}|${o.score}`).join('\n');
       }
       if (type === 'question' && editItem.type === 'CONDITIONAL_CHOICE' && editItem.conditionalOptions) {
-        const condOpts = editItem.conditionalOptions;
-        initialData.thresholdQuestion = condOpts.thresholdQuestion || editItem.text;
-        initialData.yesLabel = condOpts.yesLabel || 'Evet';
-        initialData.noLabel = condOpts.noLabel || 'Hayır';
-        if (condOpts.options && Array.isArray(condOpts.options)) {
-          initialData.conditionalOptionsText = condOpts.options
-            .map((o: any) => `${o.label}|${o.score}`)
-            .join('\n');
+        const condOpts = parseConditionalOptions(editItem.conditionalOptions);
+        if (condOpts) {
+          initialData.thresholdQuestion = condOpts.thresholdQuestion || editItem.text;
+          initialData.yesLabel = condOpts.yesLabel || 'Evet';
+          initialData.noLabel = condOpts.noLabel || 'Hayır';
+          const condSubOpts = parseOptions(condOpts.options);
+          if (condSubOpts.length > 0) {
+            initialData.conditionalOptionsText = condSubOpts
+              .map((o: any) => `${o.label}|${o.score}`)
+              .join('\n');
+          }
         }
       }
       setFormData(initialData);
@@ -504,19 +540,28 @@ export default function CategoriesPage() {
             <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded">Kanıt Gerekli</span>
           )}
         </div>
-        {question.options && question.options.length > 0 && question.type !== 'SCALE' && question.type !== 'CONDITIONAL_CHOICE' && (
-          <div className="mt-2 text-xs text-[var(--text-dim)]">
-            Şıklar: {question.options.map((opt: any) => `${opt.label}(${opt.score}p)`).join(', ')}
-          </div>
-        )}
-        {question.type === 'CONDITIONAL_CHOICE' && question.conditionalOptions && (
-          <div className="mt-2 text-xs text-[var(--text-dim)]">
-            <p className="font-medium text-[var(--accent)]">Kademeli: {(question.conditionalOptions as any).thresholdQuestion}</p>
-            {(question.conditionalOptions as any).options && (question.conditionalOptions as any).options.length > 0 && (
-              <p className="mt-1">Alt seçenekler: {(question.conditionalOptions as any).options.map((opt: any) => `${opt.label}(${opt.score}p)`).join(', ')}</p>
-            )}
-          </div>
-        )}
+        {(() => {
+          const parsedOpts = parseOptions(question.options);
+          return parsedOpts.length > 0 && question.type !== 'SCALE' && question.type !== 'CONDITIONAL_CHOICE' ? (
+            <div className="mt-2 text-xs text-[var(--text-dim)]">
+              Şıklar: {parsedOpts.map((opt: any) => `${opt.label}(${opt.score}p)`).join(', ')}
+            </div>
+          ) : null;
+        })()}
+        {(() => {
+          if (question.type !== 'CONDITIONAL_CHOICE' || !question.conditionalOptions) return null;
+          const condOpts = parseConditionalOptions(question.conditionalOptions);
+          if (!condOpts) return null;
+          const condSubOpts = parseOptions(condOpts.options);
+          return (
+            <div className="mt-2 text-xs text-[var(--text-dim)]">
+              <p className="font-medium text-[var(--accent)]">Kademeli: {condOpts.thresholdQuestion}</p>
+              {condSubOpts.length > 0 && (
+                <p className="mt-1">Alt seçenekler: {condSubOpts.map((opt: any) => `${opt.label}(${opt.score}p)`).join(', ')}</p>
+              )}
+            </div>
+          );
+        })()}
       </div>
       <div className="flex items-center gap-1 ml-2">
         <button 
