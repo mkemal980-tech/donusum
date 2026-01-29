@@ -25,9 +25,9 @@ interface BubbleChartProps {
 }
 
 const strategicColors = {
-  QUICK_WIN: { bg: 'var(--accent-bright)', border: 'var(--accent)', label: 'Hızlı Kazanım' },
-  PROJECT: { bg: 'var(--blue-light)', border: 'var(--blue-main)', label: 'Proje' },
-  BIG_BET: { bg: '#c084fc', border: '#a855f7', label: 'Büyük Yatırım' }
+  QUICK_WIN: { bg: '#0CC1C3', border: '#0aa8aa', text: '#0a2a2a', label: 'Hızlı Kazanım' },
+  PROJECT: { bg: '#3b82f6', border: '#2563eb', text: '#0a1628', label: 'Proje' },
+  BIG_BET: { bg: '#a855f7', border: '#9333ea', text: '#1a0a28', label: 'Büyük Yatırım' }
 };
 
 const timeframeLabels = {
@@ -190,8 +190,8 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
       ctx.stroke();
 
       // Draw number
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${Math.max(12, radius * 0.6)}px system-ui`;
+      ctx.fillStyle = colors.text;
+      ctx.font = `bold ${Math.max(14, radius * 0.7)}px system-ui`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText((index + 1).toString(), x, y);
