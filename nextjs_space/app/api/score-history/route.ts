@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    const completedRecs = await prisma.userRecommendationCompletion.count({
+    const completedRecs = await prisma.roadmapItem.count({
       where: { userId, status: 'COMPLETED' }
     });
 

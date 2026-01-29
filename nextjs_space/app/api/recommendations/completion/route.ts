@@ -43,8 +43,8 @@ async function calculateUserScores(userId: string, surveyId?: string) {
     }
   });
 
-  // Tamamlanan önerilerin puanlarını al
-  const completedRecs = await prisma.userRecommendationCompletion.findMany({
+  // Tamamlanan önerilerin puanlarını al (RoadmapItem'dan)
+  const completedRecs = await prisma.roadmapItem.findMany({
     where: { 
       userId, 
       status: 'COMPLETED' 
@@ -318,7 +318,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Recommendation ID is required' }, { status: 400 });
     }
 
-    await prisma.userRecommendationCompletion.delete({
+    await prisma.roadmapItem.delete({
       where: {
         userId_recommendationId: {
           userId,
