@@ -182,7 +182,10 @@ export default function DashboardClient() {
         const firstSurveyId = activeSurveys[0].id;
         setSelectedSurveyId(firstSurveyId);
 
-        const dashboardRes = await fetch(`/api/dashboard/unified?surveyId=${firstSurveyId}`);
+        const [dashboardRes, categoryScoresRes] = await Promise.all([
+          fetch(`/api/dashboard/unified?surveyId=${firstSurveyId}`),
+          fetch(`/api/survey/category-scores?surveyId=${firstSurveyId}`)
+        ]);
         
         if (dashboardRes.status === 401) {
           // Session expired, redirect to login
@@ -190,12 +193,27 @@ export default function DashboardClient() {
           return;
         }
         
+        // Kategori skorlarını işle
+        let categoryScoresMap: Record<string, CategoryScore> = {};
+        if (categoryScoresRes.ok) {
+          const catData = await categoryScoresRes.json();
+          if (catData.categories) {
+            catData.categories.forEach((cat: any) => {
+              categoryScoresMap[cat.id] = {
+                name: cat.name,
+                score: cat.score,
+                percentage: cat.percentage
+              };
+            });
+          }
+        }
+        
         if (dashboardRes.ok) {
           const data = await dashboardRes.json();
           
           // Tüm state'leri tek seferde set et
           setUserProfile(data.userProfile);
-          setScoreData({ totalScore: data.score.totalScore, categoryScores: {} });
+          setScoreData({ totalScore: data.score.totalScore, categoryScores: categoryScoresMap });
           setResponses(data.responses);
           setTotalQuestions(data.score.totalQuestions);
           setCategoryStats(data.categoryStats);
@@ -220,17 +238,35 @@ export default function DashboardClient() {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        const dashboardRes = await fetch(`/api/dashboard/unified?surveyId=${selectedSurveyId}`);
+        const [dashboardRes, categoryScoresRes] = await Promise.all([
+          fetch(`/api/dashboard/unified?surveyId=${selectedSurveyId}`),
+          fetch(`/api/survey/category-scores?surveyId=${selectedSurveyId}`)
+        ]);
         
         if (dashboardRes.status === 401) {
           window.location.href = '/login';
           return;
         }
         
+        // Kategori skorlarını işle
+        let categoryScoresMap: Record<string, CategoryScore> = {};
+        if (categoryScoresRes.ok) {
+          const catData = await categoryScoresRes.json();
+          if (catData.categories) {
+            catData.categories.forEach((cat: any) => {
+              categoryScoresMap[cat.id] = {
+                name: cat.name,
+                score: cat.score,
+                percentage: cat.percentage
+              };
+            });
+          }
+        }
+        
         if (dashboardRes.ok) {
           const data = await dashboardRes.json();
           
-          setScoreData({ totalScore: data.score.totalScore, categoryScores: {} });
+          setScoreData({ totalScore: data.score.totalScore, categoryScores: categoryScoresMap });
           setResponses(data.responses);
           setTotalQuestions(data.score.totalQuestions);
           setCategoryStats(data.categoryStats);
