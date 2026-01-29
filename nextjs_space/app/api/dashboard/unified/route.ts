@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      // 4. Recommendations
+      // 4. Recommendations - 3 yol ile bağlı önerileri çek
       (async () => {
         // First get all categories for this survey
         const surveyCategories = await prisma.category.findMany({
@@ -125,18 +125,29 @@ export async function GET(request: NextRequest) {
 
         return prisma.recommendation.findMany({
           where: {
-            categoryId: { in: categoryIds }
+            OR: [
+              { categoryId: { in: categoryIds } },
+              { subCategory: { categoryId: { in: categoryIds } } },
+              { subLevel: { subCategory: { categoryId: { in: categoryIds } } } }
+            ]
           },
           select: {
             id: true,
             title: true,
             description: true,
             categoryId: true,
+            subCategoryId: true,
             subLevelId: true,
             strategicType: true,
             videoUrl: true,
             minScoreThreshold: true,
-            maxScoreThreshold: true
+            maxScoreThreshold: true,
+            subCategory: {
+              select: { categoryId: true }
+            },
+            subLevel: {
+              select: { subCategory: { select: { categoryId: true } } }
+            }
           }
         });
       })(),
@@ -176,9 +187,16 @@ export async function GET(request: NextRequest) {
 
       totalQuestions += catTotalQuestions;
 
-      const catRecommendationCount = recommendations.filter(
-        rec => rec.categoryId === cat.id
-      ).length;
+      // Öneri sayısını 3 yol ile hesapla (categoryId, subCategoryId, subLevelId)
+      const catRecommendationCount = recommendations.filter((rec: any) => {
+        // Direkt categoryId ile bağlı
+        if (rec.categoryId === cat.id) return true;
+        // subCategory üzerinden bağlı
+        if (rec.subCategory?.categoryId === cat.id) return true;
+        // subLevel üzerinden bağlı
+        if (rec.subLevel?.subCategory?.categoryId === cat.id) return true;
+        return false;
+      }).length;
 
       return {
         id: cat.id,
