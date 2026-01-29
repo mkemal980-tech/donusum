@@ -807,9 +807,9 @@ export default function RecommendationsPage() {
 
               {/* Puan Aralığı (Soru seçilmediyse) */}
               {!modalQuestionId && (
-                <div className="p-4 bg-[rgba(245,158,11,0.1)] rounded-lg">
-                  <label className="block text-sm font-medium text-amber-800 mb-2">Puan Aralığı (Alternatif Yöntem)</label>
-                  <p className="text-xs text-amber-400 mb-3">
+                <div className="p-4 bg-[var(--bg-card-2)] rounded-lg border border-[var(--border-soft)]">
+                  <label className="block text-sm font-medium text-[var(--text-main)] mb-2">Puan Aralığı (Alternatif Yöntem)</label>
+                  <p className="text-xs text-[var(--text-muted)] mb-3">
                     Soru seçmediyseniz, bu öneri seçilen alandaki puan aralığına göre gösterilir.
                   </p>
                   <div className="grid grid-cols-2 gap-4">
