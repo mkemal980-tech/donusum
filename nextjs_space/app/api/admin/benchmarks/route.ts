@@ -40,36 +40,52 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Anket, sektör ve seviye gerekli" }, { status: 400 });
     }
 
-    // Upsert benchmark
-    const benchmark = await prisma.benchmark.upsert({
+    // Mevcut benchmark'ı kontrol et (null değerler için özel sorgu)
+    const existingBenchmark = await prisma.benchmark.findFirst({
       where: {
-        surveyId_sectorId_subSectorId_level_targetId: {
-          surveyId,
-          sectorId,
-          subSectorId: subSectorId || null,
-          level,
-          targetId: targetId || null
-        }
-      },
-      update: {
-        bestScore: bestScore || 0,
-        averageScore: averageScore || 0
-      },
-      create: {
         surveyId,
         sectorId,
         subSectorId: subSectorId || null,
         level,
-        targetId: targetId || null,
-        bestScore: bestScore || 0,
-        averageScore: averageScore || 0
-      },
-      include: {
-        survey: true,
-        sector: true,
-        subSector: true
+        targetId: targetId || null
       }
     });
+
+    let benchmark;
+    
+    if (existingBenchmark) {
+      // Güncelle
+      benchmark = await prisma.benchmark.update({
+        where: { id: existingBenchmark.id },
+        data: {
+          bestScore: bestScore || 0,
+          averageScore: averageScore || 0
+        },
+        include: {
+          survey: true,
+          sector: true,
+          subSector: true
+        }
+      });
+    } else {
+      // Yeni oluştur
+      benchmark = await prisma.benchmark.create({
+        data: {
+          surveyId,
+          sectorId,
+          subSectorId: subSectorId || null,
+          level,
+          targetId: targetId || null,
+          bestScore: bestScore || 0,
+          averageScore: averageScore || 0
+        },
+        include: {
+          survey: true,
+          sector: true,
+          subSector: true
+        }
+      });
+    }
 
     return NextResponse.json(benchmark);
   } catch (error) {
