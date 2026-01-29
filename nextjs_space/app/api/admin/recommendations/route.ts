@@ -48,7 +48,10 @@ export async function GET() {
           }
         },
         subCategory: {
-          include: {
+          select: {
+            id: true,
+            name: true,
+            categoryId: true,
             category: {
               select: {
                 id: true,
@@ -59,9 +62,14 @@ export async function GET() {
           }
         },
         subLevel: {
-          include: {
+          select: {
+            id: true,
+            name: true,
             subCategory: {
-              include: { 
+              select: {
+                id: true,
+                name: true,
+                categoryId: true,
                 category: {
                   select: {
                     id: true,

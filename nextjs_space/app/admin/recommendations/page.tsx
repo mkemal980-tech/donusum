@@ -52,19 +52,48 @@ interface Recommendation {
     text: string;
     type: string;
     options: string | null;
+    subLevel?: {
+      id: string;
+      name: string;
+      subCategory?: {
+        id: string;
+        name: string;
+        category?: {
+          id: string;
+          name: string;
+          surveyId?: string;
+        };
+      };
+    };
+    subCategory?: {
+      id: string;
+      name: string;
+      category?: {
+        id: string;
+        name: string;
+        surveyId?: string;
+      };
+    };
   };
   subCategory?: { 
-    name: string; 
+    id: string;
+    name: string;
+    categoryId: string;
     category?: { 
+      id: string;
       name: string;
       surveyId?: string;
     } 
   };
   subLevel?: { 
+    id: string;
     name: string; 
     subCategory?: { 
-      name: string; 
+      id: string;
+      name: string;
+      categoryId: string;
       category?: { 
+        id: string;
         name: string;
         surveyId?: string;
       } 
@@ -374,7 +403,24 @@ export default function RecommendationsPage() {
   const filteredRecs = recommendations.filter(rec => {
     const matchSearch = rec.title.toLowerCase().includes(search.toLowerCase()) || 
                         rec.description.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = !filterCategory || rec.categoryId === filterCategory;
+    
+    // Kategori filtreleme - öneri hangi yoldan kategoriye bağlı olursa olsun kontrol et
+    let matchCategory = true;
+    if (filterCategory) {
+      if (rec.subLevel?.subCategory?.category?.id) {
+        matchCategory = rec.subLevel.subCategory.category.id === filterCategory;
+      } else if (rec.subCategory?.category?.id) {
+        matchCategory = rec.subCategory.category.id === filterCategory;
+      } else if (rec.question?.subLevel?.subCategory?.category?.id) {
+        matchCategory = rec.question.subLevel.subCategory.category.id === filterCategory;
+      } else if (rec.question?.subCategory?.category?.id) {
+        matchCategory = rec.question.subCategory.category.id === filterCategory;
+      } else if (rec.categoryId) {
+        matchCategory = rec.categoryId === filterCategory;
+      } else {
+        matchCategory = false;
+      }
+    }
     
     let matchSurvey = true;
     if (filterSurvey) {
