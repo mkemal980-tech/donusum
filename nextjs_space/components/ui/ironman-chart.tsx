@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Building2, Globe, Target, Plus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Building2, Globe, Target, Plus, X, ChevronDown, Check, Factory } from "lucide-react";
 
 interface IronmanData {
   current: {
@@ -45,6 +45,23 @@ interface IronmanData {
   };
 }
 
+interface SectorOption {
+  id: string;
+  name: string;
+  subSectors?: { id: string; name: string }[];
+}
+
+interface ComparisonData {
+  sectorId: string;
+  sectorName: string;
+  subSectorId?: string;
+  subSectorName?: string;
+  velocity: number;
+  endurance: number;
+  targetVelocity: number;
+  targetEndurance: number;
+}
+
 // Simulated other companies data for visualization
 const generateOtherCompanies = () => {
   const companies = [];
@@ -63,6 +80,14 @@ export function IronmanChart() {
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [otherCompanies] = useState(generateOtherCompanies);
+  
+  // Karşılaştırma state'leri
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const [sectors, setSectors] = useState<SectorOption[]>([]);
+  const [selectedSector, setSelectedSector] = useState<string>('');
+  const [selectedSubSector, setSelectedSubSector] = useState<string>('');
+  const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
+  const [loadingComparison, setLoadingComparison] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -88,6 +113,86 @@ export function IronmanChart() {
     };
     fetchData();
   }, []);
+
+  // Sektörleri yükle
+  const fetchSectors = async () => {
+    try {
+      const res = await fetch('/api/sectors');
+      if (res.ok) {
+        const sectorsData = await res.json();
+        setSectors(sectorsData);
+      }
+    } catch (error) {
+      console.error('Error fetching sectors:', error);
+    }
+  };
+
+  // Karşılaştırma verisini getir
+  const fetchComparisonData = async (sectorId: string, subSectorId?: string) => {
+    setLoadingComparison(true);
+    try {
+      const params = new URLSearchParams({ sectorId });
+      if (subSectorId) {
+        params.append('subSectorId', subSectorId);
+      }
+      const res = await fetch(`/api/ironman/benchmark?${params.toString()}`);
+      if (res.ok) {
+        const benchmarkData = await res.json();
+        const sector = sectors.find(s => s.id === sectorId);
+        const subSector = sector?.subSectors?.find(ss => ss.id === subSectorId);
+        
+        setComparisonData({
+          sectorId,
+          sectorName: sector?.name || 'Bilinmeyen Sektör',
+          subSectorId,
+          subSectorName: subSector?.name,
+          velocity: benchmarkData.current?.velocity || 2.5,
+          endurance: benchmarkData.current?.endurance || 2.5,
+          targetVelocity: benchmarkData.target?.velocity || 3.5,
+          targetEndurance: benchmarkData.target?.endurance || 3.5,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching comparison data:', error);
+      // Fallback: rastgele değerler
+      const sector = sectors.find(s => s.id === sectorId);
+      const subSector = sector?.subSectors?.find(ss => ss.id === subSectorId);
+      setComparisonData({
+        sectorId,
+        sectorName: sector?.name || 'Bilinmeyen Sektör',
+        subSectorId,
+        subSectorName: subSector?.name,
+        velocity: 2.0 + Math.random() * 1.5,
+        endurance: 2.0 + Math.random() * 1.5,
+        targetVelocity: 3.0 + Math.random() * 1.0,
+        targetEndurance: 3.0 + Math.random() * 1.0,
+      });
+    } finally {
+      setLoadingComparison(false);
+    }
+  };
+
+  const handleOpenCompareModal = () => {
+    if (sectors.length === 0) {
+      fetchSectors();
+    }
+    setShowCompareModal(true);
+  };
+
+  const handleSelectComparison = () => {
+    if (selectedSector) {
+      fetchComparisonData(selectedSector, selectedSubSector || undefined);
+      setShowCompareModal(false);
+    }
+  };
+
+  const handleClearComparison = () => {
+    setComparisonData(null);
+    setSelectedSector('');
+    setSelectedSubSector('');
+  };
+
+  const currentSubSectors = sectors.find(s => s.id === selectedSector)?.subSectors || [];
 
   const drawChart = useCallback(() => {
     if (!canvasRef.current || !data || !mounted) return;
@@ -500,17 +605,207 @@ export function IronmanChart() {
                 </div>
               </div>
 
-              {/* Select to Compare */}
-              <div className="bg-[var(--bg-card-2)] rounded-xl p-4 flex flex-col items-center justify-center text-center">
-                <p className="text-sm text-[var(--text-muted)] mb-4">Karşılaştırmak için seçin</p>
-                <button className="w-16 h-16 rounded-full border-2 border-dashed border-[var(--border-soft)] flex items-center justify-center text-[var(--text-muted)] hover:border-[var(--blue-main)] hover:text-[var(--blue-main)] transition-colors">
-                  <Plus className="w-8 h-8" />
-                </button>
+              {/* Select to Compare / Comparison Result */}
+              <div className="bg-[var(--bg-card-2)] rounded-xl p-4 flex flex-col items-center justify-center text-center min-h-[200px]">
+                {comparisonData ? (
+                  // Karşılaştırma sonucu göster
+                  <div className="w-full">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Factory className="w-4 h-4 text-[var(--accent)]" />
+                        <span className="text-xs font-medium text-[var(--text-dim)]">Karşılaştırma</span>
+                      </div>
+                      <button
+                        onClick={handleClearComparison}
+                        className="p-1 rounded-full hover:bg-[var(--bg-card)] transition-colors"
+                      >
+                        <X className="w-4 h-4 text-[var(--text-muted)]" />
+                      </button>
+                    </div>
+                    
+                    <div className="text-left mb-4">
+                      <p className="text-sm font-semibold text-[var(--accent)]">{comparisonData.sectorName}</p>
+                      {comparisonData.subSectorName && (
+                        <p className="text-xs text-[var(--text-muted)]">{comparisonData.subSectorName}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-[var(--text-muted)]">Hız (Mevcut)</span>
+                          <span className="text-[var(--text-dim)] font-medium">{comparisonData.velocity.toFixed(1)}</span>
+                        </div>
+                        <div className="h-2 bg-[var(--bg-card)] rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-[var(--accent)] rounded-full transition-all duration-500"
+                            style={{ width: `${(comparisonData.velocity / 5) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-[var(--text-muted)]">Dayanıklılık (Mevcut)</span>
+                          <span className="text-[var(--text-dim)] font-medium">{comparisonData.endurance.toFixed(1)}</span>
+                        </div>
+                        <div className="h-2 bg-[var(--bg-card)] rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-[var(--accent)] rounded-full transition-all duration-500"
+                            style={{ width: `${(comparisonData.endurance / 5) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-[var(--border-soft)]">
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-[var(--text-muted)]">Hız (Hedef)</span>
+                          <span className="text-[var(--text-dim)] font-medium">{comparisonData.targetVelocity.toFixed(1)}</span>
+                        </div>
+                        <div className="h-2 bg-[var(--bg-card)] rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-[var(--blue-main)] rounded-full transition-all duration-500"
+                            style={{ width: `${(comparisonData.targetVelocity / 5) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-[var(--text-muted)]">Dayanıklılık (Hedef)</span>
+                          <span className="text-[var(--text-dim)] font-medium">{comparisonData.targetEndurance.toFixed(1)}</span>
+                        </div>
+                        <div className="h-2 bg-[var(--bg-card)] rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-[var(--blue-main)] rounded-full transition-all duration-500"
+                            style={{ width: `${(comparisonData.targetEndurance / 5) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleOpenCompareModal}
+                      className="mt-4 text-xs text-[var(--accent)] hover:underline"
+                    >
+                      Başka sektör seç
+                    </button>
+                  </div>
+                ) : (
+                  // Karşılaştırma butonu
+                  <>
+                    <p className="text-sm text-[var(--text-muted)] mb-4">Karşılaştırmak için seçin</p>
+                    <button
+                      onClick={handleOpenCompareModal}
+                      className="w-16 h-16 rounded-full border-2 border-dashed border-[var(--border-soft)] flex items-center justify-center text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+                    >
+                      <Plus className="w-8 h-8" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Karşılaştırma Modal */}
+      <AnimatePresence>
+        {showCompareModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setShowCompareModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[var(--bg-card)] rounded-2xl p-6 w-full max-w-md border border-[var(--border-soft)] shadow-xl"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-[var(--text-dim)]">Sektör Karşılaştırması</h3>
+                <button
+                  onClick={() => setShowCompareModal(false)}
+                  className="p-1.5 rounded-full hover:bg-[var(--bg-card-2)] transition-colors"
+                >
+                  <X className="w-5 h-5 text-[var(--text-muted)]" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Sektör Seçimi */}
+                <div>
+                  <label className="block text-sm font-medium text-[var(--text-dim)] mb-2">
+                    Sektör Seçin
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={selectedSector}
+                      onChange={(e) => {
+                        setSelectedSector(e.target.value);
+                        setSelectedSubSector('');
+                      }}
+                      className="w-full px-4 py-3 rounded-xl bg-[var(--bg-card-2)] border border-[var(--border-soft)] text-[var(--text-dim)] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+                    >
+                      <option value="">Sektör seçin...</option>
+                      {sectors.map((sector) => (
+                        <option key={sector.id} value={sector.id}>
+                          {sector.name}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)] pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Alt Sektör Seçimi */}
+                {currentSubSectors.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--text-dim)] mb-2">
+                      Alt Sektör (Opsiyonel)
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedSubSector}
+                        onChange={(e) => setSelectedSubSector(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl bg-[var(--bg-card-2)] border border-[var(--border-soft)] text-[var(--text-dim)] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50"
+                      >
+                        <option value="">Tüm alt sektörler</option>
+                        {currentSubSectors.map((subSector) => (
+                          <option key={subSector.id} value={subSector.id}>
+                            {subSector.name}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)] pointer-events-none" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Seçim Butonu */}
+                <button
+                  onClick={handleSelectComparison}
+                  disabled={!selectedSector || loadingComparison}
+                  className="w-full py-3 px-4 rounded-xl bg-[var(--accent)] text-white font-medium hover:bg-[var(--accent)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                >
+                  {loadingComparison ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Check className="w-5 h-5" />
+                      Karşılaştır
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
