@@ -75,7 +75,8 @@ export async function GET(request: NextRequest) {
           question: {
             OR: [
               { subLevel: { subCategory: { category: { surveyId } } } },
-              { subCategory: { category: { surveyId } } }
+              { subCategory: { category: { surveyId } } },
+              { category: { surveyId } }
             ]
           }
         },
@@ -227,7 +228,8 @@ async function fetchCategoryScores(userId: string, surveyId: string) {
         question: {
           OR: [
             { subLevel: { subCategory: { category: { surveyId } } } },
-            { subCategory: { category: { surveyId } } }
+            { subCategory: { category: { surveyId } } },
+            { category: { surveyId } }
           ]
         }
       },
@@ -247,7 +249,8 @@ async function fetchCategoryScores(userId: string, surveyId: string) {
               include: {
                 category: true
               }
-            }
+            },
+            category: true
           }
         }
       }

@@ -25,7 +25,13 @@ export async function GET(request: NextRequest) {
     const responses = await prisma.surveyResponse.findMany({
       where: { 
         userId,
-        ...(surveyId && { question: { subLevel: { subCategory: { category: { surveyId } } } } }),
+        ...(surveyId && {
+          OR: [
+            { question: { subLevel: { subCategory: { category: { surveyId } } } } },
+            { question: { subCategory: { category: { surveyId } } } },
+            { question: { category: { surveyId } } }
+          ]
+        }),
       },
       include: {
         question: {
@@ -35,6 +41,7 @@ export async function GET(request: NextRequest) {
             axisType: true,
             subLevelId: true,
             subCategoryId: true,
+            categoryId: true,
             subLevel: {
               select: {
                 subCategory: {
@@ -52,6 +59,9 @@ export async function GET(request: NextRequest) {
                   select: { id: true, name: true, surveyId: true }
                 }
               }
+            },
+            category: {
+              select: { id: true, name: true, surveyId: true }
             }
           }
         }
@@ -64,6 +74,7 @@ export async function GET(request: NextRequest) {
       OR: [
         { subLevel: { subCategory: { category: { surveyId } } } },
         { subCategory: { category: { surveyId } } },
+        { category: { surveyId } }
       ]
     } : {};
     
