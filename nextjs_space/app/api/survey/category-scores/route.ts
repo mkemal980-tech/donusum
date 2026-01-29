@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
     const categories = await prisma.category.findMany({
       where: surveyId ? { surveyId } : undefined,
       include: {
+        questions: true, // Doğrudan kategoriye bağlı sorular
         subCategories: {
           include: {
             subLevels: {
@@ -85,6 +86,7 @@ export async function GET(request: NextRequest) {
       include: {
         question: {
           include: {
+            category: true, // Doğrudan kategoriye bağlı sorular için
             subLevel: {
               include: {
                 subCategory: true
@@ -109,6 +111,19 @@ export async function GET(request: NextRequest) {
     const categoryScores = categories.map(category => {
       let catTotalScore = 0;
       let catMaxScore = 0;
+
+      // Doğrudan kategoriye bağlı soruları işle
+      const directCategoryQuestions = (category as any).questions || [];
+      for (const question of directCategoryQuestions) {
+        const response = responseMap.get(question.id);
+        const weight = question.weight || 1;
+        const maxQuestionScore = 5 * weight;
+        
+        if (response) {
+          catTotalScore += response.score * weight;
+        }
+        catMaxScore += maxQuestionScore;
+      }
 
       const subCategoryScores = category.subCategories.map(subCat => {
         let subCatTotalScore = 0;

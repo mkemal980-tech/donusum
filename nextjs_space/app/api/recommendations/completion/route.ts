@@ -28,7 +28,13 @@ async function calculateUserScores(userId: string, surveyId?: string) {
   const responses = await prisma.surveyResponse.findMany({
     where: { 
       userId,
-      ...(surveyId && { question: { subLevel: { subCategory: { category: { surveyId } } } } }),
+      ...(surveyId && {
+        OR: [
+          { question: { subLevel: { subCategory: { category: { surveyId } } } } },
+          { question: { subCategory: { category: { surveyId } } } },
+          { question: { category: { surveyId } } }
+        ]
+      }),
     },
     include: {
       question: {

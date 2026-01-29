@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
       include: {
         question: {
           include: {
+            category: true,  // Doğrudan kategoriye bağlı sorular için
             subLevel: {
               include: {
                 subCategory: {
@@ -66,6 +67,13 @@ export async function GET(request: NextRequest) {
       include: {
         recommendation: {
           include: {
+            question: {
+              include: {
+                category: true,
+                subCategory: { include: { category: true } },
+                subLevel: { include: { subCategory: { include: { category: true } } } }
+              }
+            },
             subCategory: {
               include: { category: true }
             },
