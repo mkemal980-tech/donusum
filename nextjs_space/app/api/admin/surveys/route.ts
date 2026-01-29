@@ -3,9 +3,94 @@ import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-// GET - Tüm anketleri getir
-export async function GET() {
+// GET - Tüm anketleri getir veya silme öncesi etki analizi
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
+    const id = searchParams.get('id');
+    
+    // Silme öncesi etki analizi - bağlı kayıtları say
+    if (action === 'delete-impact' && id) {
+      const survey = await prisma.survey.findUnique({
+        where: { id },
+        select: { name: true }
+      });
+      
+      if (!survey) {
+        return NextResponse.json({ error: 'Anket bulunamadı' }, { status: 404 });
+      }
+      
+      // Bağlı kategorileri say
+      const categories = await prisma.category.findMany({
+        where: { surveyId: id },
+        select: { id: true }
+      });
+      const categoryIds = categories.map(c => c.id);
+      
+      // Bağlı alt kategorileri say
+      const subCategories = await prisma.subCategory.findMany({
+        where: { categoryId: { in: categoryIds } },
+        select: { id: true }
+      });
+      const subCategoryIds = subCategories.map(sc => sc.id);
+      
+      // Bağlı alt seviyeleri say
+      const subLevels = await prisma.subLevel.findMany({
+        where: { subCategoryId: { in: subCategoryIds } },
+        select: { id: true }
+      });
+      const subLevelIds = subLevels.map(sl => sl.id);
+      
+      // Bağlı soruları say (hem subCategory hem subLevel'dan)
+      const questions = await prisma.question.findMany({
+        where: {
+          OR: [
+            { subCategoryId: { in: subCategoryIds } },
+            { subLevelId: { in: subLevelIds } }
+          ]
+        },
+        select: { id: true }
+      });
+      const questionIds = questions.map(q => q.id);
+      
+      // Bağlı cevapları say
+      const responsesCount = await prisma.surveyResponse.count({
+        where: { questionId: { in: questionIds } }
+      });
+      
+      // Bağlı önerileri say
+      const recommendationsCount = await prisma.recommendation.count({
+        where: {
+          OR: [
+            { subCategoryId: { in: subCategoryIds } },
+            { subLevelId: { in: subLevelIds } }
+          ]
+        }
+      });
+      
+      // Bağlı benchmark'ları say
+      const benchmarksCount = await prisma.benchmark.count({
+        where: { surveyId: id }
+      });
+      
+      return NextResponse.json({
+        surveyName: survey.name,
+        impact: {
+          categories: categories.length,
+          subCategories: subCategories.length,
+          subLevels: subLevels.length,
+          questions: questions.length,
+          responses: responsesCount,
+          recommendations: recommendationsCount,
+          benchmarks: benchmarksCount,
+          total: categories.length + subCategories.length + subLevels.length + 
+                 questions.length + responsesCount + recommendationsCount + benchmarksCount
+        }
+      });
+    }
+    
+    // Normal liste
     const surveys = await prisma.survey.findMany({
       orderBy: { order: 'asc' },
       include: {

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, FileText, X, Save, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Edit, Trash2, FileText, X, Save, CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface Survey {
   id: string;
@@ -22,12 +23,44 @@ interface Survey {
   }[];
 }
 
+interface DeleteImpact {
+  categories: number;
+  subCategories: number;
+  subLevels: number;
+  questions: number;
+  responses: number;
+  recommendations: number;
+  benchmarks: number;
+  total: number;
+}
+
+interface DeleteConfirmState {
+  show: boolean;
+  surveyId: string;
+  surveyName: string;
+  impact: DeleteImpact | null;
+  confirmText: string;
+  loading: boolean;
+  deleting: boolean;
+}
+
 export default function SurveysPage() {
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<Survey | null>(null);
   const [formData, setFormData] = useState<Partial<Survey>>({});
+  
+  // Silme onay state'i
+  const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState>({
+    show: false,
+    surveyId: '',
+    surveyName: '',
+    impact: null,
+    confirmText: '',
+    loading: false,
+    deleting: false
+  });
 
   const fetchSurveys = async () => {
     try {
@@ -59,14 +92,86 @@ export default function SurveysPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bu anketi ve tüm içeriğini silmek istediğinizden emin misiniz?')) return;
+  // Silme işlemini başlat - önce etki analizi yap
+  const initiateDelete = async (survey: Survey) => {
+    setDeleteConfirm({
+      show: true,
+      surveyId: survey.id,
+      surveyName: survey.name,
+      impact: null,
+      confirmText: '',
+      loading: true,
+      deleting: false
+    });
+    
     try {
-      await fetch(`/api/admin/surveys?id=${id}`, { method: 'DELETE' });
-      fetchSurveys();
+      const res = await fetch(`/api/admin/surveys?action=delete-impact&id=${survey.id}`);
+      const data = await res.json();
+      
+      if (data.error) {
+        toast.error(data.error);
+        setDeleteConfirm(prev => ({ ...prev, show: false }));
+        return;
+      }
+      
+      setDeleteConfirm(prev => ({
+        ...prev,
+        impact: data.impact,
+        loading: false
+      }));
+    } catch (error) {
+      console.error('Error fetching impact:', error);
+      toast.error('Etki analizi yapılamadı');
+      setDeleteConfirm(prev => ({ ...prev, show: false }));
+    }
+  };
+  
+  // Gerçek silme işlemi
+  const handleDelete = async () => {
+    if (deleteConfirm.confirmText !== deleteConfirm.surveyName) {
+      toast.error('Anket adı eşleşmiyor!');
+      return;
+    }
+    
+    setDeleteConfirm(prev => ({ ...prev, deleting: true }));
+    
+    try {
+      const res = await fetch(`/api/admin/surveys?id=${deleteConfirm.surveyId}`, { method: 'DELETE' });
+      
+      if (res.ok) {
+        toast.success('Anket başarıyla silindi');
+        fetchSurveys();
+        setDeleteConfirm({
+          show: false,
+          surveyId: '',
+          surveyName: '',
+          impact: null,
+          confirmText: '',
+          loading: false,
+          deleting: false
+        });
+      } else {
+        toast.error('Silme işlemi başarısız');
+        setDeleteConfirm(prev => ({ ...prev, deleting: false }));
+      }
     } catch (error) {
       console.error('Error deleting:', error);
+      toast.error('Silme işlemi sırasında hata oluştu');
+      setDeleteConfirm(prev => ({ ...prev, deleting: false }));
     }
+  };
+  
+  // Silme işlemini iptal et
+  const cancelDelete = () => {
+    setDeleteConfirm({
+      show: false,
+      surveyId: '',
+      surveyName: '',
+      impact: null,
+      confirmText: '',
+      loading: false,
+      deleting: false
+    });
   };
 
   const openModal = (survey?: Survey) => {
@@ -146,7 +251,7 @@ export default function SurveysPage() {
                     <Edit size={18} />
                   </button>
                   <button 
-                    onClick={() => handleDelete(survey.id)} 
+                    onClick={() => initiateDelete(survey)} 
                     className="p-2 hover:bg-[rgba(239,68,68,0.15)] rounded text-red-400" 
                     title="Sil"
                   >
@@ -257,6 +362,140 @@ export default function SurveysPage() {
                 {editItem ? 'Güncelle' : 'Kaydet'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Silme Onay Dialog */}
+      {deleteConfirm.show && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-lg border border-red-500/30">
+            {deleteConfirm.loading ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
+                <p className="mt-4 text-[var(--text-muted)]">Etki analizi yapılıyor...</p>
+              </div>
+            ) : (
+              <>
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="text-red-500" size={24} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-red-500">Tehlikeli İşlem!</h2>
+                    <p className="text-sm text-[var(--text-dim)]">Bu işlem geri alınamaz</p>
+                  </div>
+                </div>
+                
+                {/* Anket Bilgisi */}
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-4">
+                  <p className="text-[var(--text-main)] font-medium">
+                    &ldquo;{deleteConfirm.surveyName}&rdquo; anketini silmek üzeresiniz.
+                  </p>
+                </div>
+                
+                {/* Etki Analizi */}
+                {deleteConfirm.impact && (
+                  <div className="bg-[var(--bg-card-2)] rounded-lg p-4 mb-4">
+                    <h3 className="text-[var(--text-main)] font-semibold mb-3 flex items-center gap-2">
+                      <AlertTriangle size={16} className="text-orange-400" />
+                      Silinecek Kayıtlar:
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {deleteConfirm.impact.categories > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-[var(--text-dim)]">Kategoriler:</span>
+                          <span className="text-red-400 font-medium">{deleteConfirm.impact.categories}</span>
+                        </div>
+                      )}
+                      {deleteConfirm.impact.subCategories > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-[var(--text-dim)]">Alt Kategoriler:</span>
+                          <span className="text-red-400 font-medium">{deleteConfirm.impact.subCategories}</span>
+                        </div>
+                      )}
+                      {deleteConfirm.impact.subLevels > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-[var(--text-dim)]">Alt Seviyeler:</span>
+                          <span className="text-red-400 font-medium">{deleteConfirm.impact.subLevels}</span>
+                        </div>
+                      )}
+                      {deleteConfirm.impact.questions > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-[var(--text-dim)]">Sorular:</span>
+                          <span className="text-red-400 font-medium">{deleteConfirm.impact.questions}</span>
+                        </div>
+                      )}
+                      {deleteConfirm.impact.responses > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-[var(--text-dim)]">Kullanıcı Cevapları:</span>
+                          <span className="text-red-400 font-medium">{deleteConfirm.impact.responses}</span>
+                        </div>
+                      )}
+                      {deleteConfirm.impact.recommendations > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-[var(--text-dim)]">Öneriler:</span>
+                          <span className="text-red-400 font-medium">{deleteConfirm.impact.recommendations}</span>
+                        </div>
+                      )}
+                      {deleteConfirm.impact.benchmarks > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-[var(--text-dim)]">Benchmark&apos;lar:</span>
+                          <span className="text-red-400 font-medium">{deleteConfirm.impact.benchmarks}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-[var(--border-soft)] flex justify-between">
+                      <span className="text-[var(--text-main)] font-semibold">Toplam:</span>
+                      <span className="text-red-500 font-bold">{deleteConfirm.impact.total} kayıt silinecek</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Onay Kutusu */}
+                <div className="mb-4">
+                  <label className="block text-sm text-[var(--text-muted)] mb-2">
+                    Silmek için anket adını yazın: <span className="font-bold text-red-400">{deleteConfirm.surveyName}</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={deleteConfirm.confirmText}
+                    onChange={(e) => setDeleteConfirm(prev => ({ ...prev, confirmText: e.target.value }))}
+                    placeholder="Anket adını buraya yazın..."
+                    className="w-full p-3 border border-red-500/30 rounded-lg bg-[var(--bg-card-2)] text-[var(--text-main)] focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  />
+                </div>
+                
+                {/* Butonlar */}
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={cancelDelete}
+                    disabled={deleteConfirm.deleting}
+                    className="px-4 py-2 text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] rounded-lg disabled:opacity-50"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleteConfirm.confirmText !== deleteConfirm.surveyName || deleteConfirm.deleting}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {deleteConfirm.deleting ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Siliniyor...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 size={18} />
+                        Kalıcı Olarak Sil
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
