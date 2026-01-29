@@ -1312,7 +1312,7 @@ export default function DashboardClient() {
               </div>
               <div>
                 <p className="text-sm text-[var(--text-secondary)]">Mevcut Puan</p>
-                <p className="text-2xl font-bold text-[var(--text-primary)]">{scoreData?.totalScore ?? 0}%</p>
+                <p className="text-2xl font-bold text-[var(--text-primary)]">{Math.round(scoreData?.totalScore ?? 0)}%</p>
               </div>
             </div>
           </motion.div>

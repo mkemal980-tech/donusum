@@ -231,7 +231,7 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
     },
     {
       title: 'Olgunluk Yüzde',
-      value: data.overview.overallPercentage,
+      value: Math.round(data.overview.overallPercentage),
       suffix: '%',
       icon: Target,
       color: '#f59e0b',

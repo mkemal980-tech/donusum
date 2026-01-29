@@ -20,14 +20,15 @@ export default function ScoreCard({ score, label, color, size = "large" }: Score
 
   useEffect(() => {
     if (inView) {
+      const targetScore = Math.round(score ?? 0);
       const duration = 1500;
       const steps = 60;
-      const stepValue = (score ?? 0) / steps;
+      const stepValue = targetScore / steps;
       let current = 0;
       const interval = setInterval(() => {
         current += stepValue;
-        if (current >= (score ?? 0)) {
-          setDisplayScore(score ?? 0);
+        if (current >= targetScore) {
+          setDisplayScore(targetScore);
           clearInterval(interval);
         } else {
           setDisplayScore(Math.round(current));
@@ -40,7 +41,7 @@ export default function ScoreCard({ score, label, color, size = "large" }: Score
   const radius = size === "large" ? 80 : 40;
   const strokeWidth = size === "large" ? 12 : 6;
   const circumference = 2 * Math.PI * radius;
-  const progress = ((score ?? 0) / 100) * circumference;
+  const progress = (Math.round(score ?? 0) / 100) * circumference;
 
   return (
     <motion.div

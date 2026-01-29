@@ -197,7 +197,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       userProfile,
       score: {
-        totalScore: scorePercentage,
+        totalScore: Math.round(scorePercentage),
         answeredQuestions: userResponses.length,
         totalQuestions,
         completionPercentage
