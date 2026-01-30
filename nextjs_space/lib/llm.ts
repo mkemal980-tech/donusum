@@ -82,6 +82,41 @@ export async function callLLM(
 }
 
 /**
+ * JSON string'i temizler ve parse eder
+ */
+function cleanAndParseJSON<T>(content: string): T {
+  let cleaned = content.trim();
+  
+  // Markdown code block'larını temizle
+  if (cleaned.startsWith('```json')) {
+    cleaned = cleaned.slice(7);
+  } else if (cleaned.startsWith('```')) {
+    cleaned = cleaned.slice(3);
+  }
+  if (cleaned.endsWith('```')) {
+    cleaned = cleaned.slice(0, -3);
+  }
+  
+  cleaned = cleaned.trim();
+  
+  // İlk { veya [ karakterini bul
+  const jsonStart = cleaned.search(/[\[{]/);
+  if (jsonStart > 0) {
+    cleaned = cleaned.slice(jsonStart);
+  }
+  
+  // Son } veya ] karakterini bul
+  const lastBrace = cleaned.lastIndexOf('}');
+  const lastBracket = cleaned.lastIndexOf(']');
+  const jsonEnd = Math.max(lastBrace, lastBracket);
+  if (jsonEnd > 0 && jsonEnd < cleaned.length - 1) {
+    cleaned = cleaned.slice(0, jsonEnd + 1);
+  }
+  
+  return JSON.parse(cleaned) as T;
+}
+
+/**
  * JSON formatında yanıt alır
  */
 export async function callLLMForJSON<T>(
@@ -92,8 +127,9 @@ export async function callLLMForJSON<T>(
   const response = await callLLM(prompt, systemPrompt, options);
   
   try {
-    return JSON.parse(response.content) as T;
-  } catch {
-    throw new Error(`JSON parse hatası: ${response.content}`);
+    return cleanAndParseJSON<T>(response.content);
+  } catch (e) {
+    console.error('LLM JSON parse hatası. Ham içerik:', response.content);
+    throw new Error('AI yanıtı işlenemedi. Lütfen tekrar deneyin.');
   }
 }
