@@ -214,33 +214,33 @@ export function IronmanChart() {
 
     ctx.clearRect(0, 0, size, size);
 
-    // Colors
-    const gridColor = 'rgba(200, 200, 210, 0.3)';
+    // Colors - Dark Theme
+    const gridColor = 'rgba(100, 116, 139, 0.25)';
     const axisColor = '#94a3b8';
-    const labelColor = '#64748b';
+    const labelColor = '#94a3b8';
 
-    // Draw background - light gray
-    ctx.fillStyle = '#f8fafc';
+    // Draw background - dark
+    ctx.fillStyle = '#1e293b';
     ctx.fillRect(padding, padding, chartSize, chartSize);
 
-    // Draw quadrant backgrounds with subtle colors
+    // Draw quadrant backgrounds with subtle dark colors
     const midX = padding + chartSize / 2;
     const midY = padding + chartSize / 2;
 
     // Walker (bottom-left)
-    ctx.fillStyle = 'rgba(241, 245, 249, 1)';
+    ctx.fillStyle = 'rgba(30, 41, 59, 1)';
     ctx.fillRect(padding, midY, chartSize / 2, chartSize / 2);
 
     // Sprinter (bottom-right)
-    ctx.fillStyle = 'rgba(241, 245, 249, 1)';
+    ctx.fillStyle = 'rgba(30, 41, 59, 1)';
     ctx.fillRect(midX, midY, chartSize / 2, chartSize / 2);
 
     // Marathon Runner (top-left)
-    ctx.fillStyle = 'rgba(241, 245, 249, 1)';
+    ctx.fillStyle = 'rgba(30, 41, 59, 1)';
     ctx.fillRect(padding, padding, chartSize / 2, chartSize / 2);
 
-    // Iron Man (top-right) - light blue tint
-    ctx.fillStyle = 'rgba(224, 242, 254, 0.5)';
+    // Iron Man (top-right) - subtle blue tint
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
     ctx.fillRect(midX, padding, chartSize / 2, chartSize / 2);
 
     // Draw grid lines
@@ -259,8 +259,8 @@ export function IronmanChart() {
     }
 
     // Draw center lines (thicker)
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.5)';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(midX, padding);
     ctx.lineTo(midX, padding + chartSize);
@@ -271,7 +271,7 @@ export function IronmanChart() {
     ctx.stroke();
 
     // Draw diagonal reference line (Iron Man line)
-    ctx.strokeStyle = 'rgba(99, 102, 241, 0.4)';
+    ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
     ctx.lineWidth = 2;
     ctx.setLineDash([8, 4]);
     ctx.beginPath();
@@ -298,12 +298,12 @@ export function IronmanChart() {
     ctx.font = 'bold 11px system-ui';
     ctx.textAlign = 'center';
     
-    ctx.fillStyle = '#94a3b8';
+    ctx.fillStyle = '#64748b';
     ctx.fillText('Yaya', padding + chartSize / 4, padding + chartSize - 12);
     ctx.fillText('Sprinter', padding + chartSize * 3 / 4, padding + chartSize - 12);
     ctx.fillText('Maraton Koşucusu', padding + chartSize / 4, padding + 18);
     
-    ctx.fillStyle = '#6366f1';
+    ctx.fillStyle = '#818cf8';
     ctx.fillText('Demir Adam', padding + chartSize * 3 / 4, padding + 18);
 
     // Helper function to convert score to position
@@ -317,7 +317,7 @@ export function IronmanChart() {
     };
 
     // Draw other companies as small blue dots
-    ctx.fillStyle = 'rgba(147, 197, 253, 0.7)';
+    ctx.fillStyle = 'rgba(96, 165, 250, 0.6)';
     otherCompanies.forEach(company => {
       const x = scoreToPos(company.velocity, 'x');
       const y = scoreToPos(company.endurance, 'y');
@@ -361,7 +361,7 @@ export function IronmanChart() {
     ctx.stroke();
 
     // Axis titles
-    ctx.fillStyle = '#475569';
+    ctx.fillStyle = '#94a3b8';
     ctx.font = 'bold 12px system-ui';
     ctx.textAlign = 'center';
     ctx.fillText('Velocity', size / 2, size - 5);
