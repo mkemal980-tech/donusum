@@ -123,35 +123,36 @@ export async function POST(request: NextRequest) {
       .map(([name, score]) => `${name} (${score.toFixed(1)})`)
       .join(', ');
 
-    // Öneri başlıklarını al
-    const recTitles = (recommendations as { id: string; title: string }[])
+    // Öneri sayısını sınırla (max 15)
+    const limitedRecs = (recommendations as { id: string; title: string }[]).slice(0, 15);
+    const recTitlesLimited = limitedRecs
       .map((r, i) => `${i + 1}. [ID:${r.id}] ${r.title}`)
       .join('\n');
 
-    const systemPrompt = `Sen bir sürdürülebilirlik danışmanısın. Verilen önerileri kullanıcı profiline göre önceliklendir ve her birine 1 cümle kişisel not ekle. SADECE JSON döndür.`;
+    const systemPrompt = `Sen bir sürdürülebilirlik danışmanısın. Önerileri önceliklendir ve kısa not ekle. SADECE JSON döndür.`;
 
     const prompt = `
-Kullanıcı Profili:
-- Sektör: ${sectorName}${subSectorName ? ` / ${subSectorName}` : ''}
-- Zayıf Alanlar: ${weakAreas || 'Yok'}
-- Güçlü Alanlar: ${strongAreas || 'Yok'}
+Profil: ${sectorName}${subSectorName ? ` / ${subSectorName}` : ''}
+Zayıf: ${weakAreas || 'Yok'} | Güçlü: ${strongAreas || 'Yok'}
 
 Öneriler:
-${recTitles}
+${recTitlesLimited}
 
-Görev: Bu önerileri aciliyet ve etki bazında öncelik sırasına koy (1=en öncelikli). Her öneri için sektöre özel 1 cümle kişisel not yaz.
+Her öneriyi öncelik sırasına koy (1=en öncelikli). Kısa not ekle (max 15 kelime).
 
-JSON formatı:
-{
-  "recommendations": [
-    { "id": "öneri_id", "priority": 1, "note": "Kişisel not" }
-  ]
-}
+JSON:
+{"recommendations":[{"id":"ID","priority":1,"note":"Not"}]}
 `;
 
     const aiResult = await callLLMForJSON<AIResponse>(prompt, systemPrompt, {
       temperature: 0.3,
-      maxTokens: 800
+      maxTokens: 2000
+    });
+    
+    // Eksik önerileri varsayılan öncelikle ekle
+    const processedRecs = (recommendations as { id: string; title: string }[]).map((rec, index) => {
+      const aiRec = aiResult.recommendations.find(r => r.id === rec.id);
+      return aiRec || { id: rec.id, priority: 100 + index, note: '' };
     });
 
     // 3. Cache'e kaydet
@@ -162,11 +163,11 @@ JSON formatı:
       create: {
         profileHash,
         surveyId,
-        recommendations: aiResult.recommendations as unknown as object,
+        recommendations: processedRecs as unknown as object,
         expiresAt
       },
       update: {
-        recommendations: aiResult.recommendations as unknown as object,
+        recommendations: processedRecs as unknown as object,
         expiresAt
       }
     });
@@ -175,7 +176,7 @@ JSON formatı:
     cleanExpiredCache();
 
     return NextResponse.json({
-      recommendations: aiResult.recommendations,
+      recommendations: processedRecs,
       fromCache: false,
       cacheExpires: expiresAt
     });
