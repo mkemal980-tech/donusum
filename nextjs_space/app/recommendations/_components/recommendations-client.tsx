@@ -20,7 +20,9 @@ import {
   Circle,
   BarChart3,
   Sparkles,
-  Loader2
+  Loader2,
+  Video,
+  ExternalLink
 } from "lucide-react";
 
 type CompletionStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
@@ -526,17 +528,76 @@ export default function RecommendationsClient() {
 
         {/* Bubble Chart View */}
         {viewMode === 'bubble' && (filteredRecommendations?.length ?? 0) > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mb-8"
-          >
-            <BubbleChart 
-              recommendations={filteredRecommendations as Recommendation[]} 
-              title="Öneri Önceliklendirme Grafiği"
-            />
-          </motion.div>
+          <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mb-8"
+            >
+              <BubbleChart 
+                recommendations={filteredRecommendations as Recommendation[]} 
+                title="Öneri Önceliklendirme Grafiği"
+              />
+            </motion.div>
+
+            {/* Eğitim ve Danışmanlık Bölümü */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mb-8"
+            >
+              <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] p-6">
+                <h3 className="text-lg font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
+                  <Video className="text-[var(--accent)]" size={20} />
+                  Eğitim ve Danışmanlık
+                </h3>
+                
+                {filteredRecommendations.filter(r => r.videoUrl).length > 0 ? (
+                  <div className="space-y-3">
+                    {filteredRecommendations
+                      .filter(r => r.videoUrl)
+                      .map((rec, index) => (
+                        <motion.div
+                          key={rec.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.05 * index }}
+                          className="flex items-center justify-between p-4 bg-[var(--bg-card-2)] rounded-lg border border-[var(--border-soft)] hover:border-[var(--accent)]/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--error)] to-[var(--accent-bright)] flex items-center justify-center flex-shrink-0">
+                              <Video size={18} className="text-white" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-[var(--text-main)] truncate">{rec.title}</p>
+                              <p className="text-xs text-[var(--text-muted)]">Video eğitim mevcut</p>
+                            </div>
+                          </div>
+                          <a
+                            href={rec.videoUrl || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--error)] to-[var(--accent-bright)] text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity flex-shrink-0"
+                          >
+                            <ExternalLink size={14} />
+                            <span>İzle</span>
+                          </a>
+                        </motion.div>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="w-16 h-16 rounded-full bg-[var(--bg-card-2)] flex items-center justify-center mb-4">
+                      <Video size={28} className="text-[var(--text-dim)]" />
+                    </div>
+                    <p className="text-[var(--text-muted)] text-sm">Eğitim ve Danışmanlık Videonuz Bulunmamaktadır</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
         )}
 
         {/* List View */}
