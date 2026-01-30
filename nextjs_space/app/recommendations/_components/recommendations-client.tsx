@@ -22,7 +22,10 @@ import {
   Sparkles,
   Loader2,
   Video,
-  ExternalLink
+  ExternalLink,
+  X,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 
 type CompletionStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
@@ -79,6 +82,10 @@ export default function RecommendationsClient() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiFromCache, setAiFromCache] = useState(false);
+  
+  // Video oynatıcı state'leri
+  const [activeVideo, setActiveVideo] = useState<{ url: string; title: string } | null>(null);
+  const [videoSize, setVideoSize] = useState({ width: 800, height: 450 });
 
   const fetchRecommendations = async () => {
     try {
@@ -575,15 +582,13 @@ export default function RecommendationsClient() {
                               <p className="text-xs text-[var(--text-muted)]">Video eğitim mevcut</p>
                             </div>
                           </div>
-                          <a
-                            href={rec.videoUrl || '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            onClick={() => setActiveVideo({ url: rec.videoUrl || '', title: rec.title })}
                             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--error)] to-[var(--accent-bright)] text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity flex-shrink-0"
                           >
-                            <ExternalLink size={14} />
+                            <Play size={14} />
                             <span>İzle</span>
-                          </a>
+                          </button>
                         </motion.div>
                       ))}
                   </div>
@@ -714,6 +719,94 @@ export default function RecommendationsClient() {
           </motion.div>
         )}
       </main>
+
+      {/* Video Oynatıcı Modal */}
+      {activeVideo && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setActiveVideo(null)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="relative bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] overflow-hidden shadow-2xl"
+            style={{ width: videoSize.width, maxWidth: '95vw', maxHeight: '90vh' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-[var(--border-soft)] bg-[var(--bg-card-2)]">
+              <h3 className="text-sm font-semibold text-[var(--text-main)] truncate flex-1 mr-4">
+                {activeVideo.title}
+              </h3>
+              <div className="flex items-center gap-2">
+                {/* Boyut Ayarlama Butonları */}
+                <button
+                  onClick={() => setVideoSize({ width: 640, height: 360 })}
+                  className={`p-2 rounded-lg transition-colors ${videoSize.width === 640 ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                  title="Küçük"
+                >
+                  <Minimize2 size={16} />
+                </button>
+                <button
+                  onClick={() => setVideoSize({ width: 800, height: 450 })}
+                  className={`p-2 rounded-lg transition-colors ${videoSize.width === 800 ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                  title="Orta"
+                >
+                  <Video size={16} />
+                </button>
+                <button
+                  onClick={() => setVideoSize({ width: 1200, height: 675 })}
+                  className={`p-2 rounded-lg transition-colors ${videoSize.width === 1200 ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                  title="Büyük"
+                >
+                  <Maximize2 size={16} />
+                </button>
+                {/* Kapat Butonu */}
+                <button
+                  onClick={() => setActiveVideo(null)}
+                  className="p-2 rounded-lg bg-[var(--error)]/20 text-[var(--error)] hover:bg-[var(--error)]/30 transition-colors ml-2"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+            
+            {/* Video Container */}
+            <div className="relative bg-black" style={{ aspectRatio: '16/9' }}>
+              {activeVideo.url.includes('youtube.com') || activeVideo.url.includes('youtu.be') ? (
+                <iframe
+                  src={`https://www.youtube.com/embed/${
+                    activeVideo.url.includes('youtu.be') 
+                      ? activeVideo.url.split('youtu.be/')[1]?.split('?')[0]
+                      : activeVideo.url.split('v=')[1]?.split('&')[0]
+                  }?autoplay=1`}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : activeVideo.url.includes('vimeo.com') ? (
+                <iframe
+                  src={`https://player.vimeo.com/video/${activeVideo.url.split('vimeo.com/')[1]?.split('?')[0]}?autoplay=1`}
+                  className="w-full h-full"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <video
+                  src={activeVideo.url}
+                  className="w-full h-full"
+                  controls
+                  autoPlay
+                />
+              )}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }
