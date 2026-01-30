@@ -449,13 +449,13 @@ export function IronmanChart() {
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-medium text-[var(--text-dim)]">Hız</span>
                 </div>
-                <div className="relative h-6 bg-[var(--bg-card-2)] rounded-full overflow-hidden">
+                <div className="relative h-6 bg-[var(--bg-card)] rounded-full overflow-hidden">
                   {/* Your Current - Pink */}
                   <div 
                     className="absolute h-6 flex items-center justify-end pr-1 z-10"
                     style={{ width: `${((data.current?.velocity ?? 1) / 5) * 100}%` }}
                   >
-                    <div className="bg-[var(--accent-bright)] h-5 rounded-full flex items-center justify-center px-2 text-[10px] text-white font-medium min-w-[32px]">
+                    <div className="bg-[#ec4899] h-5 rounded-full flex items-center justify-center px-2 text-[10px] text-white font-medium min-w-[32px]">
                       {(data.current?.velocity ?? 1).toFixed(1)}
                     </div>
                   </div>
@@ -464,18 +464,18 @@ export function IronmanChart() {
                     className="absolute h-6 flex items-center z-10"
                     style={{ left: `${((data.target?.velocity ?? 3) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                   >
-                    <div className="bg-[var(--info-bg)]0 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                    <div className="bg-[#3b82f6] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
                       {(data.target?.velocity ?? 3).toFixed(1)}
                     </div>
                   </div>
-                  {/* Industry Avg - Purple */}
+                  {/* Industry Avg - Purple & Orange */}
                   {data.benchmark && (
                     <>
                       <div 
                         className="absolute h-6 flex items-center z-10"
                         style={{ left: `${((data.benchmark.current?.velocity ?? 2.5) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
-                        <div className="bg-[var(--accent)]/100 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                        <div className="bg-[#8b5cf6] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
                           {(data.benchmark.current?.velocity ?? 2.5).toFixed(1)}
                         </div>
                       </div>
@@ -483,7 +483,7 @@ export function IronmanChart() {
                         className="absolute h-6 flex items-center z-10"
                         style={{ left: `${((data.benchmark.target?.velocity ?? 3.0) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
-                        <div className="bg-[var(--blue-dark)] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                        <div className="bg-[#f97316] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
                           {(data.benchmark.target?.velocity ?? 3.0).toFixed(1)}
                         </div>
                       </div>
@@ -497,13 +497,13 @@ export function IronmanChart() {
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-medium text-[var(--text-dim)]">Dayanıklılık</span>
                 </div>
-                <div className="relative h-6 bg-[var(--bg-card-2)] rounded-full overflow-hidden">
+                <div className="relative h-6 bg-[var(--bg-card)] rounded-full overflow-hidden">
                   {/* Your Current - Pink */}
                   <div 
                     className="absolute h-6 flex items-center justify-end pr-1 z-10"
                     style={{ width: `${((data.current?.endurance ?? 1) / 5) * 100}%` }}
                   >
-                    <div className="bg-[var(--accent-bright)] h-5 rounded-full flex items-center justify-center px-2 text-[10px] text-white font-medium min-w-[32px]">
+                    <div className="bg-[#ec4899] h-5 rounded-full flex items-center justify-center px-2 text-[10px] text-white font-medium min-w-[32px]">
                       {(data.current?.endurance ?? 1).toFixed(1)}
                     </div>
                   </div>
@@ -512,18 +512,18 @@ export function IronmanChart() {
                     className="absolute h-6 flex items-center z-10"
                     style={{ left: `${((data.target?.endurance ?? 3) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                   >
-                    <div className="bg-[var(--info-bg)]0 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                    <div className="bg-[#3b82f6] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
                       {(data.target?.endurance ?? 3).toFixed(1)}
                     </div>
                   </div>
-                  {/* Industry Avg - Purple */}
+                  {/* Industry Avg - Purple & Orange */}
                   {data.benchmark && (
                     <>
                       <div 
                         className="absolute h-6 flex items-center z-10"
                         style={{ left: `${((data.benchmark.current?.endurance ?? 2.5) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
-                        <div className="bg-[var(--accent)]/100 h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                        <div className="bg-[#8b5cf6] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
                           {(data.benchmark.current?.endurance ?? 2.5).toFixed(1)}
                         </div>
                       </div>
@@ -531,7 +531,7 @@ export function IronmanChart() {
                         className="absolute h-6 flex items-center z-10"
                         style={{ left: `${((data.benchmark.target?.endurance ?? 3.0) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
-                        <div className="bg-[var(--blue-dark)] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                        <div className="bg-[#f97316] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
                           {(data.benchmark.target?.endurance ?? 3.0).toFixed(1)}
                         </div>
                       </div>
@@ -543,19 +543,19 @@ export function IronmanChart() {
               {/* Legend */}
               <div className="flex flex-wrap gap-3 text-[10px] text-[var(--text-muted)] mt-3">
                 <div className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent-bright)]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#ec4899]" />
                   <span>Mevcut</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[var(--info-bg)]0" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]" />
                   <span>Hedef</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6]" />
                   <span>Sektör Ort. Mevcut</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[var(--blue-dark)]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#f97316]" />
                   <span>Sektör Ort. Hedef</span>
                 </div>
               </div>
