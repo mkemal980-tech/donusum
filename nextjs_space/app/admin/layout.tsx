@@ -1,28 +1,59 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Settings, FolderTree, Lightbulb, LayoutDashboard, Factory, BarChart3, Scale, FileText, Activity, Download, Users, Building2, UserCheck, Files } from "lucide-react";
 
-const navItems = [
-  { href: "/admin", label: "Genel Bakış", icon: LayoutDashboard, section: null },
-  { href: "/admin/dashboard", label: "Sistem Dashboard", icon: BarChart3, section: null },
-  { href: "/admin/users", label: "Kullanıcılar", icon: Users, section: "Kullanıcı Yönetimi" },
-  { href: "/admin/units", label: "Birimler", icon: Building2, section: "Kullanıcı Yönetimi" },
-  { href: "/admin/surveys", label: "Anketler", icon: FileText, section: "Anket Yönetimi" },
-  { href: "/admin/survey-assignments", label: "Anket Atamaları", icon: UserCheck, section: "Anket Yönetimi" },
-  { href: "/admin/categories", label: "Kategoriler & Sorular", icon: FolderTree, section: "Anket Yönetimi" },
-  { href: "/admin/recommendations", label: "Öneriler", icon: Lightbulb, section: "Anket Yönetimi" },
-  { href: "/admin/documents", label: "Yüklenen Dosyalar", icon: Files, section: "Anket Yönetimi" },
-  { href: "/admin/sectors", label: "Sektörler", icon: Factory, section: "Sektör & Benchmark" },
-  { href: "/admin/benchmarks", label: "Benchmark Verileri", icon: BarChart3, section: "Sektör & Benchmark" },
-  { href: "/admin/sector-weights", label: "Sektör Ağırlıkları", icon: Scale, section: "Sektör & Benchmark" },
-  { href: "/admin/ironman-benchmarks", label: "Ironman Benchmark", icon: Activity, section: "Sektör & Benchmark" },
-  { href: "/admin/export", label: "Veri Dışa Aktarma", icon: Download, section: "Diğer" },
+const baseNavItems = [
+  { href: "/admin", label: "Genel Bakış", icon: LayoutDashboard, section: null, roles: ["ADMIN", "UNIT_MANAGER"] },
+  { href: "/admin/dashboard", label: "Sistem Dashboard", icon: BarChart3, section: null, roles: ["ADMIN"], requiresUnitResponses: true },
+  { href: "/admin/users", label: "Kullanıcılar", icon: Users, section: "Kullanıcı Yönetimi", roles: ["ADMIN"] },
+  { href: "/admin/units", label: "Birimler", icon: Building2, section: "Kullanıcı Yönetimi", roles: ["ADMIN"] },
+  { href: "/admin/surveys", label: "Anketler", icon: FileText, section: "Anket Yönetimi", roles: ["ADMIN"] },
+  { href: "/admin/survey-assignments", label: "Anket Atamaları", icon: UserCheck, section: "Anket Yönetimi", roles: ["ADMIN"] },
+  { href: "/admin/categories", label: "Kategoriler & Sorular", icon: FolderTree, section: "Anket Yönetimi", roles: ["ADMIN"] },
+  { href: "/admin/recommendations", label: "Öneriler", icon: Lightbulb, section: "Anket Yönetimi", roles: ["ADMIN"] },
+  { href: "/admin/documents", label: "Yüklenen Dosyalar", icon: Files, section: "Anket Yönetimi", roles: ["ADMIN"] },
+  { href: "/admin/sectors", label: "Sektörler", icon: Factory, section: "Sektör & Benchmark", roles: ["ADMIN"] },
+  { href: "/admin/benchmarks", label: "Benchmark Verileri", icon: BarChart3, section: "Sektör & Benchmark", roles: ["ADMIN"] },
+  { href: "/admin/sector-weights", label: "Sektör Ağırlıkları", icon: Scale, section: "Sektör & Benchmark", roles: ["ADMIN"] },
+  { href: "/admin/ironman-benchmarks", label: "Ironman Benchmark", icon: Activity, section: "Sektör & Benchmark", roles: ["ADMIN"] },
+  { href: "/admin/export", label: "Veri Dışa Aktarma", icon: Download, section: "Diğer", roles: ["ADMIN"] },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const [unitHasResponses, setUnitHasResponses] = useState(false);
+  
+  const userRole = (session?.user as { role?: string })?.role || "USER";
+  
+  // Check if unit manager's unit has responses
+  useEffect(() => {
+    if (userRole === "UNIT_MANAGER") {
+      fetch("/api/admin/dashboard/unit-check")
+        .then((res) => res.json())
+        .then((data) => {
+          setUnitHasResponses(data.hasResponses || false);
+        })
+        .catch(() => setUnitHasResponses(false));
+    }
+  }, [userRole]);
+  
+  // Filter nav items based on user role
+  const navItems = baseNavItems.filter((item) => {
+    // Check if user role is allowed
+    if (!item.roles.includes(userRole)) {
+      // Special case: UNIT_MANAGER can see dashboard if their unit has responses
+      if (item.requiresUnitResponses && userRole === "UNIT_MANAGER" && unitHasResponses) {
+        return true;
+      }
+      return false;
+    }
+    return true;
+  });
   
   // Group items by section
   const sections = navItems.reduce((acc, item) => {
