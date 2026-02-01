@@ -5,18 +5,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/db";
 
-const TEST_USER_ID = "cmkzye325000tmo085fruemez";
-
-async function getUserId() {
-  try {
-    const session = await getServerSession(authOptions);
-    if (session?.user) {
-      return (session.user as any)?.id || TEST_USER_ID;
-    }
-  } catch (e) {}
-  return TEST_USER_ID;
-}
-
 // Durum bazlı çarpan
 function getStatusMultiplier(status: string): number {
   switch (status) {
@@ -31,7 +19,11 @@ function getStatusMultiplier(status: string): number {
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getUserId();
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = session.user.id;
     const { searchParams } = new URL(request.url);
     const surveyId = searchParams.get('surveyId');
 

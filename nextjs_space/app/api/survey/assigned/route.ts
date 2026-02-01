@@ -5,23 +5,15 @@ import { prisma } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 
-const TEST_USER_ID = "cmkzye325000tmo085fruemez";
-
-async function getUserId() {
-  const session = await getServerSession(authOptions);
-  if (session?.user) {
-    return {
-      userId: (session.user as any)?.id || TEST_USER_ID,
-      role: (session.user as any)?.role || "USER"
-    };
-  }
-  return { userId: TEST_USER_ID, role: "USER" };
-}
-
 // Kullanıcıya atanan anketleri getir
 export async function GET() {
   try {
-    const { userId, role: userRole } = await getUserId();
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = session.user.id;
+    const userRole = (session.user as any)?.role || "USER";
 
     // Admin ise tüm aktif anketleri gör
     if (userRole === "ADMIN") {

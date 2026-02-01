@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
-
-// Test kullanıcı ID (geliştirme için)
-const TEST_USER_ID = 'cmkzye325000tmo085fruemez';
 
 /**
  * Digitopia-Style Ironman Analysis API
@@ -55,7 +54,11 @@ const quadrantInfo: Record<string, { title: string; titleEn: string; description
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = TEST_USER_ID;
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = session.user.id;
 
     // Kullanıcı bilgilerini al
     const user = await prisma.user.findUnique({
@@ -223,7 +226,11 @@ export async function GET(request: NextRequest) {
 // Target skorları kaydet
 export async function POST(request: NextRequest) {
   try {
-    const userId = TEST_USER_ID;
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = session.user.id;
     const body = await request.json();
     const { targetVelocity, targetEndurance, targetDate } = body;
 

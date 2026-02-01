@@ -5,21 +5,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/db";
 
-const TEST_USER_ID = "cmkzye325000tmo085fruemez";
-
-async function getUserId() {
-  try {
-    const session = await getServerSession(authOptions);
-    if (session?.user) {
-      return (session.user as any)?.id || TEST_USER_ID;
-    }
-  } catch (e) {}
-  return TEST_USER_ID;
+async function getUserIdOrNull() {
+  const session = await getServerSession(authOptions);
+  return session?.user?.id || null;
 }
 
 export async function GET() {
   try {
-    const userId = await getUserId();
+    const userId = await getUserIdOrNull();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const roadmapItems = await prisma.roadmapItem.findMany({
       where: { userId },
@@ -45,7 +41,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getUserId();
+    const userId = await getUserIdOrNull();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const body = await request.json();
     const { recommendationId, plannedQuarter, plannedYear, priority } = body ?? {};
 
@@ -93,7 +92,10 @@ export async function POST(request: NextRequest) {
 // Status güncelleme için PUT
 export async function PUT(request: NextRequest) {
   try {
-    const userId = await getUserId();
+    const userId = await getUserIdOrNull();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const body = await request.json();
     const { recommendationId, status, plannedQuarter, plannedYear, priority } = body ?? {};
 
@@ -143,7 +145,10 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const userId = await getUserId();
+    const userId = await getUserIdOrNull();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const { searchParams } = new URL(request.url);
     const recommendationId = searchParams.get('recommendationId');
 

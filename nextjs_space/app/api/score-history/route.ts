@@ -5,27 +5,14 @@ import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-const TEST_USER_ID = "cmkzye325000tmo085fruemez";
-
-interface SessionUser {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-}
-
-async function getUserId() {
-  const session = await getServerSession(authOptions);
-  if (session?.user) {
-    return (session.user as SessionUser)?.id || TEST_USER_ID;
-  }
-  return TEST_USER_ID;
-}
-
 // Skor geçmişini getir
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getUserId();
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = session.user.id;
     const { searchParams } = new URL(request.url);
     
     const surveyId = searchParams.get('surveyId');
@@ -133,7 +120,11 @@ export async function GET(request: NextRequest) {
 // Manuel snapshot oluştur
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getUserId();
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const userId = session.user.id;
     const { surveyId } = await request.json();
 
     // Mevcut skorları hesapla

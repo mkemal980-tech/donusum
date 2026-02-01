@@ -5,17 +5,13 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
 
-// Test mode için varsayılan kullanıcı ID
-const TEST_USER_ID = "cmkzye325000tmo085fruemez";
-
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    const userId = (session?.user as any)?.id || TEST_USER_ID;
-    
-    if (!userId) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const userId = session.user.id;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },

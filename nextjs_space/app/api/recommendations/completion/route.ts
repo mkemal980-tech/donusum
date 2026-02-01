@@ -5,21 +5,9 @@ import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-const TEST_USER_ID = "cmkzye325000tmo085fruemez";
-
-interface SessionUser {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  image?: string | null;
-}
-
-async function getUserId() {
+async function getUserIdOrNull() {
   const session = await getServerSession(authOptions);
-  if (session?.user) {
-    return (session.user as SessionUser)?.id || TEST_USER_ID;
-  }
-  return TEST_USER_ID;
+  return session?.user?.id || null;
 }
 
 // Kullanıcının mevcut skorlarını hesapla
@@ -162,7 +150,10 @@ async function recordScoreHistory(
 // Get all completion statuses for the current user
 export async function GET() {
   try {
-    const userId = await getUserId();
+    const userId = await getUserIdOrNull();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     // RoadmapItem tablosundan oku (yol haritası ile senkronize)
     const roadmapItems = await prisma.roadmapItem.findMany({
@@ -212,7 +203,10 @@ export async function GET() {
 // Create or update a completion status
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getUserId();
+    const userId = await getUserIdOrNull();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const { recommendationId, status, notes, surveyId } = await request.json();
 
@@ -309,7 +303,10 @@ export async function POST(request: NextRequest) {
 // Delete a completion status (reset to not started)
 export async function DELETE(request: NextRequest) {
   try {
-    const userId = await getUserId();
+    const userId = await getUserIdOrNull();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const { searchParams } = new URL(request.url);
     const recommendationId = searchParams.get('recommendationId');
