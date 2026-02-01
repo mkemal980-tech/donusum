@@ -6,6 +6,7 @@ import { Settings, FolderTree, Lightbulb, LayoutDashboard, Factory, BarChart3, S
 
 const navItems = [
   { href: "/admin", label: "Genel Bakış", icon: LayoutDashboard, section: null },
+  { href: "/admin/dashboard", label: "Sistem Dashboard", icon: BarChart3, section: null },
   { href: "/admin/users", label: "Kullanıcılar", icon: Users, section: "Kullanıcı Yönetimi" },
   { href: "/admin/units", label: "Birimler", icon: Building2, section: "Kullanıcı Yönetimi" },
   { href: "/admin/surveys", label: "Anketler", icon: FileText, section: "Anket Yönetimi" },
