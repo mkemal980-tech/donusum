@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, FileText, Plus, Trash2, Search, UserCheck, Calendar, Building2 } from "lucide-react";
+import { Users, FileText, Plus, Trash2, Search, UserCheck, Calendar, Building2, Clock, AlertTriangle, RefreshCw, Timer, TimerOff } from "lucide-react";
 
 interface User {
   id: string;
@@ -24,6 +24,10 @@ interface Assignment {
   surveyId: string;
   assignedAt: string;
   isActive: boolean;
+  hasDeadline: boolean;
+  deadline: string | null;
+  deadlineExtendedAt: string | null;
+  deadlineExtendedBy: string | null;
   user: User;
   survey: { id: string; name: string };
 }
@@ -38,6 +42,14 @@ export default function SurveyAssignmentsPage() {
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  
+  // Süre sınırı ayarları
+  const [hasDeadline, setHasDeadline] = useState(false);
+  const [deadline, setDeadline] = useState("");
+  
+  // Süre uzatma modalı
+  const [extendModal, setExtendModal] = useState<Assignment | null>(null);
+  const [newDeadline, setNewDeadline] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -72,13 +84,23 @@ export default function SurveyAssignmentsPage() {
       setMessage({ type: "error", text: "Lütfen kullanıcı ve anket seçin" });
       return;
     }
+    
+    if (hasDeadline && !deadline) {
+      setMessage({ type: "error", text: "Süre sınırı aktifse bitiş tarihi seçmelisiniz" });
+      return;
+    }
 
     setSaving(true);
     try {
       const res = await fetch("/api/admin/survey-assignments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: selectedUserId, surveyId: selectedSurveyId })
+        body: JSON.stringify({ 
+          userId: selectedUserId, 
+          surveyId: selectedSurveyId,
+          hasDeadline,
+          deadline: hasDeadline ? deadline : null
+        })
       });
 
       const data = await res.json();
@@ -90,12 +112,83 @@ export default function SurveyAssignmentsPage() {
       setMessage({ type: "success", text: "Anket başarıyla atandı" });
       setSelectedUserId("");
       setSelectedSurveyId("");
+      setHasDeadline(false);
+      setDeadline("");
       fetchData();
     } catch (error: any) {
       setMessage({ type: "error", text: error.message });
     } finally {
       setSaving(false);
     }
+  };
+  
+  const handleExtendDeadline = async () => {
+    if (!extendModal || !newDeadline) return;
+    
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/survey-assignments", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          id: extendModal.id,
+          extendDeadline: true,
+          deadline: newDeadline
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Süre uzatma başarısız");
+      }
+
+      setMessage({ type: "success", text: "Süre başarıyla uzatıldı" });
+      setExtendModal(null);
+      setNewDeadline("");
+      fetchData();
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+  
+  const handleToggleDeadline = async (assignment: Assignment, enable: boolean) => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/survey-assignments", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          id: assignment.id,
+          hasDeadline: enable,
+          deadline: enable ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : null
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error("İşlem başarısız");
+      }
+
+      setMessage({ type: "success", text: enable ? "Süre sınırı aktifleştirildi (varsayılan 7 gün)" : "Süre sınırı kaldırıldı" });
+      fetchData();
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+  
+  const isExpired = (assignment: Assignment) => {
+    if (!assignment.hasDeadline || !assignment.deadline) return false;
+    return new Date(assignment.deadline) < new Date();
+  };
+  
+  const getDaysRemaining = (deadline: string) => {
+    const diff = new Date(deadline).getTime() - new Date().getTime();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return days;
   };
 
   const handleRemove = async (assignmentId: string) => {
@@ -179,7 +272,7 @@ export default function SurveyAssignmentsPage() {
           Yeni Anket Ata
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">Kullanıcı</label>
             <select
@@ -188,7 +281,7 @@ export default function SurveyAssignmentsPage() {
                 setSelectedUserId(e.target.value);
                 setSelectedSurveyId("");
               }}
-              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)]"
+              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] bg-[var(--bg-card)] text-[var(--text-main)]"
             >
               <option value="">Kullanıcı seçin...</option>
               {users.map(user => (
@@ -205,7 +298,7 @@ export default function SurveyAssignmentsPage() {
               value={selectedSurveyId}
               onChange={(e) => setSelectedSurveyId(e.target.value)}
               disabled={!selectedUserId}
-              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] disabled:bg-[var(--bg-card-2)] disabled:cursor-not-allowed"
+              className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] disabled:bg-[var(--bg-card-2)] disabled:cursor-not-allowed bg-[var(--bg-card)] text-[var(--text-main)]"
             >
               <option value="">{selectedUserId ? "Anket seçin..." : "Önce kullanıcı seçin"}</option>
               {availableSurveysForUser.map(survey => (
@@ -219,10 +312,39 @@ export default function SurveyAssignmentsPage() {
             )}
           </div>
           
+          {/* Süre Sınırı Ayarları */}
+          <div>
+            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">Süre Sınırı</label>
+            <div className="flex items-center gap-3">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={hasDeadline}
+                  onChange={(e) => {
+                    setHasDeadline(e.target.checked);
+                    if (!e.target.checked) setDeadline("");
+                  }}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-[var(--ui-passive)] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[var(--accent)]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[var(--accent)]"></div>
+              </label>
+              <span className="text-sm text-[var(--text-muted)]">{hasDeadline ? "Aktif" : "Pasif"}</span>
+            </div>
+            {hasDeadline && (
+              <input
+                type="date"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="w-full mt-2 px-3 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] bg-[var(--bg-card)] text-[var(--text-main)]"
+              />
+            )}
+          </div>
+          
           <div className="flex items-end">
             <button
               onClick={handleAssign}
-              disabled={!selectedUserId || !selectedSurveyId || saving}
+              disabled={!selectedUserId || !selectedSurveyId || saving || (hasDeadline && !deadline)}
               className="w-full px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] disabled:bg-[var(--ui-passive)] disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
             >
               {saving ? (
@@ -267,16 +389,20 @@ export default function SurveyAssignmentsPage() {
               <thead className="bg-[var(--bg-card-2)]">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Kullanıcı</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Organizasyon</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Anket</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Atama Tarihi</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Süre Sınırı</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Durum</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-[var(--text-dim)] uppercase">İşlemler</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredAssignments.map((assignment) => (
-                  <tr key={assignment.id} className="hover:bg-[var(--bg-card-2)]">
+              <tbody className="divide-y divide-[var(--border-soft)]">
+                {filteredAssignments.map((assignment) => {
+                  const expired = isExpired(assignment);
+                  const daysLeft = assignment.deadline ? getDaysRemaining(assignment.deadline) : null;
+                  
+                  return (
+                  <tr key={assignment.id} className={`hover:bg-[var(--bg-card-2)] ${expired ? 'bg-[rgba(239,68,68,0.05)]' : ''}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 flex items-center justify-center">
@@ -286,12 +412,6 @@ export default function SurveyAssignmentsPage() {
                           <p className="font-medium text-[var(--text-main)]">{getUserName(assignment.user)}</p>
                           <p className="text-sm text-[var(--text-dim)]">{assignment.user.email}</p>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 text-[var(--text-muted)]">
-                        <Building2 className="w-4 h-4" />
-                        {assignment.user.organization || "-"}
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -307,25 +427,93 @@ export default function SurveyAssignmentsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        assignment.isActive
-                          ? "bg-[rgba(12,193,195,0.15)] text-[var(--accent-bright)]"
-                          : "bg-[var(--bg-card-2)] text-[var(--text-main)]"
-                      }`}>
-                        {assignment.isActive ? "Aktif" : "Pasif"}
-                      </span>
+                      {assignment.hasDeadline && assignment.deadline ? (
+                        <div className="space-y-1">
+                          <div className={`flex items-center gap-2 ${expired ? 'text-[var(--error)]' : daysLeft !== null && daysLeft <= 3 ? 'text-[var(--warning)]' : 'text-[var(--text-muted)]'}`}>
+                            <Clock className="w-4 h-4" />
+                            <span>{new Date(assignment.deadline).toLocaleDateString("tr-TR")}</span>
+                          </div>
+                          {expired ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-[var(--error)]">
+                              <AlertTriangle className="w-3 h-3" />
+                              Süresi doldu
+                            </span>
+                          ) : daysLeft !== null && (
+                            <span className={`text-xs ${daysLeft <= 3 ? 'text-[var(--warning)]' : 'text-[var(--text-dim)]'}`}>
+                              {daysLeft} gün kaldı
+                            </span>
+                          )}
+                          {assignment.deadlineExtendedAt && (
+                            <span className="block text-xs text-[var(--accent)]">
+                              Uzatıldı: {new Date(assignment.deadlineExtendedAt).toLocaleDateString("tr-TR")}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-[var(--text-dim)] text-sm flex items-center gap-1">
+                          <TimerOff className="w-4 h-4" />
+                          Sınırsız
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {expired ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgba(239,68,68,0.15)] text-[var(--error)]">
+                          Süresi Doldu
+                        </span>
+                      ) : (
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          assignment.isActive
+                            ? "bg-[rgba(12,193,195,0.15)] text-[var(--accent-bright)]"
+                            : "bg-[var(--bg-card-2)] text-[var(--text-main)]"
+                        }`}>
+                          {assignment.isActive ? "Aktif" : "Pasif"}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => handleRemove(assignment.id)}
-                        className="p-2 text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)] rounded-lg transition-colors"
-                        title="Atamayı Kaldır"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        {/* Süre sınırı toggle */}
+                        {!assignment.hasDeadline ? (
+                          <button
+                            onClick={() => handleToggleDeadline(assignment, true)}
+                            className="p-2 text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-lg transition-colors"
+                            title="Süre sınırı ekle"
+                          >
+                            <Timer className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => {
+                                setExtendModal(assignment);
+                                setNewDeadline(assignment.deadline ? new Date(new Date(assignment.deadline).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '');
+                              }}
+                              className="p-2 text-[var(--blue-main)] hover:bg-[var(--blue-main)]/10 rounded-lg transition-colors"
+                              title="Süre uzat"
+                            >
+                              <RefreshCw className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleToggleDeadline(assignment, false)}
+                              className="p-2 text-[var(--warning)] hover:bg-[var(--warning)]/10 rounded-lg transition-colors"
+                              title="Süre sınırını kaldır"
+                            >
+                              <TimerOff className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        <button
+                          onClick={() => handleRemove(assignment.id)}
+                          className="p-2 text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)] rounded-lg transition-colors"
+                          title="Atamayı Kaldır"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
@@ -370,6 +558,66 @@ export default function SurveyAssignmentsPage() {
           <p className="text-sm text-[var(--text-dim)] mt-4 text-center">ve {users.length - 9} kullanıcı daha...</p>
         )}
       </div>
+      
+      {/* Süre Uzatma Modalı */}
+      {extendModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-md mx-4 border border-[var(--border-soft)]">
+            <h3 className="text-lg font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 text-[var(--accent)]" />
+              Süre Uzat
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="p-3 bg-[var(--bg-card-2)] rounded-lg">
+                <p className="text-sm text-[var(--text-muted)]">Kullanıcı</p>
+                <p className="font-medium text-[var(--text-main)]">{getUserName(extendModal.user)}</p>
+                <p className="text-sm text-[var(--text-muted)]">Anket</p>
+                <p className="font-medium text-[var(--text-main)]">{extendModal.survey.name}</p>
+                {extendModal.deadline && (
+                  <>
+                    <p className="text-sm text-[var(--text-muted)] mt-2">Mevcut Bitiş Tarihi</p>
+                    <p className={`font-medium ${isExpired(extendModal) ? 'text-[var(--error)]' : 'text-[var(--text-main)]'}`}>
+                      {new Date(extendModal.deadline).toLocaleDateString("tr-TR")}
+                      {isExpired(extendModal) && ' (Süresi doldu)'}
+                    </p>
+                  </>
+                )}
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">Yeni Bitiş Tarihi</label>
+                <input
+                  type="date"
+                  value={newDeadline}
+                  onChange={(e) => setNewDeadline(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-3 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] bg-[var(--bg-card)] text-[var(--text-main)]"
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setExtendModal(null);
+                    setNewDeadline("");
+                  }}
+                  className="flex-1 px-4 py-2 border border-[var(--border-soft)] text-[var(--text-muted)] rounded-lg hover:bg-[var(--bg-card-2)] transition-colors"
+                >
+                  İptal
+                </button>
+                <button
+                  onClick={handleExtendDeadline}
+                  disabled={!newDeadline || saving}
+                  className="flex-1 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] disabled:bg-[var(--ui-passive)] disabled:cursor-not-allowed transition-colors"
+                >
+                  {saving ? "Kaydediliyor..." : "Süreyi Uzat"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

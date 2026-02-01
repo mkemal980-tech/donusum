@@ -18,7 +18,10 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Upload
+  Upload,
+  Clock,
+  AlertTriangle,
+  Lock
 } from "lucide-react";
 
 interface Question {
@@ -62,6 +65,9 @@ interface Survey {
   name: string;
   description?: string;
   isActive: boolean;
+  hasDeadline?: boolean;
+  deadline?: string | null;
+  isExpired?: boolean;
 }
 
 export default function SurveyClient() {
@@ -431,6 +437,61 @@ export default function SurveyClient() {
       </div>
     );
   }
+  
+  // Seçili anket süresi dolmuşsa
+  if (selectedSurvey?.isExpired) {
+    return (
+      <div className="min-h-screen bg-[var(--bg-main)]">
+        <Header />
+        <div className="max-w-[800px] mx-auto px-6 py-16">
+          <div className="bg-[var(--bg-card)] rounded-2xl shadow-lg p-8 text-center border border-[var(--error)]/30">
+            <div className="w-20 h-20 bg-[rgba(239,68,68,0.1)] rounded-full flex items-center justify-center mx-auto mb-6">
+              <Lock size={40} className="text-[var(--error)]" />
+            </div>
+            <h2 className="text-2xl font-bold text-[var(--text-main)] mb-3">Anket Süresi Doldu</h2>
+            <p className="text-[var(--text-muted)] mb-4">
+              <strong>{selectedSurvey.name}</strong> anketi için belirlenen süre dolmuştur.
+            </p>
+            {selectedSurvey.deadline && (
+              <p className="text-sm text-[var(--error)] mb-6 flex items-center justify-center gap-2">
+                <Clock size={16} />
+                Bitiş Tarihi: {new Date(selectedSurvey.deadline).toLocaleDateString("tr-TR")}
+              </p>
+            )}
+            <p className="text-[var(--text-dim)] mb-6 text-sm">
+              Süre uzatma talebi için lütfen sistem yöneticinizle iletişime geçin.
+            </p>
+            
+            {/* Diğer anketler varsa seçim imkanı */}
+            {surveys.filter(s => !s.isExpired).length > 0 && (
+              <div className="mb-6 p-4 bg-[var(--bg-card-2)] rounded-lg">
+                <p className="text-sm text-[var(--text-muted)] mb-2">Diğer anketlere devam edebilirsiniz:</p>
+                <select
+                  value=""
+                  onChange={(e) => setSelectedSurveyId(e.target.value)}
+                  className="w-full px-4 py-2 border border-[var(--border-soft)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)]"
+                >
+                  <option value="">Anket seçin...</option>
+                  {surveys.filter(s => !s.isExpired).map((survey) => (
+                    <option key={survey.id} value={survey.id}>
+                      {survey.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="px-6 py-3 bg-[var(--accent)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors"
+            >
+              Ana Sayfaya Dön
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg-main)]">
@@ -451,15 +512,46 @@ export default function SurveyClient() {
                 <select
                   value={selectedSurveyId}
                   onChange={(e) => setSelectedSurveyId(e.target.value)}
-                  className="w-full md:w-auto px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+                  className="w-full md:w-auto px-4 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent bg-[var(--bg-card)] text-[var(--text-main)]"
                 >
                   {surveys.map((survey) => (
-                    <option key={survey.id} value={survey.id}>
-                      {survey.name}
+                    <option key={survey.id} value={survey.id} disabled={survey.isExpired}>
+                      {survey.name} {survey.isExpired ? '(Süresi doldu)' : ''}
                     </option>
                   ))}
                 </select>
               </div>
+            </div>
+          </motion.div>
+        )}
+        
+        {/* Süre Uyarısı */}
+        {selectedSurvey?.hasDeadline && selectedSurvey?.deadline && !selectedSurvey?.isExpired && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`rounded-xl shadow-md p-4 mb-6 flex items-center gap-3 ${
+              new Date(selectedSurvey.deadline).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000
+                ? 'bg-[rgba(239,68,68,0.1)] border border-[var(--error)]/30'
+                : 'bg-[rgba(245,158,11,0.1)] border border-[var(--warning)]/30'
+            }`}
+          >
+            <Clock size={20} className={
+              new Date(selectedSurvey.deadline).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000
+                ? 'text-[var(--error)]'
+                : 'text-[var(--warning)]'
+            } />
+            <div>
+              <p className={`font-medium ${
+                new Date(selectedSurvey.deadline).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000
+                  ? 'text-[var(--error)]'
+                  : 'text-[var(--warning)]'
+              }`}>
+                Anket Bitiş Tarihi: {new Date(selectedSurvey.deadline).toLocaleDateString("tr-TR")}
+              </p>
+              <p className="text-sm text-[var(--text-dim)]">
+                {Math.ceil((new Date(selectedSurvey.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} gün kaldı
+              </p>
             </div>
           </motion.div>
         )}

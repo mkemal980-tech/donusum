@@ -143,14 +143,19 @@ model Survey {
 }
 
 model UserSurveyAssignment {
-  id         String   @id @default(cuid())
-  userId     String
-  surveyId   String
-  assignedAt DateTime @default(now())
-  assignedBy String?
-  isActive   Boolean  @default(true)
-  survey     Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(cuid())
+  userId              String
+  surveyId            String
+  assignedAt          DateTime  @default(now())
+  assignedBy          String?
+  isActive            Boolean   @default(true)
+  // Süre sınırı özellikleri
+  hasDeadline         Boolean   @default(false)  // Süre sınırı aktif mi?
+  deadline            DateTime?                   // Bitiş tarihi
+  deadlineExtendedAt  DateTime?                   // Süre uzatma tarihi
+  deadlineExtendedBy  String?                     // Süreyi uzatan admin
+  survey              Survey    @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, surveyId])
 }

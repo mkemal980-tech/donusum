@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     const body = await request.json();
-    const { userId, surveyId } = body;
+    const { userId, surveyId, hasDeadline, deadline } = body;
     
     if (!userId || !surveyId) {
       return NextResponse.json({ error: "userId ve surveyId gerekli" }, { status: 400 });
@@ -79,7 +79,12 @@ export async function POST(request: NextRequest) {
       if (!existing.isActive) {
         const updated = await prisma.userSurveyAssignment.update({
           where: { id: existing.id },
-          data: { isActive: true, assignedAt: new Date() },
+          data: { 
+            isActive: true, 
+            assignedAt: new Date(),
+            hasDeadline: hasDeadline || false,
+            deadline: hasDeadline && deadline ? new Date(deadline) : null
+          },
           include: { survey: { select: { id: true, name: true } } }
         });
         return NextResponse.json(updated);
@@ -91,7 +96,9 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         surveyId,
-        assignedBy: (session?.user as any)?.id || null
+        assignedBy: (session?.user as any)?.id || null,
+        hasDeadline: hasDeadline || false,
+        deadline: hasDeadline && deadline ? new Date(deadline) : null
       },
       include: {
         survey: { select: { id: true, name: true } }
@@ -103,6 +110,69 @@ export async function POST(request: NextRequest) {
     console.error("Error creating survey assignment:", error);
     return NextResponse.json({ 
       error: "Failed to create survey assignment",
+      details: error?.message 
+    }, { status: 500 });
+  }
+}
+
+// Süre uzatma veya güncelleme
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    const body = await request.json();
+    const { id, hasDeadline, deadline, extendDeadline } = body;
+    
+    if (!id) {
+      return NextResponse.json({ error: "id gerekli" }, { status: 400 });
+    }
+    
+    const existing = await prisma.userSurveyAssignment.findUnique({
+      where: { id }
+    });
+    
+    if (!existing) {
+      return NextResponse.json({ error: "Atama bulunamadı" }, { status: 404 });
+    }
+    
+    // Süre uzatma
+    if (extendDeadline && deadline) {
+      const updated = await prisma.userSurveyAssignment.update({
+        where: { id },
+        data: {
+          deadline: new Date(deadline),
+          deadlineExtendedAt: new Date(),
+          deadlineExtendedBy: session.user.id
+        },
+        include: {
+          user: { select: { id: true, email: true, firstName: true, lastName: true } },
+          survey: { select: { id: true, name: true } }
+        }
+      });
+      return NextResponse.json(updated);
+    }
+    
+    // Süre sınırı ayarlarını güncelle
+    const updated = await prisma.userSurveyAssignment.update({
+      where: { id },
+      data: {
+        hasDeadline: hasDeadline ?? existing.hasDeadline,
+        deadline: hasDeadline === false ? null : (deadline ? new Date(deadline) : existing.deadline)
+      },
+      include: {
+        user: { select: { id: true, email: true, firstName: true, lastName: true } },
+        survey: { select: { id: true, name: true } }
+      }
+    });
+    
+    return NextResponse.json(updated);
+  } catch (error: any) {
+    console.error("Error updating survey assignment:", error);
+    return NextResponse.json({ 
+      error: "Failed to update survey assignment",
       details: error?.message 
     }, { status: 500 });
   }

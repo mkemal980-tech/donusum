@@ -15,13 +15,20 @@ export async function GET() {
     const userId = session.user.id;
     const userRole = (session.user as any)?.role || "USER";
 
-    // Admin ise tüm aktif anketleri gör
+    // Admin ise tüm aktif anketleri gör (süre sınırı yok)
     if (userRole === "ADMIN") {
       const surveys = await prisma.survey.findMany({
         where: { isActive: true },
         orderBy: { order: 'asc' }
       });
-      return NextResponse.json(surveys);
+      // Admin için süre bilgisi ekleme
+      const surveysWithDeadline = surveys.map(s => ({
+        ...s,
+        hasDeadline: false,
+        deadline: null,
+        isExpired: false
+      }));
+      return NextResponse.json(surveysWithDeadline);
     }
 
     // Normal kullanıcı ise sadece atanan anketleri gör
@@ -36,10 +43,22 @@ export async function GET() {
       orderBy: { assignedAt: 'desc' }
     });
 
-    // Sadece aktif anketleri dön
+    const now = new Date();
+    
+    // Sadece aktif anketleri dön, süre bilgisi ile
     const surveys = assignments
       .filter(a => a.survey.isActive)
-      .map(a => a.survey);
+      .map(a => {
+        const isExpired = a.hasDeadline && a.deadline && new Date(a.deadline) < now;
+        return {
+          ...a.survey,
+          assignmentId: a.id,
+          hasDeadline: a.hasDeadline,
+          deadline: a.deadline,
+          isExpired,
+          deadlineExtendedAt: a.deadlineExtendedAt
+        };
+      });
 
     return NextResponse.json(surveys);
   } catch (error) {
