@@ -227,7 +227,7 @@ export default function SurveyClient() {
         body: JSON.stringify({
           fileName: file.name,
           contentType: file.type,
-          isPublic: false
+          isPublic: true
         })
       });
 
@@ -270,7 +270,7 @@ export default function SurveyClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           cloudStoragePath,
-          isPublic: false,
+          isPublic: true,
           fileName: file.name,
           fileType: file.type
         })

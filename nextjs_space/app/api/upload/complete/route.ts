@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         cloudStoragePath,
-        isPublic: isPublic ?? false,
+        isPublic: isPublic ?? true,
         fileName,
         fileType: fileType ?? 'application/octet-stream',
         responseId: responseId ?? null

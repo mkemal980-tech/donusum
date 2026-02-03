@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     const { uploadUrl, cloudStoragePath } = await generatePresignedUploadUrl(
       fileName,
       contentType,
-      isPublic ?? false
+      isPublic ?? true
     );
 
     return NextResponse.json({ uploadUrl, cloudStoragePath });
