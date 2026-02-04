@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/db";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -13,8 +13,31 @@ export async function GET() {
     }
     const userId = session.user.id;
 
+    const { searchParams } = new URL(request.url);
+    const surveyId = searchParams.get('surveyId');
+    const countOnly = searchParams.get('countOnly') === 'true';
+
+    // Survey filtresi için where koşulu oluştur
+    const whereCondition: any = { userId };
+    
+    if (surveyId) {
+      whereCondition.question = {
+        OR: [
+          { category: { surveyId } },
+          { subCategory: { category: { surveyId } } },
+          { subLevel: { subCategory: { category: { surveyId } } } }
+        ]
+      };
+    }
+
+    // Sadece sayı isteniyorsa count döndür
+    if (countOnly) {
+      const count = await prisma.surveyResponse.count({ where: whereCondition });
+      return NextResponse.json({ count });
+    }
+
     const responses = await prisma.surveyResponse.findMany({
-      where: { userId },
+      where: whereCondition,
       include: {
         documents: true
       }

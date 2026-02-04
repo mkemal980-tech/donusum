@@ -178,8 +178,31 @@ export default function DashboardClient() {
           return;
         }
 
-        // 2. İlk survey'i seç ve hemen unified API'den tüm verileri çek
-        const firstSurveyId = activeSurveys[0].id;
+        // 2. Kullanıcının yanıtı olan anketi bul, yoksa ilk anketi seç
+        // Her anket için yanıt sayısını kontrol et
+        let selectedId = activeSurveys[0].id;
+        
+        // Paralel olarak tüm anketlerin yanıt sayısını kontrol et
+        const responseCounts = await Promise.all(
+          activeSurveys.map(async (survey: Survey) => {
+            try {
+              const res = await fetch(`/api/survey/responses?surveyId=${survey.id}&countOnly=true`);
+              if (res.ok) {
+                const data = await res.json();
+                return { surveyId: survey.id, count: data.count || 0 };
+              }
+            } catch {}
+            return { surveyId: survey.id, count: 0 };
+          })
+        );
+        
+        // Yanıtı olan ilk anketi seç
+        const surveyWithResponses = responseCounts.find(r => r.count > 0);
+        if (surveyWithResponses) {
+          selectedId = surveyWithResponses.surveyId;
+        }
+        
+        const firstSurveyId = selectedId;
         setSelectedSurveyId(firstSurveyId);
 
         const [dashboardRes, categoryScoresRes] = await Promise.all([
