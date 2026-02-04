@@ -78,17 +78,35 @@ export default function SurveysPage() {
 
   const handleSave = async () => {
     try {
-      await fetch('/api/admin/surveys', {
+      const res = await fetch('/api/admin/surveys', {
         method: formData.id ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        // API'den gelen hata mesajını göster
+        toast.error(data.error || 'Anket kaydedilemedi', {
+          duration: 5000,
+          description: data.code === 'EMPTY_SURVEY' 
+            ? 'Önce kategoriler sayfasından soru ekleyin.' 
+            : data.code === 'NO_QUESTIONS'
+            ? 'Ankette en az bir soru olmalıdır.'
+            : undefined
+        });
+        return;
+      }
+      
+      toast.success(formData.id ? 'Anket güncellendi' : 'Anket oluşturuldu');
       fetchSurveys();
       setShowModal(false);
       setEditItem(null);
       setFormData({});
     } catch (error) {
       console.error('Error saving:', error);
+      toast.error('Bir hata oluştu');
     }
   };
 
@@ -226,8 +244,17 @@ export default function SurveysPage() {
                         <XCircle size={12} /> Pasif
                       </span>
                     )}
+                    {/* Boş anket uyarısı */}
+                    {survey._count.categories === 0 && (
+                      <span className="flex items-center gap-1 px-2 py-0.5 bg-[var(--warning)]/15 text-[var(--warning)] rounded text-xs" title="Bu ankette kategori veya soru bulunmuyor">
+                        <AlertTriangle size={12} /> Boş Anket
+                      </span>
+                    )}
                   </div>
-                  <p className="text-sm text-[var(--text-dim)]">{survey.description || 'Açıklama yok'}</p>
+                  <p className="text-sm text-[var(--text-dim)]">
+                    {survey.description || 'Açıklama yok'}
+                    <span className="ml-2 text-[var(--text-muted)]">• {survey._count.categories} kategori</span>
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-4">

@@ -154,6 +154,7 @@ export default function DashboardClient() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [errorState, setErrorState] = useState<{ type: string; message: string } | null>(null);
   const router = useRouter();
   const dashboardRef = useRef<HTMLDivElement>(null);
   
@@ -243,6 +244,10 @@ export default function DashboardClient() {
         }
       } catch (error) {
         console.error("Error initializing dashboard:", error);
+        setErrorState({
+          type: 'LOAD_ERROR',
+          message: 'Dashboard yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.'
+        });
       } finally {
         setLoading(false);
       }
@@ -1249,12 +1254,58 @@ export default function DashboardClient() {
     }
   };
 
+  // Error durumunu göster
+  if (errorState) {
+    return (
+      <div className="min-h-screen bg-[var(--bg-main)]">
+        <Header />
+        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
+          <div className="bg-[var(--bg-card)] p-8 rounded-xl border border-[var(--error)] max-w-md text-center">
+            <div className="w-16 h-16 bg-[var(--error)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-[var(--error)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-[var(--text-main)] mb-2">Bir Sorun Oluştu</h2>
+            <p className="text-[var(--text-muted)] mb-6">{errorState.message}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-[var(--accent)] text-[var(--bg-deep)] font-medium rounded-lg hover:opacity-90 transition-opacity"
+            >
+              Sayfayı Yenile
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--bg-main)]">
         <Header />
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
           <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  // Anket bulunamadı durumu
+  if (surveys.length === 0) {
+    return (
+      <div className="min-h-screen bg-[var(--bg-main)]">
+        <Header />
+        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
+          <div className="bg-[var(--bg-card)] p-8 rounded-xl border border-[var(--border-soft)] max-w-md text-center">
+            <div className="w-16 h-16 bg-[var(--accent)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-[var(--text-main)] mb-2">Henüz Anket Atanmadı</h2>
+            <p className="text-[var(--text-muted)] mb-6">Size henüz değerlendirme anketi atanmamış. Lütfen yöneticinizle iletişime geçin.</p>
+          </div>
         </div>
       </div>
     );

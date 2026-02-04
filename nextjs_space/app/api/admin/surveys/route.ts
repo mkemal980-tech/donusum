@@ -140,6 +140,61 @@ export async function PUT(request: Request) {
   try {
     const { id, name, description, isActive, order } = await request.json();
     
+    // Eğer anket aktif edilmeye çalışılıyorsa, içeriğini kontrol et
+    if (isActive === true) {
+      const surveyContent = await prisma.survey.findUnique({
+        where: { id },
+        include: {
+          categories: {
+            include: {
+              questions: { select: { id: true } },
+              subCategories: {
+                include: {
+                  questions: { select: { id: true } },
+                  subLevels: {
+                    include: {
+                      questions: { select: { id: true } }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+      
+      if (!surveyContent) {
+        return NextResponse.json({ error: 'Anket bulunamadı' }, { status: 404 });
+      }
+      
+      // Kategori kontrolü
+      if (!surveyContent.categories || surveyContent.categories.length === 0) {
+        return NextResponse.json({ 
+          error: 'Boş anket aktif edilemez. Lütfen önce en az bir kategori ekleyin.',
+          code: 'EMPTY_SURVEY'
+        }, { status: 400 });
+      }
+      
+      // Soru kontrolü - tüm hiyerarşiden soruları say
+      let totalQuestions = 0;
+      surveyContent.categories.forEach(cat => {
+        totalQuestions += cat.questions?.length || 0;
+        cat.subCategories?.forEach(sub => {
+          totalQuestions += sub.questions?.length || 0;
+          sub.subLevels?.forEach(level => {
+            totalQuestions += level.questions?.length || 0;
+          });
+        });
+      });
+      
+      if (totalQuestions === 0) {
+        return NextResponse.json({ 
+          error: 'Sorusu olmayan anket aktif edilemez. Lütfen önce soru ekleyin.',
+          code: 'NO_QUESTIONS'
+        }, { status: 400 });
+      }
+    }
+    
     const survey = await prisma.survey.update({
       where: { id },
       data: {
