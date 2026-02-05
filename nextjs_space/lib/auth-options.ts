@@ -1,7 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "./db";
+import { prisma, withRetry } from "./db";
 import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
@@ -46,9 +46,10 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
+        // Use withRetry to handle connection timeout issues
+        const user = await withRetry(() => prisma.user.findUnique({
           where: { email: credentials.email.toLowerCase() }
-        });
+        }));
 
         if (!user) {
           return null;

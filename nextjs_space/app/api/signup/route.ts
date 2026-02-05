@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma, withRetry } from "@/lib/db";
 import { checkRateLimit, getClientIP, validators } from "@/lib/api-utils";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -42,10 +42,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
-    });
+    // Check if user already exists (with retry for connection issues)
+    const existingUser = await withRetry(() => 
+      prisma.user.findUnique({
+        where: { email: email.toLowerCase() }
+      })
+    );
 
     if (existingUser) {
       return NextResponse.json(
@@ -61,8 +63,8 @@ export async function POST(request: NextRequest) {
     const emailVerificationToken = crypto.randomBytes(32).toString("hex");
     const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 saat
 
-    // Create user
-    const user = await prisma.user.create({
+    // Create user (with retry for connection issues)
+    const user = await withRetry(() => prisma.user.create({
       data: {
         email: email.toLowerCase(),
         password: hashedPassword,
@@ -76,7 +78,7 @@ export async function POST(request: NextRequest) {
         emailVerificationExpires,
         isActive: true
       }
-    });
+    }));
 
     // Hoşgeldin ve Email Doğrulama maili gönder
     const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
