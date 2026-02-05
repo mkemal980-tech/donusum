@@ -45,7 +45,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const history = await prisma.scoreHistory.findMany({
+    // Önce mevcut geçmişi kontrol et
+    let history = await prisma.scoreHistory.findMany({
       where: {
         userId,
         ...(surveyId && { surveyId }),
@@ -54,6 +55,79 @@ export async function GET(request: NextRequest) {
       orderBy: { recordedAt: 'asc' },
       take: limit,
     });
+    
+    // Eğer hiç kayıt yoksa ve kullanıcının anket cevabı varsa, başlangıç snapshot'ı oluştur
+    if (history.length === 0) {
+      const responseCount = await prisma.surveyResponse.count({
+        where: { userId }
+      });
+      
+      if (responseCount > 0) {
+        // Başlangıç snapshot'ı oluştur
+        const responses = await prisma.surveyResponse.findMany({
+          where: { userId },
+          include: {
+            question: { select: { weight: true, axisType: true } }
+          }
+        });
+
+        const completedRecs = await prisma.roadmapItem.count({
+          where: { userId, status: 'COMPLETED' }
+        });
+
+        let velocitySum = 0, velocityWeight = 0;
+        let enduranceSum = 0, enduranceWeight = 0;
+        let totalScoreSum = 0, totalWeight = 0;
+
+        responses.forEach(r => {
+          const weight = r.question.weight || 1;
+          const score = r.score;
+          
+          if (r.question.axisType === 'ENDURANCE') {
+            enduranceSum += score * weight;
+            enduranceWeight += weight;
+          } else {
+            velocitySum += score * weight;
+            velocityWeight += weight;
+          }
+          
+          totalScoreSum += score * weight;
+          totalWeight += weight;
+        });
+
+        const velocityScore = velocityWeight > 0 ? Math.round((velocitySum / velocityWeight) * 10) / 10 : 0;
+        const enduranceScore = enduranceWeight > 0 ? Math.round((enduranceSum / enduranceWeight) * 10) / 10 : 0;
+        const overallScore = totalWeight > 0 ? Math.round((totalScoreSum / totalWeight) * 10) / 10 : 0;
+        const overallPercentage = totalWeight > 0 ? Math.round(((totalScoreSum / totalWeight - 1) / 4) * 100) : 0;
+
+        const THRESHOLD = 3.0;
+        let quadrant = 'WALKER';
+        if (velocityScore >= THRESHOLD && enduranceScore >= THRESHOLD) quadrant = 'IRONMAN';
+        else if (velocityScore >= THRESHOLD && enduranceScore < THRESHOLD) quadrant = 'SPRINTER';
+        else if (velocityScore < THRESHOLD && enduranceScore >= THRESHOLD) quadrant = 'MARATHON_RUNNER';
+
+        const totalQuestions = await prisma.question.count();
+
+        // İlk snapshot'ı oluştur
+        const initialSnapshot = await prisma.scoreHistory.create({
+          data: {
+            userId,
+            surveyId: surveyId || null,
+            overallScore,
+            overallPercentage,
+            velocityScore,
+            enduranceScore,
+            quadrant,
+            completedQuestions: responses.length,
+            totalQuestions,
+            completedRecommendations: completedRecs,
+            triggerType: 'INITIAL_SNAPSHOT',
+          }
+        });
+        
+        history = [initialSnapshot];
+      }
+    }
 
     // İstatistikler
     const stats = {
