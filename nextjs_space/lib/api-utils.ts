@@ -1,0 +1,252 @@
+/**
+ * API Security & Utility Functions
+ * Production-ready helpers for authentication, rate limiting, validation
+ */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from './auth-options';
+import { prisma } from './db';
+
+// Rate limiting store (in-memory for single instance, use Redis for multi-instance)
+const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+
+// Constants
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 100; // requests per window
+const RATE_LIMIT_MAX_ADMIN = 200; // higher limit for admin
+const RATE_LIMIT_MAX_AUTH = 10; // lower limit for auth endpoints
+
+export type RateLimitType = 'default' | 'admin' | 'auth' | 'upload';
+
+/**
+ * Rate Limiter
+ */
+export function checkRateLimit(
+  identifier: string,
+  type: RateLimitType = 'default'
+): { allowed: boolean; remaining: number; resetIn: number } {
+  const now = Date.now();
+  const key = `${type}:${identifier}`;
+  const existing = rateLimitStore.get(key);
+  
+  // Get max requests based on type
+  const maxRequests = {
+    default: RATE_LIMIT_MAX_REQUESTS,
+    admin: RATE_LIMIT_MAX_ADMIN,
+    auth: RATE_LIMIT_MAX_AUTH,
+    upload: 30
+  }[type];
+
+  // Clean old entries periodically (every 1000 checks)
+  if (Math.random() < 0.001) {
+    for (const [k, v] of rateLimitStore.entries()) {
+      if (now > v.resetTime) rateLimitStore.delete(k);
+    }
+  }
+
+  if (!existing || now > existing.resetTime) {
+    // New window
+    rateLimitStore.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return { allowed: true, remaining: maxRequests - 1, resetIn: RATE_LIMIT_WINDOW };
+  }
+
+  if (existing.count >= maxRequests) {
+    return { 
+      allowed: false, 
+      remaining: 0, 
+      resetIn: existing.resetTime - now 
+    };
+  }
+
+  existing.count++;
+  return { 
+    allowed: true, 
+    remaining: maxRequests - existing.count, 
+    resetIn: existing.resetTime - now 
+  };
+}
+
+/**
+ * Get client IP from request
+ */
+export function getClientIP(request: NextRequest): string {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  return request.headers.get('x-real-ip') || 'unknown';
+}
+
+/**
+ * Authentication wrapper with admin check
+ */
+export async function withAuth(
+  request: NextRequest,
+  options: {
+    requireAdmin?: boolean;
+    rateLimit?: RateLimitType;
+  } = {}
+): Promise<{ success: true; userId: string; user: any } | { success: false; response: NextResponse }> {
+  const { requireAdmin = false, rateLimit = 'default' } = options;
+  
+  // Rate limit check
+  const ip = getClientIP(request);
+  const rateLimitResult = checkRateLimit(ip, rateLimit);
+  
+  if (!rateLimitResult.allowed) {
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: 'Çok fazla istek. Lütfen biraz bekleyin.' },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil(rateLimitResult.resetIn / 1000)),
+            'X-RateLimit-Remaining': '0'
+          }
+        }
+      )
+    };
+  }
+
+  // Session check
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user?.email) {
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: 'Oturum açmanız gerekiyor.' },
+        { status: 401 }
+      )
+    };
+  }
+
+  // Get user from database
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { id: true, email: true, role: true, firstName: true, lastName: true }
+  });
+
+  if (!user) {
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: 'Kullanıcı bulunamadı.' },
+        { status: 404 }
+      )
+    };
+  }
+
+  // Admin check
+  if (requireAdmin && user.role !== 'ADMIN') {
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: 'Bu işlem için yetkiniz yok.' },
+        { status: 403 }
+      )
+    };
+  }
+
+  return { success: true, userId: user.id, user };
+}
+
+/**
+ * Input Validation Helpers
+ */
+export const validators = {
+  email: (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  },
+  
+  password: (password: string): { valid: boolean; message?: string } => {
+    if (!password || password.length < 8) {
+      return { valid: false, message: 'Şifre en az 8 karakter olmalıdır.' };
+    }
+    if (!/[A-Z]/.test(password)) {
+      return { valid: false, message: 'Şifre en az bir büyük harf içermelidir.' };
+    }
+    if (!/[0-9]/.test(password)) {
+      return { valid: false, message: 'Şifre en az bir rakam içermelidir.' };
+    }
+    return { valid: true };
+  },
+  
+  sanitizeString: (str: string, maxLength: number = 1000): string => {
+    if (!str) return '';
+    return str.trim().slice(0, maxLength);
+  },
+  
+  isValidId: (id: string): boolean => {
+    // CUID format check
+    return /^c[a-z0-9]{24,}$/.test(id);
+  },
+
+  fileSize: (size: number, maxMB: number = 10): boolean => {
+    return size <= maxMB * 1024 * 1024;
+  },
+
+  fileType: (contentType: string, allowedTypes: string[]): boolean => {
+    return allowedTypes.some(type => 
+      type.endsWith('/*') 
+        ? contentType.startsWith(type.replace('/*', '/')) 
+        : contentType === type
+    );
+  }
+};
+
+/**
+ * Safe JSON parse
+ */
+export function safeJsonParse<T>(json: string, fallback: T): T {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Error response helper
+ */
+export function errorResponse(
+  message: string,
+  status: number = 500,
+  code?: string
+): NextResponse {
+  return NextResponse.json(
+    { error: message, code },
+    { status }
+  );
+}
+
+/**
+ * Success response helper
+ */
+export function successResponse<T>(
+  data: T,
+  status: number = 200
+): NextResponse {
+  return NextResponse.json(data, { status });
+}
+
+/**
+ * Logging helper (sanitizes sensitive data)
+ */
+export function logError(context: string, error: unknown, additionalInfo?: Record<string, any>) {
+  const safeInfo = additionalInfo ? { ...additionalInfo } : {};
+  
+  // Remove sensitive fields
+  delete safeInfo.password;
+  delete safeInfo.token;
+  delete safeInfo.secret;
+  
+  console.error(`[${context}]`, {
+    message: error instanceof Error ? error.message : 'Unknown error',
+    timestamp: new Date().toISOString(),
+    ...safeInfo
+  });
+}

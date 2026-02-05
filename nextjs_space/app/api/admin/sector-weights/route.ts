@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 // GET - Fetch sector category weights
 export async function GET(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const sectorId = searchParams.get("sectorId");
@@ -31,6 +35,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create or update sector category weights
 export async function POST(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { sectorId, surveyId, weights } = await request.json();
 
@@ -74,6 +81,9 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Remove all weights for a sector and survey
 export async function DELETE(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const sectorId = searchParams.get("sectorId");

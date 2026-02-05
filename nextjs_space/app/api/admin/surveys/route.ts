@@ -1,3 +1,4 @@
+import { withAuth } from "@/lib/api-utils";
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
@@ -5,6 +6,9 @@ export const dynamic = 'force-dynamic';
 
 // GET - Tüm anketleri getir veya silme öncesi etki analizi
 export async function GET(request: Request) {
+  const auth = await withAuth(request as any, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
@@ -116,6 +120,9 @@ export async function GET(request: Request) {
 
 // POST - Yeni anket oluştur
 export async function POST(request: Request) {
+  const auth = await withAuth(request as any, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { name, description, isActive, order } = await request.json();
     
@@ -137,6 +144,9 @@ export async function POST(request: Request) {
 
 // PUT - Anket güncelle
 export async function PUT(request: Request) {
+  const auth = await withAuth(request as any, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { id, name, description, isActive, order } = await request.json();
     
@@ -214,6 +224,9 @@ export async function PUT(request: Request) {
 
 // DELETE - Anket sil
 export async function DELETE(request: Request) {
+  const auth = await withAuth(request as any, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

@@ -1,15 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { checkRateLimit, getClientIP, validators } from "@/lib/api-utils";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
 export async function POST(request: NextRequest) {
+  // Rate limit for signup (prevent abuse)
+  const ip = getClientIP(request);
+  const rateLimit = checkRateLimit(ip, 'auth');
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Çok fazla kayıt denemesi. Lütfen biraz bekleyin." },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(rateLimit.resetIn / 1000)) } }
+    );
+  }
+
   try {
     const { email, password, firstName, lastName, organization, sectorId, subSectorId } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json(
         { error: "E-posta ve şifre gerekli" },
+        { status: 400 }
+      );
+    }
+
+    // Email validation
+    if (!validators.email(email)) {
+      return NextResponse.json(
+        { error: "Geçerli bir e-posta adresi girin" },
+        { status: 400 }
+      );
+    }
+
+    // Password strength validation
+    const passwordCheck = validators.password(password);
+    if (!passwordCheck.valid) {
+      return NextResponse.json(
+        { error: passwordCheck.message },
         { status: 400 }
       );
     }

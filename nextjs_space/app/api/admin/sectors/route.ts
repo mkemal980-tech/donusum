@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { name, naicsCode, order } = await request.json();
     
@@ -53,6 +57,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { id, name, naicsCode, order } = await request.json();
     
@@ -80,6 +87,9 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

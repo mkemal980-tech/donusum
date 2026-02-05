@@ -1,3 +1,4 @@
+import { withAuth } from "@/lib/api-utils";
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
@@ -5,6 +6,9 @@ export const dynamic = 'force-dynamic';
 
 // GET - Tüm Ironman benchmark'ları getir (sektöre göre filtrelenebilir)
 export async function GET(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const sectorId = searchParams.get('sectorId');
@@ -32,6 +36,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Yeni Ironman benchmark oluştur veya güncelle (upsert)
 export async function POST(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const data = await request.json();
     const { 
@@ -124,6 +131,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Mevcut benchmark'ı güncelle
 export async function PUT(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const data = await request.json();
     const { 
@@ -168,6 +178,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Benchmark sil
 export async function DELETE(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
