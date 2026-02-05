@@ -10,6 +10,7 @@ import ProgressBar from "@/components/ui/progress-bar";
 import { MaturityLevelBar } from "@/components/ui/maturity-level-bar";
 import { ProgressSection } from "./progress-section";
 import { ScoreTrendChart } from "./score-trend-chart";
+import { CategoryProgressChart } from "./category-progress-chart";
 
 // Error fallback component for chunk loading failures
 const ChunkErrorFallback = ({ componentName }: { componentName: string }) => (
@@ -1385,6 +1386,7 @@ export default function DashboardClient() {
         </Suspense>
 
         {/* Gelişim Trend Grafiği */}
+        <CategoryProgressChart surveyId={selectedSurveyId} />
         <ScoreTrendChart surveyId={selectedSurveyId} />
 
         {/* Overview Cards (Legacy) */}

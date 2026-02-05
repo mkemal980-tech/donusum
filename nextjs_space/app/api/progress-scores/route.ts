@@ -1,21 +1,9 @@
-export const dynamic = "force-dynamic";
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-options';
+import { prisma } from '@/lib/db';
 
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
-import { prisma } from "@/lib/db";
-
-// Durum bazlı çarpan
-function getStatusMultiplier(status: string): number {
-  switch (status) {
-    case 'COMPLETED':
-      return 1.0;  // %100
-    case 'IN_PROGRESS':
-      return 0.5;  // %50
-    default:
-      return 0;    // %0
-  }
-}
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,189 +15,166 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const surveyId = searchParams.get('surveyId');
 
-    // 1. Anket skorlarını hesapla (Baz Skor - Sarı)
-    const surveyResponses = await prisma.surveyResponse.findMany({
-      where: { userId },
-      include: {
-        question: {
-          include: {
-            category: true,  // Doğrudan kategoriye bağlı sorular için
-            subLevel: {
-              include: {
-                subCategory: {
-                  include: {
-                    category: true
-                  }
-                }
-              }
-            },
-            subCategory: {
-              include: {
-                category: true
-              }
-            }
-          }
-        }
-      }
-    });
-
-    // 2. Kullanıcının roadmap öğelerini al (öneri durumları)
-    const roadmapItems = await prisma.roadmapItem.findMany({
-      where: { userId },
-      include: {
-        recommendation: {
-          include: {
-            question: {
-              include: {
-                category: true,
-                subCategory: { include: { category: true } },
-                subLevel: { include: { subCategory: { include: { category: true } } } }
-              }
-            },
-            subCategory: {
-              include: { category: true }
-            },
-            subLevel: {
-              include: {
-                subCategory: {
-                  include: { category: true }
-                }
-              }
-            }
-          }
-        }
-      }
-    });
-
-    // 3. Kategorileri al
+    // 1. Kategorileri al
     const categories = await prisma.category.findMany({
-      where: surveyId ? { surveyId } : undefined,
+      where: surveyId ? { surveyId } : {},
       include: {
         subCategories: {
           include: {
             subLevels: true
           }
         }
+      },
+      orderBy: { order: 'asc' }
+    });
+
+    // 2. Kullanıcının anket cevaplarını al
+    const responses = await prisma.surveyResponse.findMany({
+      where: { userId },
+      include: {
+        question: {
+          include: {
+            category: true,
+            subCategory: { include: { category: true } },
+            subLevel: { include: { subCategory: { include: { category: true } } } }
+          }
+        }
       }
     });
 
-    // Alt kategori bazlı skorları hesapla
-    const subCategoryScores: Record<string, {
-      surveyScore: number;      // Sarı - Baz skor
-      progressScore: number;    // Mavi - Gelişim skoru
-      delta: number;            // Fark
-      name: string;
-      categoryId: string;
-      categoryName: string;
-    }> = {};
+    // 3. Tamamlanan önerileri al
+    const completedRoadmapItems = await prisma.roadmapItem.findMany({
+      where: { userId, status: 'COMPLETED' },
+      include: {
+        recommendation: {
+          include: {
+            subCategory: { include: { category: true } },
+            subLevel: { include: { subCategory: { include: { category: true } } } }
+          }
+        }
+      }
+    });
 
-    // Kategori bazlı skorları hesapla
-    const categoryScores: Record<string, {
-      surveyScore: number;
-      progressScore: number;
-      delta: number;
-      name: string;
-    }> = {};
+    // 4. Her kategori için skorları hesapla
+    const categoryProgress = categories.map(category => {
+      // Anket cevaplarından base score
+      const categoryResponses = responses.filter(r => {
+        const q = r.question;
+        if (q.category?.id === category.id) return true;
+        if (q.subCategory?.category?.id === category.id) return true;
+        if (q.subLevel?.subCategory?.category?.id === category.id) return true;
+        return false;
+      });
 
-    // Her kategori için hesapla
-    for (const category of categories) {
-      let categoryTotalSurveyScore = 0;
-      let categoryTotalProgressScore = 0;
-      let subCategoryCount = 0;
+      const baseScore = categoryResponses.length > 0
+        ? categoryResponses.reduce((sum, r) => sum + r.score, 0) / categoryResponses.length
+        : 0;
 
-      for (const subCategory of category.subCategories) {
-        // Alt kategori için anket skorunu hesapla
-        const subCatResponses = surveyResponses.filter(r => {
-          if (r.question.subCategoryId === subCategory.id) return true;
-          if (r.question.subLevel?.subCategoryId === subCategory.id) return true;
+      // Tamamlanan önerilerden bonus puanlar
+      const categoryCompletions = completedRoadmapItems.filter(item => {
+        const rec = item.recommendation;
+        if (rec.categoryId === category.id) return true;
+        if (rec.subCategory?.category?.id === category.id) return true;
+        if (rec.subLevel?.subCategory?.category?.id === category.id) return true;
+        return false;
+      });
+
+      const bonusPoints = categoryCompletions.reduce((sum, item) => {
+        return sum + (item.recommendation.points || 0);
+      }, 0);
+
+      // Alt kategoriler için de hesapla
+      const subCategoryProgress = category.subCategories.map(subCat => {
+        const subCatResponses = responses.filter(r => {
+          const q = r.question;
+          if (q.subCategory?.id === subCat.id) return true;
+          if (q.subLevel?.subCategory?.id === subCat.id) return true;
           return false;
         });
 
-        // Ağırlıklı ortalama
-        let totalWeightedScore = 0;
-        let totalWeight = 0;
-
-        for (const response of subCatResponses) {
-          const weight = response.question.weight || 1;
-          const score = response.score || 0;
-          totalWeightedScore += score * weight;
-          totalWeight += weight;
-        }
-
-        // Baz skor (1-5 ölçeğine normalize et)
-        const surveyScore = totalWeight > 0 
-          ? Math.min(5, Math.max(0, totalWeightedScore / totalWeight))
+        const subBaseScore = subCatResponses.length > 0
+          ? subCatResponses.reduce((sum, r) => sum + r.score, 0) / subCatResponses.length
           : 0;
 
-        // Öneri katkılarını hesapla
-        let recommendationBonus = 0;
-        const relatedRoadmapItems = roadmapItems.filter(item => {
+        const subCompletions = completedRoadmapItems.filter(item => {
           const rec = item.recommendation;
-          if (rec.subCategoryId === subCategory.id) return true;
-          if (rec.subLevel?.subCategoryId === subCategory.id) return true;
+          if (rec.subCategoryId === subCat.id) return true;
+          if (rec.subLevel?.subCategory?.id === subCat.id) return true;
           return false;
         });
 
-        for (const item of relatedRoadmapItems) {
-          const multiplier = getStatusMultiplier(item.status);
-          const points = item.recommendation.points || 0;
-          recommendationBonus += points * multiplier;
-        }
+        const subBonusPoints = subCompletions.reduce((sum, item) => {
+          return sum + (item.recommendation.points || 0);
+        }, 0);
 
-        // Gelişim skoru (max 5)
-        const progressScore = Math.min(5, surveyScore + recommendationBonus);
-        const delta = progressScore - surveyScore;
-
-        subCategoryScores[subCategory.id] = {
-          surveyScore: Math.round(surveyScore * 100) / 100,
-          progressScore: Math.round(progressScore * 100) / 100,
-          delta: Math.round(delta * 100) / 100,
-          name: subCategory.name,
-          categoryId: category.id,
-          categoryName: category.name
+        return {
+          id: subCat.id,
+          name: subCat.name,
+          baseScore: Math.round(subBaseScore * 100) / 100,
+          bonusPoints: Math.round(subBonusPoints * 100) / 100,
+          totalScore: Math.min(5, Math.round((subBaseScore + subBonusPoints) * 100) / 100),
+          completedCount: subCompletions.length,
+          responseCount: subCatResponses.length
         };
+      });
 
-        categoryTotalSurveyScore += surveyScore;
-        categoryTotalProgressScore += progressScore;
-        subCategoryCount++;
-      }
-
-      // Kategori ortalaması
-      const avgSurveyScore = subCategoryCount > 0 ? categoryTotalSurveyScore / subCategoryCount : 0;
-      const avgProgressScore = subCategoryCount > 0 ? categoryTotalProgressScore / subCategoryCount : 0;
-
-      categoryScores[category.id] = {
-        surveyScore: Math.round(avgSurveyScore * 100) / 100,
-        progressScore: Math.round(avgProgressScore * 100) / 100,
-        delta: Math.round((avgProgressScore - avgSurveyScore) * 100) / 100,
-        name: category.name
+      return {
+        id: category.id,
+        name: category.name,
+        baseScore: Math.round(baseScore * 100) / 100,
+        bonusPoints: Math.round(bonusPoints * 100) / 100,
+        totalScore: Math.min(5, Math.round((baseScore + bonusPoints) * 100) / 100),
+        completedCount: categoryCompletions.length,
+        responseCount: categoryResponses.length,
+        subCategories: subCategoryProgress
       };
-    }
-
-    // Toplam skor
-    const categoryIds = Object.keys(categoryScores);
-    const totalSurveyScore = categoryIds.length > 0
-      ? categoryIds.reduce((sum, id) => sum + categoryScores[id].surveyScore, 0) / categoryIds.length
-      : 0;
-    const totalProgressScore = categoryIds.length > 0
-      ? categoryIds.reduce((sum, id) => sum + categoryScores[id].progressScore, 0) / categoryIds.length
-      : 0;
-
-    return NextResponse.json({
-      overall: {
-        surveyScore: Math.round(totalSurveyScore * 100) / 100,
-        progressScore: Math.round(totalProgressScore * 100) / 100,
-        delta: Math.round((totalProgressScore - totalSurveyScore) * 100) / 100
-      },
-      categories: categoryScores,
-      subCategories: subCategoryScores
     });
 
+    // 5. Genel velocity ve endurance skorları
+    let velocityBase = 0, velocityBonus = 0, velocityCount = 0;
+    let enduranceBase = 0, enduranceBonus = 0, enduranceCount = 0;
+
+    responses.forEach(r => {
+      if (r.question.axisType === 'ENDURANCE') {
+        enduranceBase += r.score;
+        enduranceCount++;
+      } else {
+        velocityBase += r.score;
+        velocityCount++;
+      }
+    });
+
+    completedRoadmapItems.forEach(item => {
+      const axisType = item.recommendation.subLevel?.axisType || 'VELOCITY';
+      if (axisType === 'ENDURANCE') {
+        enduranceBonus += item.recommendation.points || 0;
+      } else {
+        velocityBonus += item.recommendation.points || 0;
+      }
+    });
+
+    const velocityBaseScore = velocityCount > 0 ? velocityBase / velocityCount : 0;
+    const enduranceBaseScore = enduranceCount > 0 ? enduranceBase / enduranceCount : 0;
+
+    return NextResponse.json({
+      categories: categoryProgress,
+      overall: {
+        velocity: {
+          baseScore: Math.round(velocityBaseScore * 100) / 100,
+          bonusPoints: Math.round(velocityBonus * 100) / 100,
+          totalScore: Math.min(5, Math.round((velocityBaseScore + velocityBonus) * 100) / 100)
+        },
+        endurance: {
+          baseScore: Math.round(enduranceBaseScore * 100) / 100,
+          bonusPoints: Math.round(enduranceBonus * 100) / 100,
+          totalScore: Math.min(5, Math.round((enduranceBaseScore + enduranceBonus) * 100) / 100)
+        },
+        totalCompletedRecommendations: completedRoadmapItems.length,
+        totalResponses: responses.length
+      }
+    });
   } catch (error) {
-    console.error("Error calculating progress scores:", error);
-    return NextResponse.json(
-      { error: "Failed to calculate progress scores" },
-      { status: 500 }
-    );
+    console.error('Progress scores error:', error);
+    return NextResponse.json({ error: 'Failed to fetch progress scores' }, { status: 500 });
   }
 }
