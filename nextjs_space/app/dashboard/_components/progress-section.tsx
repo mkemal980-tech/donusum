@@ -5,26 +5,33 @@ import { ProgressBenchmarkChart } from "@/components/ui/progress-benchmark-chart
 import { TrendingUp, Target, Info } from "lucide-react";
 import Link from "next/link";
 
+interface CategoryItem {
+  id: string;
+  name: string;
+  baseScore: number;
+  bonusPoints: number;
+  totalScore: number;
+  completedCount: number;
+  responseCount: number;
+  subCategories: Array<{
+    id: string;
+    name: string;
+    baseScore: number;
+    bonusPoints: number;
+    totalScore: number;
+    completedCount: number;
+    responseCount: number;
+  }>;
+}
+
 interface ProgressData {
+  categories: CategoryItem[];
   overall: {
-    surveyScore: number;
-    progressScore: number;
-    delta: number;
+    velocity: { baseScore: number; bonusPoints: number; totalScore: number };
+    endurance: { baseScore: number; bonusPoints: number; totalScore: number };
+    totalCompletedRecommendations: number;
+    totalResponses: number;
   };
-  categories: Record<string, {
-    surveyScore: number;
-    progressScore: number;
-    delta: number;
-    name: string;
-  }>;
-  subCategories: Record<string, {
-    surveyScore: number;
-    progressScore: number;
-    delta: number;
-    name: string;
-    categoryId: string;
-    categoryName: string;
-  }>;
 }
 
 export function ProgressSection({ surveyId }: { surveyId?: string }) {
@@ -39,10 +46,15 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
           ? `/api/progress-scores?surveyId=${surveyId}`
           : '/api/progress-scores';
         const res = await fetch(url);
+        if (!res.ok) {
+          setData(null);
+          return;
+        }
         const result = await res.json();
         setData(result);
       } catch (error) {
         console.error("Error fetching progress:", error);
+        setData(null);
       } finally {
         setLoading(false);
       }
@@ -52,10 +64,10 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
 
   if (loading) {
     return (
-      <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-xl p-6">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl shadow-xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <Target className="text-[var(--accent)]" size={24} />
-          <h3 className="text-lg font-semibold text-[var(--foreground)]">Benchmark</h3>
+          <h3 className="text-lg font-semibold text-[var(--text-main)]">Benchmark</h3>
         </div>
         <div className="flex items-center justify-center h-48">
           <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
@@ -64,56 +76,61 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
     );
   }
 
-  if (!data) {
+  if (!data || !data.categories || !Array.isArray(data.categories)) {
     return (
-      <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-xl p-6">
+      <div className="bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl shadow-xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <Target className="text-[var(--accent)]" size={24} />
-          <h3 className="text-lg font-semibold text-[var(--foreground)]">Benchmark</h3>
+          <h3 className="text-lg font-semibold text-[var(--text-main)]">Benchmark</h3>
         </div>
-        <div className="text-center py-8 text-[var(--muted-foreground)]">
-          Veri yüklenemedi
+        <div className="text-center py-8 text-[var(--text-muted)]">
+          Henüz veri bulunmuyor
         </div>
       </div>
     );
   }
 
-  // Kategori veya alt kategori verilerini hazırla
-  // Güvenli kontroller - API yapısı farklı olabilir
-  const categories = data.categories && typeof data.categories === 'object' && !Array.isArray(data.categories) 
-    ? data.categories 
-    : {};
-  const subCategories = data.subCategories && typeof data.subCategories === 'object' && !Array.isArray(data.subCategories) 
-    ? data.subCategories 
-    : {};
+  // Kategori dizisinden alt kategorileri çıkar
+  const allSubCategories = data.categories.flatMap(cat => 
+    (cat.subCategories || []).map(subCat => ({
+      ...subCat,
+      categoryName: cat.name
+    }))
+  );
+
+  // Genel ortalama skor hesapla
+  const overallBaseScore = data.categories.length > 0
+    ? data.categories.reduce((sum, cat) => sum + (cat.baseScore || 0), 0) / data.categories.length
+    : 0;
+  const overallBonusPoints = data.categories.reduce((sum, cat) => sum + (cat.bonusPoints || 0), 0);
 
   const chartCategories = viewMode === 'category' 
-    ? Object.values(categories).map((cat: any) => ({
+    ? data.categories.map(cat => ({
         name: cat.name || '',
-        surveyScore: cat.surveyScore || 0,
-        progressScore: cat.progressScore || 0,
-        delta: cat.delta || 0
+        surveyScore: cat.baseScore || 0,
+        progressScore: cat.totalScore || 0,
+        delta: cat.bonusPoints || 0
       }))
-    : Object.values(subCategories).map((subCat: any) => ({
+    : allSubCategories.map(subCat => ({
         name: subCat.name || '',
-        surveyScore: subCat.surveyScore || 0,
-        progressScore: subCat.progressScore || 0,
-        delta: subCat.delta || 0
+        surveyScore: subCat.baseScore || 0,
+        progressScore: subCat.totalScore || 0,
+        delta: subCat.bonusPoints || 0
       }));
 
-  const hasDelta = data.overall?.delta && data.overall.delta > 0;
+  const hasDelta = overallBonusPoints > 0;
 
   return (
     <div className="space-y-4">
       {/* Info Box */}
       {hasDelta && (
-        <div className="bg-[var(--success-bg)] border border-[var(--success)]/30 rounded-xl p-4 flex items-start gap-3">
-          <TrendingUp className="text-[var(--success)] mt-0.5 flex-shrink-0" size={20} />
+        <div className="bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.3)] rounded-xl p-4 flex items-start gap-3">
+          <TrendingUp className="text-[#22c55e] mt-0.5 flex-shrink-0" size={20} />
           <div>
-            <p className="font-medium text-[var(--success)]">Gelişim Kaydedildi!</p>
-            <p className="text-sm text-[var(--success)]">
-              Önerileri tamamlayarak skorunuzu <span className="font-bold">+{(data.overall?.delta || 0).toFixed(2)}</span> puan artırdınız.
-              <Link href="/roadmap" className="underline ml-1 hover:text-[var(--success)]">Yol haritasına git →</Link>
+            <p className="font-medium text-[#22c55e]">Gelişim Kaydedildi!</p>
+            <p className="text-sm text-[#22c55e]">
+              Önerileri tamamlayarak skorunuzu <span className="font-bold">+{overallBonusPoints.toFixed(2)}</span> puan artırdınız.
+              <Link href="/roadmap" className="underline ml-1 hover:text-[#16a34a]">Yol haritasına git →</Link>
             </p>
           </div>
         </div>
@@ -125,8 +142,8 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
           onClick={() => setViewMode('subcategory')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             viewMode === 'subcategory'
-              ? 'bg-[rgba(245,158,11,0.1)]0 text-white'
-              : 'bg-[var(--muted)] text-[var(--muted-foreground)] hover:bg-[var(--accent)]'
+              ? 'bg-[rgba(245,158,11,0.2)] text-[#f59e0b]'
+              : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--bg-card)]'
           }`}
         >
           Alt Kategoriler
@@ -135,8 +152,8 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
           onClick={() => setViewMode('category')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             viewMode === 'category'
-              ? 'bg-[rgba(6,182,212,0.1)]0 text-white'
-              : 'bg-[var(--muted)] text-[var(--muted-foreground)] hover:bg-[var(--accent)]'
+              ? 'bg-[rgba(6,182,212,0.2)] text-[#06b6d4]'
+              : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--bg-card)]'
           }`}
         >
           Kategoriler
@@ -147,9 +164,9 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
       <ProgressBenchmarkChart
         title="Benchmark"
         overall={{ 
-          surveyScore: data.overall?.surveyScore || 0, 
-          progressScore: data.overall?.progressScore || 0, 
-          delta: data.overall?.delta || 0,
+          surveyScore: overallBaseScore, 
+          progressScore: Math.min(5, overallBaseScore + overallBonusPoints), 
+          delta: overallBonusPoints,
           name: "Genel" 
         }}
         categories={chartCategories}
