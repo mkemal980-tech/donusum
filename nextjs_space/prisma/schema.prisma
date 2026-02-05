@@ -423,3 +423,16 @@ model AIRecommendationCache {
 
   survey          Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 }
+// System Health Monitoring
+model HealthLog {
+  id            String   @id @default(cuid())
+  status        String   // healthy, degraded, unhealthy
+  dbLatency     Int?     // ms
+  memoryUsage   Int?     // percentage
+  responseTime  Int?     // ms
+  errorMessage  String?
+  checkedAt     DateTime @default(now())
+
+  @@index([checkedAt])
+  @@index([status])
+}

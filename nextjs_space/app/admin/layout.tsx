@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Settings, FolderTree, Lightbulb, LayoutDashboard, Factory, BarChart3, Scale, FileText, Activity, Download, Users, Building2, UserCheck, Files } from "lucide-react";
+import { Settings, FolderTree, Lightbulb, LayoutDashboard, Factory, BarChart3, Scale, FileText, Activity, Download, Users, Building2, UserCheck, Files, Gauge } from "lucide-react";
 
 const baseNavItems = [
   { href: "/admin", label: "Genel Bakış", icon: LayoutDashboard, section: null, roles: ["ADMIN", "UNIT_MANAGER"] },
@@ -21,6 +21,7 @@ const baseNavItems = [
   { href: "/admin/sector-weights", label: "Sektör Ağırlıkları", icon: Scale, section: "Sektör & Benchmark", roles: ["ADMIN"] },
   { href: "/admin/ironman-benchmarks", label: "Ironman Benchmark", icon: Activity, section: "Sektör & Benchmark", roles: ["ADMIN"] },
   { href: "/admin/export", label: "Veri Dışa Aktarma", icon: Download, section: "Diğer", roles: ["ADMIN"] },
+  { href: "/admin/monitoring", label: "Sistem İzleme", icon: Gauge, section: "Diğer", roles: ["ADMIN"] },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
