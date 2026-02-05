@@ -239,6 +239,66 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
     );
   }
 
+  // Tek kayıt varsa - başlangıç durumunu göster
+  if (history.length === 1) {
+    const current = history[0];
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-soft)]"
+      >
+        <div className="flex items-center gap-2 mb-6">
+          <Activity size={20} className="text-[var(--accent)]" />
+          <h3 className="text-lg font-semibold text-[var(--text-main)]">Gelişim Trend Analizi</h3>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {/* Mevcut Skor */}
+          <div className="bg-[var(--bg-card-2)] rounded-lg p-4 text-center">
+            <p className="text-xs text-[var(--text-muted)] mb-1">Mevcut Skor</p>
+            <p className="text-3xl font-bold text-[var(--accent)]">{current.overallScore.toFixed(1)}</p>
+            <p className="text-xs text-[var(--text-dim)] mt-1">/ 5.0</p>
+          </div>
+          
+          {/* Velocity */}
+          <div className="bg-[var(--bg-card-2)] rounded-lg p-4 text-center">
+            <p className="text-xs text-[var(--text-muted)] mb-1">Velocity</p>
+            <p className="text-2xl font-semibold text-[#818cf8]">
+              {current.velocityScore?.toFixed(1) || '-'}
+            </p>
+          </div>
+          
+          {/* Endurance */}
+          <div className="bg-[var(--bg-card-2)] rounded-lg p-4 text-center">
+            <p className="text-xs text-[var(--text-muted)] mb-1">Endurance</p>
+            <p className="text-2xl font-semibold text-[#34d399]">
+              {current.enduranceScore?.toFixed(1) || '-'}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-[var(--bg-card-2)]/50 rounded-lg p-4 text-center">
+          <div className="flex items-center justify-center gap-2 text-[var(--text-muted)] mb-2">
+            <TrendingUp size={18} className="text-[var(--accent)]" />
+            <span className="text-sm font-medium">Başlangıç Noktası Kaydedildi</span>
+          </div>
+          <p className="text-xs text-[var(--text-dim)]">
+            Önerileri tamamladıkça burada ilerleme grafiğiniz oluşacak.
+          </p>
+          <p className="text-xs text-[var(--text-dim)] mt-1">
+            Her tamamlanan öneri yeni bir veri noktası ekler.
+          </p>
+        </div>
+
+        <div className="mt-4 flex items-center justify-center gap-2 text-xs text-[var(--text-dim)]">
+          <Calendar size={12} />
+          <span>Başlangıç: {new Date(current.recordedAt).toLocaleDateString('tr-TR')}</span>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
