@@ -94,20 +94,21 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
 
   const ProgressBar = ({ item, isSubCategory = false }: { item: SubCategoryProgress | CategoryProgress; isSubCategory?: boolean }) => {
     const maxScore = 5;
-    const basePercent = (item.baseScore / maxScore) * 100;
-    const bonusPercent = (item.bonusPoints / maxScore) * 100;
-    const totalPercent = Math.min(100, basePercent + bonusPercent);
+    const safeBaseScore = item.baseScore ?? 0;
+    const safeBonusPoints = item.bonusPoints ?? 0;
+    const basePercent = (safeBaseScore / maxScore) * 100;
+    const bonusPercent = (safeBonusPoints / maxScore) * 100;
 
     return (
       <div className={`${isSubCategory ? 'py-2 pl-6' : 'py-3'}`}>
         <div className="flex items-center justify-between mb-2">
           <span className={`${isSubCategory ? 'text-sm text-[var(--text-muted)]' : 'text-sm font-medium text-[var(--text-main)]'}`}>
-            {item.name}
+            {item.name || 'Kategori'}
           </span>
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-[#f59e0b] font-medium">{item.baseScore.toFixed(2)}</span>
-            {item.bonusPoints > 0 && (
-              <span className="text-[#3b82f6] font-medium">+{item.bonusPoints.toFixed(2)}</span>
+            <span className="text-[#f59e0b] font-medium">{safeBaseScore.toFixed(2)}</span>
+            {safeBonusPoints > 0 && (
+              <span className="text-[#3b82f6] font-medium">+{safeBonusPoints.toFixed(2)}</span>
             )}
           </div>
         </div>
@@ -120,7 +121,7 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
             className="absolute h-full bg-[#f59e0b] rounded-l-md"
           />
           {/* Bonus Points (Mavi) */}
-          {item.bonusPoints > 0 && (
+          {safeBonusPoints > 0 && (
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${bonusPercent}%` }}
@@ -136,15 +137,15 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
                 className="absolute text-xs font-bold text-white"
                 style={{ left: `${Math.min(basePercent - 2, basePercent / 2)}%`, transform: 'translateX(-50%)' }}
               >
-                {item.baseScore.toFixed(2)}
+                {safeBaseScore.toFixed(2)}
               </span>
             )}
-            {item.bonusPoints > 0 && bonusPercent > 10 && (
+            {safeBonusPoints > 0 && bonusPercent > 10 && (
               <span 
                 className="absolute text-xs font-bold text-white"
                 style={{ left: `${basePercent + bonusPercent / 2}%`, transform: 'translateX(-50%)' }}
               >
-                {item.bonusPoints.toFixed(1)}
+                {safeBonusPoints.toFixed(1)}
               </span>
             )}
           </div>
@@ -178,7 +179,7 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
       </div>
 
       {/* Velocity & Endurance */}
-      {overall && (
+      {overall && overall.velocity && overall.endurance && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-[var(--bg-card-2)] rounded-lg">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -188,25 +189,25 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
             <div className="relative h-5 bg-[var(--bg-deep)] rounded overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${(overall.velocity.baseScore / 5) * 100}%` }}
+                animate={{ width: `${((overall.velocity.baseScore ?? 0) / 5) * 100}%` }}
                 className="absolute h-full bg-[#f59e0b]"
               />
-              {overall.velocity.bonusPoints > 0 && (
+              {(overall.velocity.bonusPoints ?? 0) > 0 && (
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${(overall.velocity.bonusPoints / 5) * 100}%` }}
+                  animate={{ width: `${((overall.velocity.bonusPoints ?? 0) / 5) * 100}%` }}
                   className="absolute h-full bg-[#3b82f6]"
-                  style={{ left: `${(overall.velocity.baseScore / 5) * 100}%` }}
+                  style={{ left: `${((overall.velocity.baseScore ?? 0) / 5) * 100}%` }}
                 />
               )}
             </div>
             <div className="flex justify-between mt-1 text-xs">
-              <span className="text-[#f59e0b]">{overall.velocity.baseScore.toFixed(2)}</span>
-              {overall.velocity.bonusPoints > 0 && (
-                <span className="text-[#3b82f6]">+{overall.velocity.bonusPoints.toFixed(2)}</span>
+              <span className="text-[#f59e0b]">{(overall.velocity.baseScore ?? 0).toFixed(2)}</span>
+              {(overall.velocity.bonusPoints ?? 0) > 0 && (
+                <span className="text-[#3b82f6]">+{(overall.velocity.bonusPoints ?? 0).toFixed(2)}</span>
               )}
               <span className="text-[var(--text-muted)]">
-                Toplam: {overall.velocity.totalScore.toFixed(2)}
+                Toplam: {(overall.velocity.totalScore ?? 0).toFixed(2)}
               </span>
             </div>
           </div>
@@ -219,25 +220,25 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
             <div className="relative h-5 bg-[var(--bg-deep)] rounded overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${(overall.endurance.baseScore / 5) * 100}%` }}
+                animate={{ width: `${((overall.endurance.baseScore ?? 0) / 5) * 100}%` }}
                 className="absolute h-full bg-[#f59e0b]"
               />
-              {overall.endurance.bonusPoints > 0 && (
+              {(overall.endurance.bonusPoints ?? 0) > 0 && (
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${(overall.endurance.bonusPoints / 5) * 100}%` }}
+                  animate={{ width: `${((overall.endurance.bonusPoints ?? 0) / 5) * 100}%` }}
                   className="absolute h-full bg-[#3b82f6]"
-                  style={{ left: `${(overall.endurance.baseScore / 5) * 100}%` }}
+                  style={{ left: `${((overall.endurance.baseScore ?? 0) / 5) * 100}%` }}
                 />
               )}
             </div>
             <div className="flex justify-between mt-1 text-xs">
-              <span className="text-[#f59e0b]">{overall.endurance.baseScore.toFixed(2)}</span>
-              {overall.endurance.bonusPoints > 0 && (
-                <span className="text-[#3b82f6]">+{overall.endurance.bonusPoints.toFixed(2)}</span>
+              <span className="text-[#f59e0b]">{(overall.endurance.baseScore ?? 0).toFixed(2)}</span>
+              {(overall.endurance.bonusPoints ?? 0) > 0 && (
+                <span className="text-[#3b82f6]">+{(overall.endurance.bonusPoints ?? 0).toFixed(2)}</span>
               )}
               <span className="text-[var(--text-muted)]">
-                Toplam: {overall.endurance.totalScore.toFixed(2)}
+                Toplam: {(overall.endurance.totalScore ?? 0).toFixed(2)}
               </span>
             </div>
           </div>

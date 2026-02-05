@@ -79,21 +79,29 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
   }
 
   // Kategori veya alt kategori verilerini hazırla
+  // Güvenli kontroller - API yapısı farklı olabilir
+  const categories = data.categories && typeof data.categories === 'object' && !Array.isArray(data.categories) 
+    ? data.categories 
+    : {};
+  const subCategories = data.subCategories && typeof data.subCategories === 'object' && !Array.isArray(data.subCategories) 
+    ? data.subCategories 
+    : {};
+
   const chartCategories = viewMode === 'category' 
-    ? Object.values(data.categories).map(cat => ({
-        name: cat.name,
-        surveyScore: cat.surveyScore,
-        progressScore: cat.progressScore,
-        delta: cat.delta
+    ? Object.values(categories).map((cat: any) => ({
+        name: cat.name || '',
+        surveyScore: cat.surveyScore || 0,
+        progressScore: cat.progressScore || 0,
+        delta: cat.delta || 0
       }))
-    : Object.values(data.subCategories).map(subCat => ({
-        name: subCat.name,
-        surveyScore: subCat.surveyScore,
-        progressScore: subCat.progressScore,
-        delta: subCat.delta
+    : Object.values(subCategories).map((subCat: any) => ({
+        name: subCat.name || '',
+        surveyScore: subCat.surveyScore || 0,
+        progressScore: subCat.progressScore || 0,
+        delta: subCat.delta || 0
       }));
 
-  const hasDelta = data.overall.delta > 0;
+  const hasDelta = data.overall?.delta && data.overall.delta > 0;
 
   return (
     <div className="space-y-4">
@@ -104,7 +112,7 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
           <div>
             <p className="font-medium text-[var(--success)]">Gelişim Kaydedildi!</p>
             <p className="text-sm text-[var(--success)]">
-              Önerileri tamamlayarak skorunuzu <span className="font-bold">+{data.overall.delta.toFixed(2)}</span> puan artırdınız.
+              Önerileri tamamlayarak skorunuzu <span className="font-bold">+{(data.overall?.delta || 0).toFixed(2)}</span> puan artırdınız.
               <Link href="/roadmap" className="underline ml-1 hover:text-[var(--success)]">Yol haritasına git →</Link>
             </p>
           </div>
@@ -138,7 +146,12 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
       {/* Chart */}
       <ProgressBenchmarkChart
         title="Benchmark"
-        overall={{ ...data.overall, name: "Genel" }}
+        overall={{ 
+          surveyScore: data.overall?.surveyScore || 0, 
+          progressScore: data.overall?.progressScore || 0, 
+          delta: data.overall?.delta || 0,
+          name: "Genel" 
+        }}
         categories={chartCategories}
       />
     </div>
