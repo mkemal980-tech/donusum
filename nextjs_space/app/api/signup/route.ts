@@ -162,10 +162,23 @@ export async function POST(request: NextRequest) {
       lastName: user.lastName,
       message: "Kayıt başarılı! Lütfen email adresinizi doğrulayın."
     });
-  } catch (error) {
-    console.error("Signup error:", error);
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Signup error:", err.message, err.stack);
+    
+    // Daha açıklayıcı hata mesajları
+    const errorMessage = err.message || '';
+    if (errorMessage.includes('idle-session timeout') || 
+        errorMessage.includes('Connection') ||
+        errorMessage.includes('ECONNRESET')) {
+      return NextResponse.json(
+        { error: "Veritabanı bağlantı hatası. Lütfen tekrar deneyin." },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: "Kayıt sırasında bir hata oluştu" },
+      { error: "Kayıt sırasında bir hata oluştu. Lütfen tekrar deneyin." },
       { status: 500 }
     );
   }

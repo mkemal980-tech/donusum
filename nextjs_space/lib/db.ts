@@ -4,7 +4,7 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// Create Prisma client with retry logic for connection issues
+// Create Prisma client - lazy connection (connects on first query)
 function createPrismaClient(): PrismaClient {
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
@@ -13,7 +13,10 @@ function createPrismaClient(): PrismaClient {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient()
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// Cache the prisma instance globally to avoid creating multiple instances
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma
+}
 
 // Helper function to execute queries with automatic retry on connection errors
 export async function withRetry<T>(
@@ -28,6 +31,7 @@ export async function withRetry<T>(
     } catch (error: unknown) {
       lastError = error as Error;
       const errorMessage = lastError?.message || '';
+      const errorStr = String(error);
       
       // Check if it's a connection error that can be retried
       const isConnectionError = 
@@ -36,18 +40,15 @@ export async function withRetry<T>(
         errorMessage.includes('Connection terminated') ||
         errorMessage.includes('connection was closed') ||
         errorMessage.includes('ECONNRESET') ||
-        errorMessage.includes('terminating connection');
+        errorMessage.includes('terminating connection') ||
+        errorMessage.includes('Connection pool timeout') ||
+        errorStr.includes('idle-session timeout') ||
+        errorStr.includes('terminating connection');
       
       if (isConnectionError && attempt < maxRetries) {
-        console.log(`[DB] Connection error, retrying (attempt ${attempt}/${maxRetries})...`);
-        // Reconnect before retry
-        try {
-          await prisma.$disconnect();
-        } catch {
-          // Ignore disconnect errors
-        }
-        // Small delay before retry
-        await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+        console.log(`[DB] Retry ${attempt}/${maxRetries} - ${errorMessage.slice(0, 80)}`);
+        // Wait before retry with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, 300 * attempt));
         continue;
       }
       
