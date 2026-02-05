@@ -9,7 +9,7 @@ import ScoreCard from "@/components/ui/score-card";
 import ProgressBar from "@/components/ui/progress-bar";
 import { MaturityLevelBar } from "@/components/ui/maturity-level-bar";
 import { ProgressSection } from "./progress-section";
-import { ScoreTrendChart } from "./score-trend-chart";
+
 import { CategoryProgressChart } from "./category-progress-chart";
 
 // Error fallback component for chunk loading failures
@@ -1387,7 +1387,6 @@ export default function DashboardClient() {
 
         {/* Gelişim Trend Grafiği */}
         <CategoryProgressChart surveyId={selectedSurveyId} />
-        <ScoreTrendChart surveyId={selectedSurveyId} />
 
         {/* Overview Cards (Legacy) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
