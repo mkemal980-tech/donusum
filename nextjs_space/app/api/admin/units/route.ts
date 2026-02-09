@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
-import { prisma } from "@/lib/db";
+import { prisma, withRetry } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +10,10 @@ async function getParentUnits(unitId: string): Promise<string[]> {
   let currentId: string | null = unitId;
 
   while (currentId) {
-    const result: { parentId: string | null } | null = await prisma.unit.findUnique({
-      where: { id: currentId },
+    const result: { parentId: string | null } | null = await withRetry(() => prisma.unit.findUnique({
+      where: { id: currentId! },
       select: { parentId: true },
-    });
+    }));
     if (result?.parentId) {
       parentIds.push(result.parentId);
       currentId = result.parentId;
@@ -30,7 +30,7 @@ async function getEffectiveAdmins(unitId: string) {
   const parentIds = await getParentUnits(unitId);
   const allUnitIds = [unitId, ...parentIds];
 
-  const admins = await prisma.unitAdmin.findMany({
+  const admins = await withRetry(() => prisma.unitAdmin.findMany({
     where: { unitId: { in: allUnitIds } },
     include: {
       user: {
@@ -45,7 +45,7 @@ async function getEffectiveAdmins(unitId: string) {
         select: { id: true, name: true },
       },
     },
-  });
+  }));
 
   // Deduplicate by user id and mark inherited admins
   const adminMap = new Map<string, { user: any; isInherited: boolean; fromUnit: string }>;
@@ -66,7 +66,7 @@ async function getEffectiveAdmins(unitId: string) {
 export async function GET() {
   try {
     // Sadece üst birimleri (parentId null olanlar) getir, alt birimleri içerecek şekilde
-    const units = await prisma.unit.findMany({
+    const units = await withRetry(() => prisma.unit.findMany({
       where: { parentId: null },
       include: {
         subUnits: {
@@ -120,7 +120,7 @@ export async function GET() {
         _count: { select: { users: true, subUnits: true } },
       },
       orderBy: { name: "asc" },
-    });
+    }));
 
     return NextResponse.json(units);
   } catch (error) {
