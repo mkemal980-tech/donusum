@@ -4,7 +4,7 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-// Create Prisma client - lazy connection (connects on first query)
+// Create Prisma client with optimized connection settings
 function createPrismaClient(): PrismaClient {
   return new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
@@ -27,6 +27,15 @@ export async function withRetry<T>(
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
+      // Before each attempt, try to reconnect if needed
+      if (attempt > 1) {
+        try {
+          await prisma.$disconnect();
+          await prisma.$connect();
+        } catch {
+          // Ignore reconnection errors, the operation itself will fail if connection is broken
+        }
+      }
       return await operation();
     } catch (error: unknown) {
       lastError = error as Error;
@@ -42,13 +51,18 @@ export async function withRetry<T>(
         errorMessage.includes('ECONNRESET') ||
         errorMessage.includes('terminating connection') ||
         errorMessage.includes('Connection pool timeout') ||
+        errorMessage.includes('prepared statement') ||
+        errorMessage.includes('Cannot reach database') ||
         errorStr.includes('idle-session timeout') ||
-        errorStr.includes('terminating connection');
+        errorStr.includes('terminating connection') ||
+        errorStr.includes('P1001') || // Can't reach database
+        errorStr.includes('P1002') || // Timeout
+        errorStr.includes('P1017');   // Server closed connection
       
       if (isConnectionError && attempt < maxRetries) {
-        console.log(`[DB] Retry ${attempt}/${maxRetries} - ${errorMessage.slice(0, 80)}`);
-        // Wait before retry with exponential backoff
-        await new Promise(resolve => setTimeout(resolve, 300 * attempt));
+        console.log(`[DB] Retry ${attempt}/${maxRetries} - reconnecting...`);
+        // Wait before retry with exponential backoff (500ms, 1s, 1.5s)
+        await new Promise(resolve => setTimeout(resolve, 500 * attempt));
         continue;
       }
       
