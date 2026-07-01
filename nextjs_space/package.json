@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "start": "node .next/standalone/nextjs_space/server.js",
+    "start": "node scripts/start-standalone.js",
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:migrate": "node scripts/migrate-deploy.js",

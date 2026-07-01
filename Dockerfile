@@ -39,13 +39,21 @@ COPY --from=builder /app/package-lock.json ./package-lock.json
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/.next/standalone ./
+RUN set -eux; \
+  if [ -f server.js ]; then \
+    echo "Standalone server already at /app/server.js"; \
+  elif [ -f app/server.js ]; then \
+    cp -R app/. ./; \
+  elif [ -f nextjs_space/server.js ]; then \
+    cp -R nextjs_space/. ./; \
+  else \
+    echo "Next standalone server.js not found during image build"; \
+    find . -maxdepth 4 -name server.js -print; \
+    exit 1; \
+  fi
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./app/public
-COPY --from=builder /app/.next/static ./app/.next/static
-COPY --from=builder /app/public ./nextjs_space/public
-COPY --from=builder /app/.next/static ./nextjs_space/.next/static
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "if [ -f server.js ]; then exec node server.js; elif [ -f app/server.js ]; then exec node app/server.js; elif [ -f nextjs_space/server.js ]; then exec node nextjs_space/server.js; else echo 'Next standalone server.js not found'; find . -maxdepth 4 -name server.js -print; exit 1; fi"]
+CMD ["node", "scripts/start-standalone.js"]
