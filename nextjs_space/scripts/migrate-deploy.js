@@ -24,54 +24,83 @@ function buildPgConnectionString() {
   return `postgresql://${user}:${password}@${PGHOST}:${PGPORT}/${database}`;
 }
 
-function resolveDatabaseUrl() {
-  if (process.env.DATABASE_URL) {
-    return { url: process.env.DATABASE_URL, source: 'DATABASE_URL' };
+function getInvalidReason(url) {
+  if (!url || !url.trim()) {
+    return 'it is empty';
   }
 
-  if (process.env.DATABASE_PRIVATE_URL) {
-    return { url: process.env.DATABASE_PRIVATE_URL, source: 'DATABASE_PRIVATE_URL' };
+  const trimmed = url.trim();
+
+  if (trimmed.includes('${{') || trimmed.includes('}}')) {
+    return 'it looks like an unresolved Railway reference variable';
   }
 
-  if (process.env.POSTGRES_PRISMA_URL) {
-    return { url: process.env.POSTGRES_PRISMA_URL, source: 'POSTGRES_PRISMA_URL' };
-  }
-
-  if (process.env.POSTGRES_URL) {
-    return { url: process.env.POSTGRES_URL, source: 'POSTGRES_URL' };
-  }
-
-  const pgConnectionString = buildPgConnectionString();
-  if (pgConnectionString) {
-    return { url: pgConnectionString, source: 'PG* variables' };
-  }
-
-  if (process.env.DATABASE_PUBLIC_URL) {
-    return { url: process.env.DATABASE_PUBLIC_URL, source: 'DATABASE_PUBLIC_URL' };
+  if (!trimmed.startsWith('postgresql://') && !trimmed.startsWith('postgres://')) {
+    return 'it must start with postgresql:// or postgres://';
   }
 
   return null;
 }
 
+function resolveDatabaseUrl() {
+  const candidates = [
+    { url: process.env.DATABASE_URL, source: 'DATABASE_URL' },
+    { url: process.env.DATABASE_PRIVATE_URL, source: 'DATABASE_PRIVATE_URL' },
+    { url: process.env.POSTGRES_PRISMA_URL, source: 'POSTGRES_PRISMA_URL' },
+    { url: process.env.POSTGRES_URL, source: 'POSTGRES_URL' },
+    { url: buildPgConnectionString(), source: 'PG* variables' },
+    { url: process.env.DATABASE_PUBLIC_URL, source: 'DATABASE_PUBLIC_URL' },
+  ].filter((candidate) => candidate.url !== undefined && candidate.url !== null);
+
+  const invalidCandidates = [];
+
+  for (const candidate of candidates) {
+    const invalidReason = getInvalidReason(candidate.url);
+    if (!invalidReason) {
+      return { url: candidate.url.trim(), source: candidate.source, invalidCandidates };
+    }
+    invalidCandidates.push({ source: candidate.source, reason: invalidReason });
+  }
+
+  return { url: null, source: null, invalidCandidates };
+}
+
 const database = resolveDatabaseUrl();
 
-if (!database) {
+if (!database.url) {
+  const invalidDetails = database.invalidCandidates.length
+    ? `\nDetected invalid DB variables:\n${database.invalidCandidates
+        .map((candidate) => `- ${candidate.source}: ${candidate.reason}`)
+        .join('\n')}\n`
+    : '';
+
   console.error(`
-[migrate] DATABASE_URL is missing, so Prisma cannot run migrations.
+[migrate] A valid PostgreSQL DATABASE_URL is missing, so Prisma cannot run migrations.
+${invalidDetails}
+DATABASE_URL must be the resolved PostgreSQL connection string. It must start with:
+- postgresql://
+- postgres://
 
 Railway fix:
 1. Open the web/app service, not the Postgres service.
 2. Go to Variables.
-3. Add a reference variable named DATABASE_URL.
-4. Set its value to \${{Postgres.DATABASE_URL}}.
-   If your database service has another name, use \${{<database-service-name>.DATABASE_URL}}.
-5. Redeploy the web/app service.
+3. Delete the current DATABASE_URL if it is manually typed or malformed.
+4. Click Add Reference Variable.
+5. Select DATABASE_URL from the PostgreSQL service using the dropdown/autocomplete.
+6. Redeploy the web/app service.
 `);
   process.exit(1);
 }
 
 if (database.source !== 'DATABASE_URL') {
-  console.warn(`[migrate] DATABASE_URL was not set; using ${database.source} for Prisma migrate deploy.`);
+  const invalidDatabaseUrl = database.invalidCandidates.find((candidate) => candidate.source === 'DATABASE_URL');
+  if (invalidDatabaseUrl) {
+    console.warn(
+      `[migrate] DATABASE_URL is invalid (${invalidDatabaseUrl.reason}); using ${database.source} for Prisma migrate deploy.`
+    );
+  } else {
+    console.warn(`[migrate] DATABASE_URL was not set; using ${database.source} for Prisma migrate deploy.`);
+  }
 }
 
 if (database.source === 'DATABASE_PUBLIC_URL') {
