@@ -158,6 +158,7 @@ export default function DashboardClient() {
   const [errorState, setErrorState] = useState<{ type: string; message: string } | null>(null);
   const router = useRouter();
   const dashboardRef = useRef<HTMLDivElement>(null);
+  const lastLoadedSurveyIdRef = useRef<string | null>(null);
   
   // OPTIMIZED: Tek seferde surveys + ilk survey datasını çek
   useEffect(() => {
@@ -206,6 +207,7 @@ export default function DashboardClient() {
         
         const firstSurveyId = selectedId;
         setSelectedSurveyId(firstSurveyId);
+        lastLoadedSurveyIdRef.current = firstSurveyId;
 
         const [dashboardRes, categoryScoresRes] = await Promise.all([
           fetch(`/api/dashboard/unified?surveyId=${firstSurveyId}`),
@@ -260,9 +262,7 @@ export default function DashboardClient() {
   // Survey değiştiğinde sadece dashboard datasını güncelle
   useEffect(() => {
     if (!selectedSurveyId || surveys.length === 0) return;
-    
-    // İlk yüklemede zaten fetch ediliyor, tekrar etmeyelim
-    if (loading) return;
+    if (lastLoadedSurveyIdRef.current === selectedSurveyId) return;
 
     const fetchDashboardData = async () => {
       setLoading(true);
@@ -299,6 +299,7 @@ export default function DashboardClient() {
           setResponses(data.responses);
           setTotalQuestions(data.score.totalQuestions);
           setCategoryStats(data.categoryStats);
+          lastLoadedSurveyIdRef.current = selectedSurveyId;
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -308,7 +309,7 @@ export default function DashboardClient() {
     };
 
     fetchDashboardData();
-  }, [selectedSurveyId]);
+  }, [selectedSurveyId, surveys.length]);
 
   const completedQuestions = responses?.length ?? 0;
   const completionPercentage = totalQuestions > 0 

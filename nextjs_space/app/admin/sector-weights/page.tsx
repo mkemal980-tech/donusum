@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Save, AlertCircle, CheckCircle, RefreshCw, FileText } from "lucide-react";
 
 interface Sector {
@@ -60,20 +60,12 @@ export default function SectorWeightsPage() {
   }, []);
 
   // Filter categories by selected survey
-  const filteredCategories = selectedSurvey
-    ? categories.filter((cat) => cat.surveyId === selectedSurvey)
-    : [];
+  const filteredCategories = useMemo(
+    () => (selectedSurvey ? categories.filter((cat) => cat.surveyId === selectedSurvey) : []),
+    [categories, selectedSurvey]
+  );
 
-  // Fetch weights when sector and survey are selected
-  useEffect(() => {
-    if (selectedSector && selectedSurvey && filteredCategories.length > 0) {
-      fetchWeightsForSectorAndSurvey(selectedSector, selectedSurvey);
-    } else {
-      setWeights([]);
-    }
-  }, [selectedSector, selectedSurvey, filteredCategories.length]);
-
-  const fetchWeightsForSectorAndSurvey = async (sectorId: string, surveyId: string) => {
+  const fetchWeightsForSectorAndSurvey = useCallback(async (sectorId: string, surveyId: string) => {
     try {
       const res = await fetch(`/api/admin/sector-weights?sectorId=${sectorId}&surveyId=${surveyId}`);
       const data = await res.json();
@@ -93,7 +85,16 @@ export default function SectorWeightsPage() {
     } catch (error) {
       console.error("Error fetching weights:", error);
     }
-  };
+  }, [filteredCategories]);
+
+  // Fetch weights when sector and survey are selected
+  useEffect(() => {
+    if (selectedSector && selectedSurvey && filteredCategories.length > 0) {
+      fetchWeightsForSectorAndSurvey(selectedSector, selectedSurvey);
+    } else {
+      setWeights([]);
+    }
+  }, [selectedSector, selectedSurvey, filteredCategories.length, fetchWeightsForSectorAndSurvey]);
 
   const handleWeightChange = (categoryId: string, value: string) => {
     const numValue = parseFloat(value) || 0;

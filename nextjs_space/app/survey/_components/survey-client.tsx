@@ -116,8 +116,8 @@ export default function SurveyClient() {
         if (res.ok) {
           const data = await res.json();
           setSurveys(data ?? []);
-          if (data.length > 0 && !selectedSurveyId) {
-            setSelectedSurveyId(data[0].id);
+          if (data.length > 0) {
+            setSelectedSurveyId((current) => current || data[0].id);
           }
         }
       } catch (error) {

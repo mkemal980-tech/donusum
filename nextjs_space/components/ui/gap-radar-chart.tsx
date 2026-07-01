@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 
 interface DataPoint {
@@ -22,7 +22,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
   const isDark = theme === 'dark';
 
   // Theme-aware colors
-  const colors = {
+  const colors = useMemo(() => ({
     primary: isDark ? 'var(--accent-cyan)' : 'var(--blue-main)',
     primaryLight: isDark ? 'rgba(34, 211, 238, 0.2)' : 'rgba(59, 130, 246, 0.15)',
     secondary: isDark ? '#818cf8' : '#06b6d4',
@@ -32,7 +32,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
     grid: isDark ? 'rgba(34, 211, 238, 0.15)' : 'rgba(59, 130, 246, 0.2)',
     text: isDark ? '#e2e8f0' : '#374151',
     textMuted: isDark ? '#94a3b8' : '#9ca3af',
-  };
+  }), [isDark]);
 
   useEffect(() => {
     setMounted(true);

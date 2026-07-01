@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -127,7 +127,7 @@ export default function UnitManagerPage() {
     }
   };
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     setLoadingDocs(true);
     try {
       const res = await fetch("/api/unit-manager/documents");
@@ -140,13 +140,13 @@ export default function UnitManagerPage() {
     } finally {
       setLoadingDocs(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (activeTab === "documents" && documents.length === 0) {
       fetchDocuments();
     }
-  }, [activeTab]);
+  }, [activeTab, documents.length, fetchDocuments]);
 
   const toggleUnit = (unitId: string) => {
     setExpandedUnits((prev) => {

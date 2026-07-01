@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Save, X, FileText, Layers, Upload, Download, AlertCircle, CheckCircle, Activity } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 
@@ -119,7 +119,7 @@ export default function CategoriesPage() {
   const [surveyBulkUploading, setSurveyBulkUploading] = useState(false);
   const surveyFileInputRef = useRef<HTMLInputElement>(null);
 
-  const fetchSurveys = async () => {
+  const fetchSurveys = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/surveys');
       const data = await res.json();
@@ -127,9 +127,9 @@ export default function CategoriesPage() {
     } catch (error) {
       console.error('Error:', error);
     }
-  };
+  }, []);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const url = selectedSurveyId 
         ? `/api/admin/categories?surveyId=${selectedSurveyId}` 
@@ -142,16 +142,16 @@ export default function CategoriesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedSurveyId]);
 
   useEffect(() => { 
     fetchSurveys(); 
-  }, []);
+  }, [fetchSurveys]);
 
   useEffect(() => { 
     setLoading(true);
     fetchCategories(); 
-  }, [selectedSurveyId]);
+  }, [fetchCategories]);
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));

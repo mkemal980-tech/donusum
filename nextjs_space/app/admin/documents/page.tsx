@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FileText, Download, Trash2, User, Building2, Search, Filter, Eye } from "lucide-react";
 import { toast } from "sonner";
 
@@ -61,17 +61,7 @@ export default function DocumentsPage() {
   const [selectedUser, setSelectedUser] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    fetchUnits();
-    fetchUsers();
-    fetchDocuments();
-  }, []);
-
-  useEffect(() => {
-    fetchDocuments();
-  }, [selectedUnit, selectedUser]);
-
-  const fetchUnits = async () => {
+  const fetchUnits = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/units");
       if (res.ok) {
@@ -81,9 +71,9 @@ export default function DocumentsPage() {
     } catch (error) {
       console.error("Error fetching units:", error);
     }
-  };
+  }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/users");
       if (res.ok) {
@@ -93,9 +83,9 @@ export default function DocumentsPage() {
     } catch (error) {
       console.error("Error fetching users:", error);
     }
-  };
+  }, []);
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -112,7 +102,16 @@ export default function DocumentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedUnit, selectedUser]);
+
+  useEffect(() => {
+    fetchUnits();
+    fetchUsers();
+  }, [fetchUnits, fetchUsers]);
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [fetchDocuments]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Bu dosyayı silmek istediğinizden emin misiniz?")) return;
