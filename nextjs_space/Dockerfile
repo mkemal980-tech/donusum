@@ -39,9 +39,13 @@ COPY --from=builder /app/package-lock.json ./package-lock.json
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./app/public
+COPY --from=builder /app/.next/static ./app/.next/static
 COPY --from=builder /app/public ./nextjs_space/public
 COPY --from=builder /app/.next/static ./nextjs_space/.next/static
 
 EXPOSE 3000
 
-CMD ["node", "nextjs_space/server.js"]
+CMD ["sh", "-c", "if [ -f server.js ]; then exec node server.js; elif [ -f app/server.js ]; then exec node app/server.js; elif [ -f nextjs_space/server.js ]; then exec node nextjs_space/server.js; else echo 'Next standalone server.js not found'; find . -maxdepth 4 -name server.js -print; exit 1; fi"]
