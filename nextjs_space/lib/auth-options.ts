@@ -5,6 +5,7 @@ import { prisma, withRetry } from "./db";
 import bcrypt from "bcryptjs";
 
 const nextAuthUrl = process.env.NEXTAUTH_URL;
+const nextAuthSecret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
 const useSecureCookies =
   process.env.NODE_ENV === "production" || nextAuthUrl?.startsWith("https://");
 const cookiePrefix = useSecureCookies ? "__Secure-" : "";
@@ -12,7 +13,7 @@ const sameSite = useSecureCookies ? ("none" as const) : ("lax" as const);
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: nextAuthSecret,
   cookies: {
     sessionToken: {
       name: `${cookiePrefix}next-auth.session-token`,
