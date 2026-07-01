@@ -1,15 +1,14 @@
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand, CreateMultipartUploadCommand, UploadPartCommand, CompleteMultipartUploadCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { createS3Client, getBucketConfig } from "./aws-config";
-
-const s3Client = createS3Client();
-const { bucketName, folderPrefix } = getBucketConfig();
+import { assertStorageConfigured, createS3Client } from "./storage-config";
 
 export async function generatePresignedUploadUrl(
   fileName: string,
   contentType: string,
   isPublic: boolean = false
 ): Promise<{ uploadUrl: string; cloudStoragePath: string }> {
+  const s3Client = createS3Client();
+  const { bucketName, folderPrefix } = assertStorageConfigured();
   const cloudStoragePath = isPublic
     ? `${folderPrefix}public/uploads/${Date.now()}-${fileName}`
     : `${folderPrefix}uploads/${Date.now()}-${fileName}`;
@@ -30,6 +29,8 @@ export async function initiateMultipartUpload(
   fileName: string,
   isPublic: boolean = false
 ): Promise<{ uploadId: string; cloudStoragePath: string }> {
+  const s3Client = createS3Client();
+  const { bucketName, folderPrefix } = assertStorageConfigured();
   const cloudStoragePath = isPublic
     ? `${folderPrefix}public/uploads/${Date.now()}-${fileName}`
     : `${folderPrefix}uploads/${Date.now()}-${fileName}`;
@@ -50,6 +51,8 @@ export async function getPresignedUrlForPart(
   uploadId: string,
   partNumber: number
 ): Promise<string> {
+  const s3Client = createS3Client();
+  const { bucketName } = assertStorageConfigured();
   const command = new UploadPartCommand({
     Bucket: bucketName,
     Key: cloudStoragePath,
@@ -65,6 +68,8 @@ export async function completeMultipartUpload(
   uploadId: string,
   parts: { ETag: string; PartNumber: number }[]
 ): Promise<void> {
+  const s3Client = createS3Client();
+  const { bucketName } = assertStorageConfigured();
   const command = new CompleteMultipartUploadCommand({
     Bucket: bucketName,
     Key: cloudStoragePath,
@@ -79,9 +84,11 @@ export async function getFileUrl(
   cloudStoragePath: string,
   isPublic: boolean = false
 ): Promise<string> {
-  if (isPublic) {
-    const region = process.env.AWS_REGION ?? "us-east-1";
-    return `https://${bucketName}.s3.${region}.amazonaws.com/${cloudStoragePath}`;
+  const s3Client = createS3Client();
+  const { bucketName } = assertStorageConfigured();
+
+  if (isPublic && process.env.S3_PUBLIC_BASE_URL) {
+    return `${process.env.S3_PUBLIC_BASE_URL.replace(/\/$/, "")}/${cloudStoragePath}`;
   }
 
   const command = new GetObjectCommand({
@@ -94,6 +101,8 @@ export async function getFileUrl(
 }
 
 export async function deleteFile(cloudStoragePath: string): Promise<void> {
+  const s3Client = createS3Client();
+  const { bucketName } = assertStorageConfigured();
   const command = new DeleteObjectCommand({
     Bucket: bucketName,
     Key: cloudStoragePath

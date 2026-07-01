@@ -687,11 +687,9 @@ declare module 'next-auth' {
     user: SessionUser;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
   interface User extends SessionUser {}
 }
 
 declare module 'next-auth/jwt' {
-  // eslint-disable-next-line @typescript-eslint/no-empty-interface
   interface JWT extends SessionUser {}
 }

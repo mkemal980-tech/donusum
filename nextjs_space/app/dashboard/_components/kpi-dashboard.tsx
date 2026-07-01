@@ -81,6 +81,7 @@ interface KPIDashboardProps {
 }
 
 export function KPIDashboard({ surveyId }: KPIDashboardProps) {
+  const router = useRouter();
   const [data, setData] = useState<KPIData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -142,8 +143,6 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
     if (value < 0) return <ArrowDownRight size={14} className="text-[var(--error)]" />;
     return <Minus size={14} className="text-[var(--text-muted)]" />;
   };
-
-  const router = useRouter();
 
   // Boş State UI - Hiç anket cevabı yoksa
   if (hasNoData) {

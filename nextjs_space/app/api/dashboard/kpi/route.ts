@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
+import { calculateUserScore } from '@/lib/scoring';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,6 +83,7 @@ export async function GET(request: NextRequest) {
     } : {};
     
     const totalQuestions = await prisma.question.count({ where: questionFilter });
+    const scoreData = await calculateUserScore(userId, surveyId ?? undefined);
 
     // Cevaplanmış soru sayısı
     const answeredQuestions = responses.length;
@@ -141,6 +143,7 @@ export async function GET(request: NextRequest) {
     const categories = await prisma.category.findMany({
       where: categoryFilter,
       include: {
+        questions: { select: { id: true } },
         subCategories: {
           include: {
             subLevels: {
@@ -155,8 +158,8 @@ export async function GET(request: NextRequest) {
     const answeredIds = new Set(responses.map(r => r.questionId));
     
     const categoryStats = categories.map(cat => {
-      let totalQ = 0;
-      let answeredQ = 0;
+      let totalQ = cat.questions.length;
+      let answeredQ = cat.questions.filter(q => answeredIds.has(q.id)).length;
       
       cat.subCategories.forEach(sub => {
         if (sub.subLevels.length > 0) {
@@ -239,9 +242,9 @@ export async function GET(request: NextRequest) {
         totalQuestions,
         answeredQuestions,
         completionPercentage,
-        overallScore,
-        overallPercentage,
-        maturityLevel: getMaturityLevel(overallPercentage),
+        overallScore: scoreData.totalScoreOn5,
+        overallPercentage: scoreData.totalScore,
+        maturityLevel: getMaturityLevel(scoreData.totalScore),
       },
       
       // Ironman Analizi

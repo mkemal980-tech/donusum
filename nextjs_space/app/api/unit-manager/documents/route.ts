@@ -59,6 +59,9 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 text: true,
+                category: {
+                  select: { name: true }
+                },
                 subLevel: {
                   select: {
                     name: true,

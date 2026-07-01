@@ -2,11 +2,13 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
+import { withAuth } from "@/lib/api-utils";
 
 // Kullanıcıya atanan anketleri getir
 export async function GET(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -60,8 +62,10 @@ export async function GET(request: NextRequest) {
 
 // Kullanıcıya anket ata
 export async function POST(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
-    const session = await getServerSession(authOptions);
     const body = await request.json();
     const { userId, surveyId, hasDeadline, deadline } = body;
     
@@ -96,7 +100,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         surveyId,
-        assignedBy: (session?.user as any)?.id || null,
+        assignedBy: auth.userId,
         hasDeadline: hasDeadline || false,
         deadline: hasDeadline && deadline ? new Date(deadline) : null
       },
@@ -117,12 +121,10 @@ export async function POST(request: NextRequest) {
 
 // Süre uzatma veya güncelleme
 export async function PUT(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
     const body = await request.json();
     const { id, hasDeadline, deadline, extendDeadline } = body;
     
@@ -145,7 +147,7 @@ export async function PUT(request: NextRequest) {
         data: {
           deadline: new Date(deadline),
           deadlineExtendedAt: new Date(),
-          deadlineExtendedBy: session.user.id
+          deadlineExtendedBy: auth.userId
         },
         include: {
           user: { select: { id: true, email: true, firstName: true, lastName: true } },
@@ -180,6 +182,9 @@ export async function PUT(request: NextRequest) {
 
 // Anket atamasını kaldır
 export async function DELETE(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

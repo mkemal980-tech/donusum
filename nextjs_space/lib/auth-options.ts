@@ -4,33 +4,40 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma, withRetry } from "./db";
 import bcrypt from "bcryptjs";
 
+const nextAuthUrl = process.env.NEXTAUTH_URL;
+const useSecureCookies =
+  process.env.NODE_ENV === "production" || nextAuthUrl?.startsWith("https://");
+const cookiePrefix = useSecureCookies ? "__Secure-" : "";
+const sameSite = useSecureCookies ? ("none" as const) : ("lax" as const);
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+  secret: process.env.NEXTAUTH_SECRET,
   cookies: {
     sessionToken: {
-      name: `next-auth.session-token`,
+      name: `${cookiePrefix}next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: 'none' as const,
+        sameSite,
         path: '/',
-        secure: true
+        secure: useSecureCookies
       }
     },
     callbackUrl: {
-      name: `next-auth.callback-url`,
+      name: `${cookiePrefix}next-auth.callback-url`,
       options: {
-        sameSite: 'none' as const,
+        sameSite,
         path: '/',
-        secure: true
+        secure: useSecureCookies
       }
     },
     csrfToken: {
-      name: `next-auth.csrf-token`,
+      name: `${cookiePrefix}next-auth.csrf-token`,
       options: {
         httpOnly: true,
-        sameSite: 'none' as const,
+        sameSite,
         path: '/',
-        secure: true
+        secure: useSecureCookies
       }
     }
   },
@@ -48,7 +55,7 @@ export const authOptions: NextAuthOptions = {
 
         // Use withRetry to handle connection timeout issues
         const user = await withRetry(() => prisma.user.findUnique({
-          where: { email: credentials.email.toLowerCase() }
+          where: { email: credentials.email.toLowerCase().trim() }
         }));
 
         if (!user) {
@@ -104,6 +111,7 @@ export const authOptions: NextAuthOptions = {
         token.unitId = (user as any).unitId;
         token.sectorId = (user as any).sectorId;
         token.subSectorId = (user as any).subSectorId;
+        token.emailVerified = (user as any).emailVerified;
       }
       return token;
     },
@@ -117,6 +125,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).unitId = token.unitId;
         (session.user as any).sectorId = token.sectorId;
         (session.user as any).subSectorId = token.subSectorId;
+        (session.user as any).emailVerified = token.emailVerified;
       }
       return session;
     }

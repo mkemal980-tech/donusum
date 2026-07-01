@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { sendEmail } from "@/lib/email";
 import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +53,6 @@ export async function POST(request: NextRequest) {
     });
 
     // Şifre değişiklik bildirimi gönder
-    const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
     const appName = "Dönüşüm Platformu";
     const changeDate = new Date().toLocaleString("tr-TR", {
       dateStyle: "long",
@@ -94,29 +94,14 @@ export async function POST(request: NextRequest) {
       </div>
     `;
 
-    try {
-      const response = await fetch("https://apps.abacus.ai/api/sendNotificationEmail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          deployment_token: process.env.ABACUSAI_API_KEY,
-          app_id: process.env.WEB_APP_ID,
-          notification_id: process.env.NOTIF_ID_IFRE_DEIIKLIK_BILDIRIMI,
-          subject: `${appName} - Şifreniz Değiştirildi 🔐`,
-          body: htmlBody,
-          is_html: true,
-          recipient_email: user.email,
-          sender_email: "noreply@mail.abacusai.app",
-          sender_alias: "Donusum Platformu",
-        }),
-      });
+    const emailResult = await sendEmail({
+      to: user.email,
+      subject: `${appName} - Şifreniz Değiştirildi 🔐`,
+      html: htmlBody
+    });
 
-      const result = await response.json();
-      if (!result.success && !result.notification_disabled) {
-        console.error("Şifre değişiklik bildirimi gönderilemedi:", result);
-      }
-    } catch (emailError) {
-      console.error("Email gönderme hatası:", emailError);
+    if (!emailResult.success) {
+      console.error("Şifre değişiklik bildirimi gönderilemedi:", emailResult.error);
     }
 
     return NextResponse.json({

@@ -23,9 +23,10 @@ interface Document {
     } | null;
   };
   response?: {
-    question: {
-      text: string;
-      subLevel?: {
+        question: {
+          text: string;
+          category?: { name: string } | null;
+          subLevel?: {
         name: string;
         subCategory: {
           name: string;
@@ -151,6 +152,8 @@ export default function DocumentsPage() {
       return `${q.subLevel.subCategory.category.name} > ${q.subLevel.subCategory.name} > ${q.subLevel.name}`;
     } else if (q.subCategory) {
       return `${q.subCategory.category.name} > ${q.subCategory.name}`;
+    } else if (q.category) {
+      return q.category.name;
     }
     return "";
   };

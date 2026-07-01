@@ -45,6 +45,7 @@ interface SubCategory {
   hasSubLevels: boolean;
   subLevels: SubLevel[];
   questions: Question[]; // Doğrudan sorular (hasSubLevels = false olduğunda)
+  isCategoryDirect?: boolean;
 }
 
 interface Category {
@@ -58,6 +59,10 @@ interface Category {
 interface Response {
   questionId: string;
   value: string;
+  documents?: Array<{
+    fileName: string;
+    cloudStoragePath: string;
+  }>;
 }
 
 interface Survey {
@@ -68,6 +73,24 @@ interface Survey {
   hasDeadline?: boolean;
   deadline?: string | null;
   isExpired?: boolean;
+}
+
+function getDisplaySubCategories(category?: Category): SubCategory[] {
+  if (!category) return [];
+
+  const directQuestions = category.questions ?? [];
+  const directSection: SubCategory[] = directQuestions.length > 0
+    ? [{
+        id: `${category.id}__direct`,
+        name: "Kategori Soruları",
+        hasSubLevels: false,
+        subLevels: [],
+        questions: directQuestions,
+        isCategoryDirect: true
+      }]
+    : [];
+
+  return [...directSection, ...(category.subCategories ?? [])];
 }
 
 export default function SurveyClient() {
@@ -127,10 +150,20 @@ export default function SurveyClient() {
         if (responsesRes.ok) {
           const data = await responsesRes.json();
           const responseMap: Record<string, string> = {};
+          const fileMap: Record<string, { fileName: string; cloudStoragePath: string }> = {};
           (data ?? []).forEach((r: Response) => {
-            responseMap[r?.questionId ?? ''] = r?.value ?? '';
+            if (!r?.questionId) return;
+            responseMap[r.questionId] = r?.value ?? '';
+            const latestDocument = r.documents?.[0];
+            if (latestDocument) {
+              fileMap[r.questionId] = {
+                fileName: latestDocument.fileName,
+                cloudStoragePath: latestDocument.cloudStoragePath
+              };
+            }
           });
           setResponses(responseMap);
+          setUploadedFiles(fileMap);
         }
 
         // Reset navigation
@@ -148,7 +181,8 @@ export default function SurveyClient() {
   }, [selectedSurveyId]);
 
   const currentCategory = categories?.[currentCategoryIndex];
-  const currentSubCategory = currentCategory?.subCategories?.[currentSubCategoryIndex];
+  const currentSubCategories = getDisplaySubCategories(currentCategory);
+  const currentSubCategory = currentSubCategories?.[currentSubCategoryIndex];
   const hasSubLevels = currentSubCategory?.hasSubLevels ?? true;
   const currentSubLevel = hasSubLevels ? currentSubCategory?.subLevels?.[currentSubLevelIndex] : null;
   
@@ -182,6 +216,7 @@ export default function SurveyClient() {
     : 0;
 
   const handleAnswer = async (questionId: string, value: string) => {
+    const previousValue = responses[questionId];
     setResponses(prev => ({ ...(prev ?? {}), [questionId]: value }));
     setSaving(true);
 
@@ -192,11 +227,24 @@ export default function SurveyClient() {
         body: JSON.stringify({ questionId, value })
       });
       
-      if (res.ok) {
-        toast.success("Cevap kaydedildi", {
-          duration: 1500,
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setResponses(prev => {
+          const next = { ...(prev ?? {}) };
+          if (previousValue === undefined) {
+            delete next[questionId];
+          } else {
+            next[questionId] = previousValue;
+          }
+          return next;
         });
+        toast.error(data?.error || "Cevap kaydedilemedi");
+        return;
       }
+
+      toast.success("Cevap kaydedildi", {
+        duration: 1500,
+      });
     } catch (error) {
       console.error("Error saving response:", error);
       toast.error("Cevap kaydedilemedi");
@@ -206,6 +254,15 @@ export default function SurveyClient() {
   };
 
   const handleUpload = async (questionId: string, file: File) => {
+    if (!responses[questionId]) {
+      toast.error("Önce soruyu cevaplayın", {
+        description: "Kanıt dosyasını cevabınızla ilişkilendirmek için önce bu soruya cevap vermelisiniz.",
+        duration: 5000,
+        icon: <AlertTriangle className="text-[var(--warning)]" size={20} />
+      });
+      return;
+    }
+
     setUploading(questionId);
     
     // Dosya boyutu kontrolü (10MB)
@@ -227,7 +284,8 @@ export default function SurveyClient() {
         body: JSON.stringify({
           fileName: file.name,
           contentType: file.type,
-          isPublic: true
+          isPublic: true,
+          fileSize: file.size
         })
       });
 
@@ -265,16 +323,27 @@ export default function SurveyClient() {
         return;
       }
 
-      await fetch("/api/upload/complete", {
+      const completeRes = await fetch("/api/upload/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           cloudStoragePath,
           isPublic: true,
           fileName: file.name,
-          fileType: file.type
+          fileType: file.type,
+          questionId
         })
       });
+
+      if (!completeRes.ok) {
+        const data = await completeRes.json().catch(() => ({}));
+        toast.error("Dosya kaydı tamamlanamadı", {
+          description: data?.error || "Dosya yüklendi ancak cevapla ilişkilendirilemedi.",
+          duration: 5000,
+          icon: <XCircle className="text-[var(--error)]" size={20} />
+        });
+        return;
+      }
 
       // State'i güncelle - dosya başarıyla yüklendi
       setUploadedFiles(prev => ({
@@ -313,12 +382,12 @@ export default function SurveyClient() {
   };
 
   const canGoNext = () => {
-    const currentSubCat = currentCategory?.subCategories?.[currentSubCategoryIndex];
+    const currentSubCat = currentSubCategories?.[currentSubCategoryIndex];
     
     if (currentSubCat?.hasSubLevels) {
       if ((currentSubLevelIndex ?? 0) < ((currentSubCat?.subLevels?.length ?? 1) - 1)) return true;
     }
-    if ((currentSubCategoryIndex ?? 0) < ((currentCategory?.subCategories?.length ?? 1) - 1)) return true;
+    if ((currentSubCategoryIndex ?? 0) < ((currentSubCategories?.length ?? 1) - 1)) return true;
     if ((currentCategoryIndex ?? 0) < ((categories?.length ?? 1) - 1)) return true;
     return false;
   };
@@ -330,7 +399,7 @@ export default function SurveyClient() {
   };
 
   const goNext = () => {
-    const currentSubCat = currentCategory?.subCategories?.[currentSubCategoryIndex];
+    const currentSubCat = currentSubCategories?.[currentSubCategoryIndex];
     
     if (currentSubCat?.hasSubLevels) {
       if ((currentSubLevelIndex ?? 0) < ((currentSubCat?.subLevels?.length ?? 1) - 1)) {
@@ -339,7 +408,7 @@ export default function SurveyClient() {
       }
     }
     
-    if ((currentSubCategoryIndex ?? 0) < ((currentCategory?.subCategories?.length ?? 1) - 1)) {
+    if ((currentSubCategoryIndex ?? 0) < ((currentSubCategories?.length ?? 1) - 1)) {
       setCurrentSubCategoryIndex(prev => (prev ?? 0) + 1);
       setCurrentSubLevelIndex(0);
       return;
@@ -353,7 +422,7 @@ export default function SurveyClient() {
   };
 
   const goPrev = () => {
-    const currentSubCat = currentCategory?.subCategories?.[currentSubCategoryIndex];
+    const currentSubCat = currentSubCategories?.[currentSubCategoryIndex];
     
     if (currentSubCat?.hasSubLevels && (currentSubLevelIndex ?? 0) > 0) {
       setCurrentSubLevelIndex(prev => (prev ?? 1) - 1);
@@ -363,7 +432,7 @@ export default function SurveyClient() {
     if ((currentSubCategoryIndex ?? 0) > 0) {
       const newSubCatIndex = (currentSubCategoryIndex ?? 1) - 1;
       setCurrentSubCategoryIndex(newSubCatIndex);
-      const prevSubCat = currentCategory?.subCategories?.[newSubCatIndex];
+      const prevSubCat = currentSubCategories?.[newSubCatIndex];
       if (prevSubCat?.hasSubLevels) {
         const prevSubLevels = prevSubCat?.subLevels ?? [];
         setCurrentSubLevelIndex(Math.max(0, prevSubLevels.length - 1));
@@ -376,7 +445,7 @@ export default function SurveyClient() {
     if ((currentCategoryIndex ?? 0) > 0) {
       const newCatIndex = (currentCategoryIndex ?? 1) - 1;
       setCurrentCategoryIndex(newCatIndex);
-      const prevSubCats = categories?.[newCatIndex]?.subCategories ?? [];
+      const prevSubCats = getDisplaySubCategories(categories?.[newCatIndex]);
       const lastSubCatIndex = Math.max(0, prevSubCats.length - 1);
       setCurrentSubCategoryIndex(lastSubCatIndex);
       const lastSubCat = prevSubCats?.[lastSubCatIndex];

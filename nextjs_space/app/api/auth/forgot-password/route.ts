@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { logDevEmailLink, sendEmail } from "@/lib/email";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -67,29 +68,15 @@ export async function POST(request: NextRequest) {
       </div>
     `;
 
-    try {
-      const response = await fetch("https://apps.abacus.ai/api/sendNotificationEmail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          deployment_token: process.env.ABACUSAI_API_KEY,
-          app_id: process.env.WEB_APP_ID,
-          notification_id: process.env.NOTIF_ID_IFRE_SFRLAMA,
-          subject: "Şifre Sıfırlama Talebi",
-          body: htmlBody,
-          is_html: true,
-          recipient_email: user.email,
-          sender_email: "noreply@mail.abacusai.app",
-          sender_alias: "Donusum Platformu",
-        }),
-      });
+    logDevEmailLink("Password reset", resetUrl);
+    const emailResult = await sendEmail({
+      to: user.email,
+      subject: "Şifre Sıfırlama Talebi",
+      html: htmlBody
+    });
 
-      const result = await response.json();
-      if (!result.success && !result.notification_disabled) {
-        console.error("Email gönderilemedi:", result);
-      }
-    } catch (emailError) {
-      console.error("Email gönderme hatası:", emailError);
+    if (!emailResult.success) {
+      console.error("Şifre sıfırlama emaili gönderilemedi:", emailResult.error);
     }
 
     return NextResponse.json({

@@ -21,7 +21,7 @@ const ALLOWED_FILE_TYPES = [
   'text/csv'
 ];
 
-const MAX_FILE_SIZE_MB = 25; // Maximum 25MB
+const MAX_FILE_SIZE_MB = 10; // Maximum 10MB
 
 export async function POST(request: NextRequest) {
   // Rate limiting for uploads

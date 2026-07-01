@@ -60,6 +60,7 @@ interface Document {
   response?: {
     question: {
       text: string;
+      category?: { name: string } | null;
       subLevel?: { name: string; subCategory: { name: string; category: { name: string } } } | null;
       subCategory?: { name: string; category: { name: string } } | null;
     };
@@ -177,6 +178,8 @@ export default function UnitManagerPage() {
       return `${q.subLevel.subCategory.category.name} > ${q.subLevel.subCategory.name} > ${q.subLevel.name}`;
     } else if (q.subCategory) {
       return `${q.subCategory.category.name} > ${q.subCategory.name}`;
+    } else if (q.category) {
+      return q.category.name;
     }
     return "";
   };

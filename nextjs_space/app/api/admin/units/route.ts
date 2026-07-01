@@ -63,7 +63,10 @@ async function getEffectiveAdmins(unitId: string) {
   return Array.from(adminMap.values());
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     // Sadece üst birimleri (parentId null olanlar) getir, alt birimleri içerecek şekilde
     const units = await withRetry(() => prisma.unit.findMany({

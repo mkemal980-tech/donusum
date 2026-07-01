@@ -4,7 +4,10 @@ import { prisma, withRetry } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const sectors = await withRetry(() => prisma.sector.findMany({
       include: {

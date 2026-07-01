@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from './auth-options';
 import { prisma } from './db';
+import type { UserRole } from '@prisma/client';
 
 // Rate limiting store (in-memory for single instance, use Redis for multi-instance)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -18,6 +19,19 @@ const RATE_LIMIT_MAX_ADMIN = 200; // higher limit for admin
 const RATE_LIMIT_MAX_AUTH = 10; // lower limit for auth endpoints
 
 export type RateLimitType = 'default' | 'admin' | 'auth' | 'upload';
+
+export type AuthenticatedUser = {
+  id: string;
+  email: string;
+  role: UserRole;
+  firstName: string | null;
+  lastName: string | null;
+  unitId: string | null;
+  sectorId: string | null;
+  subSectorId: string | null;
+  emailVerified: boolean;
+  isActive: boolean;
+};
 
 /**
  * Rate Limiter
@@ -85,10 +99,11 @@ export async function withAuth(
   request: NextRequest,
   options: {
     requireAdmin?: boolean;
+    requireUnitManager?: boolean;
     rateLimit?: RateLimitType;
   } = {}
-): Promise<{ success: true; userId: string; user: any } | { success: false; response: NextResponse }> {
-  const { requireAdmin = false, rateLimit = 'default' } = options;
+): Promise<{ success: true; userId: string; user: AuthenticatedUser } | { success: false; response: NextResponse }> {
+  const { requireAdmin = false, requireUnitManager = false, rateLimit = 'default' } = options;
   
   // Rate limit check
   const ip = getClientIP(request);
@@ -126,7 +141,18 @@ export async function withAuth(
   // Get user from database
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    select: { id: true, email: true, role: true, firstName: true, lastName: true }
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      firstName: true,
+      lastName: true,
+      unitId: true,
+      sectorId: true,
+      subSectorId: true,
+      emailVerified: true,
+      isActive: true
+    }
   });
 
   if (!user) {
@@ -139,8 +165,28 @@ export async function withAuth(
     };
   }
 
+  if (!user.isActive) {
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: 'Hesabınız devre dışı bırakılmış.' },
+        { status: 403 }
+      )
+    };
+  }
+
   // Admin check
   if (requireAdmin && user.role !== 'ADMIN') {
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: 'Bu işlem için yetkiniz yok.' },
+        { status: 403 }
+      )
+    };
+  }
+
+  if (requireUnitManager && user.role !== 'ADMIN' && user.role !== 'UNIT_MANAGER') {
     return {
       success: false,
       response: NextResponse.json(

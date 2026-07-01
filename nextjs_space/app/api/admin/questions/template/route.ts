@@ -1,9 +1,14 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { withAuth } from "@/lib/api-utils";
 import * as XLSX from 'xlsx';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     // Create workbook
     const workbook = XLSX.utils.book_new();

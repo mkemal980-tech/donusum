@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { logDevEmailLink, sendEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -147,29 +148,19 @@ export async function PUT(request: NextRequest) {
       </div>
     `;
 
-    try {
-      const response = await fetch("https://apps.abacus.ai/api/sendNotificationEmail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          deployment_token: process.env.ABACUSAI_API_KEY,
-          app_id: process.env.WEB_APP_ID,
-          notification_id: process.env.NOTIF_ID_HOGELDIN_EMAIL_DORULAMA,
-          subject: `${appName} - Email Doğrulama`,
-          body: htmlBody,
-          is_html: true,
-          recipient_email: user.email,
-          sender_email: "noreply@mail.abacusai.app",
-          sender_alias: "Donusum Platformu",
-        }),
-      });
+    logDevEmailLink("Email verification", verifyUrl);
+    const emailResult = await sendEmail({
+      to: user.email,
+      subject: `${appName} - Email Doğrulama`,
+      html: htmlBody
+    });
 
-      const result = await response.json();
-      if (!result.success && !result.notification_disabled) {
-        console.error("Doğrulama emaili gönderilemedi:", result);
-      }
-    } catch (emailError) {
-      console.error("Email gönderme hatası:", emailError);
+    if (!emailResult.success && process.env.NODE_ENV === "production") {
+      console.error("Doğrulama emaili gönderilemedi:", emailResult.error);
+      return NextResponse.json(
+        { error: "Doğrulama emaili gönderilemedi. Lütfen daha sonra tekrar deneyin." },
+        { status: 503 }
+      );
     }
 
     return NextResponse.json({

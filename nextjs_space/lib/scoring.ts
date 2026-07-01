@@ -23,6 +23,16 @@ function percentageToScore(percentage: number): number {
   return (percentage / 100) * 4 + 1;
 }
 
+export function buildSurveyQuestionWhere(surveyId: string) {
+  return {
+    OR: [
+      { category: { surveyId } },
+      { subCategory: { category: { surveyId } } },
+      { subLevel: { subCategory: { category: { surveyId } } } }
+    ]
+  };
+}
+
 export async function calculateUserScore(userId: string, surveyId?: string) {
   // Önce tüm kategorileri getir (ankete göre filtrelenebilir)
   const allCategories = await prisma.category.findMany({
@@ -42,7 +52,10 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
   });
 
   const responses = await prisma.surveyResponse.findMany({
-    where: { userId },
+    where: {
+      userId,
+      ...(surveyId ? { question: buildSurveyQuestionWhere(surveyId) } : {})
+    },
     include: {
       question: {
         include: {
@@ -119,21 +132,7 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
     };
   }
 
-  if (responses?.length === 0) {
-    // Hiç cevap yoksa tüm kategorileri %0 olarak döndür
-    const normalizedCategoryScores: Record<string, { score: number; scoreOn5: number; percentage: number; name: string }> = {};
-    for (const [catId, data] of Object.entries(categoryScores)) {
-      normalizedCategoryScores[catId] = {
-        score: 0,
-        scoreOn5: 1,
-        percentage: 0,
-        name: data.name
-      };
-    }
-    return { totalScore: 0, totalScoreOn5: 1, categoryScores: normalizedCategoryScores, subLevelScores: {}, subCategoryScores: {} };
-  }
   let totalWeightedScore = 0;
-  let totalMaxScore = 0;
 
   for (const response of responses ?? []) {
     const question = response?.question;
@@ -168,12 +167,11 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
     if (!categoryScores[categoryId]) {
       categoryScores[categoryId] = {
         score: 0,
-        maxScore: 0,
+        maxScore,
         name: category?.name ?? 'Unknown'
       };
     }
     categoryScores[categoryId].score += score;
-    categoryScores[categoryId].maxScore += maxScore;
 
     // Alt kategori bazlı puanlama
     if (subCategory) {
@@ -181,13 +179,12 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
       if (!subCategoryScores[subCategoryId]) {
         subCategoryScores[subCategoryId] = {
           score: 0,
-          maxScore: 0,
+          maxScore,
           name: subCategory?.name ?? 'Unknown',
           categoryName: category?.name ?? 'Unknown'
         };
       }
       subCategoryScores[subCategoryId].score += score;
-      subCategoryScores[subCategoryId].maxScore += maxScore;
     }
 
     // Alt seviye bazlı puanlama (sadece subLevel varsa)
@@ -196,17 +193,15 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
       if (!subLevelScores[subLevelId]) {
         subLevelScores[subLevelId] = {
           score: 0,
-          maxScore: 0,
+          maxScore,
           name: subLevel?.name ?? 'Unknown',
           categoryName: category?.name ?? 'Unknown'
         };
       }
       subLevelScores[subLevelId].score += score;
-      subLevelScores[subLevelId].maxScore += maxScore;
     }
 
     totalWeightedScore += score;
-    totalMaxScore += maxScore;
   }
 
   const normalizedCategoryScores: Record<string, { score: number; scoreOn5: number; percentage: number; name: string }> = {};
@@ -248,6 +243,7 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
     };
   }
 
+  const totalMaxScore = Object.values(categoryScores).reduce((sum, data) => sum + data.maxScore, 0);
   const totalPercentage = totalMaxScore > 0 ? Math.round((totalWeightedScore / totalMaxScore) * 100) : 0;
   const totalScoreOn5 = percentageToScore(totalPercentage);
 
@@ -276,6 +272,9 @@ export async function getRecommendationsForUser(userId: string) {
   }
   
   const { categoryScores, subLevelScores, subCategoryScores } = await calculateUserScore(userId);
+  const categoryPercentages = Object.fromEntries(
+    Object.entries(categoryScores).map(([id, data]) => [id, data?.percentage ?? 0])
+  );
   
   // Cevapları questionId -> value map'ine dönüştür
   const userAnswerMap = new Map<string, string>();
@@ -355,6 +354,13 @@ export async function getRecommendationsForUser(userId: string) {
       return userScore >= rec.minScoreThreshold && userScore <= rec.maxScoreThreshold;
     }
     
+    // Kategori bazlı
+    if (rec.categoryId) {
+      const userScore = categoryPercentages[rec.categoryId];
+      if (userScore === undefined) return false;
+      return userScore >= rec.minScoreThreshold && userScore <= rec.maxScoreThreshold;
+    }
+
     // Genel öneri (her zaman göster)
     return true;
   });

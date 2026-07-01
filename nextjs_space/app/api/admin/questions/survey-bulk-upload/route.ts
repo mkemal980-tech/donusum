@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { withAuth } from "@/lib/api-utils";
 import * as XLSX from 'xlsx';
 
 interface QuestionRow {
@@ -149,6 +150,9 @@ function validateRow(row: QuestionRow, rowNumber: number): ValidationError[] {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;

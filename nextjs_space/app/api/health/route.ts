@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withRetry } from '@/lib/db';
+import { withAuth } from '@/lib/api-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,8 +43,13 @@ export async function GET(request: NextRequest) {
     const heapTotalMB = Math.round(memUsage.heapTotal / 1024 / 1024);
     memoryUsage = Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100);
     
-    if (memoryUsage > 90) {
-      checks.memory = { status: 'error', message: `High memory usage: ${memoryUsage}%` };
+    const memoryThreshold = Number(process.env.HEALTH_MEMORY_THRESHOLD ?? 98);
+
+    if (memoryUsage > memoryThreshold) {
+      checks.memory = {
+        status: 'error',
+        message: `High memory usage: ${memoryUsage}% (threshold: ${memoryThreshold}%)`
+      };
       overallStatus = overallStatus === 'healthy' ? 'degraded' : overallStatus;
       errorMessage = errorMessage || `High memory: ${memoryUsage}%`;
     } else {
@@ -104,6 +110,9 @@ export async function GET(request: NextRequest) {
 
 // Get health history for admin dashboard
 export async function POST(request: NextRequest) {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const body = await request.json();
     const { hours = 24 } = body;

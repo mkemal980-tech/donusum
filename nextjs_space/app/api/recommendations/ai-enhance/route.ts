@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { callLLMForJSON } from '@/lib/llm';
+import { callLLMForJSON, isLLMConfigured } from '@/lib/llm';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +16,16 @@ interface AIResponse {
 
 // 24 saat cache süresi
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+function buildFallbackRecommendations(
+  recommendations: { id: string; title: string }[]
+): AIEnhancedRecommendation[] {
+  return recommendations.map((rec, index) => ({
+    id: rec.id,
+    priority: index + 1,
+    note: 'Mevcut skor ve öneri sırasına göre önceliklendirildi'
+  }));
+}
 
 /**
  * Profil hash'i oluşturur - benzer profiller aynı hash'i alır
@@ -104,6 +114,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         recommendations: cachedResult.recommendations,
         fromCache: true,
+        fromAI: true,
         cacheExpires: cachedResult.expiresAt
       });
     }
@@ -144,11 +155,31 @@ JSON:
 {"recommendations":[{"id":"ID","priority":1,"note":"Not"}]}
 `;
 
-    const aiResult = await callLLMForJSON<AIResponse>(prompt, systemPrompt, {
-      temperature: 0.3,
-      maxTokens: 2000
-    });
-    
+    if (!isLLMConfigured()) {
+      return NextResponse.json({
+        recommendations: buildFallbackRecommendations(limitedRecs),
+        fromCache: false,
+        fromAI: false,
+        cacheExpires: null
+      });
+    }
+
+    let aiResult: AIResponse;
+    try {
+      aiResult = await callLLMForJSON<AIResponse>(prompt, systemPrompt, {
+        temperature: 0.3,
+        maxTokens: 2000
+      });
+    } catch (aiError) {
+      console.error('AI provider unavailable, using fallback recommendations:', aiError);
+      return NextResponse.json({
+        recommendations: buildFallbackRecommendations(limitedRecs),
+        fromCache: false,
+        fromAI: false,
+        cacheExpires: null
+      });
+    }
+
     // Eksik önerileri varsayılan öncelikle ekle
     const processedRecs = (recommendations as { id: string; title: string }[]).map((rec, index) => {
       const aiRec = aiResult.recommendations.find(r => r.id === rec.id);
@@ -178,6 +209,7 @@ JSON:
     return NextResponse.json({
       recommendations: processedRecs,
       fromCache: false,
+      fromAI: true,
       cacheExpires: expiresAt
     });
 

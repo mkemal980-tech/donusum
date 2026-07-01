@@ -15,6 +15,8 @@ export async function GET(
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    const userId = session.user.id;
+    const userRole = session.user.role;
 
     const document = await prisma.document.findUnique({
       where: { id: params?.id }
@@ -22,6 +24,10 @@ export async function GET(
 
     if (!document) {
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
+    }
+
+    if (document.userId !== userId && userRole !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const downloadUrl = await getFileUrl(
@@ -50,6 +56,7 @@ export async function DELETE(
     }
 
     const userId = (session.user as any)?.id;
+    const userRole = (session.user as any)?.role;
 
     const document = await prisma.document.findUnique({
       where: { id: params?.id }
@@ -59,7 +66,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Document not found" }, { status: 404 });
     }
 
-    if (document?.userId !== userId) {
+    if (document?.userId !== userId && userRole !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

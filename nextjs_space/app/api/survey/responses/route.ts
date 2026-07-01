@@ -4,6 +4,49 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/db";
+import { buildSurveyQuestionWhere } from "@/lib/scoring";
+
+async function validateSurveyAccess(userId: string, role: string, surveyId: string) {
+  if (role === "ADMIN") return null;
+
+  const assignment = await prisma.userSurveyAssignment.findUnique({
+    where: { userId_surveyId: { userId, surveyId } },
+    include: {
+      survey: {
+        select: { isActive: true }
+      }
+    }
+  });
+
+  if (!assignment || !assignment.isActive || !assignment.survey.isActive) {
+    return NextResponse.json(
+      { error: "Bu ankete erişim yetkiniz yok." },
+      { status: 403 }
+    );
+  }
+
+  if (assignment.hasDeadline && assignment.deadline && assignment.deadline < new Date()) {
+    return NextResponse.json(
+      { error: "Bu anketin süresi dolmuş." },
+      { status: 403 }
+    );
+  }
+
+  return null;
+}
+
+function getQuestionSurveyId(question: {
+  category?: { surveyId: string | null } | null;
+  subCategory?: { category?: { surveyId: string | null } | null } | null;
+  subLevel?: { subCategory?: { category?: { surveyId: string | null } | null } | null } | null;
+}) {
+  return (
+    question.category?.surveyId ??
+    question.subCategory?.category?.surveyId ??
+    question.subLevel?.subCategory?.category?.surveyId ??
+    null
+  );
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,22 +55,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = session.user.id;
+    const userRole = session.user.role;
 
     const { searchParams } = new URL(request.url);
     const surveyId = searchParams.get('surveyId');
     const countOnly = searchParams.get('countOnly') === 'true';
 
+    if (surveyId) {
+      const accessError = await validateSurveyAccess(userId, userRole, surveyId);
+      if (accessError) return accessError;
+    }
+
     // Survey filtresi için where koşulu oluştur
     const whereCondition: any = { userId };
     
     if (surveyId) {
-      whereCondition.question = {
-        OR: [
-          { category: { surveyId } },
-          { subCategory: { category: { surveyId } } },
-          { subLevel: { subCategory: { category: { surveyId } } } }
-        ]
-      };
+      whereCondition.question = buildSurveyQuestionWhere(surveyId);
     }
 
     // Sadece sayı isteniyorsa count döndür
@@ -39,7 +82,9 @@ export async function GET(request: NextRequest) {
     const responses = await prisma.surveyResponse.findMany({
       where: whereCondition,
       include: {
-        documents: true
+        documents: {
+          orderBy: { createdAt: 'desc' }
+        }
       }
     });
 
@@ -60,6 +105,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = session.user.id;
+    const userRole = session.user.role;
     const body = await request.json();
     const { questionId, value } = body ?? {};
 
@@ -71,7 +117,24 @@ export async function POST(request: NextRequest) {
     }
 
     const question = await prisma.question.findUnique({
-      where: { id: questionId }
+      where: { id: questionId },
+      include: {
+        category: { select: { surveyId: true } },
+        subCategory: {
+          select: {
+            category: { select: { surveyId: true } }
+          }
+        },
+        subLevel: {
+          select: {
+            subCategory: {
+              select: {
+                category: { select: { surveyId: true } }
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!question) {
@@ -79,6 +142,19 @@ export async function POST(request: NextRequest) {
         { error: "Question not found" },
         { status: 404 }
       );
+    }
+
+    const surveyId = getQuestionSurveyId(question);
+    if (!surveyId && userRole !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Soru aktif bir ankete bağlı değil." },
+        { status: 400 }
+      );
+    }
+
+    if (surveyId) {
+      const accessError = await validateSurveyAccess(userId, userRole, surveyId);
+      if (accessError) return accessError;
     }
 
     let score = 0;

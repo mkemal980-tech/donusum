@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { prisma } from "@/lib/db";
+import { calculateUserScore } from "@/lib/scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -83,6 +84,8 @@ export async function GET(request: NextRequest) {
       weights.forEach(w => sectorWeights.set(w.categoryId, w.weight));
     }
 
+    const scoreData = await calculateUserScore(userId, effectiveSurveyId ?? undefined);
+
     // Get user responses
     const responses = await prisma.surveyResponse.findMany({
       where: { userId },
@@ -163,11 +166,12 @@ export async function GET(request: NextRequest) {
             // Yeni formül: Puan = (Yüzde / 100) × 4 + 1
             const levelScore = percentageToScore(levelPercentage);
 
+            const normalizedSubLevel = scoreData.subLevelScores[subLevel.id];
             return {
               id: subLevel.id,
               name: subLevel.name,
-              score: Math.round(levelScore * 10) / 10,
-              percentage: Math.round(levelPercentage),
+              score: normalizedSubLevel?.scoreOn5 ?? Math.round(levelScore * 10) / 10,
+              percentage: normalizedSubLevel?.percentage ?? Math.round(levelPercentage),
               questionCount: questionCount,
               answeredCount: subLevel.questions.filter(q => responseMap.has(q.id)).length
             };
@@ -202,11 +206,12 @@ export async function GET(request: NextRequest) {
           ? subCat.subLevels.reduce((sum, sl) => sum + sl.questions.filter(q => responseMap.has(q.id)).length, 0)
           : ((subCat as any).questions?.filter((q: any) => responseMap.has(q.id))?.length || 0);
 
+        const normalizedSubCategory = scoreData.subCategoryScores[subCat.id];
         return {
           id: subCat.id,
           name: subCat.name,
-          score: Math.round(subCatScore * 10) / 10,
-          percentage: Math.round(subCatPercentage),
+          score: normalizedSubCategory?.scoreOn5 ?? Math.round(subCatScore * 10) / 10,
+          percentage: normalizedSubCategory?.percentage ?? Math.round(subCatPercentage),
           target: 5,
           hasSubLevels,
           subLevels: subLevelScores,
@@ -225,14 +230,15 @@ export async function GET(request: NextRequest) {
         ? (sectorWeights.get(category.id) ?? 0)
         : defaultWeight;
 
+      const normalizedCategory = scoreData.categoryScores[category.id];
       return {
         id: category.id,
         name: category.name,
         description: category.description,
         surveyId: category.surveyId,
         surveyName: category.survey?.name,
-        score: Math.round(catScore * 10) / 10,
-        percentage: Math.round(catPercentage),
+        score: normalizedCategory?.scoreOn5 ?? Math.round(catScore * 10) / 10,
+        percentage: normalizedCategory?.percentage ?? Math.round(catPercentage),
         weight: categoryWeight,
         subCategories: subCategoryScores
       };
@@ -240,23 +246,6 @@ export async function GET(request: NextRequest) {
 
     // Calculate overall score using weights
     // Önce ağırlıklı yüzdeleri hesapla, sonra puana dönüştür
-    let overallWeightedPercentage = 0;
-    let totalWeight = 0;
-
-    for (const cat of categoryScores) {
-      overallWeightedPercentage += cat.percentage * cat.weight;
-      totalWeight += cat.weight;
-    }
-
-    // Normalize if weights don't sum to 1 (fallback)
-    if (totalWeight > 0 && Math.abs(totalWeight - 1) > 0.01) {
-      overallWeightedPercentage = overallWeightedPercentage / totalWeight;
-    }
-
-    // Genel puan: ağırlıklı yüzdeyi puana dönüştür
-    const overallScore = percentageToScore(overallWeightedPercentage);
-    const overallPercentage = overallWeightedPercentage;
-
     // If specific category requested, return details
     if (categoryId) {
       const category = categoryScores.find(c => c.id === categoryId);
@@ -265,13 +254,13 @@ export async function GET(request: NextRequest) {
       }
       return NextResponse.json({
         category,
-        overallScore: Math.round(overallScore * 10) / 10
+        overallScore: scoreData.totalScoreOn5
       });
     }
 
     return NextResponse.json({
-      overallScore: Math.round(overallScore * 10) / 10,
-      overallPercentage: Math.round(overallPercentage),
+      overallScore: scoreData.totalScoreOn5,
+      overallPercentage: scoreData.totalScore,
       surveyId: effectiveSurveyId,
       categories: categoryScores
     });

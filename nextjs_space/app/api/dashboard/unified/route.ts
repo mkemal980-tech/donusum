@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/db";
+import { buildSurveyQuestionWhere, calculateUserScore } from "@/lib/scoring";
 
 /**
  * Unified Dashboard API - Tüm dashboard verilerini tek seferde döndürür
@@ -41,7 +42,8 @@ export async function GET(request: NextRequest) {
       userResponses,
       surveyStructure,
       recommendations,
-      categoryScores
+      categoryScores,
+      scoreData
     ] = await Promise.all([
       // 1. User Profile
       prisma.user.findUnique({
@@ -72,13 +74,7 @@ export async function GET(request: NextRequest) {
       prisma.surveyResponse.findMany({
         where: {
           userId,
-          question: {
-            OR: [
-              { subLevel: { subCategory: { category: { surveyId } } } },
-              { subCategory: { category: { surveyId } } },
-              { category: { surveyId } }
-            ]
-          }
+          question: buildSurveyQuestionWhere(surveyId)
         },
         select: {
           id: true,
@@ -93,6 +89,10 @@ export async function GET(request: NextRequest) {
         where: { surveyId },
         orderBy: { order: 'asc' },
         include: {
+          questions: {
+            orderBy: { order: 'asc' },
+            select: { id: true }
+          },
           subCategories: {
             orderBy: { order: 'asc' },
             include: {
@@ -153,21 +153,19 @@ export async function GET(request: NextRequest) {
       })(),
 
       // 5. Category Scores - Bu hesaplama zaten var, kullanıyoruz
-      fetchCategoryScores(userId, surveyId)
-    ]);
+      fetchCategoryScores(userId, surveyId),
 
-    // Survey score calculation
-    const totalScore = userResponses.reduce((sum, r) => sum + (r.score || 0), 0);
-    const maxPossibleScore = userResponses.length * 5;
-    const scorePercentage = maxPossibleScore > 0 ? (totalScore / maxPossibleScore) * 100 : 0;
+      // 6. Authoritative score calculation
+      calculateUserScore(userId, surveyId)
+    ]);
 
     // Question counts
     let totalQuestions = 0;
     const answeredQuestionIds = new Set(userResponses.map(r => r.questionId));
     
     const categoryStats = surveyStructure.map(cat => {
-      let catTotalQuestions = 0;
-      let catAnsweredQuestions = 0;
+      let catTotalQuestions = cat.questions.length;
+      let catAnsweredQuestions = cat.questions.filter(q => answeredQuestionIds.has(q.id)).length;
 
       cat.subCategories.forEach(sub => {
         if (!sub.hasSubLevels) {
@@ -215,7 +213,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       userProfile,
       score: {
-        totalScore: Math.round(scorePercentage),
+        totalScore: scoreData.totalScore,
         answeredQuestions: userResponses.length,
         totalQuestions,
         completionPercentage
@@ -239,85 +237,20 @@ export async function GET(request: NextRequest) {
 // Category scores hesaplama fonksiyonu
 async function fetchCategoryScores(userId: string, surveyId: string) {
   try {
-    // Kullanıcının cevapları
-    const responses = await prisma.surveyResponse.findMany({
-      where: {
-        userId,
-        question: {
-          OR: [
-            { subLevel: { subCategory: { category: { surveyId } } } },
-            { subCategory: { category: { surveyId } } },
-            { category: { surveyId } }
-          ]
-        }
-      },
-      include: {
-        question: {
-          include: {
-            subLevel: {
-              include: {
-                subCategory: {
-                  include: {
-                    category: true
-                  }
-                }
-              }
-            },
-            subCategory: {
-              include: {
-                category: true
-              }
-            },
-            category: true
-          }
-        }
-      }
-    });
-
-    if (responses.length === 0) {
-      return {
-        overallScore: 1,
-        overallPercentage: 0,
-        categories: [],
-        subCategories: [],
-        subLevels: []
-      };
-    }
-
-    // Basit aggregate score
-    const totalScore = responses.reduce((sum, r) => sum + (r.score || 0), 0);
-    const maxScore = responses.length * 5;
-    const overallPercentage = (totalScore / maxScore) * 100;
-    const overallScore = (overallPercentage / 100) * 4 + 1;
-
-    // Kategori bazlı skorlar
-    const categoryMap = new Map<string, { total: number; max: number; name: string }>();
-    
-    responses.forEach(resp => {
-      const category = resp.question.subLevel?.subCategory.category || resp.question.subCategory?.category;
-      if (category) {
-        if (!categoryMap.has(category.id)) {
-          categoryMap.set(category.id, { total: 0, max: 0, name: category.name });
-        }
-        const cat = categoryMap.get(category.id)!;
-        cat.total += resp.score || 0;
-        cat.max += 5;
-      }
-    });
-
-    const categories = Array.from(categoryMap.entries()).map(([id, data]) => ({
+    const scoreData = await calculateUserScore(userId, surveyId);
+    const categories = Object.entries(scoreData.categoryScores).map(([id, data]) => ({
       id,
       name: data.name,
-      score: (data.total / data.max) * 4 + 1,
-      percentage: (data.total / data.max) * 100
+      score: data.scoreOn5,
+      percentage: data.percentage
     }));
 
     return {
-      overallScore: Math.round(overallScore * 10) / 10,
-      overallPercentage: Math.round(overallPercentage),
+      overallScore: scoreData.totalScoreOn5,
+      overallPercentage: scoreData.totalScore,
       categories,
-      subCategories: [],
-      subLevels: []
+      subCategories: Object.entries(scoreData.subCategoryScores).map(([id, data]) => ({ id, ...data })),
+      subLevels: Object.entries(scoreData.subLevelScores).map(([id, data]) => ({ id, ...data }))
     };
   } catch (error) {
     console.error("Category scores error:", error);

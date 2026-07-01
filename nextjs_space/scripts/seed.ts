@@ -57,7 +57,7 @@ async function main() {
 
   // Create admin user
   const adminPassword = await bcrypt.hash('admin123', 10);
-  await prisma.user.create({
+  const adminUser = await prisma.user.create({
     data: {
       email: 'admin@test.com',
       password: adminPassword,
@@ -74,7 +74,7 @@ async function main() {
 
   // Create test user
   const hashedPassword = await bcrypt.hash('johndoe123', 10);
-  await prisma.user.create({
+  const testUser = await prisma.user.create({
     data: {
       email: 'john@doe.com',
       password: hashedPassword,
@@ -99,6 +99,17 @@ async function main() {
   });
 
   console.log('Created default survey:', defaultSurvey.name);
+
+  await prisma.userSurveyAssignment.create({
+    data: {
+      userId: testUser.id,
+      surveyId: defaultSurvey.id,
+      assignedBy: adminUser.id,
+      isActive: true
+    }
+  });
+
+  console.log('Assigned default survey to test user');
 
   // Create survey structure
   const categories = [
@@ -395,11 +406,6 @@ async function main() {
   // TEST KULLANICISI İÇİN ÖRNEK ANKET CEVAPLARI
   // ============================================
   
-  // Test kullanıcısını al (cmkhjzaa70000x50t7n7fsjxo olması lazım)
-  const testUser = await prisma.user.findUnique({
-    where: { email: 'john@doe.com' }
-  });
-
   if (testUser) {
     console.log('Creating sample survey responses for test user...');
 

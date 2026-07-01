@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import type { ExportData } from '@/lib/types';
+import { withAuth } from '@/lib/api-utils';
 
 export const dynamic = 'force-dynamic';
 
 // Veritabanı verilerini dışa aktar
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  if (!auth.success) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'json';
