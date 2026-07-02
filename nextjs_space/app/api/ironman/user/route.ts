@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
+import { withAuth } from '@/lib/api-utils';
+import { classifyQuadrant } from '@/lib/scoring';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,14 +15,7 @@ export const dynamic = 'force-dynamic';
  * - Benchmark karşılaştırması
  */
 
-// Kadran belirleme (Eşik değer: 3.0)
-const THRESHOLD = 3.0;
-const getQuadrant = (velocity: number, endurance: number) => {
-  if (velocity >= THRESHOLD && endurance >= THRESHOLD) return 'IRONMAN';
-  if (velocity >= THRESHOLD && endurance < THRESHOLD) return 'SPRINTER';
-  if (velocity < THRESHOLD && endurance >= THRESHOLD) return 'MARATHON_RUNNER';
-  return 'WALKER';
-};
+// Kadran belirleme lib/scoring.classifyQuadrant üzerinden (tek doğru kaynak)
 
 // Kadran açıklamaları
 const quadrantInfo: Record<string, { title: string; titleEn: string; description: string; color: string }> = {
@@ -53,13 +46,11 @@ const quadrantInfo: Record<string, { title: string; titleEn: string; description
 };
 
 export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const userId = session.user.id;
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
 
+  try {
     // Kullanıcı bilgilerini al
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -144,7 +135,7 @@ export async function GET(request: NextRequest) {
       ? Math.round((enduranceWeightedSum / enduranceWeightTotal) * 10) / 10
       : 2.5;
 
-    const quadrant = getQuadrant(currentVelocity, currentEndurance);
+    const quadrant = classifyQuadrant(currentVelocity, currentEndurance);
 
     // Sektör benchmark verilerini al
     let benchmark = null;
@@ -225,12 +216,11 @@ export async function GET(request: NextRequest) {
 
 // Target skorları kaydet
 export async function POST(request: NextRequest) {
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const userId = session.user.id;
     const body = await request.json();
     const { targetVelocity, targetEndurance, targetDate } = body;
 

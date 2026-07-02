@@ -150,7 +150,9 @@ export default function SignupPage() {
         <div className="bg-[var(--bg-card)] rounded-3xl shadow-xl p-8 border border-[var(--border-soft)]">
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <motion.div 
+              <motion.div
+                role="alert"
+                aria-live="assertive"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="p-4 bg-[var(--error-bg)] rounded-xl flex items-center gap-3 text-[var(--error)] border border-[var(--error)]"
@@ -161,7 +163,9 @@ export default function SignupPage() {
             )}
 
             {success && (
-              <motion.div 
+              <motion.div
+                role="status"
+                aria-live="polite"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="p-6 rounded-xl text-center bg-[var(--success-bg)] border border-[var(--success)]"

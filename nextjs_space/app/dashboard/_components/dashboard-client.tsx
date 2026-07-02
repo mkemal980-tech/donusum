@@ -8,6 +8,7 @@ import Header from "@/components/ui/header";
 import ScoreCard from "@/components/ui/score-card";
 import ProgressBar from "@/components/ui/progress-bar";
 import { MaturityLevelBar } from "@/components/ui/maturity-level-bar";
+import SectionErrorBoundary from "@/components/section-error-boundary";
 import { ProgressSection } from "./progress-section";
 
 import { CategoryProgressChart } from "./category-progress-chart";
@@ -1552,9 +1553,11 @@ export default function DashboardClient() {
           transition={{ delay: 0.6 }}
           className="mb-8"
         >
-          <Suspense fallback={<ComponentSkeleton height="400px" />}>
-            <BenchmarkSection />
-          </Suspense>
+          <SectionErrorBoundary label="Kıyaslama grafiği yüklenemedi.">
+            <Suspense fallback={<ComponentSkeleton height="400px" />}>
+              <BenchmarkSection />
+            </Suspense>
+          </SectionErrorBoundary>
         </motion.div>
 
         {/* Progress Benchmark Section */}
@@ -1574,9 +1577,11 @@ export default function DashboardClient() {
           transition={{ delay: 0.62 }}
           className="mb-8"
         >
-          <Suspense fallback={<ComponentSkeleton height="600px" />}>
-            <IronmanChart />
-          </Suspense>
+          <SectionErrorBoundary label="Ironman analizi yüklenemedi.">
+            <Suspense fallback={<ComponentSkeleton height="600px" />}>
+              <IronmanChart />
+            </Suspense>
+          </SectionErrorBoundary>
         </motion.div>
 
         {/* Category Analysis Section */}

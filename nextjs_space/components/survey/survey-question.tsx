@@ -72,12 +72,16 @@ export default function SurveyQuestion({
               <span>Düşük Olgunluk</span>
               <span>Yüksek Olgunluk</span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2" role="radiogroup" aria-label="Olgunluk seviyesi (1 en düşük, 5 en yüksek)">
               {[1, 2, 3, 4, 5].map((num) => (
                 <button
                   key={num}
+                  type="button"
+                  role="radio"
+                  aria-checked={value === String(num)}
+                  aria-label={`Seviye ${num}${num === 1 ? " - en düşük olgunluk" : num === 5 ? " - en yüksek olgunluk" : ""}`}
                   onClick={() => onAnswer?.(q?.id, String(num))}
-                  className={`flex-1 py-4 rounded-lg font-semibold text-lg transition-all border-2 ${
+                  className={`flex-1 py-4 rounded-lg font-semibold text-lg transition-all border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)] ${
                     value === String(num)
                       ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-[0_0_20px_rgba(12,193,195,0.6)] scale-105 ring-2 ring-[var(--accent)]/30"
                       : "bg-[var(--bg-card-2)] text-[var(--text-muted)] border-[var(--border-soft)] hover:bg-[var(--border-soft)] hover:border-[var(--accent)]/50"
@@ -96,8 +100,11 @@ export default function SurveyQuestion({
             {["yes", "no"].map((option) => (
               <button
                 key={option}
+                type="button"
+                aria-pressed={value === option}
+                aria-label={option === "yes" ? "Evet" : "Hayır"}
                 onClick={() => onAnswer?.(q?.id, option)}
-                className={`flex-1 py-4 rounded-lg font-medium text-lg capitalize transition-all ${
+                className={`flex-1 py-4 rounded-lg font-medium text-lg capitalize transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)] ${
                   value === option
                     ? "bg-[var(--accent)] text-white shadow-lg"
                     : "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--border-soft)]"
@@ -117,8 +124,10 @@ export default function SurveyQuestion({
             {options?.map((option: any) => (
               <button
                 key={option?.value}
+                type="button"
+                aria-pressed={value === option?.value}
                 onClick={() => onAnswer?.(q?.id, option?.value)}
-                className={`p-4 rounded-lg text-left transition-all ${
+                className={`p-4 rounded-lg text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)] ${
                   value === option?.value
                     ? "bg-[var(--accent)] text-white shadow-lg"
                     : "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--border-soft)]"
@@ -174,8 +183,10 @@ export default function SurveyQuestion({
                 {[{ value: 'yes', label: yesLabel }, { value: 'no', label: noLabel }].map((option) => (
                   <button
                     key={option.value}
+                    type="button"
+                    aria-pressed={parsedValue.threshold === option.value}
                     onClick={() => handleThresholdChange(option.value)}
-                    className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+                    className={`flex-1 py-3 rounded-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)] ${
                       parsedValue.threshold === option.value
                         ? "bg-[var(--accent)] text-white shadow-lg"
                         : "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--border-soft)]"
@@ -204,8 +215,10 @@ export default function SurveyQuestion({
                   return (
                     <button
                       key={option.value}
+                      type="button"
+                      aria-pressed={isSelected}
                       onClick={() => handleOptionToggle(option.value)}
-                      className={`w-full p-4 rounded-lg text-left transition-all flex items-center justify-between ${
+                      className={`w-full p-4 rounded-lg text-left transition-all flex items-center justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)] ${
                         isSelected
                           ? "bg-[var(--accent)] text-white shadow-lg"
                           : "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--border-soft)]"
@@ -272,12 +285,21 @@ export default function SurveyQuestion({
             </div>
           ) : (
             <div
+              role="button"
+              tabIndex={0}
+              aria-label="Kanıt belgesi yükle: dosyayı buraya bırakın veya seçmek için tıklayın"
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
+              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
                 dragActive
                   ? "border-[#a78bfa] bg-[var(--accent)]/10"
                   : "border-[var(--border-soft)] hover:border-[#a78bfa] hover:bg-[var(--bg-card-2)]"

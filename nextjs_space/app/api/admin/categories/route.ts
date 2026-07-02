@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
+import { archiveCategory } from "@/lib/soft-delete";
 
 export async function GET(request: NextRequest) {
   const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const surveyId = searchParams.get('surveyId');
 
-    const whereClause = surveyId ? { surveyId } : {};
+    const whereClause = { archivedAt: null, ...(surveyId ? { surveyId } : {}) };
 
     const categories = await prisma.category.findMany({
       where: whereClause,
@@ -22,11 +23,14 @@ export async function GET(request: NextRequest) {
         },
         // Kategoriye doğrudan bağlı sorular
         questions: {
+          where: { archivedAt: null },
           orderBy: { order: 'asc' }
         },
         subCategories: {
+          where: { archivedAt: null },
           include: {
             subLevels: {
+              where: { archivedAt: null },
               select: {
                 id: true,
                 name: true,
@@ -34,12 +38,14 @@ export async function GET(request: NextRequest) {
                 order: true,
                 axisType: true,
                 questions: {
+                  where: { archivedAt: null },
                   orderBy: { order: 'asc' }
                 }
               },
               orderBy: { order: 'asc' }
             },
             questions: {
+              where: { archivedAt: null },
               orderBy: { order: 'asc' }
             }
           },
@@ -106,7 +112,7 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
-    await prisma.category.delete({ where: { id } });
+    await archiveCategory(id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting category:", error);

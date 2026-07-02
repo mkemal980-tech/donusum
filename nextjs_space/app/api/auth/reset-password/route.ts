@@ -40,17 +40,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Şifreyi güncelle
+    // Şifreyi güncelle — token'ı atomik olarak "tüket".
+    // updateMany + where token koşulu, eşzamanlı iki isteğin aynı token'ı
+    // kullanmasını engeller (TOCTOU yarışını kapatır): yalnızca ilki başarılı olur.
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await prisma.user.update({
-      where: { id: user.id },
+    const consumed = await prisma.user.updateMany({
+      where: {
+        id: user.id,
+        passwordResetToken: token,
+        passwordResetExpires: { gt: new Date() },
+      },
       data: {
         password: hashedPassword,
         passwordResetToken: null,
         passwordResetExpires: null,
       },
     });
+
+    if (consumed.count === 0) {
+      return NextResponse.json(
+        { error: "Geçersiz veya süresi dolmuş token" },
+        { status: 400 }
+      );
+    }
 
     // Şifre değişiklik bildirimi gönder
     const appName = "Dönüşüm Platformu";

@@ -18,7 +18,7 @@ export async function GET() {
     // Admin ise tüm aktif anketleri gör (süre sınırı yok)
     if (userRole === "ADMIN") {
       const surveys = await prisma.survey.findMany({
-        where: { isActive: true },
+        where: { isActive: true, archivedAt: null },
         orderBy: { order: 'asc' }
       });
       // Admin için süre bilgisi ekleme
@@ -47,7 +47,7 @@ export async function GET() {
     
     // Sadece aktif anketleri dön, süre bilgisi ile
     const surveys = assignments
-      .filter(a => a.survey.isActive)
+      .filter(a => a.survey.isActive && !a.survey.archivedAt)
       .map(a => {
         const isExpired = a.hasDeadline && a.deadline && new Date(a.deadline) < now;
         return {

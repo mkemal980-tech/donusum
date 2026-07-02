@@ -82,6 +82,69 @@ export function checkRateLimit(
 }
 
 /**
+ * Dağıtık (cluster-safe) rate limit kontrolü.
+ *
+ * Upstash Redis REST yapılandırılmışsa (UPSTASH_REDIS_REST_URL + _TOKEN),
+ * sabit-pencere sayacı Redis üzerinde tutulur — çok-instance dağıtımda tutarlı.
+ * Yapılandırılmamışsa (yerel/tek-instance) mevcut in-memory sayaca düşer.
+ *
+ * Redis hatası durumunda güvenli tarafta kalır: isteği in-memory sayaç ile
+ * değerlendirir (fail-open değil, yerel limit devrede).
+ */
+export async function checkRateLimitDistributed(
+  identifier: string,
+  type: RateLimitType = 'default'
+): Promise<{ allowed: boolean; remaining: number; resetIn: number }> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!url || !token) {
+    // Redis yok: yerel in-memory sayaç
+    return checkRateLimit(identifier, type);
+  }
+
+  const maxRequests = {
+    default: RATE_LIMIT_MAX_REQUESTS,
+    admin: RATE_LIMIT_MAX_ADMIN,
+    auth: RATE_LIMIT_MAX_AUTH,
+    upload: 30,
+  }[type];
+
+  const windowSeconds = RATE_LIMIT_WINDOW / 1000;
+  const bucket = Math.floor(Date.now() / RATE_LIMIT_WINDOW);
+  const key = `rl:${type}:${identifier}:${bucket}`;
+
+  try {
+    // Tek round-trip'te INCR + EXPIRE (pipeline)
+    const res = await fetch(`${url}/pipeline`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify([
+        ['INCR', key],
+        ['EXPIRE', key, String(windowSeconds)],
+      ]),
+      // Prod'da sayaç güncel olmalı, cache yok
+      cache: 'no-store',
+    });
+
+    if (!res.ok) throw new Error(`Upstash HTTP ${res.status}`);
+    const data = (await res.json()) as Array<{ result: number }>;
+    const count = data?.[0]?.result ?? 1;
+    const remaining = Math.max(0, maxRequests - count);
+    const resetIn = (windowSeconds - (Math.floor(Date.now() / 1000) % windowSeconds)) * 1000;
+
+    return { allowed: count <= maxRequests, remaining, resetIn };
+  } catch (error) {
+    logError('checkRateLimitDistributed', error, { type });
+    // Redis erişilemiyorsa yerel sayaca düş
+    return checkRateLimit(identifier, type);
+  }
+}
+
+/**
  * Get client IP from request
  */
 export function getClientIP(request: NextRequest): string {
@@ -105,9 +168,9 @@ export async function withAuth(
 ): Promise<{ success: true; userId: string; user: AuthenticatedUser } | { success: false; response: NextResponse }> {
   const { requireAdmin = false, requireUnitManager = false, rateLimit = 'default' } = options;
   
-  // Rate limit check
+  // Rate limit check (dağıtık; Redis yoksa in-memory'ye düşer)
   const ip = getClientIP(request);
-  const rateLimitResult = checkRateLimit(ip, rateLimit);
+  const rateLimitResult = await checkRateLimitDistributed(ip, rateLimit);
   
   if (!rateLimitResult.allowed) {
     return {

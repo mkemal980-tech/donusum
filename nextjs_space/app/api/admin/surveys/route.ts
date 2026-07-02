@@ -1,6 +1,7 @@
 import { withAuth } from "@/lib/api-utils";
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { archiveSurvey } from "@/lib/soft-delete";
 
 export const dynamic = 'force-dynamic';
 
@@ -94,11 +95,13 @@ export async function GET(request: Request) {
       });
     }
     
-    // Normal liste
+    // Normal liste (arşivlenmemiş)
     const surveys = await prisma.survey.findMany({
+      where: { archivedAt: null },
       orderBy: { order: 'asc' },
       include: {
         categories: {
+          where: { archivedAt: null },
           orderBy: { order: 'asc' },
           include: {
             _count: {
@@ -235,10 +238,8 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Survey ID required' }, { status: 400 });
     }
     
-    await prisma.survey.delete({
-      where: { id }
-    });
-    
+    await archiveSurvey(id);
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting survey:', error);

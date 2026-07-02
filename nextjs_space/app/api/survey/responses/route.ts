@@ -1,10 +1,9 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/db";
-import { buildSurveyQuestionWhere } from "@/lib/scoring";
+import { withAuth } from "@/lib/api-utils";
+import { buildSurveyQuestionWhere, scoreConditionalChoice } from "@/lib/scoring";
 
 async function validateSurveyAccess(userId: string, role: string, surveyId: string) {
   if (role === "ADMIN") return null;
@@ -49,14 +48,12 @@ function getQuestionSurveyId(question: {
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const userId = session.user.id;
-    const userRole = session.user.role;
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
+  const userRole = auth.user.role;
 
+  try {
     const { searchParams } = new URL(request.url);
     const surveyId = searchParams.get('surveyId');
     const countOnly = searchParams.get('countOnly') === 'true';
@@ -99,13 +96,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
+  const userRole = auth.user.role;
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const userId = session.user.id;
-    const userRole = session.user.role;
     const body = await request.json();
     const { questionId, value } = body ?? {};
 
@@ -169,25 +165,11 @@ export async function POST(request: NextRequest) {
       const selected = options?.find((o: any) => o?.value === value);
       score = selected?.score ?? 0;
     } else if (question?.type === 'CONDITIONAL_CHOICE') {
-      // Parse value: { threshold: 'yes'|'no', selected: string[] }
-      try {
-        const parsedValue = JSON.parse(value);
-        if (parsedValue.threshold === 'no') {
-          // "Hayır" seçildi, puan 0
-          score = 0;
-        } else if (parsedValue.threshold === 'yes' && parsedValue.selected) {
-          // "Evet" seçildi, seçilen alt seçeneklerin puanlarını topla
-          const condOpts = question?.conditionalOptions as any;
-          const subOptions = condOpts?.options || [];
-          score = parsedValue.selected.reduce((total: number, selectedValue: string) => {
-            const option = subOptions.find((o: any) => o.value === selectedValue);
-            return total + (option?.score || 0);
-          }, 0);
-        }
-      } catch (e) {
-        console.error('Error parsing conditional choice value:', e);
-        score = 0;
-      }
+      // { threshold: 'yes'|'no', selected: string[] } → puan (5 ile sınırlı)
+      score = scoreConditionalChoice(
+        String(value),
+        question?.conditionalOptions as any
+      );
     }
 
     const response = await prisma.surveyResponse.upsert({

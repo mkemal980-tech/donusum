@@ -1,22 +1,15 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/db";
+import { withAuth } from "@/lib/api-utils";
 
-async function getUserIdOrNull() {
-  const session = await getServerSession(authOptions);
-  return session?.user?.id || null;
-}
+export async function GET(request: NextRequest) {
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
 
-export async function GET() {
   try {
-    const userId = await getUserIdOrNull();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const roadmapItems = await prisma.roadmapItem.findMany({
       where: { userId },
       include: {
@@ -40,11 +33,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
+
   try {
-    const userId = await getUserIdOrNull();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     const body = await request.json();
     const { recommendationId, plannedQuarter, plannedYear, priority } = body ?? {};
 
@@ -91,11 +84,11 @@ export async function POST(request: NextRequest) {
 
 // Status güncelleme için PUT
 export async function PUT(request: NextRequest) {
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
+
   try {
-    const userId = await getUserIdOrNull();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     const body = await request.json();
     const { recommendationId, status, plannedQuarter, plannedYear, priority } = body ?? {};
 
@@ -144,11 +137,11 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
+
   try {
-    const userId = await getUserIdOrNull();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     const { searchParams } = new URL(request.url);
     const recommendationId = searchParams.get('recommendationId');
 

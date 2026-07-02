@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
 import { prisma } from '@/lib/db';
+import { withAuth } from '@/lib/api-utils';
+import { classifyQuadrant } from '@/lib/scoring';
+import type { Prisma } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
-async function getUserIdOrNull() {
-  const session = await getServerSession(authOptions);
-  return session?.user?.id || null;
-}
+type DbClient = Prisma.TransactionClient | typeof prisma;
 
 // Kullanıcının mevcut skorlarını hesapla
-async function calculateUserScores(userId: string, surveyId?: string) {
+async function calculateUserScores(userId: string, surveyId?: string, db: DbClient = prisma) {
   // Kullanıcının cevaplarını al
-  const responses = await prisma.surveyResponse.findMany({
+  const responses = await db.surveyResponse.findMany({
     where: { 
       userId,
       ...(surveyId && {
@@ -32,7 +30,7 @@ async function calculateUserScores(userId: string, surveyId?: string) {
   });
 
   // Tamamlanan önerilerin puanlarını al (RoadmapItem'dan)
-  const completedRecs = await prisma.roadmapItem.findMany({
+  const completedRecs = await db.roadmapItem.findMany({
     where: { 
       userId, 
       status: 'COMPLETED' 
@@ -96,15 +94,11 @@ async function calculateUserScores(userId: string, surveyId?: string) {
   const overallScore = Math.min(5, baseOverall + (velocityBonus + enduranceBonus) / 2);
   const overallPercentage = ((overallScore - 1) / 4) * 100;
 
-  // Quadrant hesapla
-  const THRESHOLD = 3.0;
-  let quadrant = 'WALKER';
-  if (velocityScore >= THRESHOLD && enduranceScore >= THRESHOLD) quadrant = 'IRONMAN';
-  else if (velocityScore >= THRESHOLD && enduranceScore < THRESHOLD) quadrant = 'SPRINTER';
-  else if (velocityScore < THRESHOLD && enduranceScore >= THRESHOLD) quadrant = 'MARATHON_RUNNER';
+  // Quadrant hesapla (tek doğru kaynak: lib/scoring)
+  const quadrant = classifyQuadrant(velocityScore, enduranceScore);
 
   // Toplam soru sayısı
-  const totalQuestions = await prisma.question.count();
+  const totalQuestions = await db.question.count();
 
   return {
     overallScore: Math.round(overallScore * 10) / 10,
@@ -120,14 +114,15 @@ async function calculateUserScores(userId: string, surveyId?: string) {
 
 // Skor geçmişine kayıt ekle
 async function recordScoreHistory(
-  userId: string, 
-  triggerType: string, 
+  userId: string,
+  triggerType: string,
   triggerEntityId?: string,
-  surveyId?: string
+  surveyId?: string,
+  db: DbClient = prisma
 ) {
-  const scores = await calculateUserScores(userId, surveyId);
-  
-  await prisma.scoreHistory.create({
+  const scores = await calculateUserScores(userId, surveyId, db);
+
+  await db.scoreHistory.create({
     data: {
       userId,
       surveyId,
@@ -148,13 +143,12 @@ async function recordScoreHistory(
 }
 
 // Get all completion statuses for the current user
-export async function GET() {
-  try {
-    const userId = await getUserIdOrNull();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export async function GET(request: NextRequest) {
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
 
+  try {
     // RoadmapItem tablosundan oku (yol haritası ile senkronize)
     const roadmapItems = await prisma.roadmapItem.findMany({
       where: { userId },
@@ -202,12 +196,11 @@ export async function GET() {
 
 // Create or update a completion status
 export async function POST(request: NextRequest) {
-  try {
-    const userId = await getUserIdOrNull();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
 
+  try {
     const { recommendationId, status, notes, surveyId } = await request.json();
 
     if (!recommendationId) {
@@ -233,38 +226,55 @@ export async function POST(request: NextRequest) {
     const wasCompleted = previousItem?.status === 'COMPLETED';
     const isNowCompleted = status === 'COMPLETED';
 
-    // RoadmapItem tablosunu güncelle (yol haritası ile senkronize)
-    const roadmapItem = await prisma.roadmapItem.upsert({
-      where: {
-        userId_recommendationId: {
+    // Durum güncellemesi ile skor geçmişi yazımını atomik yap:
+    // upsert ve (gerekiyorsa) scoreHistory kaydı tek transaction'da,
+    // böylece yarım kalmış yazma / yarış durumu oluşmaz.
+    const { roadmapItem, updatedScores } = await prisma.$transaction(async (tx) => {
+      const item = await tx.roadmapItem.upsert({
+        where: {
+          userId_recommendationId: {
+            userId,
+            recommendationId: recommendationId
+          }
+        },
+        create: {
           userId,
-          recommendationId: recommendationId
-        }
-      },
-      create: {
-        userId,
-        recommendationId: recommendationId,
-        status: status || 'NOT_STARTED'
-      },
-      update: {
-        status: status || 'NOT_STARTED'
-      },
-      include: {
-        recommendation: {
-          select: {
-            id: true,
-            title: true,
-            points: true,
-            subLevelId: true,
-            subLevel: {
-              select: {
-                name: true,
-                axisType: true
+          recommendationId: recommendationId,
+          status: status || 'NOT_STARTED'
+        },
+        update: {
+          status: status || 'NOT_STARTED'
+        },
+        include: {
+          recommendation: {
+            select: {
+              id: true,
+              title: true,
+              points: true,
+              subLevelId: true,
+              subLevel: {
+                select: {
+                  name: true,
+                  axisType: true
+                }
               }
             }
           }
         }
+      });
+
+      let scores = null;
+      if (!wasCompleted && isNowCompleted) {
+        scores = await recordScoreHistory(
+          userId,
+          'RECOMMENDATION_COMPLETED',
+          recommendationId,
+          surveyId,
+          tx
+        );
       }
+
+      return { roadmapItem: item, updatedScores: scores };
     });
 
     // Formatı completion formatına dönüştür
@@ -277,17 +287,6 @@ export async function POST(request: NextRequest) {
       completedAt: roadmapItem.status === 'COMPLETED' ? roadmapItem.updatedAt : null,
       recommendation: roadmapItem.recommendation
     };
-
-    // Eğer yeni tamamlandıysa, skor geçmişine kayıt ekle
-    let updatedScores = null;
-    if (!wasCompleted && isNowCompleted) {
-      updatedScores = await recordScoreHistory(
-        userId, 
-        'RECOMMENDATION_COMPLETED', 
-        recommendationId,
-        surveyId
-      );
-    }
 
     return NextResponse.json({
       completion,
@@ -302,12 +301,11 @@ export async function POST(request: NextRequest) {
 
 // Delete a completion status (reset to not started)
 export async function DELETE(request: NextRequest) {
-  try {
-    const userId = await getUserIdOrNull();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
 
+  try {
     const { searchParams } = new URL(request.url);
     const recommendationId = searchParams.get('recommendationId');
 

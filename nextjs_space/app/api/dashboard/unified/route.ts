@@ -1,8 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
+import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
 import { buildSurveyQuestionWhere, calculateUserScore } from "@/lib/scoring";
 
@@ -11,30 +10,17 @@ import { buildSurveyQuestionWhere, calculateUserScore } from "@/lib/scoring";
  * Bu sayede multiple API calls yerine tek request ile tüm data gelir
  */
 export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
 
+  try {
     const { searchParams } = new URL(request.url);
     const surveyId = searchParams.get("surveyId");
 
     if (!surveyId) {
       return NextResponse.json({ error: "surveyId gerekli" }, { status: 400 });
     }
-
-    // Get user ID from email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-      select: { id: true }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const userId = user.id;
 
     // PARALEL FETCH - Tüm veriler aynı anda çekilir
     const [

@@ -23,6 +23,66 @@ function percentageToScore(percentage: number): number {
   return (percentage / 100) * 4 + 1;
 }
 
+/**
+ * Bir sorunun alabileceği maksimum ham puan (1-5 ölçeği).
+ * Puanlama motoru her sorunun maksimumunu `MAX_QUESTION_SCORE × weight` kabul eder.
+ */
+export const MAX_QUESTION_SCORE = 5;
+
+/**
+ * Ham soru puanını geçerli [0, MAX_QUESTION_SCORE] aralığına sıkıştırır.
+ * CONDITIONAL_CHOICE gibi birden çok alt-seçenek puanının toplandığı tiplerde
+ * toplamın 5'i aşarak yüzdeyi %100 üzerine çıkarmasını engeller.
+ */
+export function clampScore(score: number): number {
+  if (!Number.isFinite(score) || score < 0) return 0;
+  return Math.min(score, MAX_QUESTION_SCORE);
+}
+
+/**
+ * CONDITIONAL_CHOICE cevabını puana çevirir.
+ * value: JSON string — { threshold: 'yes'|'no', selected?: string[] }
+ * conditionalOptions: { options: { value: string; score: number }[] }
+ * "Hayır" → 0; "Evet" → seçilen alt-seçenek puanları toplamı (5 ile sınırlı).
+ */
+export function scoreConditionalChoice(
+  value: string,
+  conditionalOptions: { options?: { value: string; score?: number }[] } | null | undefined
+): number {
+  let parsed: { threshold?: string; selected?: string[] };
+  try {
+    parsed = JSON.parse(value);
+  } catch {
+    return 0;
+  }
+  if (parsed.threshold !== "yes" || !Array.isArray(parsed.selected)) {
+    return 0;
+  }
+  const subOptions = conditionalOptions?.options ?? [];
+  const rawSum = parsed.selected.reduce((total: number, selectedValue: string) => {
+    const option = subOptions.find((o) => o.value === selectedValue);
+    return total + (option?.score ?? 0);
+  }, 0);
+  return clampScore(rawSum);
+}
+
+// Ironman kadran eşiği (Velocity/Endurance ekseni)
+export const QUADRANT_THRESHOLD = 3.0;
+
+export type Quadrant = "IRONMAN" | "SPRINTER" | "MARATHON_RUNNER" | "WALKER";
+
+/**
+ * Velocity/Endurance skorlarına göre kadran sınıflandırması.
+ * Tek doğru kaynak — ironman, score-history ve recommendations/completion
+ * rotalarındaki tekrarlanan mantığın yerini alır.
+ */
+export function classifyQuadrant(velocity: number, endurance: number): Quadrant {
+  if (velocity >= QUADRANT_THRESHOLD && endurance >= QUADRANT_THRESHOLD) return "IRONMAN";
+  if (velocity >= QUADRANT_THRESHOLD && endurance < QUADRANT_THRESHOLD) return "SPRINTER";
+  if (velocity < QUADRANT_THRESHOLD && endurance >= QUADRANT_THRESHOLD) return "MARATHON_RUNNER";
+  return "WALKER";
+}
+
 export function buildSurveyQuestionWhere(surveyId: string) {
   return {
     OR: [
@@ -36,15 +96,17 @@ export function buildSurveyQuestionWhere(surveyId: string) {
 export async function calculateUserScore(userId: string, surveyId?: string) {
   // Önce tüm kategorileri getir (ankete göre filtrelenebilir)
   const allCategories = await prisma.category.findMany({
-    where: surveyId ? { surveyId } : undefined,
+    where: { archivedAt: null, ...(surveyId ? { surveyId } : {}) },
     include: {
-      questions: true,  // Doğrudan kategoriye bağlı sorular
+      questions: { where: { archivedAt: null } },  // Doğrudan kategoriye bağlı sorular
       subCategories: {
+        where: { archivedAt: null },
         include: {
           subLevels: {
-            include: { questions: true }
+            where: { archivedAt: null },
+            include: { questions: { where: { archivedAt: null } } }
           },
-          questions: true
+          questions: { where: { archivedAt: null } }
         }
       }
     },
@@ -54,7 +116,10 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
   const responses = await prisma.surveyResponse.findMany({
     where: {
       userId,
-      ...(surveyId ? { question: buildSurveyQuestionWhere(surveyId) } : {})
+      question: {
+        archivedAt: null,
+        ...(surveyId ? buildSurveyQuestionWhere(surveyId) : {})
+      }
     },
     include: {
       question: {

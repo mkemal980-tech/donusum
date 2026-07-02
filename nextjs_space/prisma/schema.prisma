@@ -65,7 +65,6 @@ model User {
   sector                    Sector?                        @relation(fields: [sectorId], references: [id])
   subSector                 SubSector?                     @relation(fields: [subSectorId], references: [id])
   unit                      Unit?                          @relation("UnitUsers", fields: [unitId], references: [id])
-  recommendationCompletions UserRecommendationCompletion[]
   surveyAssignments         UserSurveyAssignment[]
 }
 
@@ -134,6 +133,7 @@ model Survey {
   order                 Int                    @default(0)
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
+  archivedAt            DateTime?              // Soft-delete: doluysa arşivlenmiş sayılır
   benchmarks            Benchmark[]
   categories            Category[]
   sectorCategoryWeights SectorCategoryWeight[]
@@ -165,6 +165,7 @@ model Category {
   description   String?
   order         Int           @default(0)
   createdAt     DateTime      @default(now())
+  archivedAt    DateTime?     // Soft-delete
   surveyId      String?
   survey        Survey?       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   subCategories SubCategory[]
@@ -178,6 +179,7 @@ model SubCategory {
   order           Int              @default(0)
   categoryId      String
   createdAt       DateTime         @default(now())
+  archivedAt      DateTime?        // Soft-delete
   hasSubLevels    Boolean          @default(true)
   questions       Question[]       @relation("SubCategoryQuestions")
   recommendations Recommendation[]
@@ -192,6 +194,7 @@ model SubLevel {
   order           Int              @default(0)
   subCategoryId   String
   createdAt       DateTime         @default(now())
+  archivedAt      DateTime?        // Soft-delete
   axisType        AxisType         @default(VELOCITY)
   questions       Question[]       @relation("SubLevelQuestions")
   recommendations Recommendation[]
@@ -230,6 +233,7 @@ model Question {
   categoryId         String?
   axisType           AxisType         @default(VELOCITY)
   conditionalOptions Json?
+  archivedAt         DateTime?        // Soft-delete
   category           Category?        @relation("CategoryQuestions", fields: [categoryId], references: [id], onDelete: Cascade)
   subCategory        SubCategory?     @relation("SubCategoryQuestions", fields: [subCategoryId], references: [id], onDelete: Cascade)
   subLevel           SubLevel?        @relation("SubLevelQuestions", fields: [subLevelId], references: [id], onDelete: Cascade)
@@ -301,22 +305,6 @@ model Recommendation {
   subCategory       SubCategory?                   @relation(fields: [subCategoryId], references: [id])
   subLevel          SubLevel?                      @relation(fields: [subLevelId], references: [id])
   roadmapItems      RoadmapItem[]
-  completions       UserRecommendationCompletion[]
-}
-
-model UserRecommendationCompletion {
-  id               String           @id @default(cuid())
-  userId           String
-  recommendationId String
-  status           CompletionStatus @default(NOT_STARTED)
-  notes            String?
-  completedAt      DateTime?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  recommendation   Recommendation   @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
-  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, recommendationId])
 }
 
 model ScoreHistory {

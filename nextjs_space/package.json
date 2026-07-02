@@ -6,6 +6,10 @@
     "build": "prisma generate && next build",
     "start": "node scripts/start-standalone.js",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "db:generate": "prisma generate",
     "db:migrate": "node scripts/migrate-deploy.js",
     "admin:create": "tsx --require dotenv/config scripts/create-admin.ts"
@@ -15,6 +19,7 @@
   },
   "devDependencies": {
     "@next/swc-wasm-nodejs": "13.5.1",
+    "@playwright/test": "^1.61.1",
     "@types/node": "20.6.2",
     "@types/react": "18.2.22",
     "@types/react-dom": "18.2.7",
@@ -31,7 +36,8 @@
     "tailwindcss-animate": "1.0.7",
     "ts-node": "10.9.2",
     "tsx": "4.20.3",
-    "typescript": "5.2.2"
+    "typescript": "5.2.2",
+    "vitest": "^2.1.9"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",

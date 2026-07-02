@@ -2,14 +2,19 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { withAuth } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest) {
+  // Daha önce tamamen kimlik doğrulamasız erişilebilen anket yapısı uç noktası korundu.
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+
   try {
     const { searchParams } = new URL(request.url);
     const surveyId = searchParams.get('surveyId');
 
-    // Anket ID varsa sadece o ankete ait kategorileri getir
-    const whereClause = surveyId ? { surveyId } : {};
+    // Anket ID varsa sadece o ankete ait (arşivlenmemiş) kategorileri getir
+    const whereClause = { archivedAt: null, ...(surveyId ? { surveyId } : {}) };
 
     const categories = await prisma.category.findMany({
       where: whereClause,
@@ -20,22 +25,27 @@ export async function GET(request: NextRequest) {
         },
         // Doğrudan kategoriye bağlı sorular (alt kategori olmadan)
         questions: {
+          where: { archivedAt: null },
           orderBy: { order: 'asc' }
         },
         subCategories: {
+          where: { archivedAt: null },
           orderBy: { order: 'asc' },
           include: {
             // Alt seviyeler ve onların soruları
             subLevels: {
+              where: { archivedAt: null },
               orderBy: { order: 'asc' },
               include: {
                 questions: {
+                  where: { archivedAt: null },
                   orderBy: { order: 'asc' }
                 }
               }
             },
             // Doğrudan alt kategoriye bağlı sorular (hasSubLevels = false)
             questions: {
+              where: { archivedAt: null },
               orderBy: { order: 'asc' }
             }
           }

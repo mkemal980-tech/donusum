@@ -1,23 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
+import { withAuth } from '@/lib/api-utils';
 import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const userId = session.user.id;
     const { searchParams } = new URL(request.url);
     const surveyId = searchParams.get('surveyId');
 
-    // 1. Kategorileri al
+    // 1. Kategorileri al (arşivlenmemiş)
     const categories = await prisma.category.findMany({
-      where: surveyId ? { surveyId } : {},
+      where: { archivedAt: null, ...(surveyId ? { surveyId } : {}) },
       include: {
         subCategories: {
           include: {

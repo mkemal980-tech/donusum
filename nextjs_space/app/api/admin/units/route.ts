@@ -150,32 +150,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Birim oluştur
-    const unit = await prisma.unit.create({
-      data: {
-        name,
-        description,
-        organization,
-        parentId: parentId || null,
-      },
-    });
-
-    // Adminleri ata
+    // Admin adaylarının gerçek/aktif kullanıcı olduğunu doğrula (aidiyet/varlık kontrolü)
     if (adminIds && adminIds.length > 0) {
-      await prisma.unitAdmin.createMany({
-        data: adminIds.map((userId: string) => ({
-          unitId: unit.id,
-          userId,
-        })),
-        skipDuplicates: true,
+      const validCount = await prisma.user.count({
+        where: { id: { in: adminIds }, isActive: true },
+      });
+      if (validCount !== adminIds.length) {
+        return NextResponse.json(
+          { error: "Geçersiz veya pasif admin kullanıcı(lar)." },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Birim oluştur + admin ata + rol güncelle — atomik
+    const unit = await prisma.$transaction(async (tx) => {
+      const created = await tx.unit.create({
+        data: {
+          name,
+          description,
+          organization,
+          parentId: parentId || null,
+        },
       });
 
-      // Admin rolünü güncelle
-      await prisma.user.updateMany({
-        where: { id: { in: adminIds } },
-        data: { role: "UNIT_MANAGER" },
-      });
-    }
+      if (adminIds && adminIds.length > 0) {
+        await tx.unitAdmin.createMany({
+          data: adminIds.map((userId: string) => ({
+            unitId: created.id,
+            userId,
+          })),
+          skipDuplicates: true,
+        });
+        await tx.user.updateMany({
+          where: { id: { in: adminIds } },
+          data: { role: "UNIT_MANAGER" },
+        });
+      }
+
+      return created;
+    });
 
     // Güncel birimi getir
     const updatedUnit = await prisma.unit.findUnique({
@@ -220,6 +234,19 @@ export async function PUT(request: NextRequest) {
         { error: "Birim ID gerekli" },
         { status: 400 }
       );
+    }
+
+    // Admin adaylarının gerçek/aktif kullanıcı olduğunu doğrula
+    if (adminIds && adminIds.length > 0) {
+      const validCount = await prisma.user.count({
+        where: { id: { in: adminIds }, isActive: true },
+      });
+      if (validCount !== adminIds.length) {
+        return NextResponse.json(
+          { error: "Geçersiz veya pasif admin kullanıcı(lar)." },
+          { status: 400 }
+        );
+      }
     }
 
     // Kendisini kendi parent'ı yapmasını engelle

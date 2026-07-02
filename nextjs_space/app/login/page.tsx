@@ -111,11 +111,13 @@ export default function LoginPage() {
         }}>
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <motion.div 
+              <motion.div
+                role="alert"
+                aria-live="assertive"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="p-4 rounded-lg"
-                style={{ 
+                style={{
                   background: showResendVerification ? 'rgba(12, 193, 195, 0.1)' : 'var(--error-bg)', 
                   color: showResendVerification ? 'var(--accent)' : 'var(--error)',
                   border: showResendVerification ? '1px solid rgba(12, 193, 195, 0.3)' : '1px solid rgba(229, 77, 77, 0.3)'

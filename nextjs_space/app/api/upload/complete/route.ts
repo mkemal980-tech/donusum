@@ -1,18 +1,15 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/db";
+import { withAuth } from "@/lib/api-utils";
 
 export async function POST(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const auth = await withAuth(request, { rateLimit: 'upload' });
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
 
-    const userId = session.user.id;
+  try {
     const body = await request.json();
     const { cloudStoragePath, isPublic, fileName, fileType, responseId, questionId } = body ?? {};
 

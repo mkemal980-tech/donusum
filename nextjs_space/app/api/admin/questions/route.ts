@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
+import { archiveQuestion } from "@/lib/soft-delete";
 
 export async function POST(request: NextRequest) {
   const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
@@ -76,7 +77,7 @@ export async function DELETE(request: NextRequest) {
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
-    await prisma.question.delete({ where: { id } });
+    await archiveQuestion(id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting question:", error);
