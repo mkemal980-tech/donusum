@@ -8,6 +8,8 @@ import {
   formatScoredOptions,
   parseScoredOptions,
 } from "@/lib/question-options";
+import type { ImportRow } from "@/lib/question-import";
+import QuestionImportPreview, { type PreviewPayload } from "@/components/admin/question-import-preview";
 
 interface Question {
   id: string;
@@ -112,8 +114,9 @@ export default function CategoriesPage() {
     errors?: { row: number; message: string }[];
   } | null>(null);
   const [bulkUploading, setBulkUploading] = useState(false);
+  const [bulkPreview, setBulkPreview] = useState<PreviewPayload | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Survey-level bulk upload state
   const [showSurveyBulkUpload, setShowSurveyBulkUpload] = useState(false);
   const [surveyBulkUploadResult, setSurveyBulkUploadResult] = useState<{
@@ -122,6 +125,7 @@ export default function CategoriesPage() {
     errors?: { row: number; message: string }[];
   } | null>(null);
   const [surveyBulkUploading, setSurveyBulkUploading] = useState(false);
+  const [surveyBulkPreview, setSurveyBulkPreview] = useState<PreviewPayload | null>(null);
   const surveyFileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchSurveys = useCallback(async () => {
@@ -230,17 +234,20 @@ export default function CategoriesPage() {
     }
   };
 
+  // 1. adım: dosyayı doğrulat, kaydetmeden önizlemeye al
   const handleBulkUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !showBulkUpload) return;
 
     setBulkUploading(true);
     setBulkUploadResult(null);
+    setBulkPreview(null);
 
     try {
       const formData = new FormData();
       formData.append('file', file);
-      
+      formData.append('mode', 'preview');
+
       if (showBulkUpload.isSubCategory) {
         formData.append('subCategoryId', showBulkUpload.parentId);
       } else {
@@ -253,18 +260,13 @@ export default function CategoriesPage() {
       });
 
       const result = await response.json();
-      
+
       if (response.ok) {
-        setBulkUploadResult({
-          success: true,
-          summary: result.summary,
-          errors: result.errors,
-        });
-        fetchCategories();
+        setBulkPreview(result);
       } else {
         setBulkUploadResult({
           success: false,
-          errors: [{ row: 0, message: result.error || 'Yükleme başarısız' }],
+          errors: [{ row: 0, message: result.error || 'Dosya okunamadı' }],
         });
       }
     } catch (error) {
@@ -281,8 +283,49 @@ export default function CategoriesPage() {
     }
   };
 
+  // 2. adım: önizlemede düzenlenmiş satırları kaydet
+  const handleBulkConfirm = async (rows: ImportRow[]) => {
+    if (!showBulkUpload) return;
+
+    setBulkUploading(true);
+    try {
+      const response = await fetch('/api/admin/questions/bulk-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rows,
+          subCategoryId: showBulkUpload.isSubCategory ? showBulkUpload.parentId : null,
+          subLevelId: showBulkUpload.isSubCategory ? null : showBulkUpload.parentId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setBulkPreview(null);
+        setBulkUploadResult({ success: true, summary: result.summary, errors: result.errors });
+        fetchCategories();
+      } else {
+        setBulkUploadResult({
+          success: false,
+          summary: result.summary,
+          errors: result.errors?.length ? result.errors : [{ row: 0, message: result.error || 'Aktarım başarısız' }],
+        });
+      }
+    } catch (error) {
+      console.error('Error importing:', error);
+      setBulkUploadResult({
+        success: false,
+        errors: [{ row: 0, message: 'Sorular aktarılırken hata oluştu' }],
+      });
+    } finally {
+      setBulkUploading(false);
+    }
+  };
+
   const openBulkUploadModal = (parentId: string, isSubCategory: boolean) => {
     setShowBulkUpload({ parentId, isSubCategory });
+    setBulkPreview(null);
     setBulkUploadResult(null);
   };
 
@@ -307,17 +350,20 @@ export default function CategoriesPage() {
     }
   };
 
+  // 1. adım: dosyayı doğrulat, kaydetmeden önizlemeye al
   const handleSurveyBulkUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !selectedSurveyId) return;
 
     setSurveyBulkUploading(true);
     setSurveyBulkUploadResult(null);
+    setSurveyBulkPreview(null);
 
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('surveyId', selectedSurveyId);
+      formData.append('mode', 'preview');
 
       const response = await fetch('/api/admin/questions/survey-bulk-upload', {
         method: 'POST',
@@ -325,18 +371,13 @@ export default function CategoriesPage() {
       });
 
       const result = await response.json();
-      
+
       if (response.ok) {
-        setSurveyBulkUploadResult({
-          success: true,
-          summary: result.summary,
-          errors: result.errors,
-        });
-        fetchCategories();
+        setSurveyBulkPreview(result);
       } else {
         setSurveyBulkUploadResult({
           success: false,
-          errors: [{ row: 0, message: result.error || 'Yükleme başarısız' }],
+          errors: [{ row: 0, message: result.error || 'Dosya okunamadı' }],
         });
       }
     } catch (error) {
@@ -350,6 +391,42 @@ export default function CategoriesPage() {
       if (surveyFileInputRef.current) {
         surveyFileInputRef.current.value = '';
       }
+    }
+  };
+
+  // 2. adım: önizlemede düzenlenmiş satırları kaydet
+  const handleSurveyBulkConfirm = async (rows: ImportRow[]) => {
+    if (!selectedSurveyId) return;
+
+    setSurveyBulkUploading(true);
+    try {
+      const response = await fetch('/api/admin/questions/survey-bulk-upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ surveyId: selectedSurveyId, rows }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSurveyBulkPreview(null);
+        setSurveyBulkUploadResult({ success: true, summary: result.summary, errors: result.errors });
+        fetchCategories();
+      } else {
+        setSurveyBulkUploadResult({
+          success: false,
+          summary: result.summary,
+          errors: result.errors?.length ? result.errors : [{ row: 0, message: result.error || 'Aktarım başarısız' }],
+        });
+      }
+    } catch (error) {
+      console.error('Error importing:', error);
+      setSurveyBulkUploadResult({
+        success: false,
+        errors: [{ row: 0, message: 'Sorular aktarılırken hata oluştu' }],
+      });
+    } finally {
+      setSurveyBulkUploading(false);
     }
   };
 
@@ -624,7 +701,7 @@ export default function CategoriesPage() {
               </span>
               <div className="flex items-center gap-2 ml-auto">
                 <button
-                  onClick={() => setShowSurveyBulkUpload(true)}
+                  onClick={() => { setShowSurveyBulkUpload(true); setSurveyBulkPreview(null); setSurveyBulkUploadResult(null); }}
                   className="flex items-center gap-2 px-3 py-2 bg-[var(--accent-dark)] text-white rounded-lg hover:bg-[var(--accent-dark)] text-sm"
                   title="Tüm kategorilere toplu soru yükle"
                 >
@@ -1227,14 +1304,25 @@ export default function CategoriesPage() {
       {/* Bulk Upload Modal */}
       {showBulkUpload && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className={`bg-[var(--bg-card)] rounded-xl p-6 w-full max-h-[90vh] overflow-y-auto ${bulkPreview ? 'max-w-7xl' : 'max-w-lg'}`}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-[var(--text-main)]">Excel'den Toplu Soru Yükle</h2>
-              <button onClick={() => { setShowBulkUpload(null); setBulkUploadResult(null); }} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
+              <h2 className="text-xl font-bold text-[var(--text-main)]">
+                {bulkPreview ? 'Aktarmadan Önce Kontrol Edin' : "Excel'den Toplu Soru Yükle"}
+              </h2>
+              <button onClick={() => { setShowBulkUpload(null); setBulkUploadResult(null); setBulkPreview(null); }} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
                 <X size={24} />
               </button>
             </div>
 
+            {bulkPreview ? (
+              <QuestionImportPreview
+                payload={bulkPreview}
+                withStructure={false}
+                saving={bulkUploading}
+                onCancel={() => setBulkPreview(null)}
+                onConfirm={handleBulkConfirm}
+              />
+            ) : (
             <div className="space-y-4">
               {/* Template Download */}
               <div className="p-4 bg-[var(--bg-card-2)] rounded-lg border border-[var(--blue-main)]">
@@ -1262,7 +1350,8 @@ export default function CategoriesPage() {
                   2. Doldurduğunuz Dosyayı Yükleyin
                 </h3>
                 <p className="text-sm text-[var(--accent)] mb-3">
-                  Şablonu doldurduktan sonra aşağıdan yükleyin.
+                  Dosyayı seçince önce bir <strong>önizleme</strong> açılır. Soruları orada düzenleyebilir,
+                  onayladıktan sonra aktarabilirsiniz — onaylamadan hiçbir şey kaydedilmez.
                 </p>
                 <input
                   ref={fileInputRef}
@@ -1275,7 +1364,7 @@ export default function CategoriesPage() {
                 {bulkUploading && (
                   <div className="flex items-center gap-2 mt-3 text-[var(--accent)]">
                     <div className="w-4 h-4 border-2 border-[var(--success)] border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm">Yükleniyor...</span>
+                    <span className="text-sm">Dosya okunuyor...</span>
                   </div>
                 )}
               </div>
@@ -1344,15 +1433,18 @@ export default function CategoriesPage() {
                 </div>
               </div>
             </div>
+            )}
 
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => { setShowBulkUpload(null); setBulkUploadResult(null); }}
-                className="px-4 py-2 bg-[var(--border-soft)] text-[var(--text-muted)] rounded-lg hover:bg-[var(--ui-passive)]"
-              >
-                Kapat
-              </button>
-            </div>
+            {!bulkPreview && (
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => { setShowBulkUpload(null); setBulkUploadResult(null); }}
+                  className="px-4 py-2 bg-[var(--border-soft)] text-[var(--text-muted)] rounded-lg hover:bg-[var(--ui-passive)]"
+                >
+                  Kapat
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1360,12 +1452,12 @@ export default function CategoriesPage() {
       {/* Survey-Level Bulk Upload Modal */}
       {showSurveyBulkUpload && selectedSurveyId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className={`bg-[var(--bg-card)] rounded-xl p-6 w-full max-h-[90vh] overflow-y-auto ${surveyBulkPreview ? 'max-w-[95vw]' : 'max-w-2xl'}`}>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold text-[var(--text-main)]">
-                📊 Ankete Toplu Soru Yükle
+                {surveyBulkPreview ? '📋 Aktarmadan Önce Kontrol Edin' : '📊 Ankete Toplu Soru Yükle'}
               </h2>
-              <button onClick={() => { setShowSurveyBulkUpload(false); setSurveyBulkUploadResult(null); }} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
+              <button onClick={() => { setShowSurveyBulkUpload(false); setSurveyBulkUploadResult(null); setSurveyBulkPreview(null); }} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
                 <X size={24} />
               </button>
             </div>
@@ -1375,10 +1467,21 @@ export default function CategoriesPage() {
                 <strong>Seçili Anket:</strong> {surveys.find(s => s.id === selectedSurveyId)?.name}
               </p>
               <p className="text-xs text-[var(--warning)] mt-1">
-                Bu şablon, anketin tüm kategori ve alt kategorilerini içerir. Tek dosyada tüm soruları yükleyebilirsiniz.
+                {surveyBulkPreview
+                  ? 'Aşağıdaki sorular henüz kaydedilmedi. Düzenleyip onayladığınızda bu ankete eklenecek.'
+                  : 'Bu şablon, anketin tüm kategori ve alt kategorilerini içerir. Tek dosyada tüm soruları yükleyebilirsiniz.'}
               </p>
             </div>
 
+            {surveyBulkPreview ? (
+              <QuestionImportPreview
+                payload={surveyBulkPreview}
+                withStructure
+                saving={surveyBulkUploading}
+                onCancel={() => setSurveyBulkPreview(null)}
+                onConfirm={handleSurveyBulkConfirm}
+              />
+            ) : (
             <div className="space-y-4">
               {/* Template Download */}
               <div className="p-4 bg-[var(--bg-card-2)] rounded-lg border border-[var(--blue-main)]">
@@ -1406,8 +1509,8 @@ export default function CategoriesPage() {
                   2. Doldurduğunuz Dosyayı Yükleyin
                 </h3>
                 <p className="text-sm text-[var(--accent)] mb-3">
-                  Şablondaki <strong>kategori_adi</strong>, <strong>alt_kategori_adi</strong> ve <strong>alt_seviye_adi</strong> kolonlarını 
-                  değiştirmeden soruları ekleyin. Sistem otomatik olarak doğru yere yerleştirecek.
+                  Dosyayı seçince önce bir <strong>önizleme</strong> açılır: her sorunun kategorisini, tipini ve
+                  şıklarını orada düzeltebilirsiniz. <strong>Onaylamadan hiçbir soru kaydedilmez.</strong>
                 </p>
                 <input
                   ref={surveyFileInputRef}
@@ -1420,7 +1523,7 @@ export default function CategoriesPage() {
                 {surveyBulkUploading && (
                   <div className="flex items-center gap-2 mt-3 text-[var(--accent)]">
                     <div className="w-4 h-4 border-2 border-[var(--success)] border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm">Yükleniyor...</span>
+                    <span className="text-sm">Dosya okunuyor...</span>
                   </div>
                 )}
               </div>
@@ -1489,15 +1592,18 @@ export default function CategoriesPage() {
                 </div>
               </div>
             </div>
+            )}
 
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => { setShowSurveyBulkUpload(false); setSurveyBulkUploadResult(null); }}
-                className="px-4 py-2 bg-[var(--border-soft)] text-[var(--text-muted)] rounded-lg hover:bg-[var(--ui-passive)]"
-              >
-                Kapat
-              </button>
-            </div>
+            {!surveyBulkPreview && (
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  onClick={() => { setShowSurveyBulkUpload(false); setSurveyBulkUploadResult(null); }}
+                  className="px-4 py-2 bg-[var(--border-soft)] text-[var(--text-muted)] rounded-lg hover:bg-[var(--ui-passive)]"
+                >
+                  Kapat
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

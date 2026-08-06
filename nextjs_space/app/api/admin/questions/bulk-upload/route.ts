@@ -4,127 +4,91 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
 import * as XLSX from 'xlsx';
-import { parseScoredOptions } from "@/lib/question-options";
+import {
+  ImportRow,
+  buildQuestionPayload,
+  isEmptyRow,
+  normalizeRow,
+  validateQuestionRow,
+} from "@/lib/question-import";
 
-interface QuestionRow {
-  soru_metni: string;
-  soru_tipi: 'COKTAN_SECMELI' | 'OLCEK_1_5' | 'EVET_HAYIR' | 'KADEMELI_PUANLAMA';
-  soru_agirligi: number;
-  ironman_ekseni: 'VELOCITY' | 'ENDURANCE';
-  sira?: number;
-  kanit_gerekli?: string;
-  secenekler?: string;
-  evet_puani?: number;
-  hayir_puani?: number;
-  esik_sorusu?: string;
-  evet_etiketi?: string;
-  hayir_etiketi?: string;
-  alt_secenekler?: string;
-}
+/**
+ * Tek bir alt seviye / alt kategori altına toplu soru yükler.
+ *
+ * survey-bulk-upload ile aynı iki adımlı akışı kullanır:
+ *   1. multipart/form-data + mode=preview → doğrulanmış satırlar, kayıt yok.
+ *   2. application/json { subLevelId | subCategoryId, rows } → kaydeder.
+ * Burada yapı sabit olduğu için kategori kolonları doğrulanmaz.
+ */
 
-interface ValidationError {
-  row: number;
-  message: string;
-}
+type RowError = { row: number; field: string; message: string };
 
-function mapQuestionType(type: string): 'SCALE' | 'YES_NO' | 'MULTIPLE_CHOICE' | 'CONDITIONAL_CHOICE' {
-  switch (type) {
-    case 'OLCEK_1_5': return 'SCALE';
-    case 'EVET_HAYIR': return 'YES_NO';
-    case 'COKTAN_SECMELI': return 'MULTIPLE_CHOICE';
-    case 'KADEMELI_PUANLAMA': return 'CONDITIONAL_CHOICE';
-    default: return 'SCALE';
+type Target = { subLevelId: string | null; subCategoryId: string | null };
+
+function readRows(buffer: ArrayBuffer): { rows: ImportRow[]; skipped: number } {
+  const workbook = XLSX.read(buffer, { type: 'array' });
+  const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+  const raw: Record<string, unknown>[] = XLSX.utils.sheet_to_json(worksheet);
+
+  const rows: ImportRow[] = [];
+  let skipped = 0;
+
+  for (const entry of raw) {
+    const row = normalizeRow(entry);
+    if (isEmptyRow(row) || !row.soru_metni) {
+      skipped++;
+      continue;
+    }
+    rows.push(row);
   }
+
+  return { rows, skipped };
 }
 
-function parseOptions(optionsStr: string): any[] {
-  return parseScoredOptions(optionsStr).options;
-}
+async function commitRows(rows: ImportRow[], target: Target) {
+  const errors: RowError[] = [];
+  rows.forEach((row, index) => {
+    validateQuestionRow(row).forEach((error) => {
+      errors.push({ row: index + 1, field: error.field, message: error.message });
+    });
+  });
 
-function parseConditionalOptions(optionsStr: string): any[] {
-  return parseScoredOptions(optionsStr, { valueMode: 'index' }).options;
-}
+  // Hatalı satır varsa hiçbiri kaydedilmez — yarım aktarım kafa karıştırır.
+  if (errors.length > 0) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Bazı satırlar geçersiz, hiçbir soru kaydedilmedi.",
+        summary: { totalRows: rows.length, successCount: 0, errorCount: errors.length, skippedRows: 0 },
+        errors,
+      },
+      { status: 400 }
+    );
+  }
 
-/** Doldurulmamış şablon satırları hata değil, atlanacak satırdır. */
-function isEmptyRow(row: QuestionRow): boolean {
-  return Object.values(row).every(
-    (cell) => cell === undefined || cell === null || cell.toString().trim() === ''
+  const created = await prisma.$transaction(
+    rows.map((row, index) =>
+      prisma.question.create({
+        data: {
+          ...buildQuestionPayload(row, index + 1),
+          subLevelId: target.subLevelId,
+          subCategoryId: target.subCategoryId,
+        }
+      })
+    )
   );
-}
 
-function validateRow(row: QuestionRow, rowNumber: number): ValidationError[] {
-  const errors: ValidationError[] = [];
-
-  // Common validations
-  if (!row.soru_metni || row.soru_metni.toString().trim() === '') {
-    errors.push({ row: rowNumber, message: 'soru_metni boş olamaz' });
-  }
-  
-  const validTypes = ['COKTAN_SECMELI', 'OLCEK_1_5', 'EVET_HAYIR', 'KADEMELI_PUANLAMA'];
-  if (!row.soru_tipi || !validTypes.includes(row.soru_tipi.toString().toUpperCase())) {
-    errors.push({ row: rowNumber, message: `soru_tipi geçerli değil (${validTypes.join(', ')})` });
-  }
-  
-  if (row.soru_agirligi === undefined || row.soru_agirligi === null || isNaN(Number(row.soru_agirligi))) {
-    errors.push({ row: rowNumber, message: 'soru_agirligi sayı olmalı' });
-  }
-  
-  const validAxes = ['VELOCITY', 'ENDURANCE'];
-  if (!row.ironman_ekseni || !validAxes.includes(row.ironman_ekseni.toString().toUpperCase())) {
-    errors.push({ row: rowNumber, message: `ironman_ekseni geçerli değil (${validAxes.join(', ')})` });
-  }
-  
-  // Type-specific validations
-  const type = row.soru_tipi?.toString().toUpperCase();
-  
-  if (type === 'COKTAN_SECMELI') {
-    if (!row.secenekler || row.secenekler.toString().trim() === '') {
-      errors.push({ row: rowNumber, message: 'COKTAN_SECMELI için secenekler kolonu dolu olmalı. Örnek: Düşük = 1; Orta = 3; Yüksek = 5' });
-    } else {
-      const parsed = parseScoredOptions(row.secenekler.toString());
-      parsed.errors.forEach((message) => {
-        errors.push({ row: rowNumber, message: `secenekler: ${message}` });
-      });
-      if (parsed.options.length === 0 && parsed.errors.length === 0) {
-        errors.push({ row: rowNumber, message: 'secenekler okunamadı. Doğru yazım: Düşük = 1; Orta = 3; Yüksek = 5' });
-      }
-    }
-  }
-  
-  if (type === 'OLCEK_1_5') {
-    if (row.secenekler && row.secenekler.toString().trim() !== '') {
-      // Warning - not error, but we'll note it
-      console.log(`Satır ${rowNumber}: Ölçek tipi için secenekler alanı dolu, göz ardı edilecek`);
-    }
-  }
-  
-  if (type === 'EVET_HAYIR') {
-    if (row.evet_puani === undefined || row.evet_puani === null || isNaN(Number(row.evet_puani))) {
-      errors.push({ row: rowNumber, message: 'Evet/Hayır seçilmiş ama evet_puani boş veya sayı değil' });
-    }
-    if (row.hayir_puani === undefined || row.hayir_puani === null || isNaN(Number(row.hayir_puani))) {
-      errors.push({ row: rowNumber, message: 'Evet/Hayır seçilmiş ama hayir_puani boş veya sayı değil' });
-    }
-  }
-  
-  if (type === 'KADEMELI_PUANLAMA') {
-    if (!row.esik_sorusu || row.esik_sorusu.toString().trim() === '') {
-      errors.push({ row: rowNumber, message: 'Kademeli puanlama için esik_sorusu boş olamaz' });
-    }
-    if (!row.alt_secenekler || row.alt_secenekler.toString().trim() === '') {
-      errors.push({ row: rowNumber, message: 'KADEMELI_PUANLAMA için alt_secenekler kolonu dolu olmalı. Örnek: ISO 9001 = 2; ISO 14001 = 2' });
-    } else {
-      const parsed = parseScoredOptions(row.alt_secenekler.toString(), { valueMode: 'index' });
-      parsed.errors.forEach((message) => {
-        errors.push({ row: rowNumber, message: `alt_secenekler: ${message}` });
-      });
-      if (parsed.options.length === 0 && parsed.errors.length === 0) {
-        errors.push({ row: rowNumber, message: 'alt_secenekler okunamadı. Doğru yazım: ISO 9001 = 2; ISO 14001 = 2' });
-      }
-    }
-  }
-
-  return errors;
+  return NextResponse.json({
+    success: true,
+    summary: {
+      totalRows: rows.length,
+      successCount: created.length,
+      errorCount: 0,
+      skippedRows: 0,
+    },
+    errors: [],
+    createdQuestions: created,
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -132,106 +96,64 @@ export async function POST(request: NextRequest) {
   if (!auth.success) return auth.response;
 
   try {
+    const contentType = request.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      const body = await request.json();
+      const subLevelId = typeof body?.subLevelId === 'string' ? body.subLevelId : null;
+      const subCategoryId = typeof body?.subCategoryId === 'string' ? body.subCategoryId : null;
+      const rawRows = Array.isArray(body?.rows) ? body.rows : null;
+
+      if (!subLevelId && !subCategoryId) {
+        return NextResponse.json({ error: "subLevelId veya subCategoryId gerekli" }, { status: 400 });
+      }
+      if (!rawRows || rawRows.length === 0) {
+        return NextResponse.json({ error: "Kaydedilecek satır yok" }, { status: 400 });
+      }
+
+      const rows = rawRows.map((entry: Record<string, unknown>) => normalizeRow(entry ?? {}));
+      return await commitRows(rows, { subLevelId, subCategoryId });
+    }
+
     const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const file = formData.get('file') as File | null;
     const subLevelId = formData.get('subLevelId') as string | null;
     const subCategoryId = formData.get('subCategoryId') as string | null;
-    
+    const mode = formData.get('mode') as string | null;
+
     if (!file) {
       return NextResponse.json({ error: "Dosya bulunamadı" }, { status: 400 });
     }
-    
     if (!subLevelId && !subCategoryId) {
       return NextResponse.json({ error: "subLevelId veya subCategoryId gerekli" }, { status: 400 });
     }
-    
-    // Read Excel file
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const rows: QuestionRow[] = XLSX.utils.sheet_to_json(worksheet);
-    
-    if (rows.length === 0) {
-      return NextResponse.json({ error: "Excel dosyası boş" }, { status: 400 });
-    }
-    
-    const allErrors: ValidationError[] = [];
-    const validRows: { row: QuestionRow; index: number }[] = [];
-    let skippedCount = 0;
 
-    // Validate all rows
-    rows.forEach((row, index) => {
-      const rowNumber = index + 2; // Excel starts at 1, plus header
-      if (isEmptyRow(row)) {
-        skippedCount++;
-        return;
-      }
-      const errors = validateRow(row, rowNumber);
-      if (errors.length > 0) {
-        allErrors.push(...errors);
-      } else {
-        validRows.push({ row, index: rowNumber });
-      }
-    });
-    
-    // Create questions for valid rows
-    const createdQuestions = [];
-    for (const { row, index } of validRows) {
-      try {
-        const type = mapQuestionType(row.soru_tipi.toString().toUpperCase());
-        let options: any[] = [];
-        let conditionalOptions: any = null;
-        
-        if (type === 'MULTIPLE_CHOICE') {
-          options = parseOptions(row.secenekler?.toString() || '');
-        } else if (type === 'YES_NO') {
-          options = [
-            { value: 'evet', label: 'Evet', score: Number(row.evet_puani) || 5 },
-            { value: 'hayir', label: 'Hayır', score: Number(row.hayir_puani) || 1 }
-          ];
-        } else if (type === 'CONDITIONAL_CHOICE') {
-          conditionalOptions = {
-            thresholdQuestion: row.esik_sorusu?.toString().trim() || row.soru_metni.toString().trim(),
-            yesLabel: row.evet_etiketi?.toString().trim() || 'Evet',
-            noLabel: row.hayir_etiketi?.toString().trim() || 'Hayır',
-            options: parseConditionalOptions(row.alt_secenekler?.toString() || '')
-          };
-        }
-        
-        const question = await prisma.question.create({
-          data: {
-            text: row.soru_metni.toString().trim(),
-            type,
-            options,
-            conditionalOptions,
-            order: row.sira ? Number(row.sira) : index,
-            requiresEvidence: row.kanit_gerekli?.toString().toUpperCase() === 'TRUE',
-            subLevelId: subLevelId || null,
-            subCategoryId: subCategoryId || null,
-            weight: Number(row.soru_agirligi) || 1,
-            axisType: row.ironman_ekseni.toString().toUpperCase() as 'VELOCITY' | 'ENDURANCE'
-          }
-        });
-        createdQuestions.push(question);
-      } catch (err) {
-        console.error(`Error creating question at row ${index}:`, err);
-        allErrors.push({ row: index, message: `Veritabanı hatası: ${err}` });
-      }
+    const { rows, skipped } = readRows(await file.arrayBuffer());
+
+    if (rows.length === 0) {
+      return NextResponse.json(
+        { error: "Dosyada soru bulunamadı. Soruları şablonun ilk sayfasına (\"Sorular\") yazdığınızdan emin olun." },
+        { status: 400 }
+      );
     }
-    
-    return NextResponse.json({
-      success: true,
-      summary: {
-        totalRows: rows.length - skippedCount,
-        successCount: createdQuestions.length,
-        errorCount: allErrors.length,
-        skippedRows: skippedCount
-      },
-      errors: allErrors,
-      createdQuestions
-    });
-    
+
+    if (mode === 'preview') {
+      return NextResponse.json({
+        preview: true,
+        structure: [],
+        skippedRows: skipped,
+        rows: rows.map((row, index) => ({
+          rowNumber: index + 1,
+          values: row,
+          errors: validateQuestionRow(row),
+        })),
+      });
+    }
+
+    const response = await commitRows(rows, { subLevelId, subCategoryId });
+    const payload = await response.json();
+    return NextResponse.json({ ...payload, summary: { ...payload.summary, skippedRows: skipped } }, { status: response.status });
+
   } catch (error) {
     console.error("Error processing bulk upload:", error);
     return NextResponse.json({ error: "Dosya işlenirken hata oluştu" }, { status: 500 });
