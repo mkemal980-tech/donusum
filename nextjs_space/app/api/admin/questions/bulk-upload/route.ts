@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
 import * as XLSX from 'xlsx';
+import { parseScoredOptions } from "@/lib/question-options";
 
 interface QuestionRow {
   soru_metni: string;
@@ -37,42 +38,23 @@ function mapQuestionType(type: string): 'SCALE' | 'YES_NO' | 'MULTIPLE_CHOICE' |
 }
 
 function parseOptions(optionsStr: string): any[] {
-  if (!optionsStr || typeof optionsStr !== 'string') return [];
-  
-  const lines = optionsStr.split('\n').filter(line => line.trim());
-  return lines.map(line => {
-    const parts = line.split('|');
-    if (parts.length >= 3) {
-      return {
-        value: parts[0].trim(),
-        label: parts[1].trim(),
-        score: parseFloat(parts[2].trim()) || 0
-      };
-    }
-    return null;
-  }).filter(Boolean);
+  return parseScoredOptions(optionsStr).options;
 }
 
 function parseConditionalOptions(optionsStr: string): any[] {
-  if (!optionsStr || typeof optionsStr !== 'string') return [];
-  
-  const lines = optionsStr.split('\n').filter(line => line.trim());
-  return lines.map((line, idx) => {
-    const parts = line.split('|');
-    if (parts.length >= 2) {
-      return {
-        value: `option_${idx + 1}`,
-        label: parts[0].trim(),
-        score: parseFloat(parts[1].trim()) || 0
-      };
-    }
-    return null;
-  }).filter(Boolean);
+  return parseScoredOptions(optionsStr, { valueMode: 'index' }).options;
+}
+
+/** Doldurulmamış şablon satırları hata değil, atlanacak satırdır. */
+function isEmptyRow(row: QuestionRow): boolean {
+  return Object.values(row).every(
+    (cell) => cell === undefined || cell === null || cell.toString().trim() === ''
+  );
 }
 
 function validateRow(row: QuestionRow, rowNumber: number): ValidationError[] {
   const errors: ValidationError[] = [];
-  
+
   // Common validations
   if (!row.soru_metni || row.soru_metni.toString().trim() === '') {
     errors.push({ row: rowNumber, message: 'soru_metni boş olamaz' });
@@ -97,11 +79,14 @@ function validateRow(row: QuestionRow, rowNumber: number): ValidationError[] {
   
   if (type === 'COKTAN_SECMELI') {
     if (!row.secenekler || row.secenekler.toString().trim() === '') {
-      errors.push({ row: rowNumber, message: 'Çoktan seçmeli soru için secenekler alanı dolu olmalı' });
+      errors.push({ row: rowNumber, message: 'COKTAN_SECMELI için secenekler kolonu dolu olmalı. Örnek: Düşük = 1; Orta = 3; Yüksek = 5' });
     } else {
-      const options = parseOptions(row.secenekler.toString());
-      if (options.length === 0) {
-        errors.push({ row: rowNumber, message: 'Çoktan seçmeli seçenek formatı hatalı (deger|etiket|puan)' });
+      const parsed = parseScoredOptions(row.secenekler.toString());
+      parsed.errors.forEach((message) => {
+        errors.push({ row: rowNumber, message: `secenekler: ${message}` });
+      });
+      if (parsed.options.length === 0 && parsed.errors.length === 0) {
+        errors.push({ row: rowNumber, message: 'secenekler okunamadı. Doğru yazım: Düşük = 1; Orta = 3; Yüksek = 5' });
       }
     }
   }
@@ -127,15 +112,18 @@ function validateRow(row: QuestionRow, rowNumber: number): ValidationError[] {
       errors.push({ row: rowNumber, message: 'Kademeli puanlama için esik_sorusu boş olamaz' });
     }
     if (!row.alt_secenekler || row.alt_secenekler.toString().trim() === '') {
-      errors.push({ row: rowNumber, message: 'Kademeli puanlama için alt_secenekler boş olamaz' });
+      errors.push({ row: rowNumber, message: 'KADEMELI_PUANLAMA için alt_secenekler kolonu dolu olmalı. Örnek: ISO 9001 = 2; ISO 14001 = 2' });
     } else {
-      const options = parseConditionalOptions(row.alt_secenekler.toString());
-      if (options.length === 0) {
-        errors.push({ row: rowNumber, message: 'Kademeli puanlama alt seçenek formatı hatalı (etiket|puan)' });
+      const parsed = parseScoredOptions(row.alt_secenekler.toString(), { valueMode: 'index' });
+      parsed.errors.forEach((message) => {
+        errors.push({ row: rowNumber, message: `alt_secenekler: ${message}` });
+      });
+      if (parsed.options.length === 0 && parsed.errors.length === 0) {
+        errors.push({ row: rowNumber, message: 'alt_secenekler okunamadı. Doğru yazım: ISO 9001 = 2; ISO 14001 = 2' });
       }
     }
   }
-  
+
   return errors;
 }
 
@@ -170,10 +158,15 @@ export async function POST(request: NextRequest) {
     
     const allErrors: ValidationError[] = [];
     const validRows: { row: QuestionRow; index: number }[] = [];
-    
+    let skippedCount = 0;
+
     // Validate all rows
     rows.forEach((row, index) => {
       const rowNumber = index + 2; // Excel starts at 1, plus header
+      if (isEmptyRow(row)) {
+        skippedCount++;
+        return;
+      }
       const errors = validateRow(row, rowNumber);
       if (errors.length > 0) {
         allErrors.push(...errors);
@@ -230,9 +223,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       summary: {
-        totalRows: rows.length,
+        totalRows: rows.length - skippedCount,
         successCount: createdQuestions.length,
-        errorCount: allErrors.length
+        errorCount: allErrors.length,
+        skippedRows: skippedCount
       },
       errors: allErrors,
       createdQuestions

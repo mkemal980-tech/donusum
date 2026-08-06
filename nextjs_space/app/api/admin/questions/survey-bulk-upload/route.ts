@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
 import * as XLSX from 'xlsx';
+import { parseScoredOptions } from "@/lib/question-options";
 
 interface QuestionRow {
   kategori_adi: string;
@@ -40,47 +41,27 @@ function mapQuestionType(type: string): 'SCALE' | 'YES_NO' | 'MULTIPLE_CHOICE' |
 }
 
 function parseOptions(optionsStr: string): any[] {
-  if (!optionsStr || typeof optionsStr !== 'string') return [];
-  
-  const lines = optionsStr.split('\n').filter(line => line.trim());
-  return lines.map(line => {
-    const parts = line.split('|');
-    if (parts.length >= 3) {
-      return {
-        value: parts[0].trim(),
-        label: parts[1].trim(),
-        score: parseFloat(parts[2].trim()) || 0
-      };
-    }
-    return null;
-  }).filter(Boolean);
+  return parseScoredOptions(optionsStr).options;
 }
 
 function parseConditionalOptions(optionsStr: string): any[] {
-  if (!optionsStr || typeof optionsStr !== 'string') return [];
-  
-  const lines = optionsStr.split('\n').filter(line => line.trim());
-  return lines.map((line, idx) => {
-    const parts = line.split('|');
-    if (parts.length >= 2) {
-      return {
-        value: `option_${idx + 1}`,
-        label: parts[0].trim(),
-        score: parseFloat(parts[1].trim()) || 0
-      };
-    }
-    return null;
-  }).filter(Boolean);
+  return parseScoredOptions(optionsStr, { valueMode: 'index' }).options;
 }
 
 function validateRow(row: QuestionRow, rowNumber: number): ValidationError[] {
   const errors: ValidationError[] = [];
-  
+
   // Skip example/header rows
   if (row.kategori_adi?.toString().includes('ÖRNEK') || row.kategori_adi?.toString().includes('---')) {
     return [{ row: rowNumber, message: 'SKIP_ROW' }];
   }
-  
+
+  // Şablon, anketin tüm yapısını hazır satır olarak içerir; soru yazılmamış
+  // satırlar doldurulmamış demektir, hata değil.
+  if (!row.soru_metni || row.soru_metni.toString().trim() === '') {
+    return [{ row: rowNumber, message: 'SKIP_ROW' }];
+  }
+
   // Structure validations
   if (!row.kategori_adi || row.kategori_adi.toString().trim() === '') {
     errors.push({ row: rowNumber, message: 'kategori_adi boş olamaz' });
@@ -88,11 +69,6 @@ function validateRow(row: QuestionRow, rowNumber: number): ValidationError[] {
   
   if (!row.alt_kategori_adi || row.alt_kategori_adi.toString().trim() === '') {
     errors.push({ row: rowNumber, message: 'alt_kategori_adi boş olamaz' });
-  }
-  
-  // Common validations
-  if (!row.soru_metni || row.soru_metni.toString().trim() === '') {
-    errors.push({ row: rowNumber, message: 'soru_metni boş olamaz' });
   }
   
   const validTypes = ['COKTAN_SECMELI', 'OLCEK_1_5', 'EVET_HAYIR', 'KADEMELI_PUANLAMA'];
@@ -114,11 +90,14 @@ function validateRow(row: QuestionRow, rowNumber: number): ValidationError[] {
   
   if (type === 'COKTAN_SECMELI') {
     if (!row.secenekler || row.secenekler.toString().trim() === '') {
-      errors.push({ row: rowNumber, message: 'Çoktan seçmeli soru için secenekler alanı dolu olmalı' });
+      errors.push({ row: rowNumber, message: 'COKTAN_SECMELI için secenekler kolonu dolu olmalı. Örnek: Düşük = 1; Orta = 3; Yüksek = 5' });
     } else {
-      const options = parseOptions(row.secenekler.toString());
-      if (options.length === 0) {
-        errors.push({ row: rowNumber, message: 'Çoktan seçmeli seçenek formatı hatalı (deger|etiket|puan)' });
+      const parsed = parseScoredOptions(row.secenekler.toString());
+      parsed.errors.forEach((message) => {
+        errors.push({ row: rowNumber, message: `secenekler: ${message}` });
+      });
+      if (parsed.options.length === 0 && parsed.errors.length === 0) {
+        errors.push({ row: rowNumber, message: 'secenekler okunamadı. Doğru yazım: Düşük = 1; Orta = 3; Yüksek = 5' });
       }
     }
   }
@@ -137,11 +116,14 @@ function validateRow(row: QuestionRow, rowNumber: number): ValidationError[] {
       errors.push({ row: rowNumber, message: 'Kademeli puanlama için esik_sorusu boş olamaz' });
     }
     if (!row.alt_secenekler || row.alt_secenekler.toString().trim() === '') {
-      errors.push({ row: rowNumber, message: 'Kademeli puanlama için alt_secenekler boş olamaz' });
+      errors.push({ row: rowNumber, message: 'KADEMELI_PUANLAMA için alt_secenekler kolonu dolu olmalı. Örnek: ISO 9001 = 2; ISO 14001 = 2' });
     } else {
-      const options = parseConditionalOptions(row.alt_secenekler.toString());
-      if (options.length === 0) {
-        errors.push({ row: rowNumber, message: 'Kademeli puanlama alt seçenek formatı hatalı (etiket|puan)' });
+      const parsed = parseScoredOptions(row.alt_secenekler.toString(), { valueMode: 'index' });
+      parsed.errors.forEach((message) => {
+        errors.push({ row: rowNumber, message: `alt_secenekler: ${message}` });
+      });
+      if (parsed.options.length === 0 && parsed.errors.length === 0) {
+        errors.push({ row: rowNumber, message: 'alt_secenekler okunamadı. Doğru yazım: ISO 9001 = 2; ISO 14001 = 2' });
       }
     }
   }

@@ -3,6 +3,11 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Save, X, FileText, Layers, Upload, Download, AlertCircle, CheckCircle, Activity } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import {
+  formatConditionalOptions,
+  formatScoredOptions,
+  parseScoredOptions,
+} from "@/lib/question-options";
 
 interface Question {
   id: string;
@@ -359,8 +364,7 @@ export default function CategoriesPage() {
         initialData.noScore = noOpt?.score || 1;
       }
       if (type === 'question' && editItem.type === 'MULTIPLE_CHOICE' && editItem.options) {
-        const parsedOpts = parseOptions(editItem.options);
-        initialData.optionsText = parsedOpts.map((o: any) => `${o.value}|${o.label}|${o.score}`).join('\n');
+        initialData.optionsText = formatScoredOptions(parseOptions(editItem.options));
       }
       if (type === 'question' && editItem.type === 'CONDITIONAL_CHOICE' && editItem.conditionalOptions) {
         const condOpts = parseConditionalOptions(editItem.conditionalOptions);
@@ -370,9 +374,7 @@ export default function CategoriesPage() {
           initialData.noLabel = condOpts.noLabel || 'Hayır';
           const condSubOpts = parseOptions(condOpts.options);
           if (condSubOpts.length > 0) {
-            initialData.conditionalOptionsText = condSubOpts
-              .map((o: any) => `${o.label}|${o.score}`)
-              .join('\n');
+            initialData.conditionalOptionsText = formatConditionalOptions(condSubOpts);
           }
         }
       }
@@ -469,10 +471,12 @@ export default function CategoriesPage() {
         }
       }
       if (data.optionsText) {
-        data.options = data.optionsText.split('\n').filter((l: string) => l.trim()).map((line: string) => {
-          const [value, label, score] = line.split('|');
-          return { value: value?.trim(), label: label?.trim(), score: parseInt(score) || 1 };
-        });
+        const parsed = parseScoredOptions(data.optionsText);
+        if (parsed.errors.length > 0) {
+          alert(`Şıklar okunamadı:\n\n${parsed.errors.join('\n')}\n\nDoğru yazım: Düşük = 1; Orta = 3; Yüksek = 5`);
+          return;
+        }
+        data.options = parsed.options;
         delete data.optionsText;
       }
       if (data.type === 'YES_NO') {
@@ -491,18 +495,14 @@ export default function CategoriesPage() {
         };
         
         if (data.conditionalOptionsText) {
-          conditionalOpts.options = data.conditionalOptionsText.split('\n')
-            .filter((l: string) => l.trim())
-            .map((line: string, idx: number) => {
-              const [label, score] = line.split('|');
-              return {
-                value: `option_${idx + 1}`,
-                label: label?.trim() || '',
-                score: parseFloat(score) || 0
-              };
-            });
+          const parsed = parseScoredOptions(data.conditionalOptionsText, { valueMode: 'index' });
+          if (parsed.errors.length > 0) {
+            alert(`Alt seçenekler okunamadı:\n\n${parsed.errors.join('\n')}\n\nDoğru yazım: ISO 9001 = 2; ISO 14001 = 2`);
+            return;
+          }
+          conditionalOpts.options = parsed.options as never[];
         }
-        
+
         data.conditionalOptions = conditionalOpts;
         delete data.conditionalOptionsText;
         delete data.thresholdQuestion;
@@ -954,14 +954,18 @@ export default function CategoriesPage() {
                   </div>
                   {formData.type === 'MULTIPLE_CHOICE' && (
                     <div>
-                      <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Şıklar (her satırda: değer|etiket|puan)</label>
+                      <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Şıklar</label>
                       <textarea
                         value={formData.optionsText || ''}
                         onChange={(e) => setFormData({ ...formData, optionsText: e.target.value })}
                         className="w-full p-3 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                         rows={5}
-                        placeholder={`dusuk|Düşük|1\norta|Orta|3\nyuksek|Yüksek|5`}
+                        placeholder={`Düşük = 1\nOrta = 3\nYüksek = 5`}
                       />
+                      <p className="text-xs text-[var(--text-dim)] mt-1">
+                        Her satıra bir şık: <strong>Etiket = puan</strong>. Aynı satırda &quot;;&quot; ile de ayırabilirsiniz.
+                        Puan ondalıklı olabilir (2,5). Kullanıcı bir şık seçtiğinde o şıkkın puanı, soru ağırlığıyla çarpılır.
+                      </p>
                     </div>
                   )}
                   {(formData.type === 'SCALE' || !formData.type) && (
@@ -1036,17 +1040,18 @@ export default function CategoriesPage() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">
-                          Alt Seçenekler (her satırda: etiket|puan)
+                          Alt Seçenekler
                         </label>
                         <textarea
                           value={formData.conditionalOptionsText || ''}
                           onChange={(e) => setFormData({ ...formData, conditionalOptionsText: e.target.value })}
                           className="w-full p-3 border rounded-lg font-mono text-sm focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                           rows={6}
-                          placeholder={`ISO 9001|5\nISO 14001|10.5\nISO 27001|15.75\nISO 45001|20`}
+                          placeholder={`ISO 9001 = 2\nISO 14001 = 2\nISO 27001 = 1\nISO 45001 = 1`}
                         />
                         <p className="text-xs text-[var(--text-dim)] mt-1">
-                          Format: Her satırda bir seçenek. Etiket ve puan "|" ile ayrılmalı. <strong>Ondalık sayı desteklenir</strong> (örn: 10.5, 15.75)
+                          Her satıra bir seçenek: <strong>Etiket = puan</strong>. Ondalık yazılabilir (2,5).
+                          Kullanıcı birden fazla seçenek işaretleyebilir; puanlar toplanır ve en fazla 5 olur.
                         </p>
                       </div>
                     </div>
@@ -1238,7 +1243,8 @@ export default function CategoriesPage() {
                   1. Şablonu İndir
                 </h3>
                 <p className="text-sm text-[var(--accent)] mb-3">
-                  Önce Excel şablonunu indirip doldurun. Şablonda örnek sorular ve açıklamalar bulunmaktadır.
+                  Sorularınızı yalnızca <strong>&quot;Sorular&quot;</strong> sayfasına yazın; dosyadaki diğer sayfalar yardım içindir ve yüklenmez.
+                  Örnek satırlar <strong>&quot;Örnekler&quot;</strong>, şık yazımı <strong>&quot;Seçenek Yazımı&quot;</strong>, hangi tipte hangi kolonun dolacağı <strong>&quot;Soru Tipleri&quot;</strong> sayfasında.
                 </p>
                 <button
                   onClick={handleTemplateDownload}
@@ -1283,7 +1289,7 @@ export default function CategoriesPage() {
                   </h3>
                   
                   {bulkUploadResult.summary && (
-                    <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div className="grid grid-cols-4 gap-3 mb-3">
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
                         <div className="text-lg font-bold text-[var(--text-muted)]">{bulkUploadResult.summary.totalRows}</div>
                         <div className="text-xs text-[var(--text-dim)]">Toplam Satır</div>
@@ -1295,6 +1301,10 @@ export default function CategoriesPage() {
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
                         <div className="text-lg font-bold text-[var(--error)]">{bulkUploadResult.summary.errorCount}</div>
                         <div className="text-xs text-[var(--text-dim)]">Hatalı</div>
+                      </div>
+                      <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
+                        <div className="text-lg font-bold text-[var(--text-dim)]">{bulkUploadResult.summary.skippedRows || 0}</div>
+                        <div className="text-xs text-[var(--text-dim)]">Atlanan</div>
                       </div>
                     </div>
                   )}
@@ -1318,10 +1328,20 @@ export default function CategoriesPage() {
               <div className="p-4 bg-[var(--bg-card-2)] rounded-lg border border-[var(--border-soft)]">
                 <h4 className="font-medium text-[var(--text-muted)] mb-2">Desteklenen Soru Tipleri:</h4>
                 <ul className="text-sm text-[var(--text-muted)] space-y-1">
-                  <li><strong>COKTAN_SECMELI:</strong> Çoktan seçmeli (secenekler kolonunu doldurun)</li>
-                  <li><strong>OLCEK_1_5:</strong> 1-5 arası ölçek (otomatik puanlama)</li>
-                  <li><strong>EVET_HAYIR:</strong> Evet/Hayır (evet_puani ve hayir_puani kolonlarını doldurun)</li>
+                  <li><strong>COKTAN_SECMELI:</strong> Tek şık seçilir — <code>secenekler</code> kolonunu doldurun</li>
+                  <li><strong>OLCEK_1_5:</strong> 1-5 arası ölçek — ek kolon gerekmez, puanlama otomatiktir</li>
+                  <li><strong>EVET_HAYIR:</strong> Evet/Hayır — <code>evet_puani</code> ve <code>hayir_puani</code> kolonlarını doldurun</li>
+                  <li><strong>KADEMELI_PUANLAMA:</strong> Önce evet/hayır, &quot;Evet&quot; ise çoklu seçim — <code>esik_sorusu</code> ve <code>alt_secenekler</code> kolonlarını doldurun</li>
                 </ul>
+                <div className="mt-3 pt-3 border-t border-[var(--border-soft)]">
+                  <p className="text-sm text-[var(--text-muted)]">
+                    <strong>Şıklar nasıl yazılır?</strong> Hepsi tek hücreye, tek satırda:
+                  </p>
+                  <p className="text-sm font-mono mt-1 text-[var(--accent)]">Düşük = 1; Orta = 3; Yüksek = 5</p>
+                  <p className="text-xs text-[var(--text-dim)] mt-1">
+                    Her şık &quot;Etiket = puan&quot;, şıklar arasında &quot;;&quot;. Puan ondalıklı olabilir (2,5).
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -1367,8 +1387,8 @@ export default function CategoriesPage() {
                   1. Anket Şablonunu İndir
                 </h3>
                 <p className="text-sm text-[var(--accent)] mb-3">
-                  Şablon, anketin yapısını (kategori, alt kategori, alt seviye) içerir. 
-                  Her satırda hangi kategoriye ait olduğunu belirterek soruları doldurun.
+                  &quot;Sorular&quot; sayfası anketin tüm yapısıyla (kategori, alt kategori, alt seviye) hazır gelir;
+                  siz yalnızca soru satırlarını doldurun. Dosyadaki diğer sayfalar yardım içindir ve yüklenmez.
                 </p>
                 <button
                   onClick={handleSurveyTemplateDownload}
@@ -1456,9 +1476,17 @@ export default function CategoriesPage() {
                   <li>• <strong>kategori_adi:</strong> Kategori adını şablondaki gibi yazın</li>
                   <li>• <strong>alt_kategori_adi:</strong> Alt kategori adını tam olarak yazın</li>
                   <li>• <strong>alt_seviye_adi:</strong> Varsa alt seviye adı, yoksa boş bırakın</li>
-                  <li>• Şablondaki "Anket Yapısı" sayfasından doğru isimleri kopyalayabilirsiniz</li>
-                  <li>• "--- ÖRNEK SATIRLAR ---" işaretli satırlar otomatik atlanır</li>
+                  <li>• Şablondaki &quot;Anket Yapısı&quot; sayfasından doğru isimleri kopyalayabilirsiniz</li>
+                  <li>• <strong>soru_metni</strong> boş bırakılan satırlar yüklenmez — kullanmadığınız satırları silmeniz gerekmez</li>
+                  <li>• Şık yazımı için &quot;Seçenek Yazımı&quot;, tip başına gereken kolonlar için &quot;Soru Tipleri&quot; sayfasına bakın</li>
+                  <li>• &quot;Örnekler&quot; sayfası yalnızca referanstır; yüklenmez</li>
                 </ul>
+                <div className="mt-3 pt-3 border-t border-[var(--border-soft)]">
+                  <p className="text-sm text-[var(--text-muted)]">
+                    <strong>Şıklar nasıl yazılır?</strong> Hepsi tek hücreye, tek satırda:
+                  </p>
+                  <p className="text-sm font-mono mt-1 text-[var(--accent)]">Düşük = 1; Orta = 3; Yüksek = 5</p>
+                </div>
               </div>
             </div>
 
