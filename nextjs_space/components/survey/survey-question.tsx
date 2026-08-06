@@ -21,16 +21,19 @@ interface SurveyQuestionProps {
   onRemoveFile?: (questionId: string) => void;
   uploadedFile?: string | null;
   isUploading?: boolean;
+  /** Yönetici önizlemesi: kanıt alanı gösterilir ama dosya yüklenemez. */
+  previewMode?: boolean;
 }
 
-export default function SurveyQuestion({ 
-  question, 
-  value, 
-  onAnswer, 
+export default function SurveyQuestion({
+  question,
+  value,
+  onAnswer,
   onUpload,
   onRemoveFile,
   uploadedFile,
-  isUploading = false
+  isUploading = false,
+  previewMode = false
 }: SurveyQuestionProps) {
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -265,7 +268,13 @@ export default function SurveyQuestion({
             Bu soru için kanıt belgesi gereklidir
           </p>
           
-          {isUploading ? (
+          {previewMode ? (
+            <div className="border-2 border-dashed border-[var(--border-soft)] rounded-lg p-6 text-center opacity-60">
+              <Upload className="mx-auto text-[var(--text-dim)] mb-2" size={24} />
+              <p className="text-sm text-[var(--text-dim)]">Kullanıcı burada belge yükler</p>
+              <p className="text-xs text-[var(--text-dim)] mt-1">Önizlemede dosya yüklenemez</p>
+            </div>
+          ) : isUploading ? (
             <div className="flex items-center justify-center p-6 bg-[var(--accent)]/10 rounded-lg border-2 border-[var(--accent)]/30">
               <Loader2 className="animate-spin text-[var(--accent)] mr-2" size={20} />
               <span className="text-[var(--accent)] text-sm">Dosya yükleniyor...</span>

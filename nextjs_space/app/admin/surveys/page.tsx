@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, FileText, X, Save, CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { Plus, Edit, Trash2, FileText, X, Save, CheckCircle, XCircle, AlertTriangle, Loader2, Eye } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -264,8 +264,15 @@ export default function SurveysPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Link
+                    href={`/survey-preview/${survey.id}`}
+                    className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--accent)]"
+                    title="Anketi kullanıcının gördüğü gibi önizle"
+                  >
+                    <Eye size={18} />
+                  </Link>
+                  <Link
                     href={`/admin/categories?surveyId=${survey.id}`}
-                    className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]" 
+                    className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]"
                     title="Kategorileri Yönet"
                   >
                     <FileText size={18} />

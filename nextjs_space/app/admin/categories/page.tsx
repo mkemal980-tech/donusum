@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Save, X, FileText, Layers, Upload, Download, AlertCircle, CheckCircle, Activity } from "lucide-react";
+import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Save, X, FileText, Layers, Upload, Download, AlertCircle, CheckCircle, Activity, Eye } from "lucide-react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   formatConditionalOptions,
@@ -700,6 +701,14 @@ export default function CategoriesPage() {
                 {categories.length} kategori gösteriliyor
               </span>
               <div className="flex items-center gap-2 ml-auto">
+                <Link
+                  href={`/survey-preview/${selectedSurveyId}`}
+                  className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-card-2)] text-[var(--text-muted)] border border-[var(--border-soft)] rounded-lg hover:border-[var(--accent)] text-sm"
+                  title="Anketi kullanıcının gördüğü gibi görüntüle"
+                >
+                  <Eye size={16} />
+                  Anketi Önizle
+                </Link>
                 <button
                   onClick={() => { setShowSurveyBulkUpload(true); setSurveyBulkPreview(null); setSurveyBulkUploadResult(null); }}
                   className="flex items-center gap-2 px-3 py-2 bg-[var(--accent-dark)] text-white rounded-lg hover:bg-[var(--accent-dark)] text-sm"
