@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AlertCircle, ChevronDown, ChevronRight, Edit, Lightbulb, Plus, Trash2, X } from "lucide-react";
 import { triggerChoicesFor } from "@/lib/recommendation-triggers";
+import { derivePosition } from "@/lib/recommendation-position";
 
 type QuestionForRecommendations = {
   id: string;
@@ -84,6 +85,8 @@ type FormState = {
   minScoreThreshold: number;
   maxScoreThreshold: number;
   order: number;
+  /** Grafikteki konum otomatik türetilsin mi, yoksa elle mi girildi? */
+  manualPosition: boolean;
   xPosition: number;
   yPosition: number;
   capexLevel: number;
@@ -104,11 +107,24 @@ function emptyForm(order: number): FormState {
     minScoreThreshold: 0,
     maxScoreThreshold: 70,
     order,
+    manualPosition: false,
     xPosition: 5,
     yPosition: 5,
     capexLevel: 1,
     opexLevel: 1,
   };
+}
+
+/** Formun o anki değerlerine göre grafikte duracağı yer. */
+function positionOf(form: FormState) {
+  if (form.manualPosition) {
+    return { xPosition: form.xPosition, yPosition: form.yPosition };
+  }
+  return derivePosition({
+    strategicType: form.strategicType,
+    timeframe: form.timeframe,
+    estimatedImpact: form.estimatedImpact,
+  });
 }
 
 function parseTriggers(raw: string | null): string[] {
@@ -158,7 +174,19 @@ export default function QuestionRecommendationsModal({ question, target, onClose
   const startEdit = (recommendation: Recommendation) => {
     setError(null);
     setShowAdvanced(false);
+
+    // Kayıtlı konum türetilenle aynıysa hâlâ otomatik sayılır; farklıysa
+    // yönetici elle ayarlamış demektir ve o değerler korunur.
+    const derived = derivePosition({
+      strategicType: recommendation.strategicType,
+      timeframe: recommendation.timeframe,
+      estimatedImpact: recommendation.estimatedImpact,
+    });
+    const manualPosition =
+      recommendation.xPosition !== derived.xPosition || recommendation.yPosition !== derived.yPosition;
+
     setForm({
+      manualPosition,
       id: recommendation.id,
       title: recommendation.title,
       description: recommendation.description,
@@ -229,8 +257,7 @@ export default function QuestionRecommendationsModal({ question, target, onClose
           minScoreThreshold: form.minScoreThreshold,
           maxScoreThreshold: form.maxScoreThreshold,
           order: form.order,
-          xPosition: form.xPosition,
-          yPosition: form.yPosition,
+          ...positionOf(form),
           capexLevel: form.capexLevel,
           opexLevel: form.opexLevel,
         }),
@@ -529,82 +556,120 @@ export default function QuestionRecommendationsModal({ question, target, onClose
               </div>
 
               {/* Nadiren değiştirilen alanlar katlanmış durur */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">
+                  Tahmini etki: <span className="text-[var(--accent)]">{form.estimatedImpact}</span> / 10
+                </label>
+                <input
+                  type="range"
+                  min={1}
+                  max={10}
+                  step={1}
+                  value={form.estimatedImpact}
+                  onChange={(event) => setForm({ ...form, estimatedImpact: Number(event.target.value) })}
+                  className="w-full accent-[var(--accent)]"
+                />
+                <p className="text-xs text-[var(--text-dim)]">
+                  Öneri grafiğinde baloncuğun büyüklüğünü ve önerilerin sıralamasını belirler.
+                </p>
+              </div>
+
               <button
                 type="button"
                 onClick={() => setShowAdvanced((current) => !current)}
                 className="flex items-center gap-1 text-sm text-[var(--text-muted)] hover:text-[var(--accent)]"
               >
                 {showAdvanced ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                Gelişmiş ayarlar (etki, bubble chart konumu, maliyet seviyeleri)
+                Maliyet seviyeleri ve grafik konumu
               </button>
 
               {showAdvanced && (
-                <div className="grid sm:grid-cols-2 gap-3 pt-1">
-                  <div>
-                    <label className="block text-xs text-[var(--text-dim)] mb-1">Tahmini etki (1-10)</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={10}
-                      className={inputClass}
-                      value={form.estimatedImpact}
-                      onChange={(event) => setForm({ ...form, estimatedImpact: Number(event.target.value) })}
-                    />
+                <div className="space-y-3 pt-1">
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-[var(--text-dim)] mb-1">CAPEX seviyesi (1-5)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={5}
+                        className={inputClass}
+                        value={form.capexLevel}
+                        onChange={(event) => setForm({ ...form, capexLevel: Number(event.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[var(--text-dim)] mb-1">OPEX seviyesi (1-5)</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={5}
+                        className={inputClass}
+                        value={form.opexLevel}
+                        onChange={(event) => setForm({ ...form, opexLevel: Number(event.target.value) })}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs text-[var(--text-dim)] mb-1">Sıra</label>
-                    <input
-                      type="number"
-                      className={inputClass}
-                      value={form.order}
-                      onChange={(event) => setForm({ ...form, order: Number(event.target.value) })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-[var(--text-dim)] mb-1">Bubble X ({form.xPosition})</label>
-                    <input
-                      type="range"
-                      min={0}
-                      max={10}
-                      step={0.5}
-                      value={form.xPosition}
-                      onChange={(event) => setForm({ ...form, xPosition: parseFloat(event.target.value) })}
-                      className="w-full accent-[var(--accent)]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-[var(--text-dim)] mb-1">Bubble Y ({form.yPosition})</label>
-                    <input
-                      type="range"
-                      min={0}
-                      max={10}
-                      step={0.5}
-                      value={form.yPosition}
-                      onChange={(event) => setForm({ ...form, yPosition: parseFloat(event.target.value) })}
-                      className="w-full accent-[var(--accent)]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-[var(--text-dim)] mb-1">CAPEX seviyesi (1-5)</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={5}
-                      className={inputClass}
-                      value={form.capexLevel}
-                      onChange={(event) => setForm({ ...form, capexLevel: Number(event.target.value) })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-[var(--text-dim)] mb-1">OPEX seviyesi (1-5)</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={5}
-                      className={inputClass}
-                      value={form.opexLevel}
-                      onChange={(event) => setForm({ ...form, opexLevel: Number(event.target.value) })}
-                    />
+
+                  <div className="p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-soft)]">
+                    <label className="flex items-center gap-2 text-sm text-[var(--text-muted)] cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.manualPosition}
+                        onChange={(event) => {
+                          const derived = positionOf({ ...form, manualPosition: false });
+                          setForm({
+                            ...form,
+                            manualPosition: event.target.checked,
+                            // Elle ayara geçerken otomatik konumdan başla.
+                            xPosition: derived.xPosition,
+                            yPosition: derived.yPosition,
+                          });
+                        }}
+                        className="accent-[var(--accent)]"
+                      />
+                      Grafikteki konumu elle ayarla
+                    </label>
+
+                    {form.manualPosition ? (
+                      <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                        <div>
+                          <label className="block text-xs text-[var(--text-dim)] mb-1">
+                            Kaynak → Aciliyet ({form.xPosition})
+                          </label>
+                          <input
+                            type="range"
+                            min={0}
+                            max={10}
+                            step={0.5}
+                            value={form.xPosition}
+                            onChange={(event) => setForm({ ...form, xPosition: parseFloat(event.target.value) })}
+                            className="w-full accent-[var(--accent)]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-[var(--text-dim)] mb-1">
+                            Öncelik puanı ({form.yPosition})
+                          </label>
+                          <input
+                            type="range"
+                            min={0}
+                            max={10}
+                            step={0.5}
+                            value={form.yPosition}
+                            onChange={(event) => setForm({ ...form, yPosition: parseFloat(event.target.value) })}
+                            className="w-full accent-[var(--accent)]"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-[var(--text-dim)] mt-2">
+                        Strateji, vade ve tahmini etkiden hesaplanıyor — şu an{" "}
+                        <span className="text-[var(--accent)]">
+                          ({positionOf(form).xPosition}, {positionOf(form).yPosition})
+                        </span>
+                        . Bu alanları değiştirdikçe konum da güncellenir.
+                      </p>
+                    )}
                   </div>
                 </div>
               )}

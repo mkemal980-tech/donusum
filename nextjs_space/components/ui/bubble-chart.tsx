@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DollarSign, ChevronDown, ChevronUp, Clock, Target, TrendingUp } from "lucide-react";
 import { useTheme } from "next-themes";
+import { bubbleRadiusFor, spreadOverlapping } from "@/lib/recommendation-position";
 
 interface Recommendation {
   id: string;
@@ -62,7 +63,12 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
   }, []);
 
   // Sort recommendations by order
-  const sortedRecs = [...recommendations].sort((a, b) => a.order - b.order);
+  // Çizim, tıklama ve fare takibi aynı konumları kullanmalı; aynı noktaya
+  // düşen baloncuklar burada bir kez ayrıştırılır.
+  const sortedRecs = useMemo(
+    () => spreadOverlapping([...recommendations].sort((a, b) => a.order - b.order)),
+    [recommendations]
+  );
 
   const isDark = mounted && theme === 'dark';
 
@@ -173,7 +179,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
     sortedRecs.forEach((rec, index) => {
       const x = padding.left + ((rec.xPosition || 5) / 10) * chartWidth;
       const y = height - padding.bottom - ((rec.yPosition || 5) / 10) * chartHeight;
-      const radius = Math.max(15, Math.min(40, (rec.estimatedImpact || 5) * 3));
+      const radius = bubbleRadiusFor(rec.estimatedImpact);
       const colors = strategicColors[rec.strategicType];
       const isSelected = selectedId === rec.id;
       const isHovered = hoveredId === rec.id;
@@ -219,7 +225,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
     for (const rec of sortedRecs) {
       const bx = padding.left + ((rec.xPosition || 5) / 10) * chartWidth;
       const by = height - padding.bottom - ((rec.yPosition || 5) / 10) * chartHeight;
-      const radius = Math.max(15, Math.min(40, (rec.estimatedImpact || 5) * 3));
+      const radius = bubbleRadiusFor(rec.estimatedImpact);
       
       const distance = Math.sqrt((x - bx) ** 2 + (y - by) ** 2);
       if (distance <= radius) {
@@ -251,7 +257,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
     for (const rec of sortedRecs) {
       const bx = padding.left + ((rec.xPosition || 5) / 10) * chartWidth;
       const by = height - padding.bottom - ((rec.yPosition || 5) / 10) * chartHeight;
-      const radius = Math.max(15, Math.min(40, (rec.estimatedImpact || 5) * 3));
+      const radius = bubbleRadiusFor(rec.estimatedImpact);
       
       const distance = Math.sqrt((x - bx) ** 2 + (y - by) ** 2);
       if (distance <= radius) {

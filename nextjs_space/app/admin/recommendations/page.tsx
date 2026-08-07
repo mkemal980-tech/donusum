@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Edit, Trash2, X, Search, FileText, DollarSign, Target, FolderTree, HelpCircle, CheckSquare, TrendingUp } from "lucide-react";
+import { derivePosition } from "@/lib/recommendation-position";
 
 interface Survey {
   id: string;
@@ -246,8 +247,21 @@ export default function RecommendationsPage() {
     }
     
     try {
+      // Konum sürgülerine hiç dokunulmadıysa (ikisi de varsayılan 5) grafikte
+      // bütün öneriler tek noktada yığılırdı; bu durumda strateji, vade ve
+      // etkiden anlamlı bir konum türetilir.
+      const untouchedPosition = (formData.xPosition ?? 5) === 5 && (formData.yPosition ?? 5) === 5;
+      const position = untouchedPosition
+        ? derivePosition({
+            strategicType: formData.strategicType,
+            timeframe: formData.timeframe,
+            estimatedImpact: formData.estimatedImpact,
+          })
+        : { xPosition: formData.xPosition, yPosition: formData.yPosition };
+
       const dataToSave = {
         ...formData,
+        ...position,
         subCategoryId: modalSubLevelId ? null : (modalSubCategoryId || null),
         subLevelId: modalSubLevelId || null,
         questionId: modalQuestionId || null,
