@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
-import { calculateUserScore, getScopeResolver, maxScoreForQuestion } from "@/lib/scoring";
+import { calculateUserScore, getAccessibleSurveyIds, getScopeResolver, maxScoreForQuestion } from "@/lib/scoring";
+import { getAssessmentIds } from "@/lib/assessment";
 
 export const dynamic = "force-dynamic";
 
@@ -76,8 +77,13 @@ export async function GET(request: NextRequest) {
     const scoreData = await calculateUserScore(userId, effectiveSurveyId ?? undefined);
 
     // Get user responses
+    const assessmentIds = await getAssessmentIds(
+      userId,
+      effectiveSurveyId ? [effectiveSurveyId] : await getAccessibleSurveyIds(userId)
+    );
+
     const responses = await prisma.surveyResponse.findMany({
-      where: { userId },
+      where: { assessmentId: { in: assessmentIds } },
       include: {
         question: {
           include: {

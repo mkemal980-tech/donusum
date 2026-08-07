@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-utils';
 import { prisma } from '@/lib/db';
-import { calculateProgressScores } from '@/lib/scoring';
+import { calculateProgressScores, getAccessibleSurveyIds } from '@/lib/scoring';
+import { getAssessmentIds } from '@/lib/assessment';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,8 +29,13 @@ export async function GET(request: NextRequest) {
     });
 
     // 2. Kullanıcının anket cevaplarını al
+    const assessmentIds = await getAssessmentIds(
+      userId,
+      surveyId ? [surveyId] : await getAccessibleSurveyIds(userId)
+    );
+
     const responses = await prisma.surveyResponse.findMany({
-      where: { userId },
+      where: { assessmentId: { in: assessmentIds } },
       include: {
         question: {
           include: {
@@ -43,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     // 3. Tamamlanan önerileri al
     const completedRoadmapItems = await prisma.roadmapItem.findMany({
-      where: { userId, status: 'COMPLETED' },
+      where: { assessmentId: { in: assessmentIds }, status: 'COMPLETED' },
       include: {
         recommendation: {
           include: {

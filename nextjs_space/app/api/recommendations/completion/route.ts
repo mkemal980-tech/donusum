@@ -3,9 +3,11 @@ import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api-utils';
 import {
   calculateProgressScores,
+  getAccessibleSurveyIds,
   isRecommendationActionable,
   type DbClient
 } from '@/lib/scoring';
+import { getAssessmentIds, getOrCreateAssessment } from '@/lib/assessment';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +23,7 @@ async function recordScoreHistory(
 
   await db.scoreHistory.create({
     data: {
-      userId,
+      assessmentId: (await getAssessmentIds(userId, surveyId ? [surveyId] : await getAccessibleSurveyIds(userId, undefined, db), db))[0],
       surveyId,
       overallScore: scores.overallScore,
       overallPercentage: scores.overallPercentage,
@@ -47,8 +49,10 @@ export async function GET(request: NextRequest) {
 
   try {
     // RoadmapItem tablosundan oku (yol haritası ile senkronize)
+    const assessmentIds = await getAssessmentIds(userId, await getAccessibleSurveyIds(userId));
+
     const roadmapItems = await prisma.roadmapItem.findMany({
-      where: { userId },
+      where: { assessmentId: { in: assessmentIds } },
       include: {
         recommendation: {
           select: {
@@ -70,7 +74,7 @@ export async function GET(request: NextRequest) {
     // RoadmapItem formatını completions formatına dönüştür
     const completions = roadmapItems.map(item => ({
       id: item.id,
-      userId: item.userId,
+      assessmentId: item.assessmentId,
       recommendationId: item.recommendationId,
       status: item.status,
       notes: null,
@@ -123,13 +127,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Yol haritası kaydı kuruluşun değerlendirmesine bağlı.
+    const assessmentId = await getOrCreateAssessment(
+      userId,
+      surveyId ?? (await getAccessibleSurveyIds(userId))[0]
+    );
+
     // Önceki durumu kontrol et (RoadmapItem'dan)
     const previousItem = await prisma.roadmapItem.findUnique({
       where: {
-        userId_recommendationId: {
-          userId,
-          recommendationId
-        }
+        assessmentId_recommendationId: { assessmentId, recommendationId }
       }
     });
 
@@ -142,14 +149,11 @@ export async function POST(request: NextRequest) {
     const { roadmapItem, updatedScores } = await prisma.$transaction(async (tx) => {
       const item = await tx.roadmapItem.upsert({
         where: {
-          userId_recommendationId: {
-            userId,
-            recommendationId: recommendationId
-          }
+          assessmentId_recommendationId: { assessmentId, recommendationId }
         },
         create: {
-          userId,
-          recommendationId: recommendationId,
+          assessmentId,
+          recommendationId,
           status: status || 'NOT_STARTED'
         },
         update: {
@@ -190,7 +194,7 @@ export async function POST(request: NextRequest) {
     // Formatı completion formatına dönüştür
     const completion = {
       id: roadmapItem.id,
-      userId: roadmapItem.userId,
+      assessmentId: roadmapItem.assessmentId,
       recommendationId: roadmapItem.recommendationId,
       status: roadmapItem.status,
       notes: notes || null, // notes'u istek'ten al
@@ -223,12 +227,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Recommendation ID is required' }, { status: 400 });
     }
 
+    const assessmentId = await getOrCreateAssessment(
+      userId,
+      (await getAccessibleSurveyIds(userId))[0]
+    );
+
     await prisma.roadmapItem.delete({
       where: {
-        userId_recommendationId: {
-          userId,
-          recommendationId: recommendationId
-        }
+        assessmentId_recommendationId: { assessmentId, recommendationId }
       }
     });
 

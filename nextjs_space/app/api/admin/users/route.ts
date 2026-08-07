@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
         subSector: true,
         _count: {
           select: {
-            surveyResponses: true,
+            authoredResponses: true,
           },
         },
       },

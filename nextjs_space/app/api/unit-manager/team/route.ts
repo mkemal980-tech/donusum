@@ -59,25 +59,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Yönetilen birimleri getir
-    const managedUnits = await prisma.unit.findMany({
-      where: { id: { in: managedUnitIds } },
+    /**
+     * Cevaplar artık kuruluşun değerlendirmesine bağlı, kişiye değil.
+     * Bu yüzden takım tablosu birimin değerlendirmeleri üzerinden kurulur:
+     * bir satır = bir değerlendirme (kuruluşun bir anketi), kişi başına
+     * ayrı puan yok — zaten amaç tek kurumsal puan üretmekti.
+     */
+    const managedUnits = await prisma.assessment.findMany({
+      where: { unitId: { in: managedUnitIds } },
       include: {
-        users: {
+        unit: { select: { id: true, name: true } },
+        survey: { select: { id: true, name: true } },
+        responses: {
           include: {
-            surveyResponses: {
+            question: {
               include: {
-                question: {
+                subLevel: {
                   include: {
-                    subLevel: {
-                      include: {
-                        subCategory: {
-                          include: {
-                            category: true,
-                          },
-                        },
-                      },
-                    },
                     subCategory: {
                       include: {
                         category: true,
@@ -85,19 +83,22 @@ export async function GET(request: NextRequest) {
                     },
                   },
                 },
+                subCategory: {
+                  include: {
+                    category: true,
+                  },
+                },
               },
             },
-            sector: true,
-            subSector: true,
           },
         },
       },
     });
 
-    // Her kullanıcı için skor hesapla
-    const teamData = managedUnits.flatMap((unit) =>
-      unit.users.map((user) => {
-        const responses = user.surveyResponses || [];
+    // Her değerlendirme için skor hesapla
+    const teamData = managedUnits.map((assessment) => {
+      {
+        const responses = assessment.responses || [];
         let totalScore = 0;
         let totalWeight = 0;
 
@@ -111,24 +112,25 @@ export async function GET(request: NextRequest) {
         const normalizedScore = (averageScore / 5) * 100;
 
         return {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          unitId: unit.id,
-          unitName: unit.name,
-          sector: user.sector?.name || null,
-          subSector: user.subSector?.name || null,
+          id: assessment.id,
+          email: "-",
+          firstName: assessment.survey.name,
+          lastName: null as string | null,
+          unitId: assessment.unit?.id ?? "",
+          unitName: assessment.unit?.name ?? "-",
+          sector: null as string | null,
+          subSector: null as string | null,
           responseCount: responses.length,
           score: Math.round(normalizedScore * 10) / 10,
           maturityScore: Math.round(averageScore * 100) / 100,
         };
-      })
-    );
+      }
+    });
 
     // Birim özeti
-    const unitSummaries = managedUnits.map((unit) => {
-      const unitUsers = teamData.filter((u) => u.unitId === unit.id);
+    const unitSummaries = managedUnits.map((assessment) => {
+      const unit = assessment.unit;
+      const unitUsers = teamData.filter((u) => u.unitId === (unit?.id ?? ""));
       const avgScore =
         unitUsers.length > 0
           ? unitUsers.reduce((sum, u) => sum + u.score, 0) / unitUsers.length
@@ -136,9 +138,9 @@ export async function GET(request: NextRequest) {
       const completedUsers = unitUsers.filter((u) => u.responseCount > 0).length;
 
       return {
-        id: unit.id,
-        name: unit.name,
-        description: unit.description,
+        id: unit?.id ?? assessment.id,
+        name: unit?.name ?? "-",
+        description: null as string | null,
         userCount: unitUsers.length,
         completedUsers,
         averageScore: Math.round(avgScore * 10) / 10,

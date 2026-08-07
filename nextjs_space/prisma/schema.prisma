@@ -19,6 +19,7 @@ model Unit {
   parent       Unit?       @relation("UnitHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   subUnits     Unit[]      @relation("UnitHierarchy")
   admins       UnitAdmin[]
+  assessments  Assessment[]
   users        User[]      @relation("UnitUsers")
 }
 
@@ -59,8 +60,8 @@ model User {
   isActive                  Boolean                        @default(true)
   assessmentScores          AssessmentScore[]
   uploadedDocuments         Document[]
-  roadmapItems              RoadmapItem[]
-  surveyResponses           SurveyResponse[]
+  authoredResponses         SurveyResponse[]               @relation("ResponseAuthor")
+  ownedAssessments          Assessment[]                   @relation("AssessmentOwner")
   adminOfUnits              UnitAdmin[]
   sector                    Sector?                        @relation(fields: [sectorId], references: [id])
   subSector                 SubSector?                     @relation(fields: [subSectorId], references: [id])
@@ -154,6 +155,7 @@ model Survey {
   benchmarks            Benchmark[]
   categories            Category[]
   sectorScopeRules      SectorScopeRule[]
+  assessments           Assessment[]
   userAssignments       UserSurveyAssignment[]
   aiRecommendationCache AIRecommendationCache[]
 }
@@ -259,19 +261,55 @@ model Question {
   responses          SurveyResponse[]
 }
 
-model SurveyResponse {
-  id         String     @id @default(cuid())
-  value      String
-  score      Float      @default(0)
-  userId     String
-  questionId String
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  documents  Document[]
-  question   Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+/// Bir kuruluşun bir ankete verdiği değerlendirme.
+///
+/// Değerlendirmenin sahibi kişi değil kuruluştur: büyük bir şirkette farklı
+/// bölümleri farklı departmanlar doldurur ve ortaya tek bir kurumsal puan
+/// çıkması gerekir. Cevaplar, yol haritası ve puan geçmişi bu nesneye bağlıdır.
+///
+/// Kuruluşu olmayan kullanıcı için tek kişilik değerlendirme açılır
+/// (unitId null, ownerUserId dolu); davranış bugünküyle aynı kalır.
+model Assessment {
+  id           String           @id @default(cuid())
+  surveyId     String
+  unitId       String?
+  ownerUserId  String?
+  status       AssessmentStatus @default(IN_PROGRESS)
+  submittedAt  DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  survey       Survey           @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  unit         Unit?            @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  owner        User?            @relation("AssessmentOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  responses    SurveyResponse[]
+  roadmapItems RoadmapItem[]
+  scoreHistory ScoreHistory[]
 
-  @@unique([userId, questionId])
+  @@unique([surveyId, unitId])
+  @@unique([surveyId, ownerUserId])
+}
+
+enum AssessmentStatus {
+  IN_PROGRESS
+  SUBMITTED
+}
+
+model SurveyResponse {
+  id           String     @id @default(cuid())
+  value        String
+  score        Float      @default(0)
+  assessmentId String
+  questionId   String
+  /// Denetim izi: cevabı kimin girdiği. Puanlamada kullanılmaz.
+  answeredById String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  documents    Document[]
+  question     Question   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  answeredBy   User?      @relation("ResponseAuthor", fields: [answeredById], references: [id], onDelete: SetNull)
+
+  @@unique([assessmentId, questionId])
 }
 
 model Document {
@@ -332,7 +370,7 @@ model Recommendation {
 
 model ScoreHistory {
   id                       String   @id @default(cuid())
-  userId                   String
+  assessmentId             String
   surveyId                 String?
   overallScore             Float
   overallPercentage        Float
@@ -345,14 +383,15 @@ model ScoreHistory {
   triggerType              String
   triggerEntityId          String?
   recordedAt               DateTime @default(now())
+  assessment               Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 
-  @@index([userId, recordedAt])
-  @@index([userId, surveyId, recordedAt])
+  @@index([assessmentId, recordedAt])
+  @@index([assessmentId, surveyId, recordedAt])
 }
 
 model RoadmapItem {
   id               String         @id @default(cuid())
-  userId           String
+  assessmentId     String
   recommendationId String
   priority         Int            @default(0)
   plannedQuarter   Int?
@@ -361,9 +400,9 @@ model RoadmapItem {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessment       Assessment     @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, recommendationId])
+  @@unique([assessmentId, recommendationId])
 }
 
 enum UserRole {

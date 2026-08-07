@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
 import { buildSurveyQuestionWhere, calculateUserScore } from "@/lib/scoring";
+import { getAssessmentIds } from "@/lib/assessment";
 
 /**
  * Unified Dashboard API - Tüm dashboard verilerini tek seferde döndürür
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
       // 2. User Responses
       prisma.surveyResponse.findMany({
         where: {
-          userId,
+          assessmentId: { in: await getAssessmentIds(userId, [surveyId]) },
           question: buildSurveyQuestionWhere(surveyId)
         },
         select: {

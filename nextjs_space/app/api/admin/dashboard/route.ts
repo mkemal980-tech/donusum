@@ -30,20 +30,18 @@ export async function GET(req: NextRequest) {
     ]);
 
     // Admin kullanıcıları hariç aktif kullanıcılar
-    const activeUsers = await prisma.user.count({
-      where: {
-        role: "USER",
-        surveyResponses: { some: {} },
-      },
+    // Cevaplar artık kuruluşun değerlendirmesine bağlı; "aktif" ölçüsü de
+    // kişi değil, üzerinde çalışılmış değerlendirme sayısıdır.
+    const activeUsers = await prisma.assessment.count({
+      where: { responses: { some: {} } },
     });
 
     // Son 7 günde yanıt veren kullanıcılar
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentActiveUsers = await prisma.user.count({
+    const recentActiveUsers = await prisma.assessment.count({
       where: {
-        role: "USER",
-        surveyResponses: {
+        responses: {
           some: {
             updatedAt: { gte: sevenDaysAgo },
           },
@@ -66,7 +64,8 @@ export async function GET(req: NextRequest) {
       take: 10,
       orderBy: { updatedAt: "desc" },
       include: {
-        user: { select: { firstName: true, lastName: true, email: true, organization: true } },
+        // Cevabı fiilen kimin girdiği; sahibi artık kuruluşun değerlendirmesi.
+        answeredBy: { select: { firstName: true, lastName: true, email: true, organization: true } },
         question: { select: { text: true } },
       },
     });
@@ -106,10 +105,9 @@ export async function GET(req: NextRequest) {
         });
 
         // Bu anketi tamamlayan kullanıcı sayısı
-        const completedUsers = await prisma.user.count({
+        const completedUsers = await prisma.assessment.count({
           where: {
-            role: "USER",
-            surveyResponses: {
+            responses: {
               some: {
                 question: {
                   OR: [
@@ -149,15 +147,14 @@ export async function GET(req: NextRequest) {
             where: {
               questionId: { in: questionIds },
             },
-            include: {
-              user: { select: { id: true } },
-            },
+            select: { score: true, assessmentId: true },
           });
 
-          // Kullanıcı bazında puanları hesapla
+          // Puanlar değerlendirme bazında toplanır: aynı kuruluşun farklı
+          // departmanlarının verdiği cevaplar tek bir puanda birleşir.
           const userScoresMap = new Map<string, number[]>();
           for (const resp of responses) {
-            const userId = resp.user.id;
+            const userId = resp.assessmentId;
             if (!userScoresMap.has(userId)) {
               userScoresMap.set(userId, []);
             }
@@ -194,10 +191,9 @@ export async function GET(req: NextRequest) {
         }
 
         // Kullanıcı puanları
-        const usersWithResponses = await prisma.user.findMany({
+        const usersWithResponses = await prisma.assessment.findMany({
           where: {
-            role: "USER",
-            surveyResponses: {
+            responses: {
               some: {
                 question: {
                   OR: [
@@ -210,9 +206,15 @@ export async function GET(req: NextRequest) {
             },
           },
           include: {
-            sector: { select: { name: true } },
-            subSector: { select: { name: true } },
-            surveyResponses: {
+            unit: { select: { name: true } },
+            owner: {
+              select: {
+                firstName: true, lastName: true, email: true, organization: true,
+                sector: { select: { name: true } },
+                subSector: { select: { name: true } },
+              },
+            },
+            responses: {
               where: {
                 question: {
                   OR: [
@@ -237,7 +239,7 @@ export async function GET(req: NextRequest) {
         });
 
         for (const user of usersWithResponses) {
-          const responses = user.surveyResponses;
+          const responses = user.responses;
           if (responses.length === 0) continue;
 
           let totalScore = 0;
@@ -254,11 +256,17 @@ export async function GET(req: NextRequest) {
 
           userScores.push({
             userId: user.id,
-            name: [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email,
-            email: user.email,
-            organization: user.organization,
-            sector: user.sector?.name || "-",
-            subSector: user.subSector?.name || "-",
+            // Satır artık bir kuruluşun değerlendirmesi: kuruluş adı varsa o,
+            // yoksa tek kişilik değerlendirmenin sahibi gösterilir.
+            name:
+              user.unit?.name ||
+              [user.owner?.firstName, user.owner?.lastName].filter(Boolean).join(" ") ||
+              user.owner?.email ||
+              "-",
+            email: user.owner?.email ?? "-",
+            organization: user.owner?.organization ?? user.unit?.name ?? null,
+            sector: user.owner?.sector?.name || "-",
+            subSector: user.owner?.subSector?.name || "-",
             percentage: Math.round(percentage),
             maturityScore: Math.round(maturityScore * 10) / 10,
             responseCount: responses.length,
@@ -310,9 +318,12 @@ export async function GET(req: NextRequest) {
       sectorStats,
       recentActivities: recentActivities.map((a) => ({
         id: a.id,
-        userName: [a.user.firstName, a.user.lastName].filter(Boolean).join(" ") || a.user.email,
-        userEmail: a.user.email,
-        organization: a.user.organization,
+        userName:
+          [a.answeredBy?.firstName, a.answeredBy?.lastName].filter(Boolean).join(" ") ||
+          a.answeredBy?.email ||
+          "-",
+        userEmail: a.answeredBy?.email ?? "-",
+        organization: a.answeredBy?.organization ?? null,
         question: a.question.text.substring(0, 50) + (a.question.text.length > 50 ? "..." : ""),
         score: a.score,
         updatedAt: a.updatedAt,

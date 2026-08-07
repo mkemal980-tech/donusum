@@ -29,14 +29,12 @@ export async function GET() {
       return NextResponse.json({ hasResponses: false });
     }
 
-    // Check if any user in the same unit has survey responses
-    const usersWithResponses = await prisma.user.findFirst({
+    // Cevaplar kuruluşun değerlendirmesine bağlı: birimin bir değerlendirmesi
+    // üzerinde çalışılmış mı diye bakılır.
+    const usersWithResponses = await prisma.assessment.findFirst({
       where: {
         unitId: unitManager.unitId,
-        role: "USER",
-        surveyResponses: {
-          some: {},
-        },
+        responses: { some: {} },
       },
     });
 

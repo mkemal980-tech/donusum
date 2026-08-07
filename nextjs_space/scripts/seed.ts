@@ -420,6 +420,16 @@ async function main() {
 
     console.log(`Found ${allQuestions.length} questions to answer`);
 
+    // Cevaplar kuruluşun değerlendirmesine bağlı; örnek veri için test
+    // kullanıcısının tek kişilik değerlendirmesi kullanılır.
+    const sampleSurvey = await prisma.survey.findFirst({ select: { id: true } });
+    if (!sampleSurvey) throw new Error("Örnek cevap için anket bulunamadı");
+    const sampleAssessmentId = (
+      await prisma.assessment.create({
+        data: { surveyId: sampleSurvey.id, ownerUserId: testUser.id },
+      })
+    ).id;
+
     // Her soru için rastgele bir skor ata (2-5 arası, VELOCITY ve ENDURANCE dengesine dikkat et)
     const surveyResponses = [];
     for (let i = 0; i < allQuestions.length; i++) {
@@ -438,7 +448,8 @@ async function main() {
       }
 
       surveyResponses.push({
-        userId: testUser.id,
+        assessmentId: sampleAssessmentId,
+        answeredById: testUser.id,
         questionId: question.id,
         score: score,
         value: question.type === 'YES_NO' ? (score >= 3 ? 'evet' : 'hayir') : score.toString(),

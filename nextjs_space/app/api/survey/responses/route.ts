@@ -3,7 +3,8 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
-import { buildSurveyQuestionWhere, scoreConditionalChoice } from "@/lib/scoring";
+import { buildSurveyQuestionWhere, getAccessibleSurveyIds, scoreConditionalChoice } from "@/lib/scoring";
+import { getAssessmentIds, getOrCreateAssessment } from "@/lib/assessment";
 
 async function validateSurveyAccess(userId: string, role: string, surveyId: string) {
   if (role === "ADMIN") return null;
@@ -63,8 +64,13 @@ export async function GET(request: NextRequest) {
       if (accessError) return accessError;
     }
 
-    // Survey filtresi için where koşulu oluştur
-    const whereCondition: any = { userId };
+    // Cevaplar kuruluşun değerlendirmesine bağlı: aynı kuruluştaki başka bir
+    // kullanıcının girdiği cevaplar da bu listede görünür.
+    const assessmentIds = await getAssessmentIds(
+      userId,
+      surveyId ? [surveyId] : await getAccessibleSurveyIds(userId)
+    );
+    const whereCondition: any = { assessmentId: { in: assessmentIds } };
     
     if (surveyId) {
       whereCondition.question = buildSurveyQuestionWhere(surveyId);
@@ -172,22 +178,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!surveyId) {
+      return NextResponse.json(
+        { error: "Soru bir ankete bağlı değil." },
+        { status: 400 }
+      );
+    }
+
+    const assessmentId = await getOrCreateAssessment(userId, surveyId);
+
     const response = await prisma.surveyResponse.upsert({
       where: {
-        userId_questionId: {
-          userId,
-          questionId
-        }
+        assessmentId_questionId: { assessmentId, questionId }
       },
       update: {
         value: String(value),
-        score
+        score,
+        // Cevabı en son kimin güncellediği denetim izi olarak tutulur.
+        answeredById: userId
       },
       create: {
-        userId,
+        assessmentId,
         questionId,
         value: String(value),
-        score
+        score,
+        answeredById: userId
       }
     });
 

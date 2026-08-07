@@ -3,7 +3,32 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
-import { isRecommendationActionable } from "@/lib/scoring";
+import { getAccessibleSurveyIds, isRecommendationActionable } from "@/lib/scoring";
+import { getAssessmentIds, getOrCreateAssessment } from "@/lib/assessment";
+
+/** Önerinin bağlı olduğu anketin değerlendirmesi. */
+async function assessmentForRecommendation(userId: string, recommendationId: string) {
+  const rec = await prisma.recommendation.findUnique({
+    where: { id: recommendationId },
+    select: {
+      question: {
+        select: {
+          category: { select: { surveyId: true } },
+          subCategory: { select: { category: { select: { surveyId: true } } } },
+          subLevel: { select: { subCategory: { select: { category: { select: { surveyId: true } } } } } },
+        },
+      },
+    },
+  });
+  const q = rec?.question;
+  const surveyId =
+    q?.category?.surveyId ??
+    q?.subCategory?.category?.surveyId ??
+    q?.subLevel?.subCategory?.category?.surveyId ??
+    null;
+  if (!surveyId) return null;
+  return getOrCreateAssessment(userId, surveyId);
+}
 
 export async function GET(request: NextRequest) {
   const auth = await withAuth(request);
@@ -11,8 +36,10 @@ export async function GET(request: NextRequest) {
   const userId = auth.userId;
 
   try {
+    const assessmentIds = await getAssessmentIds(userId, await getAccessibleSurveyIds(userId));
+
     const roadmapItems = await prisma.roadmapItem.findMany({
-      where: { userId },
+      where: { assessmentId: { in: assessmentIds } },
       include: {
         recommendation: true
       },
@@ -58,12 +85,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const assessmentId = await assessmentForRecommendation(userId, recommendationId);
+    if (!assessmentId) {
+      return NextResponse.json(
+        { error: "Öneri bir ankete bağlı değil." },
+        { status: 400 }
+      );
+    }
+
     const roadmapItem = await prisma.roadmapItem.upsert({
       where: {
-        userId_recommendationId: {
-          userId,
-          recommendationId
-        }
+        assessmentId_recommendationId: { assessmentId, recommendationId }
       },
       update: {
         plannedQuarter: plannedQuarter ?? null,
@@ -71,7 +103,7 @@ export async function POST(request: NextRequest) {
         priority: priority ?? 0
       },
       create: {
-        userId,
+        assessmentId,
         recommendationId,
         plannedQuarter: plannedQuarter ?? null,
         plannedYear: plannedYear ?? null,
@@ -118,12 +150,17 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const assessmentId = await assessmentForRecommendation(userId, recommendationId);
+    if (!assessmentId) {
+      return NextResponse.json(
+        { error: "Öneri bir ankete bağlı değil." },
+        { status: 400 }
+      );
+    }
+
     const roadmapItem = await prisma.roadmapItem.update({
       where: {
-        userId_recommendationId: {
-          userId,
-          recommendationId
-        }
+        assessmentId_recommendationId: { assessmentId, recommendationId }
       },
       data: {
         ...(status && { status }),
@@ -162,12 +199,17 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    const assessmentId = await assessmentForRecommendation(userId, recommendationId);
+    if (!assessmentId) {
+      return NextResponse.json(
+        { error: "Öneri bir ankete bağlı değil." },
+        { status: 400 }
+      );
+    }
+
     await prisma.roadmapItem.delete({
       where: {
-        userId_recommendationId: {
-          userId,
-          recommendationId
-        }
+        assessmentId_recommendationId: { assessmentId, recommendationId }
       }
     });
 

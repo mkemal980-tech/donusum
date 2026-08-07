@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-utils';
 import { prisma } from '@/lib/db';
-import { calculateProgressScores } from '@/lib/scoring';
+import { calculateProgressScores, getAccessibleSurveyIds } from '@/lib/scoring';
+import { getAssessmentIds, getOrCreateAssessment } from '@/lib/assessment';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,9 +46,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Önce mevcut geçmişi kontrol et
+    const assessmentIds = await getAssessmentIds(
+      userId,
+      surveyId ? [surveyId] : await getAccessibleSurveyIds(userId)
+    );
+
     let history = await prisma.scoreHistory.findMany({
       where: {
-        userId,
+        assessmentId: { in: assessmentIds },
         ...(surveyId && { surveyId }),
         ...(dateFilter && { recordedAt: { gte: dateFilter } }),
       },
@@ -58,7 +64,7 @@ export async function GET(request: NextRequest) {
     // Eğer hiç kayıt yoksa ve kullanıcının anket cevabı varsa, başlangıç snapshot'ı oluştur
     if (history.length === 0) {
       const responseCount = await prisma.surveyResponse.count({
-        where: { userId }
+        where: { assessmentId: { in: assessmentIds } }
       });
       
       if (responseCount > 0) {
@@ -70,7 +76,7 @@ export async function GET(request: NextRequest) {
 
         const initialSnapshot = await prisma.scoreHistory.create({
           data: {
-            userId,
+            assessmentId: assessmentIds[0],
             surveyId: surveyId || null,
             overallScore: scores.overallScore,
             overallPercentage: scores.overallPercentage,
@@ -166,7 +172,7 @@ export async function POST(request: NextRequest) {
 
     const snapshot = await prisma.scoreHistory.create({
       data: {
-        userId,
+        assessmentId: await getOrCreateAssessment(userId, surveyId),
         surveyId,
         overallScore: scores.overallScore,
         overallPercentage: scores.overallPercentage,

@@ -17,6 +17,7 @@ const findManyAssignment = vi.fn();
 const countQuestion = vi.fn();
 const findManyQuestion = vi.fn();
 const findManyScopeRule = vi.fn();
+const findManyAssessment = vi.fn();
 
 vi.mock("../db", () => ({
   prisma: {
@@ -32,6 +33,7 @@ vi.mock("../db", () => ({
       findMany: (...a: any[]) => findManyQuestion(...a),
     },
     sectorScopeRule: { findMany: (...a: any[]) => findManyScopeRule(...a) },
+    assessment: { findMany: (...a: any[]) => findManyAssessment(...a) },
   },
 }));
 
@@ -59,6 +61,8 @@ beforeEach(() => {
   findUniqueUser.mockResolvedValue({ role: "USER", sectorId: null, subSectorId: null });
   findManyScopeRule.mockResolvedValue([]);
   findManyQuestion.mockResolvedValue([]);
+  // Kuruluşu olmayan kullanıcının tek kişilik değerlendirmesi.
+  findManyAssessment.mockResolvedValue([{ id: "assessment-1" }]);
   findManyAssignment.mockResolvedValue([{ surveyId: "survey-1" }]);
   findManySurvey.mockResolvedValue([{ id: "survey-1" }]);
   countQuestion.mockResolvedValue(0);
@@ -576,6 +580,8 @@ describe("getAccessibleSurveyIds", () => {
   findUniqueUser.mockResolvedValue({ role: "USER", sectorId: null, subSectorId: null });
   findManyScopeRule.mockResolvedValue([]);
   findManyQuestion.mockResolvedValue([]);
+  // Kuruluşu olmayan kullanıcının tek kişilik değerlendirmesi.
+  findManyAssessment.mockResolvedValue([{ id: "assessment-1" }]);
     findManyAssignment.mockResolvedValue([{ surveyId: "s1" }]);
 
     expect(await getAccessibleSurveyIds("user-1")).toEqual(["s1"]);
@@ -586,6 +592,8 @@ describe("getAccessibleSurveyIds", () => {
   findUniqueUser.mockResolvedValue({ role: "USER", sectorId: null, subSectorId: null });
   findManyScopeRule.mockResolvedValue([]);
   findManyQuestion.mockResolvedValue([]);
+  // Kuruluşu olmayan kullanıcının tek kişilik değerlendirmesi.
+  findManyAssessment.mockResolvedValue([{ id: "assessment-1" }]);
     findManyAssignment.mockResolvedValue([{ surveyId: "s1" }]);
 
     expect(await getAccessibleSurveyIds("user-1", "baskasinin-anketi")).toEqual([]);

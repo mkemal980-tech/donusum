@@ -3,6 +3,8 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
+import { getAccessibleSurveyIds } from "@/lib/scoring";
+import { getAssessmentIds } from "@/lib/assessment";
 
 export async function POST(request: NextRequest) {
   const auth = await withAuth(request, { rateLimit: 'upload' });
@@ -23,13 +25,15 @@ export async function POST(request: NextRequest) {
     let linkedResponseId: string | null = responseId ?? null;
 
     if (questionId) {
-      const response = await prisma.surveyResponse.findUnique({
-        where: {
-          userId_questionId: {
-            userId,
-            questionId
-          }
-        },
+      // Cevap kuruluşun değerlendirmesine bağlı; aynı kuruluştaki başka bir
+      // kullanıcının girdiği cevaba da belge eklenebilir.
+      const assessmentIds = await getAssessmentIds(
+        userId,
+        await getAccessibleSurveyIds(userId)
+      );
+
+      const response = await prisma.surveyResponse.findFirst({
+        where: { assessmentId: { in: assessmentIds }, questionId },
         select: { id: true }
       });
 
@@ -42,12 +46,19 @@ export async function POST(request: NextRequest) {
 
       linkedResponseId = response.id;
     } else if (linkedResponseId) {
+      const assessmentIds = await getAssessmentIds(
+        userId,
+        await getAccessibleSurveyIds(userId)
+      );
+
       const response = await prisma.surveyResponse.findUnique({
         where: { id: linkedResponseId },
-        select: { userId: true }
+        select: { assessmentId: true }
       });
 
-      if (!response || response.userId !== userId) {
+      // Yetki artık kişiye değil değerlendirmeye bakar: aynı kuruluşun
+      // cevabına belge eklenebilir, başka kuruluşunkine eklenemez.
+      if (!response || !assessmentIds.includes(response.assessmentId)) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     }

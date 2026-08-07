@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
+import { getAssessmentIds } from "./assessment";
 import {
   type ResolvedScope,
   type ScopeRule,
@@ -318,9 +319,16 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
   // Sektöre göre kapsam/ağırlık — kural yoksa her şey kapsamda, ağırlık 1.
   const scopeOf = await getScopeResolver(userId, surveyId);
 
+  // Cevaplar kişiye değil kuruluşun değerlendirmesine bağlı; aynı kuruluştaki
+  // herkesin girdiği cevaplar tek puanda toplanır.
+  const assessmentIds = await getAssessmentIds(
+    userId,
+    surveyId ? [surveyId] : await getAccessibleSurveyIds(userId)
+  );
+
   const responses = await prisma.surveyResponse.findMany({
     where: {
-      userId,
+      assessmentId: { in: assessmentIds },
       question: {
         archivedAt: null,
         ...(surveyId ? buildSurveyQuestionWhere(surveyId) : {})
@@ -668,8 +676,11 @@ export async function getRecommendationsForUser(
   options: { surveyId?: string } = {}
 ) {
   // Kullanıcının tüm anket cevaplarını getir
+  const recSurveyIds = await getAccessibleSurveyIds(userId, options.surveyId);
+  const recAssessmentIds = await getAssessmentIds(userId, recSurveyIds);
+
   const userResponses = await prisma.surveyResponse.findMany({
-    where: { userId },
+    where: { assessmentId: { in: recAssessmentIds } },
     select: {
       questionId: true,
       value: true,
@@ -684,7 +695,7 @@ export async function getRecommendationsForUser(
   }
 
   // Öneriler yalnızca kullanıcının erişebildiği anketlerden gelir.
-  const surveyIds = await getAccessibleSurveyIds(userId, options.surveyId);
+  const surveyIds = recSurveyIds;
   const surveyWhere = await buildRecommendationSurveyWhere(surveyIds);
 
   const { categoryScores, subLevelScores, subCategoryScores } = await calculateUserScore(
@@ -804,7 +815,7 @@ export async function getRecommendationsForUser(
 
   // Roadmap'teki önerileri bul
   const existingRoadmapItems = await prisma.roadmapItem.findMany({
-    where: { userId },
+    where: { assessmentId: { in: recAssessmentIds } },
     select: { recommendationId: true, status: true }
   });
 
@@ -923,8 +934,14 @@ export async function calculateProgressScores(
     ...(surveyId ? buildSurveyQuestionWhere(surveyId) : {})
   };
 
+  const progressAssessmentIds = await getAssessmentIds(
+    userId,
+    surveyId ? [surveyId] : await getAccessibleSurveyIds(userId, undefined, db),
+    db
+  );
+
   const responses = await db.surveyResponse.findMany({
-    where: { userId, question: questionWhere },
+    where: { assessmentId: { in: progressAssessmentIds }, question: questionWhere },
     include: {
       question: {
         select: {
@@ -952,7 +969,7 @@ export async function calculateProgressScores(
 
   const completedRecs = await db.roadmapItem.findMany({
     where: {
-      userId,
+      assessmentId: { in: progressAssessmentIds },
       status: "COMPLETED",
       recommendation: recommendationWhere
     },
