@@ -14,7 +14,8 @@
     "db:migrate": "node scripts/migrate-deploy.js",
     "admin:create": "tsx --require dotenv/config scripts/create-admin.ts",
     "score-history:rescale": "tsx --require dotenv/config scripts/rescale-score-history.ts",
-    "ai:check-draft": "tsx --require dotenv/config scripts/check-ai-draft.ts"
+    "ai:check-draft": "tsx --require dotenv/config scripts/check-ai-draft.ts",
+    "seed:demo": "tsx --require dotenv/config scripts/seed-demo-survey.ts"
   },
   "prisma": {
     "seed": "tsx --require dotenv/config scripts/seed.ts"
