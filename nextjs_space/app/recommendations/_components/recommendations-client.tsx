@@ -54,6 +54,11 @@ interface Recommendation {
   aiNote?: string;
 }
 
+interface AssignedSurvey {
+  id: string;
+  name: string;
+}
+
 interface AIEnhancement {
   id: string;
   priority: number;
@@ -68,6 +73,14 @@ interface CompletionRecord {
 
 export default function RecommendationsClient() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  /**
+   * Öneriler tek bir anketin sonucudur; birden fazla ankete erişimi olan
+   * kullanıcıda (özellikle adminde) hepsini tek listede toplamak kavramsal
+   * olarak yanlış — hangi önerinin hangi ankete ait olduğu ayırt edilemez ve
+   * "sıradaki adım" rozetli öneri sayısı katlanır.
+   */
+  const [surveys, setSurveys] = useState<AssignedSurvey[]>([]);
+  const [selectedSurveyId, setSelectedSurveyId] = useState<string>("");
   const [completions, setCompletions] = useState<Record<string, CompletionStatus>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -89,9 +102,10 @@ export default function RecommendationsClient() {
   const [activeVideo, setActiveVideo] = useState<{ url: string; title: string } | null>(null);
   const [videoSize, setVideoSize] = useState({ width: 800, height: 450 });
 
-  const fetchRecommendations = async () => {
+  const fetchRecommendations = async (surveyId: string) => {
+    if (!surveyId) return;
     try {
-      const res = await fetch("/api/recommendations");
+      const res = await fetch(`/api/recommendations?surveyId=${encodeURIComponent(surveyId)}`);
       if (res.ok) {
         const data = await res.json();
         setRecommendations(data ?? []);
@@ -136,7 +150,7 @@ export default function RecommendationsClient() {
       const res = await fetch("/api/recommendations/ai-enhance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({})
+        body: JSON.stringify({ surveyId: selectedSurveyId })
       });
 
       if (!res.ok) {
@@ -170,13 +184,42 @@ export default function RecommendationsClient() {
     toast.info("AI önerileri kapatıldı");
   };
 
+  // Erişilebilir anketler — kullanıcıda atananlar, adminde tüm aktif anketler.
   useEffect(() => {
+    const loadSurveys = async () => {
+      try {
+        const res = await fetch("/api/survey/assigned");
+        const data = res.ok ? await res.json() : [];
+        const list: AssignedSurvey[] = Array.isArray(data)
+          ? data.map((survey: AssignedSurvey) => ({ id: survey.id, name: survey.name }))
+          : [];
+        setSurveys(list);
+        setSelectedSurveyId((current) => current || list[0]?.id || "");
+        if (list.length === 0) setLoading(false);
+      } catch (error) {
+        console.error("Error fetching surveys:", error);
+        setLoading(false);
+      }
+    };
+    loadSurveys();
+  }, []);
+
+  // Anket değişince öneriler ve tamamlama durumları yeniden okunur.
+  useEffect(() => {
+    if (!selectedSurveyId) return;
     const loadData = async () => {
-      await Promise.all([fetchRecommendations(), fetchCompletions()]);
+      setLoading(true);
+      // Anket değişti: eski anketin AI sıralaması artık geçerli değil.
+      setAiEnabled(false);
+      setAiEnhancements([]);
+      await Promise.all([fetchRecommendations(selectedSurveyId), fetchCompletions()]);
       setLoading(false);
     };
     loadData();
-  }, []);
+  }, [selectedSurveyId]);
+
+  const selectedSurveyName =
+    surveys.find((survey) => survey.id === selectedSurveyId)?.name ?? "";
 
   const handleAddToRoadmap = async (recommendationId: string) => {
     try {
@@ -243,7 +286,7 @@ export default function RecommendationsClient() {
         }
 
         // Kademe ilerledi: kilit ve sıralama sunucudan yeniden okunur.
-        await fetchRecommendations();
+        await fetchRecommendations(selectedSurveyId);
       } else {
         const payload = await res.json().catch(() => ({}));
         toast.error(payload.error || "Durum güncellenemedi");
@@ -328,10 +371,31 @@ export default function RecommendationsClient() {
               <Lightbulb className="text-[var(--accent)]" />
               Öneriler
             </h1>
-            <p className="text-[var(--text-muted)]">Değerlendirme sonuçlarınıza göre hazırlanan iyileştirme önerileri</p>
+            <p className="text-[var(--text-muted)]">
+              {surveys.length > 1
+                ? `${selectedSurveyName} değerlendirmenize göre hazırlanan iyileştirme önerileri`
+                : "Değerlendirme sonuçlarınıza göre hazırlanan iyileştirme önerileri"}
+            </p>
           </div>
-          
-          <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Birden fazla ankete erişimi olanlar için anket seçici.
+                Tek ankette gösterilmez — gereksiz karar yükü olur. */}
+            {surveys.length > 1 && (
+              <select
+                value={selectedSurveyId}
+                onChange={(event) => setSelectedSurveyId(event.target.value)}
+                className="px-4 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-soft)] text-[var(--text-main)] text-sm shadow-sm"
+                title="Öneriler seçili ankete göre listelenir"
+              >
+                {surveys.map((survey) => (
+                  <option key={survey.id} value={survey.id}>
+                    {survey.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
             {/* AI Zenginleştirme Butonu */}
             {recommendations.length > 0 && (
               aiEnabled ? (
@@ -712,7 +776,9 @@ export default function RecommendationsClient() {
             <p className="text-[var(--text-muted)]">
               {searchTerm || filters?.timeframe !== "all" || filters?.costType !== "all" || filters?.strategicType !== "all" || statusFilter !== "all"
                 ? "Filtrelerinizi değiştirmeyi deneyin"
-                : "Kişisel öneriler almak için anketi tamamlayın"}
+                : surveys.length > 1 && selectedSurveyName
+                  ? `Kişisel öneriler almak için "${selectedSurveyName}" anketini tamamlayın`
+                  : "Kişisel öneriler almak için anketi tamamlayın"}
             </p>
           </motion.div>
         )}
