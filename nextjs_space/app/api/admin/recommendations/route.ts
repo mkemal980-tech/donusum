@@ -9,6 +9,33 @@ export async function GET(request: NextRequest) {
   if (!auth.success) return auth.response;
 
   try {
+    const { searchParams } = new URL(request.url);
+
+    // Soru sayfasındaki öneri rozetleri için: soru başına öneri adedi.
+    if (searchParams.get('countsByQuestion') === '1') {
+      const grouped = await prisma.recommendation.groupBy({
+        by: ['questionId'],
+        _count: { _all: true },
+        where: { questionId: { not: null } },
+      });
+
+      const counts: Record<string, number> = {};
+      for (const row of grouped) {
+        if (row.questionId) counts[row.questionId] = row._count._all;
+      }
+      return NextResponse.json(counts);
+    }
+
+    // Tek bir sorunun önerileri — soru içinden yönetim için.
+    const questionId = searchParams.get('questionId');
+    if (questionId) {
+      const forQuestion = await prisma.recommendation.findMany({
+        where: { questionId },
+        orderBy: { order: 'asc' },
+      });
+      return NextResponse.json(forQuestion);
+    }
+
     const recommendations = await prisma.recommendation.findMany({
       include: {
         question: {

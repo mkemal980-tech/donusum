@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Save, X, FileText, Layers, Upload, Download, AlertCircle, CheckCircle, Activity, Eye } from "lucide-react";
+import { Plus, Edit, Trash2, ChevronDown, ChevronRight, Save, X, FileText, Layers, Upload, Download, AlertCircle, CheckCircle, Activity, Eye, Lightbulb } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -11,6 +11,7 @@ import {
 } from "@/lib/question-options";
 import type { ImportRow } from "@/lib/question-import";
 import QuestionImportPreview, { type PreviewPayload } from "@/components/admin/question-import-preview";
+import QuestionRecommendationsModal, { type RecommendationTarget } from "@/components/admin/question-recommendations-modal";
 
 interface Question {
   id: string;
@@ -129,6 +130,23 @@ export default function CategoriesPage() {
   const [surveyBulkPreview, setSurveyBulkPreview] = useState<PreviewPayload | null>(null);
   const surveyFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Soru içinden öneri yönetimi
+  const [recommendationModal, setRecommendationModal] = useState<{
+    question: Question;
+    target: RecommendationTarget;
+  } | null>(null);
+  const [recommendationCounts, setRecommendationCounts] = useState<Record<string, number>>({});
+
+  const fetchRecommendationCounts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/recommendations?countsByQuestion=1');
+      if (!res.ok) return;
+      setRecommendationCounts(await res.json());
+    } catch (error) {
+      console.error('Error loading recommendation counts:', error);
+    }
+  }, []);
+
   const fetchSurveys = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/surveys');
@@ -158,10 +176,14 @@ export default function CategoriesPage() {
     fetchSurveys(); 
   }, [fetchSurveys]);
 
-  useEffect(() => { 
+  useEffect(() => {
     setLoading(true);
-    fetchCategories(); 
+    fetchCategories();
   }, [fetchCategories]);
+
+  useEffect(() => {
+    fetchRecommendationCounts();
+  }, [fetchRecommendationCounts]);
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
@@ -642,9 +664,30 @@ export default function CategoriesPage() {
         })()}
       </div>
       <div className="flex items-center gap-1 ml-2">
-        <button 
-          onClick={() => openModal('question', parentId, question, parentData)} 
-          className="p-1.5 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]" 
+        <button
+          onClick={() => setRecommendationModal({
+            question,
+            // Öneri, sorunun bulunduğu yere bağlanır; yönetici ayrıca
+            // anket/kategori seçmek zorunda kalmaz.
+            target: {
+              categoryId: parentData?.isCategory ? parentId : null,
+              subCategoryId: parentData?.isSubCategory ? parentId : null,
+              subLevelId: parentData?.isCategory || parentData?.isSubCategory ? null : parentId,
+            },
+          })}
+          className="relative p-1.5 hover:bg-[var(--bg-card-2)] rounded text-[var(--warning)]"
+          title="Bu sorunun önerileri"
+        >
+          <Lightbulb size={16} />
+          {(recommendationCounts[question.id] ?? 0) > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[var(--warning)] text-black text-[10px] font-bold flex items-center justify-center">
+              {recommendationCounts[question.id]}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => openModal('question', parentId, question, parentData)}
+          className="p-1.5 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]"
           title="Düzenle"
         >
           <Edit size={16} />
@@ -1615,6 +1658,15 @@ export default function CategoriesPage() {
             )}
           </div>
         </div>
+      )}
+
+      {recommendationModal && (
+        <QuestionRecommendationsModal
+          question={recommendationModal.question}
+          target={recommendationModal.target}
+          onClose={() => setRecommendationModal(null)}
+          onChanged={fetchRecommendationCounts}
+        />
       )}
     </div>
   );

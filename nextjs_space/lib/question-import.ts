@@ -337,9 +337,12 @@ export function buildQuestionPayload(row: ImportRow, fallbackOrder: number): Que
   if (type === "MULTIPLE_CHOICE") {
     options = parseScoredOptions(row.secenekler).options;
   } else if (type === "YES_NO") {
+    // Değerler "yes"/"no" olmalı: anket ekranı cevabı bu şekilde kaydeder ve
+    // puanlama seçeneği bu değerle eşleştirir. "evet"/"hayir" yazıldığında
+    // eşleşme kurulamaz ve evet_puani/hayir_puani yok sayılırdı.
     options = [
-      { value: "evet", label: "Evet", score: parseNumeric(row.evet_puani) ?? 5 },
-      { value: "hayir", label: "Hayır", score: parseNumeric(row.hayir_puani) ?? 1 },
+      { value: "yes", label: "Evet", score: parseNumeric(row.evet_puani) ?? 5 },
+      { value: "no", label: "Hayır", score: parseNumeric(row.hayir_puani) ?? 1 },
     ];
   } else if (type === "CONDITIONAL_CHOICE") {
     conditionalOptions = {

@@ -229,10 +229,12 @@ describe("buildQuestionPayload", () => {
       1
     );
 
+    // Değerler anket ekranının gönderdiğiyle aynı olmalı ("yes"/"no");
+    // aksi halde puanlama eşleştiremez ve girilen puanlar yok sayılır.
     expect(payload.type).toBe("YES_NO");
     expect(payload.options).toEqual([
-      { value: "evet", label: "Evet", score: 4 },
-      { value: "hayir", label: "Hayır", score: 0 },
+      { value: "yes", label: "Evet", score: 4 },
+      { value: "no", label: "Hayır", score: 0 },
     ]);
   });
 
