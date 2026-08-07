@@ -551,7 +551,8 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                   className="w-full accent-[var(--accent)]"
                 />
                 <p className="text-xs text-[var(--text-dim)]">
-                  Öneri tamamlandığında kullanıcının gelişim skoruna eklenir (devam ediyorsa yarısı).
+                  Kullanıcı bu öneriyi yol haritasında &quot;Tamamlandı&quot; işaretlediğinde gelişim skoruna eklenir.
+                  &quot;Devam ediyor&quot; durumunda puan verilmez.
                 </p>
               </div>
 

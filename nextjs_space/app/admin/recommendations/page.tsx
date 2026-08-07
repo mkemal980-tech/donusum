@@ -907,7 +907,7 @@ export default function RecommendationsPage() {
                 </div>
                 <p className="text-xs text-[var(--blue-main)] mb-4">
                   Bu öneri tamamlandığında kullanıcının gelişim skoruna eklenecek puan (0-2 arası önerilir).
-                  Devam ediyor durumunda %50'si, tamamlandığında %100'ü eklenir.
+                  Puan yalnızca yol haritasında &quot;Tamamlandı&quot; işaretlendiğinde eklenir; &quot;Devam ediyor&quot; durumunda eklenmez.
                 </p>
                 <div className="flex items-center gap-4">
                   <input
