@@ -341,6 +341,19 @@ export default function RecommendationsClient() {
     completed: recommendationsWithStatus.filter(r => r.completionStatus === 'COMPLETED').length
   };
 
+  /**
+   * Grafik yalnızca şu an yapılabilir önerileri çizer.
+   *
+   * İki sebep: kademeli merdivende öneriler katlandığı için 100+ baloncuk
+   * okunaksız hâle geliyor; ve daha önemlisi, henüz kilitli olan bir öneriyi
+   * "önceliklendirmek" anlamsız — kullanıcı ona sıra gelmeden başlayamıyor.
+   * Kilitli olanlar liste görünümünde sırasıyla duruyor.
+   */
+  const chartRecommendations = filteredRecommendations.filter(
+    (rec) => rec.isActionable !== false
+  );
+  const lockedCount = filteredRecommendations.length - chartRecommendations.length;
+
   const quickWins = filteredRecommendations?.filter(r => r?.strategicType === "QUICK_WIN") ?? [];
   const projects = filteredRecommendations?.filter(r => r?.strategicType === "PROJECT") ?? [];
   const bigBets = filteredRecommendations?.filter(r => r?.strategicType === "BIG_BET") ?? [];
@@ -604,10 +617,39 @@ export default function RecommendationsClient() {
               transition={{ delay: 0.2 }}
               className="mb-8"
             >
-              <BubbleChart 
-                recommendations={filteredRecommendations as Recommendation[]} 
-                title="Öneri Önceliklendirme Grafiği"
-              />
+              {/* Durum filtresi yüzünden yapılabilir öneri kalmayabilir;
+                  boş bir grafik çizmek yerine sebebini söyle. */}
+              {chartRecommendations.length === 0 ? (
+                <div className="bg-[var(--bg-card)] rounded-xl p-8 text-center border border-[var(--border-soft)]">
+                  <ScatterChart size={40} className="mx-auto text-[var(--text-dim)] mb-3" />
+                  <p className="text-[var(--text-muted)]">
+                    Seçili filtrelerde şu an yapılabilecek öneri yok.
+                  </p>
+                  <p className="text-sm text-[var(--text-dim)] mt-1">
+                    Sırası gelmemiş {lockedCount} öneri liste görünümünde görülebilir.
+                  </p>
+                </div>
+              ) : (
+                <BubbleChart
+                  recommendations={chartRecommendations as Recommendation[]}
+                  title="Öneri Önceliklendirme Grafiği"
+                />
+              )}
+              {/* Grafikten ne çıkarıldığı sessiz kalmamalı. */}
+              {lockedCount > 0 && chartRecommendations.length > 0 && (
+                <p className="mt-2 text-xs text-[var(--text-dim)]">
+                  Grafikte şu an yapılabilecek {chartRecommendations.length} öneri gösteriliyor.
+                  Sırası gelmemiş {lockedCount} öneri, önceki basamak tamamlandıkça açılır —
+                  hepsini{" "}
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className="underline hover:text-[var(--accent)]"
+                  >
+                    liste görünümünde
+                  </button>{" "}
+                  görebilirsiniz.
+                </p>
+              )}
             </motion.div>
 
             {/* Eğitim ve Danışmanlık Bölümü */}
