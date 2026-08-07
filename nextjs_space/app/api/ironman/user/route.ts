@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api-utils';
-import { classifyQuadrant } from '@/lib/scoring';
+import { calculateProgressScores, classifyQuadrant } from '@/lib/scoring';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,48 +93,18 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Kullanıcının tüm cevaplarını al
-    const responses = await prisma.surveyResponse.findMany({
-      where: { userId },
-      include: {
-        question: {
-          select: {
-            id: true,
-            weight: true,
-            axisType: true,
-          },
-        },
-      },
-    });
+    // Eksen puanları tek doğru kaynaktan gelir (lib/scoring).
+    //
+    // Burada eskiden ham puanların ağırlıklı ortalaması alınıyordu; oysa hem
+    // kadran eşiği (3.0) hem de sektör benchmark'ları (ortalama 2.5, en iyi
+    // 4.5) 1-5 ölçeğinde tanımlı. İki farklı ölçek karşılaştırıldığı için
+    // tavanı 5'in altında olan sorular şirketi haksız yere kadranın altında
+    // gösteriyordu.
+    const scores = await calculateProgressScores(userId);
 
-    // Velocity ve Endurance hesapla
-    let velocityWeightedSum = 0;
-    let velocityWeightTotal = 0;
-    let enduranceWeightedSum = 0;
-    let enduranceWeightTotal = 0;
-
-    for (const response of responses) {
-      const question = response.question;
-      const weight = question.weight || 1.0;
-      const score = response.score;
-      const axisType = question.axisType || 'VELOCITY';
-
-      if (axisType === 'VELOCITY') {
-        velocityWeightedSum += score * weight;
-        velocityWeightTotal += weight;
-      } else {
-        enduranceWeightedSum += score * weight;
-        enduranceWeightTotal += weight;
-      }
-    }
-
-    const currentVelocity = velocityWeightTotal > 0
-      ? Math.round((velocityWeightedSum / velocityWeightTotal) * 10) / 10
-      : 2.5;
-    const currentEndurance = enduranceWeightTotal > 0
-      ? Math.round((enduranceWeightedSum / enduranceWeightTotal) * 10) / 10
-      : 2.5;
-
+    // Hiç cevap yoksa ekran sektör ortalamasını başlangıç kabul eder.
+    const currentVelocity = scores.velocityWeight > 0 ? scores.velocityScore : 2.5;
+    const currentEndurance = scores.enduranceWeight > 0 ? scores.enduranceScore : 2.5;
     const quadrant = classifyQuadrant(currentVelocity, currentEndurance);
 
     // Sektör benchmark verilerini al
@@ -203,9 +173,9 @@ export async function GET(request: NextRequest) {
         region: user.region || 'Global',
       },
       stats: {
-        velocityQuestionCount: Math.round(velocityWeightTotal),
-        enduranceQuestionCount: Math.round(enduranceWeightTotal),
-        totalResponses: responses.length,
+        velocityQuestionCount: Math.round(scores.velocityWeight),
+        enduranceQuestionCount: Math.round(scores.enduranceWeight),
+        totalResponses: scores.completedQuestions,
       },
     });
   } catch (error) {

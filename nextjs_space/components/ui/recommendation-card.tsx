@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, DollarSign, Target, Plus, Check, TrendingUp, Play, CheckCircle2, Circle, MoreHorizontal, Video, ExternalLink, Sparkles } from "lucide-react";
+import { Clock, DollarSign, Target, Plus, Check, TrendingUp, Play, CheckCircle2, Circle, MoreHorizontal, Video, ExternalLink, Sparkles, Lock } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 type CompletionStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
@@ -18,6 +18,10 @@ interface RecommendationCardProps {
     estimatedImpact: number;
     isInRoadmap?: boolean;
     completionStatus?: CompletionStatus;
+    /** 0 = sıradaki adım, >0 = henüz kilitli, <0 = geçilmiş basamak. */
+    stepDistance?: number;
+    /** Yumuşak kilit: sırası gelmemiş basamak ilerletilemez. */
+    isActionable?: boolean;
     // AI zenginleştirme alanları
     aiPriority?: number;
     aiNote?: string;
@@ -72,6 +76,9 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
   const currentStatus = rec?.completionStatus || 'NOT_STARTED';
   const statusInfo = statusConfig[currentStatus];
   const StatusIcon = statusInfo.icon;
+  // Sunucu `isActionable` göndermezse (kademesiz öneri) kilit uygulanmaz.
+  const locked = rec?.isActionable === false;
+  const stepDistance = rec?.stepDistance ?? 0;
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -84,6 +91,11 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
   }, []);
 
   const handleStatusClick = (status: CompletionStatus) => {
+    // Kilitliyken yalnızca başa alma serbest — sunucu da aynı kuralı uygular.
+    if (locked && status !== 'NOT_STARTED') {
+      setShowStatusMenu(false);
+      return;
+    }
     if (onStatusChange && rec?.id) {
       onStatusChange(rec.id, status);
     }
@@ -96,6 +108,8 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
       className={`bg-[var(--bg-card)] rounded-xl shadow-md p-6 border-2 transition-colors ${
+        locked ? 'opacity-60 ' : ''
+      }${
         currentStatus === 'COMPLETED' 
           ? 'border-[var(--accent)] bg-[rgba(12,193,195,0.05)]' 
           : currentStatus === 'IN_PROGRESS' 
@@ -103,6 +117,23 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
             : 'border-[var(--border-soft)]'
       }`}
     >
+      {/* Kademe durumu — sıradaki adım vurgulanır, üst basamaklar kilitli */}
+      {locked ? (
+        <div className="flex items-center gap-1.5 mb-3 text-xs text-[var(--text-dim)]">
+          <Lock size={13} />
+          <span>
+            {stepDistance === 1
+              ? 'Bir sonraki basamak — önce mevcut adımı tamamlayın'
+              : `${stepDistance} basamak sonra`}
+          </span>
+        </div>
+      ) : stepDistance === 0 && rec?.stepDistance !== undefined ? (
+        <div className="inline-flex items-center gap-1.5 mb-3 px-2 py-0.5 rounded-full text-xs font-semibold bg-[rgba(12,193,195,0.15)] text-[var(--accent)]">
+          <Target size={13} />
+          Sıradaki adım
+        </div>
+      ) : null}
+
       {/* Header with Strategic Type and Status */}
       <div className="flex justify-between items-start mb-3">
         <span className={`px-3 py-1 rounded-full text-xs font-medium ${strategicColors[rec?.strategicType ?? ''] ?? 'bg-[var(--bg-card-2)] text-[var(--text-muted)]'}`}>
@@ -205,15 +236,20 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
       
       <button
         onClick={() => onAddToRoadmap?.(rec?.id)}
-        disabled={rec?.isInRoadmap}
+        disabled={rec?.isInRoadmap || locked}
+        title={locked ? "Önce bir önceki basamağı tamamlayın" : undefined}
         className={`w-full py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
           rec?.isInRoadmap
             ? "bg-[rgba(12,193,195,0.15)] text-[var(--accent)] cursor-default"
-            : "bg-[var(--accent)] text-[var(--bg-deep)] hover:bg-[var(--accent-bright)]"
+            : locked
+              ? "bg-[var(--bg-card-2)] text-[var(--text-dim)] cursor-not-allowed"
+              : "bg-[var(--accent)] text-[var(--bg-deep)] hover:bg-[var(--accent-bright)]"
         }`}
       >
         {rec?.isInRoadmap ? (
           <><Check size={16} /> Yol Haritasında</>
+        ) : locked ? (
+          <><Lock size={16} /> Sırası Gelmedi</>
         ) : (
           <><Plus size={16} /> Yol Haritasına Ekle</>
         )}

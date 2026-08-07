@@ -17,8 +17,9 @@ const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 100; // requests per window
 const RATE_LIMIT_MAX_ADMIN = 200; // higher limit for admin
 const RATE_LIMIT_MAX_AUTH = 10; // lower limit for auth endpoints
+const RATE_LIMIT_MAX_AI = 10; // LLM çağrıları pahalı — dar tutulur
 
-export type RateLimitType = 'default' | 'admin' | 'auth' | 'upload';
+export type RateLimitType = 'default' | 'admin' | 'auth' | 'upload' | 'ai';
 
 export type AuthenticatedUser = {
   id: string;
@@ -49,7 +50,8 @@ export function checkRateLimit(
     default: RATE_LIMIT_MAX_REQUESTS,
     admin: RATE_LIMIT_MAX_ADMIN,
     auth: RATE_LIMIT_MAX_AUTH,
-    upload: 30
+    upload: 30,
+    ai: RATE_LIMIT_MAX_AI
   }[type];
 
   // Clean old entries periodically (every 1000 checks)
@@ -108,6 +110,7 @@ export async function checkRateLimitDistributed(
     admin: RATE_LIMIT_MAX_ADMIN,
     auth: RATE_LIMIT_MAX_AUTH,
     upload: 30,
+    ai: RATE_LIMIT_MAX_AI,
   }[type];
 
   const windowSeconds = RATE_LIMIT_WINDOW / 1000;

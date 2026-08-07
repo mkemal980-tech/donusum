@@ -1,116 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api-utils';
-import { classifyQuadrant } from '@/lib/scoring';
-import type { Prisma } from '@prisma/client';
+import {
+  calculateProgressScores,
+  isRecommendationActionable,
+  type DbClient
+} from '@/lib/scoring';
 
 export const dynamic = 'force-dynamic';
-
-type DbClient = Prisma.TransactionClient | typeof prisma;
-
-// Kullanıcının mevcut skorlarını hesapla
-async function calculateUserScores(userId: string, surveyId?: string, db: DbClient = prisma) {
-  // Kullanıcının cevaplarını al
-  const responses = await db.surveyResponse.findMany({
-    where: { 
-      userId,
-      ...(surveyId && {
-        OR: [
-          { question: { subLevel: { subCategory: { category: { surveyId } } } } },
-          { question: { subCategory: { category: { surveyId } } } },
-          { question: { category: { surveyId } } }
-        ]
-      }),
-    },
-    include: {
-      question: {
-        select: { weight: true, axisType: true }
-      }
-    }
-  });
-
-  // Tamamlanan önerilerin puanlarını al (RoadmapItem'dan)
-  const completedRecs = await db.roadmapItem.findMany({
-    where: { 
-      userId, 
-      status: 'COMPLETED' 
-    },
-    include: {
-      recommendation: {
-        select: { 
-          points: true,
-          subLevelId: true,
-          subLevel: {
-            select: { axisType: true }
-          }
-        }
-      }
-    }
-  });
-
-  // Anket cevaplarından gelen puanlar
-  let velocitySum = 0, velocityWeight = 0;
-  let enduranceSum = 0, enduranceWeight = 0;
-  let totalScoreSum = 0, totalWeight = 0;
-
-  responses.forEach(r => {
-    const weight = r.question.weight || 1;
-    const score = r.score;
-    
-    if (r.question.axisType === 'ENDURANCE') {
-      enduranceSum += score * weight;
-      enduranceWeight += weight;
-    } else {
-      velocitySum += score * weight;
-      velocityWeight += weight;
-    }
-    
-    totalScoreSum += score * weight;
-    totalWeight += weight;
-  });
-
-  // Tamamlanan önerilerden gelen bonus puanlar
-  let velocityBonus = 0, enduranceBonus = 0;
-  
-  completedRecs.forEach(c => {
-    const points = c.recommendation.points || 0;
-    const axisType = c.recommendation.subLevel?.axisType || 'VELOCITY';
-    
-    if (axisType === 'ENDURANCE') {
-      enduranceBonus += points;
-    } else {
-      velocityBonus += points;
-    }
-  });
-
-  // Final skorlar (bonus puanlarla)
-  const baseVelocity = velocityWeight > 0 ? velocitySum / velocityWeight : 0;
-  const baseEndurance = enduranceWeight > 0 ? enduranceSum / enduranceWeight : 0;
-  const baseOverall = totalWeight > 0 ? totalScoreSum / totalWeight : 0;
-
-  // Bonus puanları uygula (maksimum 5'i geçemez)
-  const velocityScore = Math.min(5, baseVelocity + velocityBonus);
-  const enduranceScore = Math.min(5, baseEndurance + enduranceBonus);
-  const overallScore = Math.min(5, baseOverall + (velocityBonus + enduranceBonus) / 2);
-  const overallPercentage = ((overallScore - 1) / 4) * 100;
-
-  // Quadrant hesapla (tek doğru kaynak: lib/scoring)
-  const quadrant = classifyQuadrant(velocityScore, enduranceScore);
-
-  // Toplam soru sayısı
-  const totalQuestions = await db.question.count();
-
-  return {
-    overallScore: Math.round(overallScore * 10) / 10,
-    overallPercentage: Math.round(overallPercentage),
-    velocityScore: Math.round(velocityScore * 10) / 10,
-    enduranceScore: Math.round(enduranceScore * 10) / 10,
-    quadrant,
-    completedQuestions: responses.length,
-    totalQuestions,
-    completedRecommendations: completedRecs.length,
-  };
-}
 
 // Skor geçmişine kayıt ekle
 async function recordScoreHistory(
@@ -120,7 +17,7 @@ async function recordScoreHistory(
   surveyId?: string,
   db: DbClient = prisma
 ) {
-  const scores = await calculateUserScores(userId, surveyId, db);
+  const scores = await calculateProgressScores(userId, { surveyId, db });
 
   await db.scoreHistory.create({
     data: {
@@ -182,7 +79,7 @@ export async function GET(request: NextRequest) {
     }));
 
     // Mevcut skorları da döndür
-    const scores = await calculateUserScores(userId);
+    const scores = await calculateProgressScores(userId);
 
     return NextResponse.json({
       completions,
@@ -211,6 +108,19 @@ export async function POST(request: NextRequest) {
     const validStatuses = ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED'];
     if (status && !validStatuses.includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    }
+
+    // Yumuşak kilit: kademeli önerilerde sırası gelmemiş basamak ilerletilemez.
+    // Durumu başa alma (NOT_STARTED) her zaman serbest — kilit yalnızca
+    // ilerletme yönünde çalışır.
+    if (status === 'IN_PROGRESS' || status === 'COMPLETED') {
+      const actionable = await isRecommendationActionable(userId, recommendationId);
+      if (!actionable) {
+        return NextResponse.json(
+          { error: 'Bu öneriye sıra gelmedi. Önce bir önceki basamağı tamamlayın.' },
+          { status: 409 }
+        );
+      }
     }
 
     // Önceki durumu kontrol et (RoadmapItem'dan)

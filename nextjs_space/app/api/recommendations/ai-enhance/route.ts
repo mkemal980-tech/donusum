@@ -1,6 +1,13 @@
+import { createHash } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { withAuth } from '@/lib/api-utils';
 import { callLLMForJSON, isLLMConfigured } from '@/lib/llm';
+import {
+  calculateUserScore,
+  getAccessibleSurveyIds,
+  getRecommendationsForUser
+} from '@/lib/scoring';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,15 +35,24 @@ function buildFallbackRecommendations(
 }
 
 /**
- * Profil hash'i oluşturur - benzer profiller aynı hash'i alır
+ * Profil hash'i oluşturur - benzer profiller aynı hash'i alır.
+ *
+ * Öneri kimlikleri de anahtara girer: aynı sektör ve puan profiline sahip iki
+ * kullanıcı farklı sorulara cevap verdiyse öneri listeleri de farklı olur ve
+ * birinin sıralaması diğerine servis edilemez.
  */
 function createProfileHash(
   sectorId: string | null,
   surveyId: string,
-  scores: Record<string, number>
+  scores: Record<string, number>,
+  recommendationIds: string[]
 ): string {
   const sectorKey = sectorId || 'nosector';
-  
+  const recDigest = createHash('sha256')
+    .update([...recommendationIds].sort().join(','))
+    .digest('hex')
+    .slice(0, 16);
+
   // Zayıf alanlar (< 2.5)
   const weakAreas = Object.entries(scores)
     .filter(([, s]) => s < 2.5)
@@ -58,7 +74,7 @@ function createProfileHash(
     .sort()
     .join('|');
   
-  return `${sectorKey}_${surveyId}_w${weakAreas}_m${midAreas}_s${strongAreas}`;
+  return `${sectorKey}_${surveyId}_w${weakAreas}_m${midAreas}_s${strongAreas}_r${recDigest}`;
 }
 
 /**
@@ -77,16 +93,30 @@ async function cleanExpiredCache() {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { userId, surveyId, recommendations, categoryScores } = body;
+  // Kimlik doğrulama zorunlu: userId istekten değil oturumdan gelir.
+  // (LLM çağrısı pahalı olduğu için ayrıca dar bir rate limit uygulanır.)
+  const auth = await withAuth(request, { rateLimit: 'ai' });
+  if (!auth.success) return auth.response;
+  const userId = auth.userId;
 
-    if (!userId || !surveyId || !recommendations || !categoryScores) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    const requestedSurveyId: string | undefined = body?.surveyId || undefined;
+
+    // Kullanıcının gerçekten erişebildiği anket — istekten gelen değer
+    // yalnızca daraltma amacıyla kullanılır, yetki genişletemez.
+    const accessibleSurveyIds = await getAccessibleSurveyIds(userId, requestedSurveyId);
+    if (accessibleSurveyIds.length === 0) {
       return NextResponse.json(
-        { error: 'Eksik parametreler: userId, surveyId, recommendations, categoryScores gerekli' },
-        { status: 400 }
+        { error: 'Erişebileceğiniz bir anket bulunamadı.' },
+        { status: 403 }
       );
     }
+    // Anket verilmediyse öneri listesi daraltılmaz (Öneriler sayfası da tüm
+    // erişilebilir anketleri gösterir); cache satırı yabancı anahtar taşıdığı
+    // için yine gerçek bir ankete sabitlenir.
+    const scopeSurveyId = requestedSurveyId;
+    const surveyId = requestedSurveyId ?? [...accessibleSurveyIds].sort()[0];
 
     // Kullanıcı bilgilerini al
     const user = await prisma.user.findUnique({
@@ -101,8 +131,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 });
     }
 
+    // Öneriler ve puanlar sunucuda türetilir; istemciden gelen listeye
+    // güvenilmez (başka kullanıcının önerileri sıraya sokulamasın diye).
+    const userRecommendations = await getRecommendationsForUser(userId, {
+      surveyId: scopeSurveyId
+    });
+    const recommendations = userRecommendations.map(r => ({ id: r.id, title: r.title }));
+
+    if (recommendations.length === 0) {
+      return NextResponse.json({
+        recommendations: [],
+        fromCache: false,
+        fromAI: false,
+        cacheExpires: null
+      });
+    }
+
+    const { categoryScores: scoreDetail } = await calculateUserScore(userId, scopeSurveyId);
+    const categoryScores: Record<string, number> = {};
+    for (const detail of Object.values(scoreDetail)) {
+      categoryScores[detail.name] = detail.scoreOn5;
+    }
+
     // Profil hash'i oluştur
-    const profileHash = createProfileHash(user.sectorId, surveyId, categoryScores);
+    const profileHash = createProfileHash(
+      user.sectorId,
+      surveyId,
+      categoryScores,
+      recommendations.map(r => r.id)
+    );
 
     // 1. Önce cache'i kontrol et
     const cachedResult = await prisma.aIRecommendationCache.findUnique({
@@ -124,18 +181,18 @@ export async function POST(request: NextRequest) {
     const subSectorName = user.subSector?.name || '';
     
     // Zayıf ve güçlü alanları belirle
-    const weakAreas = Object.entries(categoryScores as Record<string, number>)
+    const weakAreas = Object.entries(categoryScores)
       .filter(([, s]) => s < 2.5)
       .map(([name, score]) => `${name} (${score.toFixed(1)})`)
       .join(', ');
     
-    const strongAreas = Object.entries(categoryScores as Record<string, number>)
+    const strongAreas = Object.entries(categoryScores)
       .filter(([, s]) => s >= 4)
       .map(([name, score]) => `${name} (${score.toFixed(1)})`)
       .join(', ');
 
     // Öneri sayısını sınırla (max 15)
-    const limitedRecs = (recommendations as { id: string; title: string }[]).slice(0, 15);
+    const limitedRecs = recommendations.slice(0, 15);
     const recTitlesLimited = limitedRecs
       .map((r, i) => `${i + 1}. [ID:${r.id}] ${r.title}`)
       .join('\n');
@@ -180,9 +237,11 @@ JSON:
       });
     }
 
-    // Eksik önerileri varsayılan öncelikle ekle
-    const processedRecs = (recommendations as { id: string; title: string }[]).map((rec, index) => {
-      const aiRec = aiResult.recommendations.find(r => r.id === rec.id);
+    // Eksik önerileri varsayılan öncelikle ekle.
+    // Model bozuk JSON döndürürse `recommendations` alanı olmayabilir.
+    const aiRecs = Array.isArray(aiResult?.recommendations) ? aiResult.recommendations : [];
+    const processedRecs = recommendations.map((rec, index) => {
+      const aiRec = aiRecs.find(r => r?.id === rec.id);
       return aiRec || { id: rec.id, priority: 100 + index, note: '' };
     });
 

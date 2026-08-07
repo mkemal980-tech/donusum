@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { 
       title, description, videoUrl, categoryId, subCategoryId, subLevelId, 
-      questionId, triggerOptions, points,
+      questionId, triggerOptions, triggerMaxAnswerScore, points,
       costType, timeframe, strategicType, estimatedImpact, 
       minScoreThreshold, maxScoreThreshold, order,
       xPosition, yPosition, capexLevel, opexLevel
@@ -160,6 +160,11 @@ export async function POST(request: NextRequest) {
         triggerOptions: validQuestionId && triggerOptions && triggerOptions.length > 0 
           ? JSON.stringify(triggerOptions) 
           : null,
+        // Kademeli tetikleme eşiği — yalnızca geçerli bir soruya bağlıysa anlamlı.
+        triggerMaxAnswerScore:
+          validQuestionId && typeof triggerMaxAnswerScore === 'number'
+            ? triggerMaxAnswerScore
+            : null,
         points: points ?? 0.5,  // Gelişim skoru puanı
         costType: costType || "OPEX",
         timeframe: timeframe || "SHORT_TERM",
@@ -192,7 +197,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { 
       id, title, description, videoUrl, categoryId, subCategoryId, subLevelId, 
-      questionId, triggerOptions, points,
+      questionId, triggerOptions, triggerMaxAnswerScore, points,
       costType, timeframe, strategicType, estimatedImpact, 
       minScoreThreshold, maxScoreThreshold, order,
       xPosition, yPosition, capexLevel, opexLevel
@@ -222,6 +227,11 @@ export async function PUT(request: NextRequest) {
         triggerOptions: validQuestionId && triggerOptions && triggerOptions.length > 0 
           ? JSON.stringify(triggerOptions) 
           : null,
+        // Kademeli tetikleme eşiği — yalnızca geçerli bir soruya bağlıysa anlamlı.
+        triggerMaxAnswerScore:
+          validQuestionId && typeof triggerMaxAnswerScore === 'number'
+            ? triggerMaxAnswerScore
+            : null,
         points: points ?? 0.5,  // Gelişim skoru puanı
         costType: costType || "OPEX",
         timeframe: timeframe || "SHORT_TERM",

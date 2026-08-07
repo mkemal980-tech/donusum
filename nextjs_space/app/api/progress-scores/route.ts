@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api-utils';
 import { prisma } from '@/lib/db';
+import { calculateProgressScores } from '@/lib/scoring';
 
 export const dynamic = 'force-dynamic';
 
@@ -128,45 +129,27 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // 5. Genel velocity ve endurance skorları
-    let velocityBase = 0, velocityBonus = 0, velocityCount = 0;
-    let enduranceBase = 0, enduranceBonus = 0, enduranceCount = 0;
-
-    responses.forEach(r => {
-      if (r.question.axisType === 'ENDURANCE') {
-        enduranceBase += r.score;
-        enduranceCount++;
-      } else {
-        velocityBase += r.score;
-        velocityCount++;
-      }
+    // 5. Genel velocity ve endurance skorları — tek doğru kaynak (lib/scoring).
+    // Burada eskiden ağırlıksız ham ortalama alınıyordu; gösterge paneli ve
+    // trend grafiği ile aynı veri için farklı sayılar üretiyordu.
+    const axisScores = await calculateProgressScores(userId, {
+      surveyId: surveyId || undefined
     });
-
-    completedRoadmapItems.forEach(item => {
-      const axisType = item.recommendation.subLevel?.axisType || 'VELOCITY';
-      if (axisType === 'ENDURANCE') {
-        enduranceBonus += item.recommendation.points || 0;
-      } else {
-        velocityBonus += item.recommendation.points || 0;
-      }
-    });
-
-    const velocityBaseScore = velocityCount > 0 ? velocityBase / velocityCount : 0;
-    const enduranceBaseScore = enduranceCount > 0 ? enduranceBase / enduranceCount : 0;
 
     return NextResponse.json({
       categories: categoryProgress,
       overall: {
         velocity: {
-          baseScore: Math.round(velocityBaseScore * 100) / 100,
-          bonusPoints: Math.round(velocityBonus * 100) / 100,
-          totalScore: Math.min(5, Math.round((velocityBaseScore + velocityBonus) * 100) / 100)
+          baseScore: axisScores.velocityBase,
+          bonusPoints: axisScores.velocityBonus,
+          totalScore: axisScores.velocityScore
         },
         endurance: {
-          baseScore: Math.round(enduranceBaseScore * 100) / 100,
-          bonusPoints: Math.round(enduranceBonus * 100) / 100,
-          totalScore: Math.min(5, Math.round((enduranceBaseScore + enduranceBonus) * 100) / 100)
+          baseScore: axisScores.enduranceBase,
+          bonusPoints: axisScores.enduranceBonus,
+          totalScore: axisScores.enduranceScore
         },
+        quadrant: axisScores.quadrant,
         totalCompletedRecommendations: completedRoadmapItems.length,
         totalResponses: responses.length
       }

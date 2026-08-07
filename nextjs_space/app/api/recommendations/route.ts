@@ -10,7 +10,9 @@ export async function GET(request: NextRequest) {
   const userId = auth.userId;
 
   try {
-    const recommendations = await getRecommendationsForUser(userId);
+    // Anket verilmezse kullanıcının erişebildiği tüm anketler kapsanır.
+    const surveyId = new URL(request.url).searchParams.get("surveyId") ?? undefined;
+    const recommendations = await getRecommendationsForUser(userId, { surveyId });
 
     return NextResponse.json(recommendations ?? []);
   } catch (error) {

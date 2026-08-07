@@ -12,7 +12,9 @@
     "test:e2e": "playwright test",
     "db:generate": "prisma generate",
     "db:migrate": "node scripts/migrate-deploy.js",
-    "admin:create": "tsx --require dotenv/config scripts/create-admin.ts"
+    "admin:create": "tsx --require dotenv/config scripts/create-admin.ts",
+    "score-history:rescale": "tsx --require dotenv/config scripts/rescale-score-history.ts",
+    "ai:check-draft": "tsx --require dotenv/config scripts/check-ai-draft.ts"
   },
   "prisma": {
     "seed": "tsx --require dotenv/config scripts/seed.ts"

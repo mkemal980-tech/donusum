@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { useSession } from "next-auth/react";
 import Header from "@/components/ui/header";
 import RecommendationCard from "@/components/ui/recommendation-card";
 import { BubbleChart } from "@/components/ui/bubble-chart";
@@ -46,6 +45,10 @@ interface Recommendation {
   order: number;
   isInRoadmap?: boolean;
   completionStatus?: CompletionStatus;
+  /** 0 = sıradaki adım, >0 = henüz kilitli, <0 = geçilmiş basamak. */
+  stepDistance?: number;
+  /** Yumuşak kilit: sırası gelmemiş basamak ilerletilemez. */
+  isActionable?: boolean;
   // AI zenginleştirme alanları
   aiPriority?: number;
   aiNote?: string;
@@ -64,7 +67,6 @@ interface CompletionRecord {
 }
 
 export default function RecommendationsClient() {
-  const { data: session } = useSession() || {};
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [completions, setCompletions] = useState<Record<string, CompletionStatus>>({});
   const [loading, setLoading] = useState(true);
@@ -121,43 +123,20 @@ export default function RecommendationsClient() {
 
   // AI Zenginleştirme fonksiyonu
   const handleAIEnhance = async () => {
-    const userId = (session?.user as { id?: string })?.id;
-    if (!userId || recommendations.length === 0) {
-      toast.error("Öneri bulunamadı veya oturum açılmamış");
+    if (recommendations.length === 0) {
+      toast.error("Öneri bulunamadı");
       return;
     }
 
     setAiLoading(true);
-    
+
     try {
-      // Önce kategori puanlarını al
-      const scoresRes = await fetch("/api/survey/category-scores");
-      if (!scoresRes.ok) {
-        throw new Error("Kategori puanları alınamadı");
-      }
-      const scoresData = await scoresRes.json();
-      
-      // Category scores'u object'e dönüştür
-      const categoryScores: Record<string, number> = {};
-      if (scoresData.categories) {
-        scoresData.categories.forEach((cat: { name: string; score: number }) => {
-          categoryScores[cat.name] = cat.score;
-        });
-      }
-
-      // Survey ID'yi al (ilk kategoriden)
-      const surveyId = scoresData.categories?.[0]?.surveyId || 'default';
-
-      // AI enhance API'ye istek at
+      // Öneri listesi, kullanıcı ve puan profili sunucuda oturumdan
+      // türetilir; istemci yalnızca isteği başlatır.
       const res = await fetch("/api/recommendations/ai-enhance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          surveyId,
-          recommendations: recommendations.map(r => ({ id: r.id, title: r.title })),
-          categoryScores
-        })
+        body: JSON.stringify({})
       });
 
       if (!res.ok) {
@@ -218,6 +197,10 @@ export default function RecommendationsClient() {
         toast.success("Öneri yol haritasına eklendi", {
           description: "Yol Haritası sayfasından planlayabilirsiniz"
         });
+      } else {
+        // Kademe kilidi gibi sunucu tarafı kuralların mesajını göster.
+        const payload = await res.json().catch(() => ({}));
+        toast.error(payload.error || "Öneri eklenemedi");
       }
     } catch (error) {
       console.error("Error adding to roadmap:", error);
@@ -258,6 +241,12 @@ export default function RecommendationsClient() {
         } else {
           toast.success(`Durum güncellendi: ${statusLabels[status]}`);
         }
+
+        // Kademe ilerledi: kilit ve sıralama sunucudan yeniden okunur.
+        await fetchRecommendations();
+      } else {
+        const payload = await res.json().catch(() => ({}));
+        toast.error(payload.error || "Durum güncellenemedi");
       }
     } catch (error) {
       console.error("Error updating status:", error);
@@ -276,9 +265,18 @@ export default function RecommendationsClient() {
     };
   });
 
-  // AI etkinse öncelik sırasına göre sırala
+  // AI etkinse öncelik sırasına göre sırala — ancak kademe sırası bağlayıcıdır,
+  // bir üst basamak alt basamaktan önce gelemez. AI yalnızca aynı basamak
+  // içinde sıralama yapar.
+  const stepRank = (rec: { stepDistance?: number }) => {
+    const step = rec.stepDistance ?? 0;
+    return step < 0 ? 1000 - step : step;
+  };
   const sortedRecommendations = aiEnabled
-    ? [...recommendationsWithStatus].sort((a, b) => (a.aiPriority || 999) - (b.aiPriority || 999))
+    ? [...recommendationsWithStatus].sort(
+        (a, b) =>
+          stepRank(a) - stepRank(b) || (a.aiPriority || 999) - (b.aiPriority || 999)
+      )
     : recommendationsWithStatus;
 
   const filteredRecommendations = sortedRecommendations.filter(rec => {

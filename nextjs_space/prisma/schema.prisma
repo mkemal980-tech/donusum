@@ -299,6 +299,11 @@ model Recommendation {
   subCategoryId     String?
   questionId        String?
   triggerOptions    String?
+  // Kademeli tetikleme: doluysa öneri, kullanıcının bu soruya verdiği cevabın
+  // puanı bu değere eşit veya altındaysa gösterilir. Böylece daha düşük
+  // basamaktaki kullanıcılar üst basamakların önerilerini de devralır.
+  // Null ise `triggerOptions` ile tam eşleşme uygulanır (eski davranış).
+  triggerMaxAnswerScore Float?
   points            Float                          @default(0.5)
   videoUrl          String?
   question          Question?                      @relation(fields: [questionId], references: [id])

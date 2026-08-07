@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
-import { calculateUserScore } from "@/lib/scoring";
+import { calculateUserScore, maxScoreForQuestion } from "@/lib/scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
       for (const question of directCategoryQuestions) {
         const response = responseMap.get(question.id);
         const weight = question.weight || 1;
-        const maxQuestionScore = 5 * weight;
+        const maxQuestionScore = maxScoreForQuestion(question) * weight;
         
         if (response) {
           catTotalScore += response.score * weight;
@@ -148,7 +148,8 @@ export async function GET(request: NextRequest) {
             for (const question of subLevel.questions) {
               const response = responseMap.get(question.id);
               const weight = question.weight;
-              const maxQuestionScore = 5 * weight; // Her soru için max puan = 5 * ağırlık
+              // Tavan sorunun kendi şıklarından okunur (bkz. maxScoreForQuestion)
+              const maxQuestionScore = maxScoreForQuestion(question) * weight;
               
               if (response) {
                 levelTotalScore += response.score * weight;
@@ -180,7 +181,7 @@ export async function GET(request: NextRequest) {
           for (const question of directQuestions) {
             const response = responseMap.get(question.id);
             const weight = question.weight;
-            const maxQuestionScore = 5 * weight;
+            const maxQuestionScore = maxScoreForQuestion(question) * weight;
             
             if (response) {
               subCatTotalScore += response.score * weight;

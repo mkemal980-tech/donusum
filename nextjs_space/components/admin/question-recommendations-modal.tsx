@@ -1,9 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AlertCircle, ChevronDown, ChevronRight, Edit, Lightbulb, Plus, Trash2, X } from "lucide-react";
-import { triggerChoicesFor } from "@/lib/recommendation-triggers";
+import { AlertCircle, ChevronDown, ChevronRight, Edit, Lightbulb, Loader2, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { supportsCascadeByChoice, triggerChoicesFor } from "@/lib/recommendation-triggers";
 import { derivePosition } from "@/lib/recommendation-position";
+import {
+  type QuestionContext,
+  type RecommendationImportRow,
+  buildRecommendationPayload,
+} from "@/lib/recommendation-import";
 
 type QuestionForRecommendations = {
   id: string;
@@ -25,6 +30,7 @@ type Recommendation = {
   description: string;
   videoUrl: string | null;
   triggerOptions: string | null;
+  triggerMaxAnswerScore: number | null;
   points: number;
   costType: string;
   timeframe: string;
@@ -77,6 +83,10 @@ type FormState = {
   description: string;
   videoUrl: string;
   triggers: string[];
+  /** Kademeli tetikleme: seçilen şık ve altındaki tüm şıklarda göster. */
+  cascade: boolean;
+  /** Kademeli tetiklemede eşik — şık listesi yoksa elle girilir. */
+  cascadeScore: number;
   points: number;
   costType: string;
   timeframe: string;
@@ -99,6 +109,8 @@ function emptyForm(order: number): FormState {
     description: "",
     videoUrl: "",
     triggers: [],
+    cascade: false,
+    cascadeScore: 0,
     points: 0.5,
     costType: "OPEX",
     timeframe: "SHORT_TERM",
@@ -144,8 +156,30 @@ export default function QuestionRecommendationsModal({ question, target, onClose
   const [form, setForm] = useState<FormState | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [drafting, setDrafting] = useState(false);
+  // AI taslakları sırayla forma yüklenir; her biri ayrı ayrı onaylanır.
+  const [draftQueue, setDraftQueue] = useState<RecommendationImportRow[]>([]);
 
   const triggerSupport = triggerChoicesFor(question);
+  // Şık listesi kurulabiliyorsa kademeli eşik şıktan seçilir; kurulamıyorsa
+  // (kademeli puanlama sorusu) elle sayı olarak girilir.
+  const cascadeByChoice = supportsCascadeByChoice(question);
+
+  /**
+   * Kayıtlı öneriyi forma geri yüklerken işaretlenecek şıklar.
+   * Kademeli öneride eşik puanına karşılık gelen tek şık, aksi hâlde
+   * tam eşleşme listesinin tamamı.
+   */
+  const cascadeAnchorFor = (recommendation: Recommendation): string[] => {
+    if (recommendation.triggerMaxAnswerScore === null) {
+      return parseTriggers(recommendation.triggerOptions);
+    }
+    if (!triggerSupport.supported) return [];
+    const anchor = triggerSupport.choices.find(
+      (choice) => choice.score === recommendation.triggerMaxAnswerScore
+    );
+    return anchor ? [anchor.value] : [];
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -164,6 +198,93 @@ export default function QuestionRecommendationsModal({ question, target, onClose
   useEffect(() => {
     load();
   }, [load]);
+
+  /** Soru bağlamı — taslak satırını forma çevirirken kullanılır. */
+  const questionContext = (): QuestionContext => ({
+    id: question.id,
+    text: question.text,
+    type: question.type,
+    options: question.options,
+    categoryId: target.categoryId,
+    subCategoryId: target.subCategoryId,
+    subLevelId: target.subLevelId,
+  });
+
+  /** Taslak satırını, kaydetme akışının beklediği form durumuna çevirir. */
+  const formFromDraft = (draft: RecommendationImportRow, order: number): FormState => {
+    const payload = buildRecommendationPayload(draft, questionContext(), order);
+    const triggers = payload.triggerMaxAnswerScore !== null && triggerSupport.supported
+      ? triggerSupport.choices
+          .filter((choice) => choice.score === payload.triggerMaxAnswerScore)
+          .slice(0, 1)
+          .map((choice) => choice.value)
+      : [];
+
+    return {
+      ...emptyForm(order),
+      title: payload.title,
+      description: payload.description,
+      triggers,
+      cascade: payload.triggerMaxAnswerScore !== null,
+      cascadeScore: payload.triggerMaxAnswerScore ?? 0,
+      costType: payload.costType,
+      timeframe: payload.timeframe,
+      strategicType: payload.strategicType,
+      estimatedImpact: payload.estimatedImpact,
+    };
+  };
+
+  /** Kuyruktaki bir sonraki taslağı forma alır; kuyruk bittiyse formu kapatır. */
+  const loadNextDraft = (queue: RecommendationImportRow[]) => {
+    const [next, ...rest] = queue;
+    setDraftQueue(rest);
+    if (!next) {
+      setForm(null);
+      return;
+    }
+    setError(null);
+    setShowAdvanced(false);
+    setForm(formFromDraft(next, recommendations.length + 1));
+  };
+
+  /**
+   * Bu sorunun her şıkkı için kademeli öneri taslağı ürettirir.
+   *
+   * Taslaklar doğrudan kaydedilmez: üretilen ilk satır forma yüklenir,
+   * yönetici görüp düzenledikten sonra tek tek onaylar. Toplu onay için
+   * Öneri Yönetimi ekranındaki "Toplu Kurulum" panelini kullanın.
+   */
+  const draftWithAI = async () => {
+    setDrafting(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/recommendations/ai-draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ questionIds: [question.id] }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Taslak üretilemedi.");
+        return;
+      }
+
+      const drafted: RecommendationImportRow[] = (data.rows ?? []).map(
+        (entry: { values: RecommendationImportRow }) => entry.values
+      );
+      if (drafted.length === 0) {
+        setError("Model taslak üretmedi. Tekrar deneyebilirsiniz.");
+        return;
+      }
+      loadNextDraft(drafted);
+    } catch (draftError) {
+      console.error("Error drafting recommendations:", draftError);
+      setError("Taslak üretilirken hata oluştu.");
+    } finally {
+      setDrafting(false);
+    }
+  };
 
   const startCreate = () => {
     setError(null);
@@ -191,7 +312,9 @@ export default function QuestionRecommendationsModal({ question, target, onClose
       title: recommendation.title,
       description: recommendation.description,
       videoUrl: recommendation.videoUrl ?? "",
-      triggers: parseTriggers(recommendation.triggerOptions),
+      triggers: cascadeAnchorFor(recommendation),
+      cascade: recommendation.triggerMaxAnswerScore !== null,
+      cascadeScore: recommendation.triggerMaxAnswerScore ?? 0,
       points: recommendation.points,
       costType: recommendation.costType,
       timeframe: recommendation.timeframe,
@@ -208,16 +331,29 @@ export default function QuestionRecommendationsModal({ question, target, onClose
   };
 
   const toggleTrigger = (value: string) => {
-    setForm((current) =>
-      current
-        ? {
-            ...current,
-            triggers: current.triggers.includes(value)
-              ? current.triggers.filter((entry) => entry !== value)
-              : [...current.triggers, value],
-          }
-        : current
-    );
+    setForm((current) => {
+      if (!current) return current;
+      // Kademeli tetiklemede eşik tek bir şıktan okunur; çoklu seçim
+      // anlamsız olacağı için seçim tekile indirilir.
+      if (current.cascade) {
+        return { ...current, triggers: [value] };
+      }
+      return {
+        ...current,
+        triggers: current.triggers.includes(value)
+          ? current.triggers.filter((entry) => entry !== value)
+          : [...current.triggers, value],
+      };
+    });
+  };
+
+  /** Kademeli eşik — şıktan ya da elle girilen sayıdan. */
+  const cascadeThresholdOf = (state: FormState): number | null => {
+    if (!state.cascade) return null;
+    if (!cascadeByChoice) return state.cascadeScore;
+    if (!triggerSupport.supported) return null;
+    const anchor = triggerSupport.choices.find((choice) => choice.value === state.triggers[0]);
+    return anchor ? anchor.score : null;
   };
 
   const handleSave = async () => {
@@ -227,10 +363,16 @@ export default function QuestionRecommendationsModal({ question, target, onClose
       setError("Öneri başlığı boş olamaz.");
       return;
     }
-    if (triggerSupport.supported && form.triggers.length === 0) {
+    if (form.cascade && cascadeByChoice && form.triggers.length === 0) {
+      setError("Kademeli tetikleme için bir başlangıç şıkkı seçin.");
+      return;
+    }
+    if (!form.cascade && triggerSupport.supported && form.triggers.length === 0) {
       setError("En az bir tetikleyici cevap seçin — öneri yalnızca o cevaplarda gösterilir.");
       return;
     }
+
+    const cascadeThreshold = cascadeThresholdOf(form);
 
     setSaving(true);
     setError(null);
@@ -248,7 +390,10 @@ export default function QuestionRecommendationsModal({ question, target, onClose
           subCategoryId: target.subLevelId ? null : target.subCategoryId,
           subLevelId: target.subLevelId,
           questionId: question.id,
-          triggerOptions: triggerSupport.supported ? form.triggers : null,
+          // Kademeli eşik varsa tam eşleşme listesi kullanılmaz.
+          triggerOptions:
+            cascadeThreshold === null && triggerSupport.supported ? form.triggers : null,
+          triggerMaxAnswerScore: cascadeThreshold,
           points: form.points,
           costType: form.costType,
           timeframe: form.timeframe,
@@ -269,9 +414,15 @@ export default function QuestionRecommendationsModal({ question, target, onClose
         return;
       }
 
-      setForm(null);
       await load();
       onChanged?.();
+
+      // Taslak kuyruğu varsa sıradakine geç; yoksa formu kapat.
+      if (draftQueue.length > 0) {
+        loadNextDraft(draftQueue);
+      } else {
+        setForm(null);
+      }
     } catch (saveError) {
       console.error("Error saving recommendation:", saveError);
       setError("Öneri kaydedilirken hata oluştu.");
@@ -300,6 +451,13 @@ export default function QuestionRecommendationsModal({ question, target, onClose
   const triggerLabel = (value: string) => {
     if (!triggerSupport.supported) return value;
     return triggerSupport.choices.find((choice) => choice.value === value)?.label ?? value;
+  };
+
+  /** Kademeli eşiği yöneticiye şık adıyla gösterir, bulunamazsa puanla. */
+  const cascadeLabel = (threshold: number) => {
+    if (!triggerSupport.supported) return `${threshold} puan`;
+    const anchor = triggerSupport.choices.find((choice) => choice.score === threshold);
+    return anchor ? anchor.label : `${threshold} puan`;
   };
 
   return (
@@ -350,7 +508,11 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                         </p>
                       )}
                       <div className="flex flex-wrap gap-1.5 mt-2">
-                        {triggers.length > 0 ? (
+                        {recommendation.triggerMaxAnswerScore !== null ? (
+                          <span className="text-[11px] px-2 py-0.5 rounded bg-[rgba(12,193,195,0.15)] text-[var(--accent)]">
+                            {cascadeLabel(recommendation.triggerMaxAnswerScore)} ve altındaki cevaplarda
+                          </span>
+                        ) : triggers.length > 0 ? (
                           triggers.map((trigger) => (
                             <span
                               key={trigger}
@@ -368,7 +530,9 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                           {STRATEGIC_LABELS[recommendation.strategicType] ?? recommendation.strategicType}
                         </span>
                         <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--bg-card)] text-[var(--text-dim)]">
-                          {recommendation.points} puan
+                          {recommendation.triggerMaxAnswerScore !== null
+                            ? "bir basamak ilerletir"
+                            : `${recommendation.points} soruluk ilerleme`}
                         </span>
                       </div>
                     </div>
@@ -397,9 +561,17 @@ export default function QuestionRecommendationsModal({ question, target, onClose
           {/* Ekleme / düzenleme formu */}
           {form ? (
             <div className="p-4 rounded-lg bg-[var(--bg-card-2)] border border-[var(--accent)]/40 space-y-4">
-              <h3 className="font-medium text-[var(--text-main)]">
-                {form.id ? "Öneriyi Düzenle" : "Yeni Öneri"}
-              </h3>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-medium text-[var(--text-main)]">
+                  {form.id ? "Öneriyi Düzenle" : "Yeni Öneri"}
+                </h3>
+                {draftQueue.length > 0 && (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs bg-[rgba(12,193,195,0.15)] text-[var(--accent)]">
+                    <Sparkles size={12} />
+                    AI taslağı — sırada {draftQueue.length} tane daha
+                  </span>
+                )}
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Başlık *</label>
@@ -440,6 +612,30 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                   Bu öneri hangi cevaplarda gösterilsin?
                 </p>
 
+                {/* Kademeli tetikleme — devralma anahtarı */}
+                <label className="flex items-start gap-2 mb-3 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.cascade}
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+                        cascade: event.target.checked,
+                        // Kademeliye geçerken çoklu seçim tekile iner.
+                        triggers: event.target.checked ? form.triggers.slice(0, 1) : form.triggers,
+                      })
+                    }
+                    className="accent-[var(--accent)] mt-0.5"
+                  />
+                  <span className="text-[var(--text-muted)]">
+                    Bu şık <strong>ve altındaki</strong> tüm şıklarda göster
+                    <span className="block text-xs text-[var(--text-dim)] mt-0.5">
+                      Daha düşük basamaktaki kullanıcılar bu öneriyi de devralır; olgunluk
+                      basamakları atlanamaz.
+                    </span>
+                  </span>
+                </label>
+
                 {triggerSupport.supported ? (
                   <div className="grid sm:grid-cols-2 gap-2">
                     {triggerSupport.choices.map((choice) => (
@@ -452,14 +648,32 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                         }`}
                       >
                         <input
-                          type="checkbox"
+                          type={form.cascade ? "radio" : "checkbox"}
                           checked={form.triggers.includes(choice.value)}
                           onChange={() => toggleTrigger(choice.value)}
                           className="accent-[var(--accent)]"
                         />
-                        {choice.label}
+                        <span className="flex-1">{choice.label}</span>
+                        <span className="text-[11px] text-[var(--text-dim)]">{choice.score} puan</span>
                       </label>
                     ))}
+                  </div>
+                ) : form.cascade ? (
+                  <div>
+                    <label className="block text-xs text-[var(--text-dim)] mb-1">
+                      Cevap puanı bu değere kadar olanlara göster
+                    </label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min={0}
+                      max={5}
+                      className={inputClass}
+                      value={form.cascadeScore}
+                      onChange={(event) =>
+                        setForm({ ...form, cascadeScore: Number(event.target.value) })
+                      }
+                    />
                   </div>
                 ) : (
                   <>
@@ -537,24 +751,41 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">
-                  Gelişim skoru puanı: <span className="text-[var(--accent)]">{form.points.toFixed(1)}</span>
-                </label>
-                <input
-                  type="range"
-                  min={0}
-                  max={2}
-                  step={0.1}
-                  value={form.points}
-                  onChange={(event) => setForm({ ...form, points: parseFloat(event.target.value) })}
-                  className="w-full accent-[var(--accent)]"
-                />
-                <p className="text-xs text-[var(--text-dim)]">
-                  Kullanıcı bu öneriyi yol haritasında &quot;Tamamlandı&quot; işaretlediğinde gelişim skoruna eklenir.
-                  &quot;Devam ediyor&quot; durumunda puan verilmez.
-                </p>
-              </div>
+              {form.cascade ? (
+                // Kademeli öneride puan elle girilmez: tamamlanınca kullanıcı
+                // bir üst basamağa çıkar ve katkı bundan türetilir.
+                <div className="p-3 rounded-lg bg-[var(--bg-card)] border border-[var(--border-soft)]">
+                  <p className="text-sm font-medium text-[var(--text-muted)] mb-1">
+                    Gelişim skoru puanı: otomatik
+                  </p>
+                  <p className="text-xs text-[var(--text-dim)]">
+                    Kullanıcı bu öneriyi tamamladığında bu sorudaki basamağı bir üst şıkka
+                    çıkar; gelişim skoruna katkısı sorunun ağırlığından ve anketin
+                    boyutundan türetilir. Elle puan girilmesi gerekmez.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">
+                    Gelişim skoru puanı: <span className="text-[var(--accent)]">{form.points.toFixed(1)}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min={0}
+                    max={2}
+                    step={0.1}
+                    value={form.points}
+                    onChange={(event) => setForm({ ...form, points: parseFloat(event.target.value) })}
+                    className="w-full accent-[var(--accent)]"
+                  />
+                  <p className="text-xs text-[var(--text-dim)]">
+                    Kaç soruluk ilerlemeye denk olduğunu belirtir: <strong>1.0</strong> bir soruyu
+                    en alttan tavana çıkarmakla aynı, <strong>0.5</strong> onun yarısı. Kullanıcı
+                    öneriyi &quot;Tamamlandı&quot; işaretlediğinde gelişim skoruna eklenir;
+                    &quot;Devam ediyor&quot; durumunda puan verilmez.
+                  </p>
+                </div>
+              )}
 
               {/* Nadiren değiştirilen alanlar katlanmış durur */}
               <div>
@@ -676,8 +907,22 @@ export default function QuestionRecommendationsModal({ question, target, onClose
               )}
 
               <div className="flex justify-end gap-2 pt-1">
+                {draftQueue.length > 0 && (
+                  <button
+                    onClick={() => loadNextDraft(draftQueue)}
+                    disabled={saving}
+                    className="px-4 py-2 rounded-lg text-sm bg-[var(--bg-card-2)] text-[var(--text-muted)] disabled:opacity-50"
+                  >
+                    Bu taslağı atla
+                  </button>
+                )}
                 <button
-                  onClick={() => setForm(null)}
+                  onClick={() => {
+                    // Vazgeçmek kuyruğu da iptal eder; yarım kalmış taslak
+                    // dizisi arka planda beklemesin.
+                    setDraftQueue([]);
+                    setForm(null);
+                  }}
                   disabled={saving}
                   className="px-4 py-2 rounded-lg text-sm bg-[var(--border-soft)] text-[var(--text-muted)] disabled:opacity-50"
                 >
@@ -693,13 +938,25 @@ export default function QuestionRecommendationsModal({ question, target, onClose
               </div>
             </div>
           ) : (
-            <button
-              onClick={startCreate}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-[var(--accent)]/60 text-[var(--accent)] hover:bg-[rgba(12,193,195,0.08)]"
-            >
-              <Plus size={18} />
-              Bu soruya öneri ekle
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={startCreate}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-[var(--accent)]/60 text-[var(--accent)] hover:bg-[rgba(12,193,195,0.08)]"
+              >
+                <Plus size={18} />
+                Bu soruya öneri ekle
+              </button>
+              {cascadeByChoice && (
+                <button
+                  onClick={draftWithAI}
+                  disabled={drafting}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:text-[var(--accent)] disabled:opacity-50"
+                >
+                  {drafting ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                  {drafting ? "Taslak üretiliyor..." : "AI ile her şık için taslak üret"}
+                </button>
+              )}
+            </div>
           )}
 
           <div className="flex justify-end mt-6">

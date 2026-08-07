@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
+import { isRecommendationActionable } from "@/lib/scoring";
 
 export async function GET(request: NextRequest) {
   const auth = await withAuth(request);
@@ -45,6 +46,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Recommendation ID is required" },
         { status: 400 }
+      );
+    }
+
+    // Yumuşak kilit: sırası gelmemiş kademe yol haritasına eklenemez.
+    const actionable = await isRecommendationActionable(userId, recommendationId);
+    if (!actionable) {
+      return NextResponse.json(
+        { error: "Bu öneriye sıra gelmedi. Önce bir önceki basamağı tamamlayın." },
+        { status: 409 }
       );
     }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { triggerChoicesFor } from "../recommendation-triggers";
+import { supportsCascadeByChoice, triggerChoicesFor } from "../recommendation-triggers";
 
 describe("triggerChoicesFor", () => {
   it("ölçek sorusunda 1-5 puanları verir — anket cevabı bu metinlerle kaydedilir", () => {
@@ -8,6 +8,8 @@ describe("triggerChoicesFor", () => {
     expect(result.supported).toBe(true);
     if (!result.supported) return;
     expect(result.choices.map((choice) => choice.value)).toEqual(["1", "2", "3", "4", "5"]);
+    // Kademeli tetikleme eşiği bu puanlardan hesaplanır.
+    expect(result.choices.map((choice) => choice.score)).toEqual([1, 2, 3, 4, 5]);
   });
 
   it("evet/hayır sorusunda anket ekranının kaydettiği yes/no değerlerini verir", () => {
@@ -24,8 +26,8 @@ describe("triggerChoicesFor", () => {
     expect(result.supported).toBe(true);
     if (!result.supported) return;
     expect(result.choices).toEqual([
-      { value: "yes", label: "Evet" },
-      { value: "no", label: "Hayır" },
+      { value: "yes", label: "Evet", score: 5 },
+      { value: "no", label: "Hayır", score: 1 },
     ]);
   });
 
@@ -41,8 +43,8 @@ describe("triggerChoicesFor", () => {
     expect(result.supported).toBe(true);
     if (!result.supported) return;
     expect(result.choices).toEqual([
-      { value: "takip_yok", label: "Takip yok" },
-      { value: "entegre_sistem", label: "Entegre sistem" },
+      { value: "takip_yok", label: "Takip yok", score: 1 },
+      { value: "entegre_sistem", label: "Entegre sistem", score: 5 },
     ]);
   });
 
@@ -59,10 +61,42 @@ describe("triggerChoicesFor", () => {
 
     expect(result.supported).toBe(false);
     if (result.supported) return;
-    expect(result.reason).toContain("puan aralığına");
+    expect(result.reason).toContain("kademeli tetiklemeyi");
   });
 
   it("bilinmeyen tipte tetiklemeyi desteklemez", () => {
     expect(triggerChoicesFor({ type: "SOMETHING_ELSE" }).supported).toBe(false);
+  });
+
+  it("şık puanı yazılmamışsa 0 kabul eder (kademeli eşik hesabı bozulmasın)", () => {
+    const result = triggerChoicesFor({
+      type: "MULTIPLE_CHOICE",
+      options: [{ value: "a", label: "A" }],
+    });
+
+    expect(result.supported).toBe(true);
+    if (!result.supported) return;
+    expect(result.choices[0].score).toBe(0);
+  });
+
+  it("evet/hayır şık puanları yazılmamışsa anket motoruyla aynı varsayılanı verir", () => {
+    const result = triggerChoicesFor({ type: "YES_NO" });
+
+    expect(result.supported).toBe(true);
+    if (!result.supported) return;
+    expect(result.choices.map((choice) => choice.score)).toEqual([5, 1]);
+  });
+});
+
+describe("supportsCascadeByChoice", () => {
+  it("şık listesi kurulabilen tiplerde true döner", () => {
+    expect(supportsCascadeByChoice({ type: "SCALE" })).toBe(true);
+    expect(
+      supportsCascadeByChoice({ type: "MULTIPLE_CHOICE", options: [{ value: "a", score: 1 }] })
+    ).toBe(true);
+  });
+
+  it("kademeli puanlamada false döner — eşik elle sayı olarak girilir", () => {
+    expect(supportsCascadeByChoice({ type: "CONDITIONAL_CHOICE" })).toBe(false);
   });
 });

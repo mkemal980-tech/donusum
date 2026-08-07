@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, X, Search, FileText, DollarSign, Target, FolderTree, HelpCircle, CheckSquare, TrendingUp } from "lucide-react";
+import RecommendationBulkPanel from "@/components/admin/recommendation-bulk-panel";
+import { Plus, Edit, Trash2, X, Search, FileText, DollarSign, Target, FolderTree, HelpCircle, CheckSquare, TrendingUp, FileSpreadsheet } from "lucide-react";
 import { derivePosition } from "@/lib/recommendation-position";
 
 interface Survey {
@@ -211,6 +212,7 @@ export default function RecommendationsPage() {
   const [modalSubLevelId, setModalSubLevelId] = useState('');
   const [modalQuestionId, setModalQuestionId] = useState('');
   const [selectedTriggerOptions, setSelectedTriggerOptions] = useState<string[]>([]);
+  const [showBulkPanel, setShowBulkPanel] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -501,13 +503,29 @@ export default function RecommendationsPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Öneri Yönetimi</h1>
-        <button
-          onClick={() => openModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)] transition-colors"
-        >
-          <Plus size={20} /> Yeni Öneri
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowBulkPanel(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-card-2)] text-[var(--text-muted)] rounded-lg hover:text-[var(--accent)] transition-colors"
+          >
+            <FileSpreadsheet size={20} /> Toplu Kurulum
+          </button>
+          <button
+            onClick={() => openModal()}
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)] transition-colors"
+          >
+            <Plus size={20} /> Yeni Öneri
+          </button>
+        </div>
       </div>
+
+      {showBulkPanel && (
+        <RecommendationBulkPanel
+          surveys={surveys}
+          onClose={() => setShowBulkPanel(false)}
+          onSaved={fetchData}
+        />
+      )}
 
       {/* Filters */}
       <div className="bg-[var(--bg-card)] rounded-xl shadow-soft p-4 mb-6">
