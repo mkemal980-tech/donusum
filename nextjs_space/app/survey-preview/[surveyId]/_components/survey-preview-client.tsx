@@ -132,6 +132,15 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
   const [error, setError] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showAdminDetails, setShowAdminDetails] = useState(false);
+  /**
+   * Önizleme iki işe birden yarıyor ve ikisi farklı düzen istiyor:
+   *   "user" → kullanıcının gerçekten gördüğü bölüm bölüm akış
+   *   "all"  → yöneticinin anketi bir bütün olarak gözden geçirmesi
+   * Önceden yalnızca ikincisi vardı ve "kullanıcının gördüğü ekran" diye
+   * sunuluyordu; yönetici gerçek deneyimi hiç göremiyordu.
+   */
+  const [viewMode, setViewMode] = useState<"user" | "all">("user");
+  const [stepIndex, setStepIndex] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -185,6 +194,25 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
     return numbers;
   }, [sections]);
 
+  // Kullanıcı modunda yalnızca bulunulan bölüm gösterilir.
+  const clampedStepIndex = Math.max(0, Math.min(stepIndex, sections.length - 1));
+  const currentSection = sections[clampedStepIndex];
+  const visibleSections = useMemo(
+    () =>
+      viewMode === "user"
+        ? currentSection
+          ? [{ section: currentSection, sectionIndex: clampedStepIndex }]
+          : []
+        : sections.map((section, sectionIndex) => ({ section, sectionIndex })),
+    [viewMode, sections, currentSection, clampedStepIndex]
+  );
+
+  const sectionAnswered = (currentSection?.questions ?? []).filter(
+    (question) => answers[question.id] !== undefined && answers[question.id] !== ""
+  ).length;
+  const sectionTotal = currentSection?.questions.length ?? 0;
+  const sectionPercentage = sectionTotal > 0 ? Math.round((sectionAnswered / sectionTotal) * 100) : 0;
+
   const categoryAnchors = useMemo(
     () => categories.map((category) => ({ id: category.id, name: category.name })),
     [categories]
@@ -213,11 +241,28 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
           <div className="min-w-0">
             <p className="text-sm font-medium text-[var(--text-main)] truncate">{surveyName}</p>
             <p className="text-xs text-[var(--text-dim)]">
-              Kullanıcının gördüğü ekran. Verdiğiniz cevaplar kaydedilmez, kimsenin puanını etkilemez.
+              {viewMode === "user"
+                ? "Kullanıcının gördüğü akış. Verdiğiniz cevaplar kaydedilmez."
+                : "Gözden geçirme dökümü — kullanıcı anketi böyle görmez, bölüm bölüm ilerler."}
             </p>
           </div>
 
           <div className="ml-auto flex items-center gap-2">
+            <div className="flex rounded-lg overflow-hidden border border-[var(--border-soft)]">
+              {(["user", "all"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`px-2.5 py-1.5 text-xs transition-colors ${
+                    viewMode === mode
+                      ? "bg-[var(--accent)] text-[var(--bg-deep)] font-medium"
+                      : "bg-[var(--bg-card)] text-[var(--text-muted)]"
+                  }`}
+                >
+                  {mode === "user" ? "Kullanıcı görünümü" : "Tümü tek sayfada"}
+                </button>
+              ))}
+            </div>
             <label className="flex items-center gap-2 text-xs text-[var(--text-muted)] cursor-pointer select-none">
               <input
                 type="checkbox"
@@ -254,7 +299,46 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
           </div>
         ) : (
           <>
-            {/* Özet ve kategori kısayolları */}
+            {/* Kullanıcı modunda gerçek ekrandaki bölüm başlığı ve ilerleme */}
+            {viewMode === "user" && currentSection && (
+              <div className="mb-6 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]">
+                <div className="flex items-center gap-2 text-sm flex-wrap mb-3">
+                  <span className="px-2.5 py-1 bg-[var(--accent)] text-white rounded-lg">
+                    {currentSection.categoryName}
+                  </span>
+                  <span className="text-[var(--text-dim)]">›</span>
+                  <span className="px-2.5 py-1 bg-[#a78bfa] text-white rounded-lg">
+                    {currentSection.subCategoryName ?? "Doğrudan Sorular"}
+                  </span>
+                  {currentSection.subLevelName && (
+                    <>
+                      <span className="text-[var(--text-dim)]">›</span>
+                      <span className="px-2.5 py-1 bg-[var(--border-soft)] text-[var(--text-muted)] rounded-lg">
+                        {currentSection.subLevelName}
+                      </span>
+                    </>
+                  )}
+                  <span className="ml-auto text-xs text-[var(--text-dim)] tabular-nums">
+                    Bölüm {clampedStepIndex + 1} / {sections.length}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 h-2.5 rounded-full bg-[var(--border-soft)] overflow-hidden">
+                    <div
+                      className="h-full bg-[var(--accent)] transition-all duration-500"
+                      style={{ width: `${sectionPercentage}%` }}
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-[var(--text-main)] tabular-nums whitespace-nowrap">
+                    {sectionAnswered} / {sectionTotal} soru
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Özet ve kategori kısayolları — yalnızca gözden geçirme modunda */}
+            {viewMode === "all" && (
             <div className="mb-6 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]">
               <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
                 <span className="text-[var(--text-muted)]">
@@ -292,30 +376,37 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
                 </p>
               )}
             </div>
+            )}
 
-            {sections.map((section, sectionIndex) => {
+            {visibleSections.map(({ section, sectionIndex }) => {
               const isNewCategory =
                 sectionIndex === 0 || sections[sectionIndex - 1].categoryId !== section.categoryId;
 
               return (
                 <section key={section.key} className="mb-10">
-                  {isNewCategory && (
-                    <h2
-                      id={`kategori-${section.categoryId}`}
-                      className="scroll-mt-24 text-2xl font-bold text-[var(--text-main)] mb-4 pb-2 border-b-2 border-[var(--accent)]"
-                    >
-                      {section.categoryName}
-                    </h2>
-                  )}
+                  {/* Kullanıcı modunda bölüm adı zaten üstteki kırıntıda yazıyor;
+                      burada tekrarlamak ekranı gereksiz kalabalıklaştırır. */}
+                  {viewMode === "all" && (
+                    <>
+                      {isNewCategory && (
+                        <h2
+                          id={`kategori-${section.categoryId}`}
+                          className="scroll-mt-24 text-2xl font-bold text-[var(--text-main)] mb-4 pb-2 border-b-2 border-[var(--accent)]"
+                        >
+                          {section.categoryName}
+                        </h2>
+                      )}
 
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-[var(--accent)]">
-                      {section.subCategoryName ?? "Doğrudan Sorular"}
-                    </h3>
-                    {section.subLevelName && (
-                      <p className="text-sm text-[var(--text-muted)]">{section.subLevelName}</p>
-                    )}
-                  </div>
+                      <div className="mb-4">
+                        <h3 className="text-lg font-semibold text-[var(--accent)]">
+                          {section.subCategoryName ?? "Doğrudan Sorular"}
+                        </h3>
+                        {section.subLevelName && (
+                          <p className="text-sm text-[var(--text-muted)]">{section.subLevelName}</p>
+                        )}
+                      </div>
+                    </>
+                  )}
 
                   <div className="space-y-4">
                     {section.questions.map((question) => (
@@ -367,9 +458,40 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
               );
             })}
 
-            <div className="py-8 text-center text-sm text-[var(--text-dim)] border-t border-[var(--border-soft)]">
-              Anketin sonu. Gerçek kullanıcı burada anketi tamamlar; önizlemede kayıt yapılmaz.
-            </div>
+            {viewMode === "user" ? (
+              <div className="flex items-center justify-between pt-4 border-t border-[var(--border-soft)]">
+                <button
+                  onClick={() => setStepIndex((current) => Math.max(0, current - 1))}
+                  disabled={clampedStepIndex === 0}
+                  className="px-5 py-2.5 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-soft)] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ← Önceki
+                </button>
+
+                <span className="text-sm text-[var(--text-dim)] tabular-nums">
+                  {clampedStepIndex < sections.length - 1
+                    ? `${sections.length - clampedStepIndex - 1} bölüm kaldı`
+                    : "Son bölüm"}
+                </span>
+
+                {clampedStepIndex < sections.length - 1 ? (
+                  <button
+                    onClick={() => setStepIndex((current) => current + 1)}
+                    className="px-5 py-2.5 rounded-lg text-sm bg-[var(--accent)] text-[var(--bg-deep)] font-medium"
+                  >
+                    Sonraki →
+                  </button>
+                ) : (
+                  <span className="px-5 py-2.5 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-dim)] border border-[var(--border-soft)]">
+                    Kullanıcı burada tamamlar
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-sm text-[var(--text-dim)] border-t border-[var(--border-soft)]">
+                Anketin sonu. Gerçek kullanıcı burada anketi tamamlar; önizlemede kayıt yapılmaz.
+              </div>
+            )}
           </>
         )}
       </div>

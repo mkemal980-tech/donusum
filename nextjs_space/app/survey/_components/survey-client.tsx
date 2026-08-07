@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -23,6 +23,16 @@ import {
   AlertTriangle,
   Lock
 } from "lucide-react";
+import {
+  buildSteps,
+  categoryProgress,
+  categorySummaries,
+  estimateMinutes,
+  findResumeStepIndex,
+  overallProgress,
+  stepProgress,
+  unansweredInStep,
+} from "@/lib/survey-navigation";
 
 interface Question {
   id: string;
@@ -75,33 +85,22 @@ interface Survey {
   isExpired?: boolean;
 }
 
-function getDisplaySubCategories(category?: Category): SubCategory[] {
-  if (!category) return [];
-
-  const directQuestions = category.questions ?? [];
-  const directSection: SubCategory[] = directQuestions.length > 0
-    ? [{
-        id: `${category.id}__direct`,
-        name: "Kategori Soruları",
-        hasSubLevels: false,
-        subLevels: [],
-        questions: directQuestions,
-        isCategoryDirect: true
-      }]
-    : [];
-
-  return [...directSection, ...(category.subCategories ?? [])];
-}
-
 export default function SurveyClient() {
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [responses, setResponses] = useState<Record<string, string>>({});
-  const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
-  const [currentSubCategoryIndex, setCurrentSubCategoryIndex] = useState(0);
-  const [currentSubLevelIndex, setCurrentSubLevelIndex] = useState(0);
+  // Üç seviyeli ağaç düz bir adım dizisine indirildi (bkz. lib/survey-navigation).
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  /** Eksik soru uyarısı gösterilirken hedeflenen adım. */
+  const [pendingStepIndex, setPendingStepIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  /**
+   * Atanan anketler alınamadıysa doğru sayılır. Önceden hata da boş liste de
+   * "Henüz Anket Atanmadı" gösteriyordu; kullanıcı ankete atanmış olsa bile
+   * geçici bir hatada atanmamış sanıyordu.
+   */
+  const [assignmentError, setAssignmentError] = useState(false);
   const [loadingStructure, setLoadingStructure] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, { fileName: string; cloudStoragePath: string }>>({});
@@ -113,15 +112,19 @@ export default function SurveyClient() {
     const fetchAssignedSurveys = async () => {
       try {
         const res = await fetch("/api/survey/assigned");
-        if (res.ok) {
-          const data = await res.json();
-          setSurveys(data ?? []);
-          if (data.length > 0) {
-            setSelectedSurveyId((current) => current || data[0].id);
-          }
+        if (!res.ok) {
+          setAssignmentError(true);
+          return;
+        }
+        const data = await res.json();
+        setAssignmentError(false);
+        setSurveys(data ?? []);
+        if (data.length > 0) {
+          setSelectedSurveyId((current) => current || data[0].id);
         }
       } catch (error) {
         console.error("Error fetching assigned surveys:", error);
+        setAssignmentError(true);
       } finally {
         setLoading(false);
       }
@@ -142,14 +145,17 @@ export default function SurveyClient() {
           fetch(`/api/survey/responses${surveyParam}`)
         ]);
 
+        let structure: Category[] = [];
+        let responseMap: Record<string, string> = {};
+
         if (structureRes.ok) {
           const data = await structureRes.json();
-          setCategories(data ?? []);
+          structure = data ?? [];
+          setCategories(structure);
         }
 
         if (responsesRes.ok) {
           const data = await responsesRes.json();
-          const responseMap: Record<string, string> = {};
           const fileMap: Record<string, { fileName: string; cloudStoragePath: string }> = {};
           (data ?? []).forEach((r: Response) => {
             if (!r?.questionId) return;
@@ -166,10 +172,11 @@ export default function SurveyClient() {
           setUploadedFiles(fileMap);
         }
 
-        // Reset navigation
-        setCurrentCategoryIndex(0);
-        setCurrentSubCategoryIndex(0);
-        setCurrentSubLevelIndex(0);
+        // Kaldığı yerden devam: eksik sorusu olan ilk bölüme dön.
+        // Uzun anketler tek oturumda bitmiyor; her dönüşte başa sarmak
+        // en can sıkıcı davranış.
+        setCurrentStepIndex(findResumeStepIndex(buildSteps(structure), responseMap));
+        setPendingStepIndex(null);
       } catch (error) {
         console.error("Error fetching survey data:", error);
       } finally {
@@ -180,40 +187,46 @@ export default function SurveyClient() {
     fetchData();
   }, [selectedSurveyId]);
 
-  const currentCategory = categories?.[currentCategoryIndex];
-  const currentSubCategories = getDisplaySubCategories(currentCategory);
-  const currentSubCategory = currentSubCategories?.[currentSubCategoryIndex];
-  const hasSubLevels = currentSubCategory?.hasSubLevels ?? true;
-  const currentSubLevel = hasSubLevels ? currentSubCategory?.subLevels?.[currentSubLevelIndex] : null;
-  
-  // Mevcut soruları belirle
-  const currentQuestions = hasSubLevels 
-    ? (currentSubLevel?.questions ?? [])
-    : (currentSubCategory?.questions ?? []);
+  // Anket ağacı bir kez düzleştirilir; ekranın tüm göstergeleri buna dayanır.
+  const steps = useMemo(() => buildSteps(categories), [categories]);
+  const summaries = useMemo(() => categorySummaries(steps), [steps]);
 
-  // Toplam soru sayısı (kategori soruları dahil)
-  const totalQuestions = categories?.reduce((total, cat) => {
-    // Doğrudan kategoriye bağlı sorular
-    const categoryQuestionCount = cat?.questions?.length ?? 0;
-    
-    // Alt kategori soruları
-    const subCategoryQuestionCount = (cat?.subCategories ?? []).reduce((subTotal, sub) => {
-      if (sub?.hasSubLevels) {
-        return subTotal + (sub?.subLevels ?? []).reduce((levelTotal, level) => {
-          return levelTotal + (level?.questions?.length ?? 0);
-        }, 0);
-      } else {
-        return subTotal + (sub?.questions?.length ?? 0);
+  // Soru nesnelerine kimlikten erişim — adımlar yalnızca kimlik taşır.
+  const questionById = useMemo(() => {
+    const map = new Map<string, Question>();
+    for (const category of categories ?? []) {
+      for (const question of category.questions ?? []) map.set(question.id, question);
+      for (const subCategory of category.subCategories ?? []) {
+        for (const question of subCategory.questions ?? []) map.set(question.id, question);
+        for (const subLevel of subCategory.subLevels ?? []) {
+          for (const question of subLevel.questions ?? []) map.set(question.id, question);
+        }
       }
-    }, 0);
-    
-    return total + categoryQuestionCount + subCategoryQuestionCount;
-  }, 0) ?? 0;
+    }
+    return map;
+  }, [categories]);
 
-  const answeredQuestions = Object.keys(responses ?? {}).length;
-  const progressPercentage = totalQuestions > 0 
-    ? Math.round((answeredQuestions / totalQuestions) * 100) 
-    : 0;
+  const currentStep = steps[currentStepIndex];
+  const currentQuestions = (currentStep?.questionIds ?? [])
+    .map((id) => questionById.get(id))
+    .filter((question): question is Question => !!question);
+
+  // İki seviyeli ilerleme: baskın gösterge bölüm içi, genel ikincil.
+  // Uzun ankette tek bir genel çubuk soru başına yüzde bir kıpırdar ve
+  // "hiç ilerlemiyorum" hissi terk oranını ciddi biçimde artırır.
+  const sectionProgress = stepProgress(currentStep, responses);
+  const currentCategoryProgress = categoryProgress(steps, currentStep?.categoryId ?? "", responses);
+  const overall = overallProgress(steps, responses);
+
+  const totalQuestions = overall.total;
+  const answeredQuestions = overall.answered;
+  const progressPercentage = overall.percentage;
+  const estimatedMinutes = estimateMinutes(totalQuestions);
+  const remainingUnanswered = unansweredInStep(currentStep, responses);
+
+  const activeCategoryIndex = summaries.findIndex(
+    (summary) => summary.categoryId === currentStep?.categoryId
+  );
 
   const handleAnswer = async (questionId: string, value: string) => {
     const previousValue = responses[questionId];
@@ -381,82 +394,31 @@ export default function SurveyClient() {
     });
   };
 
-  const canGoNext = () => {
-    const currentSubCat = currentSubCategories?.[currentSubCategoryIndex];
-    
-    if (currentSubCat?.hasSubLevels) {
-      if ((currentSubLevelIndex ?? 0) < ((currentSubCat?.subLevels?.length ?? 1) - 1)) return true;
-    }
-    if ((currentSubCategoryIndex ?? 0) < ((currentSubCategories?.length ?? 1) - 1)) return true;
-    if ((currentCategoryIndex ?? 0) < ((categories?.length ?? 1) - 1)) return true;
-    return false;
+  const canGoNext = currentStepIndex < steps.length - 1;
+  const canGoPrev = currentStepIndex > 0;
+
+  /** Uyarıyı atlayarak doğrudan git — onay verildikten sonra çağrılır. */
+  const jumpTo = (index: number) => {
+    setPendingStepIndex(null);
+    setCurrentStepIndex(Math.max(0, Math.min(steps.length - 1, index)));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const canGoPrev = () => {
-    return (currentCategoryIndex ?? 0) > 0 || 
-           (currentSubCategoryIndex ?? 0) > 0 || 
-           (currentSubLevelIndex ?? 0) > 0;
+  /**
+   * Bölümden ayrılırken eksik soru varsa önce uyarır.
+   * Kaydırmalı düzenin bilinen tek zaafı soru atlanması; uyarı bunu kapatır.
+   * Geri giderken uyarı yok — kullanıcı zaten düzeltmeye dönüyor olabilir.
+   */
+  const requestStep = (index: number) => {
+    if (index > currentStepIndex && remainingUnanswered > 0) {
+      setPendingStepIndex(index);
+      return;
+    }
+    jumpTo(index);
   };
 
-  const goNext = () => {
-    const currentSubCat = currentSubCategories?.[currentSubCategoryIndex];
-    
-    if (currentSubCat?.hasSubLevels) {
-      if ((currentSubLevelIndex ?? 0) < ((currentSubCat?.subLevels?.length ?? 1) - 1)) {
-        setCurrentSubLevelIndex(prev => (prev ?? 0) + 1);
-        return;
-      }
-    }
-    
-    if ((currentSubCategoryIndex ?? 0) < ((currentSubCategories?.length ?? 1) - 1)) {
-      setCurrentSubCategoryIndex(prev => (prev ?? 0) + 1);
-      setCurrentSubLevelIndex(0);
-      return;
-    }
-    
-    if ((currentCategoryIndex ?? 0) < ((categories?.length ?? 1) - 1)) {
-      setCurrentCategoryIndex(prev => (prev ?? 0) + 1);
-      setCurrentSubCategoryIndex(0);
-      setCurrentSubLevelIndex(0);
-    }
-  };
-
-  const goPrev = () => {
-    const currentSubCat = currentSubCategories?.[currentSubCategoryIndex];
-    
-    if (currentSubCat?.hasSubLevels && (currentSubLevelIndex ?? 0) > 0) {
-      setCurrentSubLevelIndex(prev => (prev ?? 1) - 1);
-      return;
-    }
-    
-    if ((currentSubCategoryIndex ?? 0) > 0) {
-      const newSubCatIndex = (currentSubCategoryIndex ?? 1) - 1;
-      setCurrentSubCategoryIndex(newSubCatIndex);
-      const prevSubCat = currentSubCategories?.[newSubCatIndex];
-      if (prevSubCat?.hasSubLevels) {
-        const prevSubLevels = prevSubCat?.subLevels ?? [];
-        setCurrentSubLevelIndex(Math.max(0, prevSubLevels.length - 1));
-      } else {
-        setCurrentSubLevelIndex(0);
-      }
-      return;
-    }
-    
-    if ((currentCategoryIndex ?? 0) > 0) {
-      const newCatIndex = (currentCategoryIndex ?? 1) - 1;
-      setCurrentCategoryIndex(newCatIndex);
-      const prevSubCats = getDisplaySubCategories(categories?.[newCatIndex]);
-      const lastSubCatIndex = Math.max(0, prevSubCats.length - 1);
-      setCurrentSubCategoryIndex(lastSubCatIndex);
-      const lastSubCat = prevSubCats?.[lastSubCatIndex];
-      if (lastSubCat?.hasSubLevels) {
-        const prevSubLevels = lastSubCat?.subLevels ?? [];
-        setCurrentSubLevelIndex(Math.max(0, prevSubLevels.length - 1));
-      } else {
-        setCurrentSubLevelIndex(0);
-      }
-    }
-  };
+  const goNext = () => requestStep(currentStepIndex + 1);
+  const goPrev = () => jumpTo(currentStepIndex - 1);
 
   const handleComplete = () => {
     toast.success("🎉 Anket tamamlandı!", {
@@ -491,16 +453,34 @@ export default function SurveyClient() {
             <div className="w-20 h-20 bg-[var(--warning-bg)] rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertCircle size={40} className="text-[var(--warning)]" />
             </div>
-            <h2 className="text-2xl font-bold text-[var(--text-main)] mb-3">Henüz Anket Atanmadı</h2>
+            <h2 className="text-2xl font-bold text-[var(--text-main)] mb-3">
+              {assignmentError ? "Anketler Yüklenemedi" : "Henüz Anket Atanmadı"}
+            </h2>
             <p className="text-[var(--text-muted)] mb-6">
-              Hesabınıza henüz bir anket atanmamış. Lütfen sistem yöneticinizle iletişime geçin.
+              {assignmentError
+                ? "Anket listesi alınamadı. Bağlantınızı kontrol edip tekrar deneyin; sorun sürerse sistem yöneticinizle iletişime geçin."
+                : "Hesabınıza henüz bir anket atanmamış. Lütfen sistem yöneticinizle iletişime geçin."}
             </p>
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="px-6 py-3 bg-[var(--accent)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors"
-            >
-              Ana Sayfaya Dön
-            </button>
+            <div className="flex items-center justify-center gap-2">
+              {assignmentError && (
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-6 py-3 bg-[var(--accent)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors"
+                >
+                  Tekrar Dene
+                </button>
+              )}
+              <button
+                onClick={() => router.push("/dashboard")}
+                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                  assignmentError
+                    ? "bg-[var(--bg-card-2)] text-[var(--text-muted)]"
+                    : "bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)]"
+                }`}
+              >
+                Ana Sayfaya Dön
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -631,8 +611,9 @@ export default function SurveyClient() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-[var(--bg-card)] rounded-xl shadow-md p-6 mb-6"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div>
+          {/* Dar ekranda yan yana sığmıyor: mobilde dikey, masaüstünde yatay. */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
+            <div className="min-w-0">
               <h1 className="text-2xl font-bold text-[var(--text-main)]">
                 {selectedSurvey?.name || "Olgunluk Değerlendirme Anketi"}
               </h1>
@@ -640,17 +621,33 @@ export default function SurveyClient() {
                 <p className="text-sm text-[var(--text-dim)] mt-1">{selectedSurvey.description}</p>
               )}
             </div>
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex items-center gap-2 text-sm md:justify-end md:text-right shrink-0">
               {saving && (
                 <span className="text-[#a78bfa] flex items-center gap-1">
                   <div className="w-3 h-3 border-2 border-[#a78bfa] border-t-transparent rounded-full animate-spin" />
                   Kaydediliyor...
                 </span>
               )}
-              <span className="text-[var(--text-dim)]">{totalQuestions} sorudan {answeredQuestions} tanesi cevaplandı</span>
+              <span className="text-[var(--text-dim)]">
+                {totalQuestions} sorudan {answeredQuestions} tanesi cevaplandı
+                {estimatedMinutes > 0 && answeredQuestions === 0 && (
+                  <> · yaklaşık {estimatedMinutes} dk · istediğiniz zaman ara verebilirsiniz</>
+                )}
+              </span>
             </div>
           </div>
-          <ProgressBar value={progressPercentage} label="Genel İlerleme" color="var(--accent)" />
+
+          {/* Genel ilerleme bilinçli olarak ince ve ikincil: uzun ankette
+              baskın gösterge bölüm çubuğudur (bkz. aşağıdaki bölüm başlığı). */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-1.5 rounded-full bg-[var(--border-soft)] overflow-hidden">
+              <div
+                className="h-full bg-[var(--accent)] transition-all duration-500"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <span className="text-xs text-[var(--text-dim)] tabular-nums">Genel %{progressPercentage}</span>
+          </div>
         </motion.div>
 
         {loadingStructure ? (
@@ -665,35 +662,98 @@ export default function SurveyClient() {
           </div>
         ) : (
           <>
-            {/* Breadcrumb Navigation */}
+            {/* Kategori haritası — "daha ne kadar var" sorusunu soru sayısıyla
+                değil kategori sayısıyla cevaplar; tıklanınca o kategorinin ilk
+                bölümüne atlar. */}
+            {summaries.length > 1 && (
+              <div className="flex items-stretch gap-1.5 mb-4 overflow-x-auto pb-1">
+                {summaries.map((summary, index) => {
+                  const progress = categoryProgress(steps, summary.categoryId, responses);
+                  const isActive = index === activeCategoryIndex;
+                  const isDone = progress.percentage === 100;
+
+                  return (
+                    <button
+                      key={summary.categoryId}
+                      onClick={() => requestStep(summary.firstStepIndex)}
+                      title={`${summary.categoryName} — ${progress.answered}/${progress.total} soru`}
+                      className={`flex-1 min-w-[92px] text-left px-2.5 py-1.5 rounded-lg border transition-colors ${
+                        isActive
+                          ? "border-[var(--accent)] bg-[rgba(12,193,195,0.12)]"
+                          : "border-[var(--border-soft)] bg-[var(--bg-card)] hover:border-[var(--accent)]/50"
+                      }`}
+                    >
+                      <span
+                        className={`block text-[11px] truncate ${
+                          isActive ? "text-[var(--accent)] font-medium" : "text-[var(--text-dim)]"
+                        }`}
+                      >
+                        {isDone && !isActive ? "✓ " : ""}
+                        {summary.categoryName}
+                      </span>
+                      <span className="mt-1 block h-1 rounded-full bg-[var(--border-soft)] overflow-hidden">
+                        <span
+                          className="block h-full bg-[var(--accent)] transition-all duration-500"
+                          style={{ width: `${progress.percentage}%` }}
+                        />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Bölüm başlığı ve baskın ilerleme çubuğu */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex items-center gap-2 text-sm mb-6 flex-wrap"
+              className="bg-[var(--bg-card)] rounded-xl shadow-md p-4 mb-6"
             >
-              <span className="flex items-center gap-1 px-3 py-1 bg-[var(--accent)] text-white rounded-lg">
-                <FolderOpen size={14} />
-                {currentCategory?.name ?? 'Category'}
-              </span>
-              <ChevronRight size={16} className="text-[var(--text-dim)]" />
-              <span className="flex items-center gap-1 px-3 py-1 bg-[#a78bfa] text-white rounded-lg">
-                <Layers size={14} />
-                {currentSubCategory?.name ?? 'Sub-category'}
-              </span>
-              {hasSubLevels && currentSubLevel && (
-                <>
-                  <ChevronRight size={16} className="text-[var(--text-dim)]" />
-                  <span className="flex items-center gap-1 px-3 py-1 bg-[var(--border-soft)] text-[var(--text-muted)] rounded-lg">
-                    {currentSubLevel?.name ?? 'Level'}
-                  </span>
-                </>
-              )}
+              <div className="flex items-center gap-2 text-sm flex-wrap mb-3">
+                <span className="flex items-center gap-1 px-2.5 py-1 bg-[var(--accent)] text-white rounded-lg">
+                  <FolderOpen size={14} />
+                  {currentStep?.categoryName ?? "Kategori"}
+                </span>
+                <ChevronRight size={16} className="text-[var(--text-dim)]" />
+                <span className="flex items-center gap-1 px-2.5 py-1 bg-[#a78bfa] text-white rounded-lg">
+                  <Layers size={14} />
+                  {currentStep?.subCategoryName ?? "Bölüm"}
+                </span>
+                {currentStep?.subLevelName && (
+                  <>
+                    <ChevronRight size={16} className="text-[var(--text-dim)]" />
+                    <span className="px-2.5 py-1 bg-[var(--border-soft)] text-[var(--text-muted)] rounded-lg">
+                      {currentStep.subLevelName}
+                    </span>
+                  </>
+                )}
+                <span className="ml-auto text-xs text-[var(--text-dim)] tabular-nums">
+                  Bölüm {currentStepIndex + 1} / {steps.length}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-2.5 rounded-full bg-[var(--border-soft)] overflow-hidden">
+                  <div
+                    className="h-full bg-[var(--accent)] transition-all duration-500"
+                    style={{ width: `${sectionProgress.percentage}%` }}
+                  />
+                </div>
+                <span className="text-sm font-medium text-[var(--text-main)] tabular-nums whitespace-nowrap">
+                  {sectionProgress.answered} / {sectionProgress.total} soru
+                </span>
+              </div>
+
+              <p className="mt-2 text-xs text-[var(--text-dim)]">
+                {currentStep?.categoryName}: {currentCategoryProgress.answered} /{" "}
+                {currentCategoryProgress.total} soru tamamlandı
+              </p>
             </motion.div>
 
             {/* Questions */}
             <AnimatePresence mode="wait">
               <motion.div
-                key={`${selectedSurveyId}-${currentCategoryIndex}-${currentSubCategoryIndex}-${currentSubLevelIndex}`}
+                key={`${selectedSurveyId}-${currentStepIndex}`}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -722,6 +782,39 @@ export default function SurveyClient() {
             </AnimatePresence>
 
             {/* Navigation */}
+            {/* Eksik soru uyarısı — kaydırmalı düzenin bilinen tek zaafı soru
+                atlanması; bölümden çıkarken hatırlatılır ama engellenmez. */}
+            {pendingStepIndex !== null && (
+              <div className="mb-4 p-4 rounded-xl bg-[rgba(245,158,11,0.1)] border border-[var(--warning)]/40">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle size={20} className="text-[var(--warning)] shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-[var(--text-main)]">
+                      Bu bölümde {remainingUnanswered} soru cevaplanmadı
+                    </p>
+                    <p className="text-xs text-[var(--text-dim)] mt-0.5">
+                      Cevaplamadan geçebilirsiniz; istediğiniz zaman geri dönüp
+                      tamamlayabilirsiniz. Ancak eksik sorular puanınıza dahil edilmez.
+                    </p>
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => setPendingStepIndex(null)}
+                        className="px-3 py-1.5 rounded-lg text-sm bg-[var(--accent)] text-[var(--bg-deep)] font-medium"
+                      >
+                        Bu bölümde kal
+                      </button>
+                      <button
+                        onClick={() => jumpTo(pendingStepIndex)}
+                        className="px-3 py-1.5 rounded-lg text-sm bg-[var(--bg-card-2)] text-[var(--text-muted)]"
+                      >
+                        Yine de devam et
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -729,29 +822,22 @@ export default function SurveyClient() {
             >
               <button
                 onClick={goPrev}
-                disabled={!canGoPrev()}
+                disabled={!canGoPrev}
                 className="flex items-center gap-2 px-6 py-3 bg-[var(--bg-card)] text-[var(--text-muted)] rounded-lg font-medium hover:bg-[var(--bg-main)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
               >
                 <ChevronLeft size={20} />
                 Önceki
               </button>
 
-              <div className="flex items-center gap-2">
-                {categories?.map((_, index) => (
-                  <div
-                    key={index}
-                    className={`w-3 h-3 rounded-full transition-colors ${
-                      index === currentCategoryIndex
-                        ? "bg-[var(--accent)]"
-                        : index < (currentCategoryIndex ?? 0)
-                        ? "bg-[#a78bfa]"
-                        : "bg-[var(--border-soft)]"
-                    }`}
-                  />
-                ))}
-              </div>
+              {/* Kategori noktaları üstteki haritayla mükerrer olduğu için
+                  burada yalnızca kalan bölüm sayısı gösterilir. */}
+              <span className="text-sm text-[var(--text-dim)] tabular-nums">
+                {canGoNext
+                  ? `${steps.length - currentStepIndex - 1} bölüm kaldı`
+                  : "Son bölüm"}
+              </span>
 
-              {canGoNext() ? (
+              {canGoNext ? (
                 <button
                   onClick={goNext}
                   className="flex items-center gap-2 px-6 py-3 bg-[var(--accent)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors shadow-md"
