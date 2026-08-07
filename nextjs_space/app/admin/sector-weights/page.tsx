@@ -50,10 +50,17 @@ export default function SectorScopePage() {
     const load = async () => {
       try {
         const res = await fetch("/api/admin/surveys");
-        const data = res.ok ? await res.json() : [];
+        if (!res.ok) {
+          setError("Anket listesi alınamadı. Sayfayı yenilemeyi deneyin.");
+          return;
+        }
+        const data = await res.json();
         const list = Array.isArray(data) ? data : [];
         setSurveys(list);
         setSurveyId((current) => current || list[0]?.id || "");
+      } catch (loadError) {
+        console.error("Error loading surveys:", loadError);
+        setError("Anket listesi alınırken hata oluştu.");
       } finally {
         setLoading(false);
       }
@@ -233,6 +240,22 @@ export default function SectorScopePage() {
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 size={32} className="animate-spin text-[var(--accent)]" />
+        </div>
+      ) : surveys.length === 0 ? (
+        <div className="p-8 rounded-xl bg-[var(--bg-card)] text-center">
+          <p className="text-[var(--text-muted)]">
+            Henüz anket yok. Kapsam kuralı yazabilmek için önce{" "}
+            <a href="/admin/surveys" className="text-[var(--accent)] underline">
+              Anketler
+            </a>{" "}
+            ekranından bir anket oluşturun.
+          </p>
+        </div>
+      ) : !surveyId ? (
+        // Anket seçilmeden kurallar çekilmez; bunu "sektör yok" diye
+        // göstermek yanıltıcı olurdu.
+        <div className="p-8 rounded-xl bg-[var(--bg-card)] text-center">
+          <p className="text-[var(--text-muted)]">Kapsamı düzenlemek için bir anket seçin.</p>
         </div>
       ) : sectors.length === 0 ? (
         <div className="p-8 rounded-xl bg-[var(--bg-card)] text-center">
