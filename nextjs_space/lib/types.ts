@@ -236,16 +236,6 @@ export interface IScoreHistory {
   recordedAt: Date;
 }
 
-export interface ISectorCategoryWeight {
-  id: string;
-  sectorId: string;
-  categoryId: string;
-  surveyId: string;
-  weight: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 // ============================================
 // EXTENDED INTERFACES - İlişkiler dahil tipler
 // ============================================
@@ -639,7 +629,6 @@ export interface ExportData {
     recommendations: IRecommendation[];
     benchmarks: IBenchmark[];
     ironmanBenchmarks: IIronmanBenchmark[];
-    sectorCategoryWeights: ISectorCategoryWeight[];
     surveyResponses: ISurveyResponse[];
     roadmapItems: IRoadmapItem[];
     scoreHistory: IScoreHistory[];

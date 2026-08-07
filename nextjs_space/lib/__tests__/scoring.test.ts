@@ -15,6 +15,8 @@ const findUniqueUser = vi.fn();
 const findManySurvey = vi.fn();
 const findManyAssignment = vi.fn();
 const countQuestion = vi.fn();
+const findManyQuestion = vi.fn();
+const findManyScopeRule = vi.fn();
 
 vi.mock("../db", () => ({
   prisma: {
@@ -25,7 +27,11 @@ vi.mock("../db", () => ({
     user: { findUnique: (...a: any[]) => findUniqueUser(...a) },
     survey: { findMany: (...a: any[]) => findManySurvey(...a) },
     userSurveyAssignment: { findMany: (...a: any[]) => findManyAssignment(...a) },
-    question: { count: (...a: any[]) => countQuestion(...a) },
+    question: {
+      count: (...a: any[]) => countQuestion(...a),
+      findMany: (...a: any[]) => findManyQuestion(...a),
+    },
+    sectorScopeRule: { findMany: (...a: any[]) => findManyScopeRule(...a) },
   },
 }));
 
@@ -49,7 +55,10 @@ import {
 beforeEach(() => {
   vi.clearAllMocks();
   // Varsayılan: bir ankete atanmış normal kullanıcı.
-  findUniqueUser.mockResolvedValue({ role: "USER" });
+  // Sektörü olmayan varsayılan kullanıcı: hiçbir kapsam kuralı uygulanmaz.
+  findUniqueUser.mockResolvedValue({ role: "USER", sectorId: null, subSectorId: null });
+  findManyScopeRule.mockResolvedValue([]);
+  findManyQuestion.mockResolvedValue([]);
   findManyAssignment.mockResolvedValue([{ surveyId: "survey-1" }]);
   findManySurvey.mockResolvedValue([{ id: "survey-1" }]);
   countQuestion.mockResolvedValue(0);
@@ -563,14 +572,20 @@ describe("getAccessibleSurveyIds", () => {
   });
 
   it("normal kullanıcı yalnızca aktif atamalarını görür", async () => {
-    findUniqueUser.mockResolvedValue({ role: "USER" });
+    // Sektörü olmayan varsayılan kullanıcı: hiçbir kapsam kuralı uygulanmaz.
+  findUniqueUser.mockResolvedValue({ role: "USER", sectorId: null, subSectorId: null });
+  findManyScopeRule.mockResolvedValue([]);
+  findManyQuestion.mockResolvedValue([]);
     findManyAssignment.mockResolvedValue([{ surveyId: "s1" }]);
 
     expect(await getAccessibleSurveyIds("user-1")).toEqual(["s1"]);
   });
 
   it("erişilemeyen anket istenirse boş döner (yetki genişlemez)", async () => {
-    findUniqueUser.mockResolvedValue({ role: "USER" });
+    // Sektörü olmayan varsayılan kullanıcı: hiçbir kapsam kuralı uygulanmaz.
+  findUniqueUser.mockResolvedValue({ role: "USER", sectorId: null, subSectorId: null });
+  findManyScopeRule.mockResolvedValue([]);
+  findManyQuestion.mockResolvedValue([]);
     findManyAssignment.mockResolvedValue([{ surveyId: "s1" }]);
 
     expect(await getAccessibleSurveyIds("user-1", "baskasinin-anketi")).toEqual([]);
@@ -642,7 +657,14 @@ describe("calculateProgressScores", () => {
 
   beforeEach(() => {
     findManyCategory.mockResolvedValue([]);
-    countQuestion.mockResolvedValue(4);
+    // Toplam soru sayısı artık kapsam süzgecinden geçtiği için count yerine
+    // findMany kullanılıyor; kapsam kuralı olmadığında hepsi sayılır.
+    findManyQuestion.mockResolvedValue([
+      { subCategoryId: null, subLevel: null },
+      { subCategoryId: null, subLevel: null },
+      { subCategoryId: null, subLevel: null },
+      { subCategoryId: null, subLevel: null },
+    ]);
     // Kademeli öneri yok — bu blokta baseline davranış sınanır.
     findManyRecommendation.mockResolvedValue([]);
   });

@@ -18,7 +18,7 @@ const baseNavItems = [
   { href: "/admin/documents", label: "Yüklenen Dosyalar", icon: Files, section: "Anket Yönetimi", roles: ["ADMIN"] },
   { href: "/admin/sectors", label: "Sektörler", icon: Factory, section: "Sektör & Benchmark", roles: ["ADMIN"] },
   { href: "/admin/benchmarks", label: "Benchmark Verileri", icon: BarChart3, section: "Sektör & Benchmark", roles: ["ADMIN"] },
-  { href: "/admin/sector-weights", label: "Sektör Ağırlıkları", icon: Scale, section: "Sektör & Benchmark", roles: ["ADMIN"] },
+  { href: "/admin/sector-weights", label: "Sektör Kapsamı", icon: Scale, section: "Sektör & Benchmark", roles: ["ADMIN"] },
   { href: "/admin/ironman-benchmarks", label: "Ironman Benchmark", icon: Activity, section: "Sektör & Benchmark", roles: ["ADMIN"] },
   { href: "/admin/export", label: "Veri Dışa Aktarma", icon: Download, section: "Diğer", roles: ["ADMIN"] },
   { href: "/admin/monitoring", label: "Sistem İzleme", icon: Gauge, section: "Diğer", roles: ["ADMIN"] },

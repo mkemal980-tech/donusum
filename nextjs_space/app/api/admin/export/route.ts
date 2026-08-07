@@ -29,7 +29,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       recommendations,
       benchmarks,
       ironmanBenchmarks,
-      sectorCategoryWeights,
       surveyResponses,
       roadmapItems,
       scoreHistory,
@@ -112,9 +111,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             include: { sector: true, subSector: true }
           })
         : [],
-      tables.includes('all') || tables.includes('sectorCategoryWeights')
-        ? prisma.sectorCategoryWeight.findMany()
-        : [],
       tables.includes('all') || tables.includes('surveyResponses')
         ? prisma.surveyResponse.findMany({
             include: { question: true, documents: true }
@@ -155,7 +151,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         recommendations: recommendations as ExportData['data']['recommendations'],
         benchmarks: benchmarks as ExportData['data']['benchmarks'],
         ironmanBenchmarks: ironmanBenchmarks as ExportData['data']['ironmanBenchmarks'],
-        sectorCategoryWeights: sectorCategoryWeights as ExportData['data']['sectorCategoryWeights'],
         surveyResponses: surveyResponses as ExportData['data']['surveyResponses'],
         roadmapItems: roadmapItems as ExportData['data']['roadmapItems'],
         scoreHistory: scoreHistory as ExportData['data']['scoreHistory']

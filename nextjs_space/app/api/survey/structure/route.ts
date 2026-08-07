@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
+import { getScopeResolver } from "@/lib/scoring";
 
 export async function GET(request: NextRequest) {
   // Daha önce tamamen kimlik doğrulamasız erişilebilen anket yapısı uç noktası korundu.
@@ -53,7 +54,27 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    return NextResponse.json(categories ?? []);
+    /**
+     * Sektöre göre kapsam dışı bırakılan bölümler kullanıcıya hiç
+     * gösterilmez — gri bir bölüm göstermek yalnızca gürültü olurdu.
+     * Kural yoksa hiçbir şey elenmez.
+     */
+    const scopeOf = await getScopeResolver(auth.userId, surveyId ?? undefined);
+
+    const scoped = (categories ?? []).map((category) => ({
+      ...category,
+      subCategories: category.subCategories.filter((subCategory) =>
+        scopeOf(subCategory.id).applicable
+      ),
+    }));
+
+    // Bütün bölümleri elenmiş kategori kullanıcıya boş görünür; onu da çıkar.
+    // (Doğrudan kategoriye bağlı soruları varsa kalır.)
+    const visible = scoped.filter(
+      (category) => category.subCategories.length > 0 || (category.questions?.length ?? 0) > 0
+    );
+
+    return NextResponse.json(visible);
   } catch (error) {
     console.error("Error fetching survey structure:", error);
     return NextResponse.json(

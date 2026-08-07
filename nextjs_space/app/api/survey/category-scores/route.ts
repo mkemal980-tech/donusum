@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
-import { calculateUserScore, maxScoreForQuestion } from "@/lib/scoring";
+import { calculateUserScore, getScopeResolver, maxScoreForQuestion } from "@/lib/scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -70,17 +70,8 @@ export async function GET(request: NextRequest) {
     // Determine surveyId from categories if not provided
     const effectiveSurveyId = surveyId || (categories.length > 0 ? categories[0].surveyId : null);
 
-    // Get sector category weights if user has a sector and surveyId is available
-    let sectorWeights = new Map<string, number>();
-    if (user?.sectorId && effectiveSurveyId) {
-      const weights = await prisma.sectorCategoryWeight.findMany({
-        where: { 
-          sectorId: user.sectorId,
-          surveyId: effectiveSurveyId
-        }
-      });
-      weights.forEach(w => sectorWeights.set(w.categoryId, w.weight));
-    }
+    // Sektöre göre bölüm kapsamı/ağırlığı (tek doğru kaynak: lib/scoring).
+    const scopeOf = await getScopeResolver(userId, effectiveSurveyId ?? undefined);
 
     const scoreData = await calculateUserScore(userId, effectiveSurveyId ?? undefined);
 
@@ -108,8 +99,6 @@ export async function GET(request: NextRequest) {
       responseMap.set(r.questionId, { score: r.score, weight: r.question.weight });
     }
 
-    // Calculate default equal weight if no sector weights defined
-    const defaultWeight = categories.length > 0 ? 1 / categories.length : 0;
 
     // Calculate scores for each level
     const categoryScores = categories.map(category => {
@@ -224,10 +213,13 @@ export async function GET(request: NextRequest) {
       // Yeni formül: Puan = (Yüzde / 100) × 4 + 1
       const catScore = percentageToScore(catPercentage);
 
-      // Get category weight (sector-specific or default equal weight)
-      const categoryWeight = sectorWeights.size > 0 
-        ? (sectorWeights.get(category.id) ?? 0)
-        : defaultWeight;
+      // Kategorinin göreli ağırlığı artık bölüm kurallarından türetilir:
+      // kapsamdaki bölümlerin ağırlık toplamı. Ayrı bir kategori ağırlığı
+      // girişi yok — tek yerde yönetilen tek matris var.
+      const categoryWeight = category.subCategories.reduce((sum, subCat) => {
+        const scope = scopeOf(subCat.id);
+        return sum + (scope.applicable ? scope.weight : 0);
+      }, 0);
 
       const normalizedCategory = scoreData.categoryScores[category.id];
       return {

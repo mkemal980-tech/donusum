@@ -78,6 +78,7 @@ model Sector {
   ironmanBenchmarks IronmanBenchmark[]
   subSectors        SubSector[]
   users             User[]
+  scopeRules        SectorScopeRule[]
 }
 
 model SubSector {
@@ -90,6 +91,7 @@ model SubSector {
   ironmanBenchmarks IronmanBenchmark[]
   sector            Sector             @relation(fields: [sectorId], references: [id], onDelete: Cascade)
   users             User[]
+  scopeRules        SectorScopeRule[]
 
   @@unique([sectorId, name])
 }
@@ -112,17 +114,32 @@ model Benchmark {
   @@unique([surveyId, sectorId, subSectorId, level, targetId])
 }
 
-model SectorCategoryWeight {
-  id         String   @id @default(cuid())
-  sectorId   String
-  categoryId String
-  weight     Float    @default(1.0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  surveyId   String
-  survey     Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+/// Sektör × bölüm kapsam ve ağırlık kuralı.
+///
+/// Kayıt yoksa varsayılan geçerlidir: bölüm kapsamdadır ve ağırlığı 1'dir.
+/// Bu bilinçli — yeni eklenen bir bölüm hiçbir sektörde kaybolmasın diye.
+///
+/// subSectorId null ise kural sektörün tamamı için geçerlidir; dolu ise
+/// yalnızca o alt sektör için geçerli olup sektör genelini ezer.
+model SectorScopeRule {
+  id            String      @id @default(cuid())
+  sectorId      String
+  subSectorId   String?
+  surveyId      String
+  subCategoryId String
+  /// false ise bölüm o sektöre hiç sorulmaz ve puana girmez.
+  applicable    Boolean     @default(true)
+  /// Kapsamdaki bölümün göreli ağırlığı (0.5 az, 1 orta, 2 çok önemli).
+  weight        Float       @default(1)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  sector        Sector      @relation(fields: [sectorId], references: [id], onDelete: Cascade)
+  subSector     SubSector?  @relation(fields: [subSectorId], references: [id], onDelete: Cascade)
+  survey        Survey      @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  subCategory   SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
 
-  @@unique([sectorId, surveyId, categoryId])
+  @@unique([sectorId, subSectorId, surveyId, subCategoryId])
+  @@index([surveyId, sectorId])
 }
 
 model Survey {
@@ -136,7 +153,7 @@ model Survey {
   archivedAt            DateTime?              // Soft-delete: doluysa arşivlenmiş sayılır
   benchmarks            Benchmark[]
   categories            Category[]
-  sectorCategoryWeights SectorCategoryWeight[]
+  sectorScopeRules      SectorScopeRule[]
   userAssignments       UserSurveyAssignment[]
   aiRecommendationCache AIRecommendationCache[]
 }
@@ -183,6 +200,7 @@ model SubCategory {
   hasSubLevels    Boolean          @default(true)
   questions       Question[]       @relation("SubCategoryQuestions")
   recommendations Recommendation[]
+  scopeRules      SectorScopeRule[]
   category        Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   subLevels       SubLevel[]
 }

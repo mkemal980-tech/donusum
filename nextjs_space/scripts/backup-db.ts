@@ -29,7 +29,6 @@ async function backupDatabase() {
     backup.subSectors = await prisma.subSector.findMany();
     backup.benchmarks = await prisma.benchmark.findMany();
     backup.ironmanBenchmarks = await prisma.ironmanBenchmark.findMany();
-    backup.sectorCategoryWeights = await prisma.sectorCategoryWeight.findMany();
     
     // Kullanıcı verilerini de yedekle (hassas)
     backup.users = await prisma.user.findMany({

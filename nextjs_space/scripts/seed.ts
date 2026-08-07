@@ -50,7 +50,7 @@ async function main() {
   await prisma.subCategory.deleteMany();
   await prisma.category.deleteMany();
   await prisma.benchmark.deleteMany();
-  await prisma.sectorCategoryWeight.deleteMany();
+  await prisma.sectorScopeRule.deleteMany();
   await prisma.userSurveyAssignment.deleteMany();
   await prisma.survey.deleteMany();
   await prisma.user.deleteMany();

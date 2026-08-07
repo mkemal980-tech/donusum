@@ -1,5 +1,10 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
+import {
+  type ResolvedScope,
+  type ScopeRule,
+  buildScopeResolver,
+} from "./sector-scope";
 
 /** Transaction içinde de çalışabilmek için: prisma ya da tx istemcisi. */
 export type DbClient = Prisma.TransactionClient | typeof prisma;
@@ -250,6 +255,46 @@ export async function buildRecommendationSurveyWhere(
   };
 }
 
+/**
+ * Kullanıcının sektörüne göre bölüm kapsam/ağırlık çözücüsü.
+ *
+ * Kuralı olmayan bölüm varsayılan olarak kapsamdadır ve ağırlığı 1'dir; bu
+ * yüzden hiç kural tanımlanmamış bir kurulumda puanlar birebir aynı kalır.
+ * Kapsam dışı bölümlerin soruları hem alınan puana hem de tavana hiç
+ * girmez — sorulmayan soru kullanıcıyı cezalandırmamalı.
+ */
+export async function getScopeResolver(
+  userId: string,
+  surveyId: string | undefined,
+  db: DbClient = prisma
+): Promise<(subCategoryId: string | null | undefined) => ResolvedScope> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { sectorId: true, subSectorId: true },
+  });
+
+  if (!user?.sectorId) {
+    // Sektörü olmayan kullanıcıya her şey sorulur.
+    return buildScopeResolver([], { sectorId: null, subSectorId: null });
+  }
+
+  const rules = await db.sectorScopeRule.findMany({
+    where: {
+      sectorId: user.sectorId,
+      ...(surveyId ? { surveyId } : {}),
+    },
+    select: {
+      sectorId: true,
+      subSectorId: true,
+      subCategoryId: true,
+      applicable: true,
+      weight: true,
+    },
+  });
+
+  return buildScopeResolver(rules as ScopeRule[], user);
+}
+
 export async function calculateUserScore(userId: string, surveyId?: string) {
   // Önce tüm kategorileri getir (ankete göre filtrelenebilir)
   const allCategories = await prisma.category.findMany({
@@ -269,6 +314,9 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
     },
     orderBy: { order: 'asc' }
   });
+
+  // Sektöre göre kapsam/ağırlık — kural yoksa her şey kapsamda, ağırlık 1.
+  const scopeOf = await getScopeResolver(userId, surveyId);
 
   const responses = await prisma.surveyResponse.findMany({
     where: {
@@ -321,11 +369,15 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
     for (const subCat of category.subCategories) {
       let subCatMaxScore = 0;
 
+      // Kapsam dışı bölüm hiç sayılmaz — ne alınan puana ne tavana girer.
+      const scope = scopeOf(subCat.id);
+      if (!scope.applicable) continue;
+
       // Alt seviyeler varsa
       if (subCat.subLevels && subCat.subLevels.length > 0) {
         for (const subLevel of subCat.subLevels) {
           const levelMaxScore = subLevel.questions.reduce(
-            (sum, q) => sum + maxScoreForQuestion(q) * q.weight,
+            (sum, q) => sum + maxScoreForQuestion(q) * q.weight * scope.weight,
             0
           );
           subCatMaxScore += levelMaxScore;
@@ -341,7 +393,7 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
         // Doğrudan sorular
         const questions = (subCat as any).questions || [];
         subCatMaxScore = questions.reduce(
-          (sum: number, q: any) => sum + maxScoreForQuestion(q) * q.weight,
+          (sum: number, q: any) => sum + maxScoreForQuestion(q) * q.weight * scope.weight,
           0
         );
       }
@@ -367,7 +419,14 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
 
   for (const response of responses ?? []) {
     const question = response?.question;
-    const weight = question?.weight ?? 1;
+    // Sorunun bağlı olduğu bölümün kapsamı; doğrudan kategoriye bağlı
+    // sorularda bölüm yoktur ve kural uygulanmaz.
+    const questionSubCategoryId =
+      question?.subLevel?.subCategory?.id ?? question?.subCategory?.id ?? null;
+    const scope = scopeOf(questionSubCategoryId);
+    if (!scope.applicable) continue;
+
+    const weight = (question?.weight ?? 1) * scope.weight;
     const score = (response?.score ?? 0) * weight;
     const maxScore = maxScoreForQuestion(question ?? {}) * weight;
 
@@ -875,11 +934,16 @@ export async function calculateProgressScores(
           // Tavan puan sorunun kendi şıklarından okunur.
           type: true,
           options: true,
-          conditionalOptions: true
+          conditionalOptions: true,
+          // Sektör kapsamı bölüm düzeyinde tanımlı.
+          subCategoryId: true,
+          subLevel: { select: { subCategoryId: true } }
         }
       }
     }
   });
+
+  const scopeOf = await getScopeResolver(userId, surveyId, db);
 
   // Bonus yalnızca kullanıcının erişebildiği (ve istenmişse seçili) anketin
   // önerilerinden gelir.
@@ -930,9 +994,17 @@ export async function calculateProgressScores(
   // altında olan sorular ekseni haksız yere aşağı çeker.
   let velocitySum = 0, velocityWeight = 0;
   let enduranceSum = 0, enduranceWeight = 0;
+  // Kapsam dışı sorular "cevaplandı" sayılmaz; ilerleme yüzdesi şişmesin.
+  let answeredInScope = 0;
 
   for (const response of responses) {
-    const weight = response.question.weight || 1;
+    const scope = scopeOf(
+      response.question.subLevel?.subCategoryId ?? response.question.subCategoryId
+    );
+    if (!scope.applicable) continue;
+
+    answeredInScope++;
+    const weight = (response.question.weight || 1) * scope.weight;
     const max = maxScoreForQuestion(response.question);
     const effective = effectiveQuestionScore(
       response.score,
@@ -1001,7 +1073,15 @@ export async function calculateProgressScores(
 
   const overallPercentage = Math.min(100, Math.max(0, ((overallScore - 1) / 4) * 100));
 
-  const totalQuestions = await db.question.count({ where: questionWhere });
+  // Toplam soru sayısı kapsam dışı bölümleri içermez — kullanıcıya
+  // sorulmayan soru "tamamlanacak iş" gibi görünmemeli.
+  const scopedQuestions = await db.question.findMany({
+    where: questionWhere,
+    select: { subCategoryId: true, subLevel: { select: { subCategoryId: true } } }
+  });
+  const totalQuestions = scopedQuestions.filter(
+    (q) => scopeOf(q.subLevel?.subCategoryId ?? q.subCategoryId).applicable
+  ).length;
 
   return {
     overallScore: Math.round(overallScore * 10) / 10,
@@ -1009,7 +1089,7 @@ export async function calculateProgressScores(
     velocityScore: Math.round(velocityScore * 10) / 10,
     enduranceScore: Math.round(enduranceScore * 10) / 10,
     quadrant: classifyQuadrant(velocityScore, enduranceScore),
-    completedQuestions: responses.length,
+    completedQuestions: answeredInScope,
     totalQuestions,
     completedRecommendations: completedRecs.length,
     velocityWeight,

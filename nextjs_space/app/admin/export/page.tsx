@@ -39,7 +39,6 @@ export default function ExportPage(): JSX.Element {
     { id: 'surveyResponses', name: 'Anket Yanıtları', description: 'Kullanıcı yanıtları', selected: true },
     { id: 'roadmapItems', name: 'Yol Haritası', description: 'Roadmap öğeleri', selected: true },
     { id: 'scoreHistory', name: 'Puan Geçmişi', description: 'Puan değişimleri', selected: true },
-    { id: 'sectorCategoryWeights', name: 'Sektör Ağırlıkları', description: 'Kategori ağırlıkları', selected: true },
     { id: 'documents', name: 'Belgeler', description: 'Yüklenen dosyalar (metadata)', selected: true },
     { id: 'units', name: 'Birimler', description: 'Organizasyon birimleri', selected: true },
     { id: 'userSurveyAssignments', name: 'Anket Atamaları', description: 'Kullanıcı-anket ilişkileri', selected: true }
