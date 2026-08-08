@@ -117,6 +117,14 @@ export default function SurveyClient() {
     submittedAt: string | null;
   } | null>(null);
   const [saving, setSaving] = useState(false);
+  /**
+   * Cevaplar her tıklamada kaydediliyor ama bunu yalnızca bir saniyelik
+   * bildirim söylüyordu. Kullanıcı "kaydet" düğmesi aramaya devam ediyordu;
+   * durumu ekranda kalıcı olarak göstermek o soruyu ortadan kaldırıyor.
+   */
+  const [savedOnce, setSavedOnce] = useState(false);
+  /** Kaldığı yerden devam ettirildiyse hangi bölümden — bir kez söylenir. */
+  const [resumedSection, setResumedSection] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, { fileName: string; cloudStoragePath: string }>>({});
   const [uploading, setUploading] = useState<string | null>(null);
   const router = useRouter();
@@ -204,8 +212,21 @@ export default function SurveyClient() {
         // Kaldığı yerden devam: eksik sorusu olan ilk bölüme dön.
         // Uzun anketler tek oturumda bitmiyor; her dönüşte başa sarmak
         // en can sıkıcı davranış.
-        setCurrentStepIndex(findResumeStepIndex(buildSteps(structure), responseMap));
+        const resumeSteps = buildSteps(structure);
+        const resumeIndex = findResumeStepIndex(resumeSteps, responseMap);
+        setCurrentStepIndex(resumeIndex);
         setPendingStepIndex(null);
+
+        // Sessizce ortadan başlatmak "neredeyim" hissi veriyor; atlandıysa söyle.
+        const resumeStep = resumeSteps[resumeIndex];
+        setResumedSection(
+          resumeIndex > 0 && resumeStep
+            ? resumeStep.subLevelName
+              ? `${resumeStep.subCategoryName} — ${resumeStep.subLevelName}`
+              : resumeStep.subCategoryName
+            : null
+        );
+        setSavedOnce(Object.keys(responseMap).length > 0);
       } catch (error) {
         console.error("Error fetching survey data:", error);
       } finally {
@@ -291,6 +312,7 @@ export default function SurveyClient() {
         return;
       }
 
+      setSavedOnce(true);
       toast.success("Cevap kaydedildi", {
         duration: 1500,
       });
@@ -658,12 +680,17 @@ export default function SurveyClient() {
               )}
             </div>
             <div className="flex items-center gap-2 text-sm md:justify-end md:text-right shrink-0">
-              {saving && (
+              {saving ? (
                 <span className="text-[#a78bfa] flex items-center gap-1">
                   <div className="w-3 h-3 border-2 border-[#a78bfa] border-t-transparent rounded-full animate-spin" />
                   Kaydediliyor...
                 </span>
-              )}
+              ) : savedOnce ? (
+                <span className="text-[var(--accent)] flex items-center gap-1" title="Her cevap anında kaydedilir; ayrıca kaydetmeniz gerekmez.">
+                  <CheckCircle2 size={14} />
+                  Otomatik kaydedildi
+                </span>
+              ) : null}
               <span className="text-[var(--text-dim)]">
                 {totalQuestions} sorudan {answeredQuestions} tanesi cevaplandı
                 {estimatedMinutes > 0 && answeredQuestions === 0 && (
@@ -729,6 +756,26 @@ export default function SurveyClient() {
                     almasını isteyin.
                   </p>
                 </div>
+              </div>
+            )}
+
+            {/* Ortadan başlamak "neredeyim" hissi veriyor; nedenini söyle. */}
+            {resumedSection && !sectionInfo?.locked && (
+              <div className="mb-4 p-3 rounded-lg bg-[var(--bg-card-2)] border border-[var(--border-soft)] flex items-start justify-between gap-3">
+                <p className="text-sm text-[var(--text-muted)] flex items-start gap-2">
+                  <Clock size={16} className="text-[var(--accent)] shrink-0 mt-0.5" />
+                  <span>
+                    Kaldığınız yerden devam ediyorsunuz:{" "}
+                    <strong className="text-[var(--text-main)]">{resumedSection}</strong>. Önceki
+                    cevaplarınız kayıtlı.
+                  </span>
+                </p>
+                <button
+                  onClick={() => setResumedSection(null)}
+                  className="text-xs text-[var(--text-dim)] hover:text-[var(--text-main)] shrink-0"
+                >
+                  Tamam
+                </button>
               </div>
             )}
 
@@ -916,12 +963,29 @@ export default function SurveyClient() {
               </button>
 
               {/* Kategori noktaları üstteki haritayla mükerrer olduğu için
-                  burada yalnızca kalan bölüm sayısı gösterilir. */}
-              <span className="text-sm text-[var(--text-dim)] tabular-nums">
-                {canGoNext
-                  ? `${steps.length - currentStepIndex - 1} bölüm kaldı`
-                  : "Son bölüm"}
-              </span>
+                  burada yalnızca kalan bölüm sayısı ve çıkış yolu gösterilir. */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-sm text-[var(--text-dim)] tabular-nums">
+                  {canGoNext
+                    ? `${steps.length - currentStepIndex - 1} bölüm kaldı`
+                    : "Son bölüm"}
+                </span>
+                {/* Teknik olarak gereksiz — cevaplar zaten kayıtlı — ama
+                    kullanıcı bir çıkış düğmesi arıyor ve bulamayınca anketi
+                    bitirmek zorunda olduğunu sanıyor. */}
+                {!sectionInfo?.locked && (
+                  <button
+                    onClick={() => {
+                      toast.success("Cevaplarınız kayıtlı. Kaldığınız yerden devam edebilirsiniz.");
+                      router.push("/dashboard");
+                    }}
+                    disabled={saving}
+                    className="text-xs text-[var(--text-dim)] hover:text-[var(--accent)] underline underline-offset-2 disabled:opacity-50"
+                  >
+                    {saving ? "Kaydediliyor..." : "Kaydet ve çık"}
+                  </button>
+                )}
+              </div>
 
               {canGoNext ? (
                 <button

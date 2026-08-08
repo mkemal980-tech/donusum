@@ -358,3 +358,43 @@ test("panodaki öneri sayısı, kullanıcının gerçekten göreceği sayıdır"
   // Panodaki sayı Öneriler ekranıyla aynı olmalı — asıl kontrol bu.
   expect(kpi.recommendations.total).toBe(shown.length);
 });
+
+test("ara verip dönen kullanıcı kaldığı yerden devam eder", async ({ browser }) => {
+  test.skip(!seeded, "Fikstür kurulamadı (veritabanı yok)");
+  test.setTimeout(120_000);
+
+  /**
+   * Cevaplar her tıklamada kaydediliyor ama kullanıcı bunu bilmiyordu ve
+   * "kaydet" düğmesi arıyordu. Üç şeyin de ekranda olması gerekiyor:
+   * kayıt göstergesi, çıkış yolu ve dönüşte nerede kaldığının söylenmesi.
+   */
+  const coordinator = await login(browser, COORDINATOR);
+
+  const assigned = await (await coordinator.request.get("/api/survey/assigned")).json();
+  const surveyId = assigned.find((survey: any) => survey.name === SURVEY).id;
+
+  // İlk bölümü tamamla: kaldığı yer bandı ancak bir adım bitince anlamlı.
+  const firstSection = await prisma.subCategory.findFirst({
+    where: { name: SECTION_MINE, category: { survey: { name: SURVEY } } },
+    include: { questions: { where: { archivedAt: null } } },
+  });
+
+  for (const question of firstSection!.questions) {
+    const res = await coordinator.request.post("/api/survey/responses", {
+      data: { questionId: question.id, value: "4" },
+    });
+    expect(res.status()).toBe(200);
+  }
+
+  await coordinator.goto("/survey");
+
+  await expect(coordinator.getByText("Otomatik kaydedildi")).toBeVisible({ timeout: 20_000 });
+  await expect(coordinator.getByRole("button", { name: "Kaydet ve çık" })).toBeVisible();
+  // İlk bölüm dolu olduğu için ikinci bölümden devam etmeli.
+  await expect(
+    coordinator.getByText(new RegExp(`Kaldığınız yerden devam ediyorsunuz:.*${SECTION_OTHER}`))
+  ).toBeVisible({ timeout: 10_000 });
+
+  await coordinator.getByRole("button", { name: "Kaydet ve çık" }).click();
+  await coordinator.waitForURL(/\/dashboard/, { timeout: 15_000 });
+});
