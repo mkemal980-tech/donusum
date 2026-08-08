@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
 import { getScopeResolver } from "@/lib/scoring";
+import { getSectionVisibility } from "@/lib/assessment";
 
 export async function GET(request: NextRequest) {
   // Daha önce tamamen kimlik doğrulamasız erişilebilen anket yapısı uç noktası korundu.
@@ -61,10 +62,23 @@ export async function GET(request: NextRequest) {
      */
     const scopeOf = await getScopeResolver(auth.userId, surveyId ?? undefined);
 
+    /**
+     * Görev dağılımı: katkıcı yalnızca kendine atanan bölümleri görür.
+     * Dağıtım anket bazlı olduğu için surveyId yoksa (tüm yapı isteniyorsa)
+     * uygulanmaz; o çağrıyı yalnızca yönetim ekranları yapıyor.
+     */
+    const visibility = surveyId ? await getSectionVisibility(auth.userId, surveyId) : null;
+
     const scoped = (categories ?? []).map((category) => ({
       ...category,
-      subCategories: category.subCategories.filter((subCategory) =>
-        scopeOf(subCategory.id).applicable
+      // Doğrudan kategoriye bağlı sorular atanamaz; dağıtım başlayınca
+      // koordinatörde kalırlar (bkz. lib/section-assignment).
+      questions:
+        visibility && !visibility.canSeeDirect ? [] : category.questions,
+      subCategories: category.subCategories.filter(
+        (subCategory) =>
+          scopeOf(subCategory.id).applicable &&
+          (!visibility || visibility.canSee(subCategory.id))
       ),
     }));
 

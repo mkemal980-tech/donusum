@@ -346,6 +346,42 @@ export function successResponse<T>(
 }
 
 /**
+ * Kullanıcının bir ankete erişimi var mı?
+ *
+ * Erişim atamayla verilir; anket ya da atama pasifse, süresi dolmuşsa erişim
+ * kapanır. Yönetici her ankete erişir. Erişim varsa null, yoksa doğrudan
+ * dönülecek hata yanıtı verir.
+ */
+export async function validateSurveyAccess(
+  userId: string,
+  role: string,
+  surveyId: string
+): Promise<NextResponse | null> {
+  if (role === 'ADMIN') return null;
+
+  const assignment = await prisma.userSurveyAssignment.findUnique({
+    where: { userId_surveyId: { userId, surveyId } },
+    include: { survey: { select: { isActive: true } } }
+  });
+
+  if (!assignment || !assignment.isActive || !assignment.survey.isActive) {
+    return NextResponse.json(
+      { error: 'Bu ankete erişim yetkiniz yok.' },
+      { status: 403 }
+    );
+  }
+
+  if (assignment.hasDeadline && assignment.deadline && assignment.deadline < new Date()) {
+    return NextResponse.json(
+      { error: 'Bu anketin süresi dolmuş.' },
+      { status: 403 }
+    );
+  }
+
+  return null;
+}
+
+/**
  * Logging helper (sanitizes sensitive data)
  */
 export function logError(context: string, error: unknown, additionalInfo?: Record<string, any>) {

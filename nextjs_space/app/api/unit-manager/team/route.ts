@@ -2,38 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/db";
+// Yönetilen birim hiyerarşisi görev dağılımıyla ortak; tek yerde durur.
+import { getManagedUnitIds } from "@/lib/assessment";
 
 export const dynamic = "force-dynamic";
-
-// Bir kullanıcının admin olduğu tüm birimleri getir (miras dahil)
-async function getAdminUnits(userId: string): Promise<string[]> {
-  // Doğrudan admin olduğu birimler
-  const directAdminUnits = await prisma.unitAdmin.findMany({
-    where: { userId },
-    select: { unitId: true },
-  });
-
-  const unitIds = new Set<string>(directAdminUnits.map(a => a.unitId));
-
-  // Alt birimleri recursive olarak bul
-  async function addSubUnits(parentId: string) {
-    const subUnits = await prisma.unit.findMany({
-      where: { parentId },
-      select: { id: true },
-    });
-
-    for (const sub of subUnits) {
-      unitIds.add(sub.id);
-      await addSubUnits(sub.id);
-    }
-  }
-
-  for (const unitId of directAdminUnits.map(a => a.unitId)) {
-    await addSubUnits(unitId);
-  }
-
-  return Array.from(unitIds);
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,7 +22,7 @@ export async function GET(request: NextRequest) {
     const userRole = (session.user as any).role;
 
     // Kullanıcının yönettiği birimlerin ID'lerini bul
-    const managedUnitIds = await getAdminUnits(userId);
+    const managedUnitIds = await getManagedUnitIds(userId);
 
     if (managedUnitIds.length === 0 && userRole !== "ADMIN") {
       return NextResponse.json(

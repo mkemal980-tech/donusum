@@ -67,6 +67,8 @@ model User {
   subSector                 SubSector?                     @relation(fields: [subSectorId], references: [id])
   unit                      Unit?                          @relation("UnitUsers", fields: [unitId], references: [id])
   surveyAssignments         UserSurveyAssignment[]
+  assignedSections          SectionAssignment[]            @relation("SectionAssignee")
+  distributedSections       SectionAssignment[]            @relation("SectionAssigner")
 }
 
 model Sector {
@@ -203,6 +205,7 @@ model SubCategory {
   questions       Question[]       @relation("SubCategoryQuestions")
   recommendations Recommendation[]
   scopeRules      SectorScopeRule[]
+  assignments     SectionAssignment[]
   category        Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   subLevels       SubLevel[]
 }
@@ -284,9 +287,37 @@ model Assessment {
   responses    SurveyResponse[]
   roadmapItems RoadmapItem[]
   scoreHistory ScoreHistory[]
+  sectionAssignments SectionAssignment[]
 
   @@unique([surveyId, unitId])
   @@unique([surveyId, ownerUserId])
+}
+
+/// Bir bölümün (alt kategori) sorumlusu.
+///
+/// Değerlendirmeyi kuruluş doldurunca sıradaki soru "kim neyi dolduracak"
+/// oluyor. Dağıtım bölüm düzeyindedir: kategori çok kaba, soru çok ince.
+///
+/// @@unique bir bölümün tek kişiye ait olmasını veritabanı düzeyinde garanti
+/// eder — iki sorumlu, aynı soruya iki cevap ve bir çatışma çözümü başlığı
+/// demekti. Kayıt yokluğu "bu bölüm henüz dağıtılmadı" anlamına gelir ve
+/// bölüm koordinatörde kalır.
+model SectionAssignment {
+  id            String      @id @default(cuid())
+  assessmentId  String
+  subCategoryId String
+  assigneeId    String
+  /// Denetim izi: görevi dağıtan koordinatör.
+  assignedById  String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  assessment    Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  subCategory   SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+  assignee      User        @relation("SectionAssignee", fields: [assigneeId], references: [id], onDelete: Cascade)
+  assignedBy    User?       @relation("SectionAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@unique([assessmentId, subCategoryId])
+  @@index([assessmentId, assigneeId])
 }
 
 enum AssessmentStatus {

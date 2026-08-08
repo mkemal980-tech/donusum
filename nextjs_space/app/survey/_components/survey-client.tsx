@@ -102,6 +102,16 @@ export default function SurveyClient() {
    */
   const [assignmentError, setAssignmentError] = useState(false);
   const [loadingStructure, setLoadingStructure] = useState(false);
+  /**
+   * Görev dağılımı durumu. Anket yapısı zaten süzülmüş geliyor; bu bilgi
+   * yalnızca ekranın doğru şeyi söylemesi için: bölüm atanmamış bir katkıcıya
+   * "anket hazırlanmamış" demek yanlış olurdu.
+   */
+  const [sectionInfo, setSectionInfo] = useState<{
+    distributed: boolean;
+    isCoordinator: boolean;
+    mySectionCount: number;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, { fileName: string; cloudStoragePath: string }>>({});
   const [uploading, setUploading] = useState<string | null>(null);
@@ -140,9 +150,10 @@ export default function SurveyClient() {
       setLoadingStructure(true);
       try {
         const surveyParam = `?surveyId=${selectedSurveyId}`;
-        const [structureRes, responsesRes] = await Promise.all([
+        const [structureRes, responsesRes, sectionsRes] = await Promise.all([
           fetch(`/api/survey/structure${surveyParam}`),
-          fetch(`/api/survey/responses${surveyParam}`)
+          fetch(`/api/survey/responses${surveyParam}`),
+          fetch(`/api/assessment/sections${surveyParam}`)
         ]);
 
         let structure: Category[] = [];
@@ -170,6 +181,18 @@ export default function SurveyClient() {
           });
           setResponses(responseMap);
           setUploadedFiles(fileMap);
+        }
+
+        if (sectionsRes.ok) {
+          const data = await sectionsRes.json();
+          setSectionInfo({
+            distributed: Boolean(data?.distributed),
+            isCoordinator: Boolean(data?.isCoordinator),
+            mySectionCount: (data?.mySectionIds ?? []).length,
+          });
+        } else {
+          // Dağıtım bilgisi alınamadıysa ekran susar; anket yine çalışır.
+          setSectionInfo(null);
         }
 
         // Kaldığı yerden devam: eksik sorusu olan ilk bölüme dön.
@@ -657,11 +680,32 @@ export default function SurveyClient() {
         ) : categories.length === 0 ? (
           <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-8 text-center">
             <FileQuestion size={64} className="mx-auto text-[var(--ui-passive)] mb-4" />
-            <h2 className="text-xl font-semibold text-[var(--text-muted)] mb-2">Anket Henüz Hazırlanmamış</h2>
-            <p className="text-[var(--text-dim)]">Bu ankete henüz soru eklenmemiş. Lütfen daha sonra tekrar kontrol edin.</p>
+            {/* Ekipte görev dağıtılmış ama bu kişiye bölüm düşmemişse anketin
+                boş görünmesi hazırlıksızlıktan değil; doğrusunu söyle. */}
+            {sectionInfo?.distributed && !sectionInfo.isCoordinator ? (
+              <>
+                <h2 className="text-xl font-semibold text-[var(--text-muted)] mb-2">Size Bölüm Atanmadı</h2>
+                <p className="text-[var(--text-dim)]">
+                  Bu ankette bölümler ekip üyelerine dağıtıldı ve size henüz bir bölüm
+                  atanmadı. Koordinatörünüzle görüşün.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-xl font-semibold text-[var(--text-muted)] mb-2">Anket Henüz Hazırlanmamış</h2>
+                <p className="text-[var(--text-dim)]">Bu ankete henüz soru eklenmemiş. Lütfen daha sonra tekrar kontrol edin.</p>
+              </>
+            )}
           </div>
         ) : (
           <>
+            {/* Katkıcı yalnızca kendi bölümlerini görüyor; ilerleme çubuğunun
+                neden anketin tamamını göstermediği açık olsun. */}
+            {sectionInfo?.distributed && !sectionInfo.isCoordinator && (
+              <p className="mb-4 text-sm text-[var(--text-dim)]">
+                Size atanan {sectionInfo.mySectionCount} bölüm gösteriliyor.
+              </p>
+            )}
             {/* Kategori haritası — "daha ne kadar var" sorusunu soru sayısıyla
                 değil kategori sayısıyla cevaplar; tıklanınca o kategorinin ilk
                 bölümüne atlar. */}

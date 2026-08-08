@@ -3,7 +3,7 @@
 Bu dosya, yeni bir oturuma başlarken bağlamı hızlıca kurmak için tutulur.
 Bir adım bitince buradaki durumu güncelleyin.
 
-**Son güncelleme:** 2026-08-08
+**Son güncelleme:** 2026-08-08 (2. adım)
 
 ---
 
@@ -18,8 +18,8 @@ Dört adımlı plan:
 | # | Adım | Durum |
 |---|---|---|
 | 1 | `Assessment` nesnesi — cevap/yol haritası/puan geçmişi sahipliği kişiden kuruluşa | ✅ **bitti** (`1574813`) |
-| 2 | Bölüm bazlı görev dağılımı + ankette filtreleme | ⬜ sıradaki |
-| 3 | Koordinatör panosu (kim ne kadar doldurdu) | ⬜ |
+| 2 | Bölüm bazlı görev dağılımı + ankette filtreleme | ✅ **bitti** |
+| 3 | Koordinatör panosu (kim ne kadar doldurdu) | ⬜ sıradaki |
 | 4 | Gönderim / kilit adımı (puan taslak → kesin) | ⬜ |
 
 ### 1. adımda ne yapıldı
@@ -41,15 +41,54 @@ Dört adımlı plan:
 2. **Tarayıcıda uçtan uca denenmedi.** Veri katmanı script ile doğrulandı;
    gerçek akış (anket doldur → puan gör → öneri al) ekrandan geçirilmedi.
 
-### 2. adım için kararlaştırılanlar
+### 2. adımda ne yapıldı
 
-- Görev dağılımı **bölüm (alt kategori) düzeyinde** olacak — kategori çok
-  kaba, soru çok ince.
-- **Bir bölüm tek kişiye** atanır; iki kişi aynı bölümü cevaplayamaz
-  (çatışma çözümü diye bir başlık açılmasın diye).
-- Roller: *Koordinatör* (`UnitAdmin`) görev dağıtır ve gönderir;
-  *Katkıcı* yalnızca kendine atanan bölümleri görür.
-- Kuruluşu olmayan kullanıcıda tüm bölümler ona atanmış sayılır.
+Kararlaştırıldığı gibi: dağıtım bölüm (alt kategori) düzeyinde, bir bölüm tek
+kişiye, koordinatör `UnitAdmin`, kuruluşu olmayan kullanıcıda her şey ona ait.
+
+- **`SectionAssignment`** = (değerlendirme, bölüm, sorumlu). Tekillik
+  `@@unique([assessmentId, subCategoryId])` ile veritabanında zorlanıyor —
+  uygulama katmanındaki bir kontrol eşzamanlı iki isteğe yetmezdi.
+  (migration `000006_section_assignments`)
+- **`lib/section-assignment.ts`** görünürlük kuralının tek kaynağı (saf modül,
+  testli): dağıtım yoksa herkes her şeyi görür; koordinatör her zaman hepsini
+  görür; katkıcı yalnızca kendi bölümlerini.
+- **`lib/assessment.ts`**: `getAssessmentContext` (koordinatör mü?),
+  `getSectionVisibility`, `getManagedUnitIds`. Sonuncusu `unit-manager/team`
+  içindeki kopya hiyerarşi gezintisinin yerini aldı (artık tek sorgu).
+- **Filtreleme** `/api/survey/structure` içinde, **yaptırım**
+  `/api/survey/responses` POST içinde: kendine atanmayan bölüme cevap yazan
+  istek 403 alır. Ekranda gizlemek tek başına yeterli değildi.
+- **Dağıtım ekranı**: Birim Yöneticisi Paneli → *Görev Dağılımı*
+  (`/unit-manager/assignments`), API `/api/assessment/sections`.
+  Sektör kapsamı dışındaki bölümler listelenmez; ekranda kişi başına yük var.
+- Anket ekranı, bölüm atanmamış katkıcıya "anket hazırlanmamış" yerine
+  "size bölüm atanmadı" der.
+
+Kaçırılmaması gereken iki davranış:
+
+1. **Dağıtım isteğe bağlı.** Hiç atama yoksa anket bugünkü gibi herkese açık.
+   Kural "atama varsa kısıtla" — yoksa hiçbir mevcut kurulum bozulmaz.
+2. **Doğrudan kategoriye bağlı sorular atanamaz** (bir alt kategorileri yok).
+   Dağıtım başlayınca koordinatörde kalırlar; dağıtım ekranında bu satır
+   "Sizde kalır" diye görünür.
+
+### 2. adımdan kalan
+
+- **Tarayıcıda denenmedi.** Veri katmanı script ile doğrulandı (18 kontrol:
+  koordinatör çözümü, katkıcı filtresi, tekillik, atama kaldırma), `npx next
+  build` ve `npx vitest run` temiz. Gerçek akış (dağıt → katkıcı gir → yalnız
+  kendi bölümünü gör) ekrandan geçirilmedi. 1. adımın aynı eksiğiyle birlikte
+  tek seferde denenebilir.
+- **Bildirim yok.** Bölüm atanan kişiye e-posta gitmiyor; koordinatörün
+  haber vermesi gerekiyor.
+
+### 3. adım için not
+
+Koordinatör panosu `/unit-manager/assignments` ekranının yanına değil,
+muhtemelen içine gelmeli: dağıtım tablosu zaten bölüm × sorumlu; üzerine
+"kaç soru doldu" sütunu eklenince pano oluyor. `getSectionAssignments` ve
+`getContributorCandidates` bu iş için hazır.
 
 ---
 

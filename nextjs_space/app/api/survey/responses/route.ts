@@ -2,38 +2,13 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { withAuth } from "@/lib/api-utils";
+import { validateSurveyAccess, withAuth } from "@/lib/api-utils";
 import { buildSurveyQuestionWhere, getAccessibleSurveyIds, scoreConditionalChoice } from "@/lib/scoring";
-import { getAssessmentIds, getOrCreateAssessment } from "@/lib/assessment";
-
-async function validateSurveyAccess(userId: string, role: string, surveyId: string) {
-  if (role === "ADMIN") return null;
-
-  const assignment = await prisma.userSurveyAssignment.findUnique({
-    where: { userId_surveyId: { userId, surveyId } },
-    include: {
-      survey: {
-        select: { isActive: true }
-      }
-    }
-  });
-
-  if (!assignment || !assignment.isActive || !assignment.survey.isActive) {
-    return NextResponse.json(
-      { error: "Bu ankete erişim yetkiniz yok." },
-      { status: 403 }
-    );
-  }
-
-  if (assignment.hasDeadline && assignment.deadline && assignment.deadline < new Date()) {
-    return NextResponse.json(
-      { error: "Bu anketin süresi dolmuş." },
-      { status: 403 }
-    );
-  }
-
-  return null;
-}
+import {
+  getAssessmentIds,
+  getOrCreateAssessment,
+  getSectionVisibility,
+} from "@/lib/assessment";
 
 function getQuestionSurveyId(question: {
   category?: { surveyId: string | null } | null;
@@ -124,6 +99,7 @@ export async function POST(request: NextRequest) {
         category: { select: { surveyId: true } },
         subCategory: {
           select: {
+            id: true,
             category: { select: { surveyId: true } }
           }
         },
@@ -131,6 +107,7 @@ export async function POST(request: NextRequest) {
           select: {
             subCategory: {
               select: {
+                id: true,
                 category: { select: { surveyId: true } }
               }
             }
@@ -182,6 +159,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Soru bir ankete bağlı değil." },
         { status: 400 }
+      );
+    }
+
+    /**
+     * Görev dağılımı yaptırımı burada; ekranda bölümü gizlemek yalnızca
+     * kolaylık. Kendisine atanmayan bir bölüme cevap yazan istek, dağıtımın
+     * tek sorumlu kuralını sessizce delerdi.
+     */
+    const visibility = await getSectionVisibility(userId, surveyId);
+    const sectionId = question.subCategory?.id ?? question.subLevel?.subCategory?.id ?? null;
+    const allowed = sectionId ? visibility.canSee(sectionId) : visibility.canSeeDirect;
+
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Bu bölüm size atanmadı. Koordinatörünüzle görüşün." },
+        { status: 403 }
       );
     }
 
