@@ -18,12 +18,15 @@
  * fazla ince olduğundan alınmadı.
  *
  * KULLANIM
- *   npm run seed:sectors              # ekler / günceller
- *   npm run seed:sectors -- --dry-run # ne yapılacağını yazar
+ *   npm run seed:sectors                   # ekler / günceller
+ *   npm run seed:sectors -- --dry-run      # ne yapılacağını yazar
+ *   npm run seed:sectors -- --fix-names    # kayıtlı adları resmî adla değiştirir
+ *   npm run seed:sectors -- --prune-naics  # NACE öncesi eski sektörleri siler
  *
- * Upsert kullanır: tekrar çalıştırılabilir, elle eklediğiniz sektörlere
- * dokunmaz ve elle düzelttiğiniz isimleri geri almaz (yalnızca sırayı
- * günceller).
+ * Tekrar çalıştırılabilir. Eşleşme ada göre değil KODA göre yapılır: resmî bir
+ * başlık düzeltildiğinde eski kayıt yerinde kalıp yenisi ikinci kez
+ * eklenmesin diye. Elle düzelttiğiniz isimler korunur; ayrışan başlıklar
+ * çalıştırma sonunda listelenir, --fix-names ile resmî adlar dayatılır.
  */
 
 import { PrismaClient } from "@prisma/client";
@@ -117,11 +120,15 @@ export const NACE_SECTIONS: Section[] = [
     ],
   },
   {
+    // Rev. 2.1'de bölüm 45 (motorlu taşıt ticareti ve onarımı) kaldırıldı:
+    // toptan satışı 46'ya, perakende satışı 47'ye, onarımı 95'e taşındı.
+    // Bu yüzden 46/47 artık motorlu taşıtları KAPSAR — eski "hariç" ifadesi
+    // Rev. 2 kalıntısıydı ve yanlıştı.
     code: "G",
     name: "Toptan ve perakende ticaret",
     divisions: [
-      { code: "46", name: "Toptan ticaret (motorlu taşıtlar hariç)" },
-      { code: "47", name: "Perakende ticaret (motorlu taşıtlar hariç)" },
+      { code: "46", name: "Toptan ticaret" },
+      { code: "47", name: "Perakende ticaret" },
     ],
   },
   {
@@ -234,7 +241,7 @@ export const NACE_SECTIONS: Section[] = [
     name: "Diğer hizmet faaliyetleri",
     divisions: [
       { code: "94", name: "Üye olunan kuruluşların faaliyetleri" },
-      { code: "95", name: "Bilgisayar ve kişisel eşyaların onarımı" },
+      { code: "95", name: "Bilgisayar, kişisel/ev eşyası ve motorlu taşıt onarımı ve bakımı" },
       { code: "96", name: "Diğer kişisel hizmet faaliyetleri" },
     ],
   },
@@ -263,6 +270,8 @@ const EXPECTED_DIVISIONS = 87;
 
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
+  const fixNames = process.argv.includes("--fix-names");
+  const pruneNaics = process.argv.includes("--prune-naics");
   const divisionCount = NACE_SECTIONS.reduce((sum, s) => sum + s.divisions.length, 0);
 
   if (NACE_SECTIONS.length !== EXPECTED_SECTIONS || divisionCount !== EXPECTED_DIVISIONS) {
@@ -284,37 +293,125 @@ async function main() {
 
   let created = 0;
   let updated = 0;
+  /** Kayıtlı ad ile resmî ad ayrışmışsa operatör görsün diye biriktirilir. */
+  const drifted: string[] = [];
 
   for (const [index, section] of NACE_SECTIONS.entries()) {
     const name = `[${section.code}] ${section.name}`;
 
-    const existing = await prisma.sector.findUnique({ where: { name } });
-    const sector = await prisma.sector.upsert({
-      where: { name },
-      // Elle düzeltilmiş isimler korunur; yalnızca sıra ve kod güncellenir.
-      update: { order: index + 1, naicsCode: section.code },
-      create: { name, order: index + 1, naicsCode: section.code },
-    });
-    existing ? updated++ : created++;
+    // Eşleşme ada göre değil koda göre: resmî bir başlık düzeltildiğinde
+    // eskisi yerinde kalıp yenisi ikinci kayıt olarak eklenmemeli.
+    const existing = await prisma.sector.findFirst({ where: { naicsCode: section.code } });
+
+    if (existing) {
+      if (existing.name !== name) drifted.push(`  ${existing.name}  →  ${name}`);
+      await prisma.sector.update({
+        where: { id: existing.id },
+        // Elle düzeltilmiş isimler korunur; --fix-names resmî adı dayatır.
+        data: { order: index + 1, ...(fixNames ? { name } : {}) },
+      });
+      updated++;
+    } else {
+      await prisma.sector.create({ data: { name, order: index + 1, naicsCode: section.code } });
+      created++;
+    }
+
+    const sector = await prisma.sector.findFirst({ where: { naicsCode: section.code } });
+    if (!sector) continue;
+
+    const subSectors = await prisma.subSector.findMany({ where: { sectorId: sector.id } });
 
     for (const [subIndex, division] of section.divisions.entries()) {
       const subName = `[${division.code}] ${division.name}`;
-      await prisma.subSector.upsert({
-        where: { sectorId_name: { sectorId: sector.id, name: subName } },
-        update: { order: subIndex + 1 },
-        create: { name: subName, sectorId: sector.id, order: subIndex + 1 },
-      });
+      // Alt bölümde de anahtar kod: "[46] " ile başlayan kayıt aynı bölümdür.
+      const existingSub = subSectors.find((row) => row.name.startsWith(`[${division.code}] `));
+
+      if (existingSub) {
+        if (existingSub.name !== subName) drifted.push(`  ${existingSub.name}  →  ${subName}`);
+        await prisma.subSector.update({
+          where: { id: existingSub.id },
+          data: { order: subIndex + 1, ...(fixNames ? { name: subName } : {}) },
+        });
+      } else {
+        await prisma.subSector.create({
+          data: { name: subName, sectorId: sector.id, order: subIndex + 1 },
+        });
+      }
     }
   }
+
+  if (pruneNaics) await pruneLegacyNaicsSectors();
 
   const totalSectors = await prisma.sector.count();
   const totalSubSectors = await prisma.subSector.count();
 
   console.log(`\n✅ ${created} sektör eklendi, ${updated} sektör güncellendi.`);
   console.log(`   Sistemdeki toplam: ${totalSectors} sektör · ${totalSubSectors} alt sektör`);
-  console.log(
-    "   (Fark varsa elle eklenmiş sektörlerdir — bu betik onlara dokunmaz.)\n"
+
+  if (drifted.length > 0) {
+    console.log(
+      fixNames
+        ? `\n✏️  ${drifted.length} başlık resmî adıyla değiştirildi:`
+        : `\n⚠️  ${drifted.length} başlık resmî listeden farklı (elle düzeltilmiş olabilir):`
+    );
+    for (const line of drifted) console.log(line);
+    if (!fixNames) {
+      console.log("   Resmî adları dayatmak için: npm run seed:sectors -- --fix-names\n");
+    }
+  }
+}
+
+/**
+ * Eski NAICS sektörlerini siler.
+ *
+ * Sistem NAICS'ten NACE'ye taşındı ama eski kayıtlar yerinde kaldı: sektör
+ * listesinde "İmalat (Sanayi)" ile "[C] İmalat" yan yana duruyor ve kullanıcı
+ * hangisini seçeceğini bilmiyor. NACE kodları harf, NAICS kodları rakam —
+ * ayrım bu.
+ *
+ * Bağlı kaydı olan sektöre dokunulmaz: silmek kullanıcının sektörünü sessizce
+ * boşaltır, kıyas ve kapsam kurallarını götürürdü. Böyle bir durumda ne
+ * yapılacağına insan karar vermeli.
+ */
+async function pruneLegacyNaicsSectors() {
+  const legacy = await prisma.sector.findMany({
+    where: { OR: [{ naicsCode: null }, { NOT: { naicsCode: { in: NACE_SECTIONS.map((s) => s.code) } } }] },
+    select: {
+      id: true,
+      name: true,
+      _count: { select: { users: true, benchmarks: true, ironmanBenchmarks: true, scopeRules: true } },
+    },
+  });
+
+  if (legacy.length === 0) {
+    console.log("\n🧹 Silinecek eski sektör yok.");
+    return;
+  }
+
+  const removable = legacy.filter(
+    (sector) =>
+      sector._count.users === 0 &&
+      sector._count.benchmarks === 0 &&
+      sector._count.ironmanBenchmarks === 0 &&
+      sector._count.scopeRules === 0
   );
+  const kept = legacy.filter((sector) => !removable.includes(sector));
+
+  if (removable.length > 0) {
+    await prisma.sector.deleteMany({ where: { id: { in: removable.map((s) => s.id) } } });
+    console.log(`\n🧹 ${removable.length} eski sektör silindi:`);
+    for (const sector of removable) console.log(`  ${sector.name}`);
+  }
+
+  if (kept.length > 0) {
+    console.log(`\n⚠️  ${kept.length} eski sektöre kayıt bağlı, dokunulmadı:`);
+    for (const sector of kept) {
+      console.log(
+        `  ${sector.name} — ${sector._count.users} kullanıcı, ${sector._count.benchmarks} kıyas, ` +
+          `${sector._count.ironmanBenchmarks} ironman, ${sector._count.scopeRules} kapsam kuralı`
+      );
+    }
+  }
 }
 
 main()

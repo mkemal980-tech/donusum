@@ -3,7 +3,7 @@
 Bu dosya, yeni bir oturuma başlarken bağlamı hızlıca kurmak için tutulur.
 Bir adım bitince buradaki durumu güncelleyin.
 
-**Son güncelleme:** 2026-08-08 (4. adım ve kalan işler)
+**Son güncelleme:** 2026-08-08 (plan tamam + veri/içerik işleri)
 
 ---
 
@@ -158,13 +158,47 @@ geri al → cevap yeniden yazılabiliyor.
 
 ## Açık kalan diğer başlıklar
 
-- **NACE alt bölüm adları** `scripts/seed-nace.ts` içinde elle yazıldı;
-  özellikle G bölümü ve J/K ayrımında resmî başlıklarla karşılaştırılmalı.
-  Yönetim → Sektörler ekranından düzeltilebilir, tohumlayıcı üzerine yazmaz.
-- **Sektör kapsam matrisi** (Yönetim → Sektör Kapsamı) kurulu ama hiç kural
-  girilmemiş; hepsi varsayılan "Orta".
-- **`rescale-score-history.ts`** yazıldı ama üretimde çalıştırılmadı
-  (geçmiş puan kaydı yok, şimdilik gereksiz).
+### NACE listesi — resmî kaynakla karşılaştırıldı
+
+Yapı doğruymuş: Rev. 2.1'in 22 bölümü (A–V), J/K ayrımı ve V = uluslararası
+örgütler kayması yerinde. Şüphelenilen G bölümünde ise **gerçek bir hata**
+çıktı: Rev. 2.1'de bölüm 45 (motorlu taşıt ticareti ve onarımı) kaldırılıp
+toptan satışı 46'ya, perakende satışı 47'ye, onarımı 95'e taşınmış. Bizim
+listede 46 ve 47 hâlâ "(motorlu taşıtlar hariç)" diyordu — Rev. 2 kalıntısı.
+Üç başlık düzeltildi (46, 47, 95).
+
+Tohumlayıcıda ayrıca bir tuzak vardı: alt bölümler **ada** göre eşleşiyordu,
+yani bir başlık düzeltildiğinde eskisi silinmeden yenisi ikinci kayıt olarak
+ekleniyordu. Artık **koda** göre eşleşiyor. Ayrışan başlıklar çalıştırma
+sonunda listeleniyor; `--fix-names` resmî adı dayatıyor.
+
+**NACE öncesi 20 NAICS sektörü hâlâ duruyordu** — sektör listesinde
+"İmalat (Sanayi)" ile "[C] İmalat" yan yana görünüyordu. `--prune-naics` ile
+silindi (kullanıcısı, kıyası veya kapsam kuralı olan sektöre dokunmaz; öyle
+biri varsa listeler ve bırakır). Yerelde 42 → 22 sektör.
+
+### Sektör kapsam matrisi — dolduruldu
+
+`npm run seed:scope` (`scripts/seed-sector-scope.ts`) 56 kural yazıyor:
+46 "çok önemli", 10 "az önemli". **Hiçbir bölüm kapsam dışı bırakılmadı** —
+dijital olgunluk bölümlerinin hepsi her sektöre bir ölçüde hitap ediyor;
+"hiç sorma" demek sektörü tanımayı gerektirir, ağırlık vermek sektörün neye
+dayandığını bilmeyi yeter.
+
+Ölçüt: sektörün işi doğrudan o yetkinliğe dayanıyorsa "çok önemli" (bankada
+veri ve güvenlik, imalatta süreç ve entegrasyon), tipik işletmesi o yetkinlik
+olmadan da çalışıyorsa "az önemli". Her kuralın gerekçesi betikte yazılı.
+
+Bu bir **başlangıç**: betik kayıtlı kuralları ezmez (`--force` hariç) ve
+Yönetim → Sektör Kapsamı ekranından her hücre değiştirilebilir. Amaç boş
+matrisle başlamamaktı.
+
+### `rescale-score-history.ts` — kaldırıldı
+
+Üretimde de yerelde de dönüştürülecek kayıt yoktu (ön izleme ile doğrulandı)
+ve eski ölçekte kayıt üreten kod yolu artık yok. Betiğin tek olası etkisi
+ileride yanlışlıkla çalıştırılıp doğru değerleri sıkıştırmaktı; bu yüzden
+silindi. Gerekirse git geçmişinden çıkar.
 - **Migration'lar elle uygulanmıyor:** `railway.json` içindeki
   `preDeployCommand: npm run db:migrate` her dağıtımdan önce çalışıyor.
   `000006_section_assignments` bu yolla üretime geçti; `prisma migrate status`
@@ -196,6 +230,7 @@ npm run db:migrate          # migration uygula
 
 npm run seed:demo           # demo anketi kur
 npm run seed:sectors        # NACE sektörlerini kur
+npm run seed:scope          # sektör kapsam matrisini kur
 npm run ai:check-draft      # AI taslak üretimini sına
 ```
 
