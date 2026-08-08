@@ -1398,6 +1398,72 @@ export default function DashboardClient() {
           </motion.div>
         )}
 
+        {/* Olgunluk puanı ve kategori kırılımı — panonun cevabı bu.
+            Sayı kartlarından ve grafiklerden önce gelir: kullanıcı sayfayı
+            açtığında ilk sorusu "kaç aldık", ikincisi "hangi başlıkta
+            zayıfız". Gerisi bu ikisinin açıklaması. */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Genel Olgunluk Puanı + Seviyelendirme */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.05 }}
+            className="lg:col-span-2 bg-[var(--bg-card)] rounded-2xl shadow-lg  p-8 border border-[var(--border-light)]"
+          >
+            <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 h-full">
+              {/* Score Card */}
+              <div className="flex flex-col items-center">
+                <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Genel Olgunluk Puanı</h3>
+                <ScoreCard 
+                  score={scoreData?.totalScore ?? 0} 
+                  label={getMaturityLevelFromPercentage(scoreData?.totalScore ?? 0).label} 
+                  color={getMaturityLevelFromPercentage(scoreData?.totalScore ?? 0).color} 
+                  size="large" 
+                />
+              </div>
+              
+              {/* Divider */}
+              <div className="hidden md:block w-px h-64 bg-[var(--border-light)]" />
+              <div className="md:hidden w-48 h-px bg-[var(--border-light)]" />
+              
+              {/* Maturity Level Bar */}
+              <MaturityLevelBar 
+                score={scoreData?.totalScore ?? 0} 
+                isPercentage={true} 
+              />
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1 }}
+            className="lg:col-span-1 bg-[var(--bg-card)] rounded-2xl shadow-lg  p-6 border border-[var(--border-light)]"
+          >
+            <div className="flex items-center gap-2 mb-6">
+              <BarChart3 className="text-[var(--secondary)]" size={20} />
+              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Kategori Puanları</h3>
+            </div>
+            
+            <div className="space-y-4">
+              {Object.entries(scoreData?.categoryScores ?? {})?.map(([id, data], index) => (
+                <ProgressBar
+                  key={id}
+                  value={data?.percentage ?? 0}
+                  label={data?.name ?? 'Bilinmeyen Kategori'}
+                  color={categoryColors[index % categoryColors.length]}
+                />
+              ))}
+              
+              {Object.keys(scoreData?.categoryScores ?? {})?.length === 0 && (
+                <div className="text-center py-8 text-[var(--text-muted)]">
+                  <p>Puan dağılımınızı görmek için anketi tamamlayın</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+
         {/* KPI Dashboard */}
         <Suspense fallback={<ComponentSkeleton height="300px" />}>
           <KPIDashboard surveyId={selectedSurveyId} />
@@ -1508,68 +1574,6 @@ export default function DashboardClient() {
           </motion.div>
         </div>
 
-        {/* Main Score Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Genel Olgunluk Puanı + Seviyelendirme */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
-            className="lg:col-span-2 bg-[var(--bg-card)] rounded-2xl shadow-lg  p-8 border border-[var(--border-light)]"
-          >
-            <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 h-full">
-              {/* Score Card */}
-              <div className="flex flex-col items-center">
-                <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Genel Olgunluk Puanı</h3>
-                <ScoreCard 
-                  score={scoreData?.totalScore ?? 0} 
-                  label={getMaturityLevelFromPercentage(scoreData?.totalScore ?? 0).label} 
-                  color={getMaturityLevelFromPercentage(scoreData?.totalScore ?? 0).color} 
-                  size="large" 
-                />
-              </div>
-              
-              {/* Divider */}
-              <div className="hidden md:block w-px h-64 bg-[var(--border-light)]" />
-              <div className="md:hidden w-48 h-px bg-[var(--border-light)]" />
-              
-              {/* Maturity Level Bar */}
-              <MaturityLevelBar 
-                score={scoreData?.totalScore ?? 0} 
-                isPercentage={true} 
-              />
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.5 }}
-            className="lg:col-span-1 bg-[var(--bg-card)] rounded-2xl shadow-lg  p-6 border border-[var(--border-light)]"
-          >
-            <div className="flex items-center gap-2 mb-6">
-              <BarChart3 className="text-[var(--secondary)]" size={20} />
-              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Kategori Puanları</h3>
-            </div>
-            
-            <div className="space-y-4">
-              {Object.entries(scoreData?.categoryScores ?? {})?.map(([id, data], index) => (
-                <ProgressBar
-                  key={id}
-                  value={data?.percentage ?? 0}
-                  label={data?.name ?? 'Bilinmeyen Kategori'}
-                  color={categoryColors[index % categoryColors.length]}
-                />
-              ))}
-              
-              {Object.keys(scoreData?.categoryScores ?? {})?.length === 0 && (
-                <div className="text-center py-8 text-[var(--text-muted)]">
-                  <p>Puan dağılımınızı görmek için anketi tamamlayın</p>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </div>
 
         {/* Benchmark Section */}
         <motion.div
