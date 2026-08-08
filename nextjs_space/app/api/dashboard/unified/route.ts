@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
 import { buildSurveyQuestionWhere, calculateUserScore } from "@/lib/scoring";
-import { getAssessmentIds } from "@/lib/assessment";
+import { getAssessmentContext, getAssessmentIds } from "@/lib/assessment";
 
 /**
  * Unified Dashboard API - Tüm dashboard verilerini tek seferde döndürür
@@ -197,8 +197,19 @@ export async function GET(request: NextRequest) {
       : 0;
 
     // Response hazırla
+    /**
+     * Puanın taslak mı kesin mi olduğu. Gönderilmemiş bir puana bakıp karar
+     * vermek yanıltıcı: ertesi gün değişebilir.
+     */
+    const assessment = await getAssessmentContext(userId, surveyId);
+
     return NextResponse.json({
       userProfile,
+      assessment: {
+        status: assessment.status,
+        submittedAt: assessment.submittedAt,
+        locked: assessment.locked,
+      },
       score: {
         totalScore: scoreData.totalScore,
         answeredQuestions: userResponses.length,

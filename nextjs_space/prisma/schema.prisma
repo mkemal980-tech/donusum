@@ -69,6 +69,7 @@ model User {
   surveyAssignments         UserSurveyAssignment[]
   assignedSections          SectionAssignment[]            @relation("SectionAssignee")
   distributedSections       SectionAssignment[]            @relation("SectionAssigner")
+  submittedAssessments      Assessment[]                   @relation("AssessmentSubmitter")
 }
 
 model Sector {
@@ -277,13 +278,18 @@ model Assessment {
   surveyId     String
   unitId       String?
   ownerUserId  String?
+  /// SUBMITTED ise cevaplar ve görev dağılımı kilitlidir; puan taslak
+  /// olmaktan çıkıp kesinleşir. Koordinatör gönderimi geri alabilir.
   status       AssessmentStatus @default(IN_PROGRESS)
   submittedAt  DateTime?
+  /// Denetim izi: gönderen koordinatör.
+  submittedById String?
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
   survey       Survey           @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   unit         Unit?            @relation(fields: [unitId], references: [id], onDelete: Cascade)
   owner        User?            @relation("AssessmentOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  submittedBy  User?            @relation("AssessmentSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
   responses    SurveyResponse[]
   roadmapItems RoadmapItem[]
   scoreHistory ScoreHistory[]

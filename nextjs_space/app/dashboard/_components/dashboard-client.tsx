@@ -148,6 +148,14 @@ interface UserProfile {
 
 export default function DashboardClient() {
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
+  /**
+   * Puan taslak mı kesin mi? Gönderilmemiş bir puana bakıp karar vermek
+   * yanıltıcı olur: ertesi gün değişebilir.
+   */
+  const [assessmentStatus, setAssessmentStatus] = useState<{
+    submitted: boolean;
+    submittedAt: string | null;
+  }>({ submitted: false, submittedAt: null });
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -245,6 +253,10 @@ export default function DashboardClient() {
           setResponses(data.responses);
           setTotalQuestions(data.score.totalQuestions);
           setCategoryStats(data.categoryStats);
+          setAssessmentStatus({
+            submitted: Boolean(data.assessment?.locked),
+            submittedAt: data.assessment?.submittedAt ?? null,
+          });
         }
       } catch (error) {
         console.error("Error initializing dashboard:", error);
@@ -300,6 +312,10 @@ export default function DashboardClient() {
           setResponses(data.responses);
           setTotalQuestions(data.score.totalQuestions);
           setCategoryStats(data.categoryStats);
+          setAssessmentStatus({
+            submitted: Boolean(data.assessment?.locked),
+            submittedAt: data.assessment?.submittedAt ?? null,
+          });
           lastLoadedSurveyIdRef.current = selectedSurveyId;
         }
       } catch (error) {
@@ -1426,6 +1442,15 @@ export default function DashboardClient() {
               <div>
                 <p className="text-sm text-[var(--text-secondary)]">Mevcut Puan</p>
                 <p className="text-2xl font-bold text-[var(--text-primary)]">{Math.round(scoreData?.totalScore ?? 0)}%</p>
+                <p className="text-xs text-[var(--text-secondary)]">
+                  {assessmentStatus.submitted
+                    ? `Kesin puan${
+                        assessmentStatus.submittedAt
+                          ? ` · ${new Date(assessmentStatus.submittedAt).toLocaleDateString("tr-TR")}`
+                          : ""
+                      }`
+                    : "Taslak — değerlendirme gönderilmedi"}
+                </p>
               </div>
             </div>
           </motion.div>

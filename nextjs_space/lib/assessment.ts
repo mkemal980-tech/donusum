@@ -18,6 +18,7 @@ import {
   type SectionVisibility,
   buildSectionVisibility,
 } from "./section-assignment";
+import { type AssessmentStatus, isLocked } from "./submission";
 
 export type DbClient = Prisma.TransactionClient | typeof prisma;
 
@@ -137,6 +138,11 @@ export type AssessmentContext = {
   unitId: string | null;
   /** Görev dağıtan ve sonunda gönderen kişi. */
   isCoordinator: boolean;
+  /** Değerlendirme henüz açılmamışsa null. */
+  status: AssessmentStatus | null;
+  submittedAt: Date | null;
+  /** Gönderilmişse cevaplar ve görev dağılımı değişmez. */
+  locked: boolean;
 };
 
 export async function getAssessmentContext(
@@ -153,15 +159,19 @@ export async function getAssessmentContext(
     where: user?.unitId
       ? { surveyId, unitId: user.unitId }
       : { surveyId, ownerUserId: userId },
-    select: { id: true, unitId: true },
+    select: { id: true, unitId: true, status: true, submittedAt: true },
   });
 
   const unitId = assessment?.unitId ?? user?.unitId ?? null;
+  const status = (assessment?.status as AssessmentStatus | undefined) ?? null;
 
   return {
     assessmentId: assessment?.id ?? null,
     unitId,
     isCoordinator: await resolveCoordinator(userId, user?.role ?? "USER", unitId, db),
+    status,
+    submittedAt: assessment?.submittedAt ?? null,
+    locked: isLocked(status),
   };
 }
 

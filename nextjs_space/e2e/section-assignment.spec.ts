@@ -132,11 +132,10 @@ async function openUntilVisible(page: Page, url: string, text: string) {
   }
 }
 
-test("koordinatör bölüm dağıtır, katkıcı yalnızca kendi bölümünü doldurur", async ({
-  browser,
-}) => {
+test("dağıt, doldur, gönder: çok kullanıcılı değerlendirmenin tam turu", async ({ browser }) => {
   test.skip(!seeded, "Fikstür kurulamadı (veritabanı yok)");
-  test.setTimeout(120_000);
+  // İki oturum, sekiz sayfa yüklemesi ve bir dev sunucusu; cömert olmak lazım.
+  test.setTimeout(240_000);
 
   // --- koordinatör dağıtır ---
   const coordinator = await login(browser, COORDINATOR);
@@ -159,13 +158,19 @@ test("koordinatör bölüm dağıtır, katkıcı yalnızca kendi bölümünü do
 
   // --- kendine atanmayan bölüme cevap yazamaz (asıl yaptırım sunucuda) ---
   const assigned = await (await coordinator.request.get("/api/survey/assigned")).json();
-  const structure = await coordinator.request.get(
-    `/api/survey/structure?surveyId=${assigned[0].id}`
-  );
-  const otherQuestionId = (await structure.json())
-    .flatMap((category: any) => category.subCategories ?? [])
-    .find((section: any) => section.name === SECTION_OTHER)?.questions?.[0]?.id;
+  const surveyId = assigned[0].id;
+  const structure = await (
+    await coordinator.request.get(`/api/survey/structure?surveyId=${surveyId}`)
+  ).json();
 
+  const structureSections = structure.flatMap((category: any) => category.subCategories ?? []);
+  const mineSection = structureSections.find((section: any) => section.name === SECTION_MINE);
+  const otherSection = structureSections.find((section: any) => section.name === SECTION_OTHER);
+  const mineQuestionId = mineSection?.questions?.[0]?.id;
+  const otherSectionId = otherSection?.id;
+  const otherQuestionId = otherSection?.questions?.[0]?.id;
+
+  expect(mineQuestionId).toBeTruthy();
   expect(otherQuestionId).toBeTruthy();
   const forbidden = await contributor.request.post("/api/survey/responses", {
     data: { questionId: otherQuestionId, value: "5" },
@@ -182,4 +187,44 @@ test("koordinatör bölüm dağıtır, katkıcı yalnızca kendi bölümünü do
   await openUntilVisible(coordinator, "/unit-manager", SURVEY);
   await expect(coordinator.getByRole("columnheader", { name: "Değerlendirme" })).toBeVisible();
   await expect(coordinator.getByText("1 kişi")).toBeVisible();
+
+  // --- gönderim: eksik varken uyarır, onaydan sonra kilitler ---
+  await openUntilVisible(coordinator, "/unit-manager/assignments", "Değerlendirmeyi gönder");
+  await expect(coordinator.getByText("2 bölümde 5 soru boş.")).toBeVisible();
+
+  await coordinator.getByRole("button", { name: "Değerlendirmeyi gönder" }).click();
+  await expect(coordinator.getByText("Boş sorularla gönderiyorsunuz:")).toBeVisible();
+  await coordinator.getByRole("button", { name: "Yine de gönder" }).click();
+  await expect(coordinator.getByText("Değerlendirme gönderildi").first()).toBeVisible({
+    timeout: 15_000,
+  });
+
+  // Kilitliyken cevap da dağıtım da yazılamaz.
+  const lockedAnswer = await contributor.request.post("/api/survey/responses", {
+    data: { questionId: mineQuestionId, value: "3" },
+  });
+  expect(lockedAnswer.status()).toBe(403);
+
+  const lockedAssignment = await coordinator.request.post("/api/assessment/sections", {
+    data: { surveyId, subCategoryId: otherSectionId, assigneeId: null },
+  });
+  expect(lockedAssignment.status()).toBe(403);
+
+  // Katkıcı ankette kilidi görür.
+  await openUntilVisible(contributor, "/survey", "Bu değerlendirme gönderildi");
+
+  // Panoda puan taslak olmaktan çıkar.
+  await openUntilVisible(coordinator, "/dashboard", "Kesin puan");
+
+  // --- geri alma kilidi açar ---
+  await openUntilVisible(coordinator, "/unit-manager/assignments", "Gönderimi geri al");
+  await coordinator.getByRole("button", { name: "Gönderimi geri al" }).click();
+  await expect(coordinator.getByRole("button", { name: "Değerlendirmeyi gönder" })).toBeVisible({
+    timeout: 15_000,
+  });
+
+  const reopenedAnswer = await contributor.request.post("/api/survey/responses", {
+    data: { questionId: mineQuestionId, value: "3" },
+  });
+  expect(reopenedAnswer.status()).toBe(200);
 });

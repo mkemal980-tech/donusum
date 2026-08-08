@@ -169,6 +169,16 @@ export async function POST(request: NextRequest) {
      * tek sorumlu kuralını sessizce delerdi.
      */
     const visibility = await getSectionVisibility(userId, surveyId);
+
+    // Gönderilmiş değerlendirme kilitlidir; yönetici de dahil kimse yazamaz.
+    // Düzeltme gerekiyorsa koordinatör gönderimi geri alır.
+    if (visibility.locked) {
+      return NextResponse.json(
+        { error: "Bu değerlendirme gönderildi ve kilitlendi." },
+        { status: 403 }
+      );
+    }
+
     const sectionId = sectionOfQuestion(question);
     const allowed = sectionId ? visibility.canSee(sectionId) : visibility.canSeeDirect;
 

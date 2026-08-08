@@ -145,6 +145,9 @@ export async function GET(request: NextRequest) {
       assessmentId: context.assessmentId,
       isCoordinator: context.isCoordinator,
       distributed: assignments.length > 0,
+      status: context.status,
+      submittedAt: context.submittedAt,
+      locked: context.locked,
       members,
       mySectionIds: assignments
         .filter((assignment) => assignment.assigneeId === auth.userId)
@@ -187,6 +190,15 @@ export async function POST(request: NextRequest) {
     if (!context.isCoordinator) {
       return NextResponse.json(
         { error: "Görev dağıtma yetkiniz yok." },
+        { status: 403 }
+      );
+    }
+
+    // Gönderilmiş değerlendirmede dağıtım da donar: kimin neyi doldurduğu
+    // kaydın bir parçası, sonradan değiştirilmemeli.
+    if (context.locked) {
+      return NextResponse.json(
+        { error: "Değerlendirme gönderildi; görev dağılımı kilitli." },
         { status: 403 }
       );
     }

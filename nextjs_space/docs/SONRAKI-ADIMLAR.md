@@ -20,7 +20,10 @@ Dört adımlı plan:
 | 1 | `Assessment` nesnesi — cevap/yol haritası/puan geçmişi sahipliği kişiden kuruluşa | ✅ **bitti** (`1574813`) |
 | 2 | Bölüm bazlı görev dağılımı + ankette filtreleme | ✅ **bitti** |
 | 3 | Koordinatör panosu (kim ne kadar doldurdu) | ✅ **bitti** |
-| 4 | Gönderim / kilit adımı (puan taslak → kesin) | ⬜ sıradaki |
+| 4 | Gönderim / kilit adımı (puan taslak → kesin) | ✅ **bitti** |
+
+**Plan tamamlandı.** Aşağıdaki "Açık kalan diğer başlıklar" dışında bu iş
+serisinde bekleyen bir adım yok.
 
 ### 1. adımda ne yapıldı
 
@@ -107,6 +110,40 @@ katkıcı ankette yalnızca o bölümü görüyor (diğeri ekranda hiç yok) →
 cevaplıyor → kendine atanmayan bölüme yazma denemesi **403** alıyor →
 koordinatörün panosunda "1/3 soru" ve "Devam ediyor" beliriyor. `npm run
 test:e2e` ile çalışır (çalışan bir veritabanı ister; yoksa test atlanır).
+
+### 4. adımda ne yapıldı
+
+Gönderim, kuruluşun "bu bizim cevabımız" dediği an. O çizgi çekilmeden puan
+hep taslak kalıyor ve kimse ona dayanarak karar veremiyordu.
+
+- `Assessment.status` ve `submittedAt` 1. adımda ileriyi düşünerek eklenmişti,
+  şimdi kullanılıyor. Üzerine `submittedById` geldi (migration `000007`):
+  "bu puanı kim kesinleştirdi" sorusuna tarih tek başına cevap vermiyor.
+- **Kilit neyi kapatır:** cevap yazma ve görev dağılımı — ikisi de sunucuda
+  403. Okuma, puan, öneriler ve yol haritası açık kalır; kilit
+  "değerlendirme bitti" demek, "sistem kapandı" demek değil.
+- **Puan taslak → kesin:** gönderimde `ScoreHistory`'ye
+  `triggerType: 'SUBMISSION'` ile anlık görüntü düşer (mevcut kayıt deseniyle
+  aynı). Panoda puanın altında artık "Taslak — değerlendirme gönderilmedi" ya
+  da "Kesin puan · tarih" yazıyor.
+- `lib/submission.ts` saf ve testli: `isLocked`, `submissionReadiness`
+  (eksik bölümler en çok eksiği olandan sıralı) ve tek cümlelik özet.
+
+İki karar, ikisi de bilinçli:
+
+1. **Eksik varken gönderim engellenmiyor.** Bazı sorular kuruluş için
+   gerçekten cevaplanamaz olabilir; %100 dayatmak insanları rastgele cevap
+   girmeye iter ve puanı bozar. Bunun yerine ekran neyin eksik olduğunu
+   sayarak söylüyor ("2 bölümde 5 soru boş"), listeliyor ve ikinci bir onay
+   istiyor. Sorumluluk koordinatörde kalıyor.
+2. **Geri alma koordinatörde.** Bir yazım hatası için sistem yöneticisi
+   beklemek işi durdururdu. Geri alma geçmişi silmiyor: gönderim anındaki
+   puan kaydı yerinde kalıyor, yeni gönderim yeni bir kayıt üretiyor. Bu
+   yüzden ayrı bir "geri alındı" alanı da tutulmuyor.
+
+E2E testi tam turu geçiyor: dağıt → doldur → eksik uyarısıyla gönder →
+cevap 403 → dağıtım 403 → katkıcı kilidi görüyor → panoda "Kesin puan" →
+geri al → cevap yeniden yazılabiliyor.
 
 ---
 

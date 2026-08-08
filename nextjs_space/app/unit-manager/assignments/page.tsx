@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Header from "@/components/ui/header";
-import { AlertCircle, ArrowLeft, Info, Loader2, Users } from "lucide-react";
+import { AlertCircle, ArrowLeft, Info, Loader2, Lock, Send, Unlock, Users } from "lucide-react";
 import { type SectionStatus, rollupByAssignee, sectionStatus } from "@/lib/section-assignment";
+import { readinessSummary, submissionReadiness } from "@/lib/submission";
 
 /**
  * Görev dağılımı ve ilerleme panosu.
@@ -84,6 +85,11 @@ export default function SectionAssignmentsPage() {
   const [loading, setLoading] = useState(true);
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [locked, setLocked] = useState(false);
+  const [submittedAt, setSubmittedAt] = useState<string | null>(null);
+  /** Gönderim iki adımlı: düğme önce neyin eksik olduğunu gösterir. */
+  const [confirmingSubmit, setConfirmingSubmit] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     // Anket seçilirse yükleme göstergesini loadSections devralır; anket yoksa
@@ -127,6 +133,9 @@ export default function SectionAssignmentsPage() {
       setCategories(data.categories ?? []);
       setMembers(data.members ?? []);
       setIsCoordinator(Boolean(data.isCoordinator));
+      setLocked(Boolean(data.locked));
+      setSubmittedAt(data.submittedAt ?? null);
+      setConfirmingSubmit(false);
     } catch (loadError) {
       console.error("Error loading section assignments:", loadError);
       setError("Görev dağılımı alınırken hata oluştu");
@@ -233,6 +242,53 @@ export default function SectionAssignmentsPage() {
   const formatDate = (value: string | null) =>
     value ? new Date(value).toLocaleDateString("tr-TR") : null;
 
+  /**
+   * Gönderime hazırlık. Bölüme bağlı olmayan sorular da sayıya girer; onlar
+   * cevaplanmadan da değerlendirme tam sayılmaz.
+   */
+  const readiness = useMemo(
+    () =>
+      submissionReadiness([
+        ...sections.map((section) => ({
+          name: section.name,
+          questionCount: section.questionCount,
+          answeredCount: section.answeredCount,
+        })),
+        ...categories
+          .filter((category) => category.directQuestionCount > 0)
+          .map((category) => ({
+            name: `${category.name} (kategori soruları)`,
+            questionCount: category.directQuestionCount,
+            answeredCount: category.directAnsweredCount,
+          })),
+      ]),
+    [categories, sections]
+  );
+
+  const submitAssessment = async (action: "submit" | "reopen") => {
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/assessment/submission", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ surveyId, action }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data?.error || "İşlem tamamlanamadı");
+        return;
+      }
+      toast.success(action === "submit" ? "Değerlendirme gönderildi" : "Gönderim geri alındı");
+      await loadSections();
+    } catch (submitError) {
+      console.error("Error submitting assessment:", submitError);
+      toast.error("İşlem sırasında hata oluştu");
+    } finally {
+      setSubmitting(false);
+      setConfirmingSubmit(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--bg-main)]">
       <Header />
@@ -299,6 +355,36 @@ export default function SectionAssignmentsPage() {
           <div className="mb-4 p-3 rounded-lg bg-[var(--error-bg,rgba(239,68,68,0.1))] border border-[var(--error)]/30 flex items-center gap-2 text-sm text-[var(--error)]">
             <AlertCircle size={16} />
             {error}
+          </div>
+        )}
+
+        {/* Kilit bandı en üstte: ekranın geri kalanı neden donuk, önce o
+            anlaşılsın. */}
+        {!loading && locked && (
+          <div className="mb-4 p-4 rounded-lg bg-[rgba(12,193,195,0.1)] border border-[var(--accent)]/40 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-start gap-2">
+              <Lock size={18} className="text-[var(--accent)] shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <p className="text-[var(--text-main)] font-medium">
+                  Değerlendirme gönderildi
+                  {formatDate(submittedAt) ? ` · ${formatDate(submittedAt)}` : ""}
+                </p>
+                <p className="text-[var(--text-muted)]">
+                  Cevaplar ve görev dağılımı kilitli, puan kesinleşti. Düzeltme gerekiyorsa
+                  gönderimi geri alın.
+                </p>
+              </div>
+            </div>
+            {isCoordinator && (
+              <button
+                onClick={() => submitAssessment("reopen")}
+                disabled={submitting}
+                className="px-4 py-2 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] text-sm text-[var(--text-main)] hover:border-[var(--accent)]/50 disabled:opacity-60 flex items-center gap-2"
+              >
+                <Unlock size={16} />
+                Gönderimi geri al
+              </button>
+            )}
           </div>
         )}
 
@@ -391,7 +477,7 @@ export default function SectionAssignmentsPage() {
 
                       <select
                         value={section.assigneeId ?? ""}
-                        disabled={!isCoordinator || savingSection === section.id}
+                        disabled={!isCoordinator || locked || savingSection === section.id}
                         onChange={(event) => assign(section.id, event.target.value || null)}
                         className={`px-3 py-2 rounded-lg border bg-[var(--bg-card-2)] text-sm disabled:opacity-60 ${
                           section.assigneeId
@@ -464,6 +550,68 @@ export default function SectionAssignmentsPage() {
                 Bölüme bağlı olmayan {directQuestionCount} soru dağıtılamaz; bunları koordinatör
                 olarak siz doldurursunuz.
               </p>
+            )}
+
+            {/* Gönderim: akışın sonu, o yüzden ekranın da sonunda. */}
+            {isCoordinator && !locked && (
+              <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-4">
+                <h2 className="font-semibold text-[var(--text-main)] mb-1">
+                  Değerlendirmeyi gönder
+                </h2>
+                <p className="text-sm text-[var(--text-muted)] mb-3">
+                  {readinessSummary(readiness)} Gönderdiğinizde cevaplar kilitlenir ve puan
+                  taslak olmaktan çıkar.
+                </p>
+
+                {confirmingSubmit && !readiness.complete && (
+                  <div className="mb-3 p-3 rounded-lg bg-[var(--warning-bg)] border border-[var(--warning)]/30 text-sm">
+                    <p className="text-[var(--warning)] font-medium mb-2">
+                      Boş sorularla gönderiyorsunuz:
+                    </p>
+                    <ul className="space-y-1 text-[var(--text-muted)]">
+                      {readiness.incompleteSections.slice(0, 8).map((section) => (
+                        <li key={section.name} className="flex justify-between gap-3">
+                          <span>{section.name}</span>
+                          <span className="tabular-nums text-[var(--text-dim)]">
+                            {section.missing} soru boş
+                          </span>
+                        </li>
+                      ))}
+                      {readiness.incompleteSections.length > 8 && (
+                        <li className="text-[var(--text-dim)]">
+                          ve {readiness.incompleteSections.length - 8} bölüm daha
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() =>
+                      confirmingSubmit || readiness.complete
+                        ? submitAssessment("submit")
+                        : setConfirmingSubmit(true)
+                    }
+                    disabled={submitting}
+                    className="px-4 py-2.5 rounded-lg bg-[var(--accent)] text-white font-medium hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-60 flex items-center gap-2"
+                  >
+                    {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                    {confirmingSubmit && !readiness.complete
+                      ? "Yine de gönder"
+                      : "Değerlendirmeyi gönder"}
+                  </button>
+
+                  {confirmingSubmit && (
+                    <button
+                      onClick={() => setConfirmingSubmit(false)}
+                      className="px-4 py-2.5 rounded-lg border border-[var(--border-soft)] text-sm text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                    >
+                      Vazgeç
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         )}

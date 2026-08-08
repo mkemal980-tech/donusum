@@ -111,6 +111,9 @@ export default function SurveyClient() {
     distributed: boolean;
     isCoordinator: boolean;
     mySectionCount: number;
+    /** Gönderilmiş değerlendirmede anket salt okunur. */
+    locked: boolean;
+    submittedAt: string | null;
   } | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, { fileName: string; cloudStoragePath: string }>>({});
@@ -189,6 +192,8 @@ export default function SurveyClient() {
             distributed: Boolean(data?.distributed),
             isCoordinator: Boolean(data?.isCoordinator),
             mySectionCount: (data?.mySectionIds ?? []).length,
+            locked: Boolean(data?.locked),
+            submittedAt: data?.submittedAt ?? null,
           });
         } else {
           // Dağıtım bilgisi alınamadıysa ekran susar; anket yine çalışır.
@@ -252,6 +257,13 @@ export default function SurveyClient() {
   );
 
   const handleAnswer = async (questionId: string, value: string) => {
+    // Kilitli değerlendirmede sunucu zaten 403 döner; kullanıcıyı boşuna
+    // beklettikten sonra hata göstermek yerine burada söyle.
+    if (sectionInfo?.locked) {
+      toast.error("Bu değerlendirme gönderildi ve kilitlendi.");
+      return;
+    }
+
     const previousValue = responses[questionId];
     setResponses(prev => ({ ...(prev ?? {}), [questionId]: value }));
     setSaving(true);
@@ -699,6 +711,26 @@ export default function SurveyClient() {
           </div>
         ) : (
           <>
+            {/* Kilit önce söylenir: kullanıcı cevabı değiştirmeyi denemeden
+                önce neden değiştiremeyeceğini bilsin. */}
+            {sectionInfo?.locked && (
+              <div className="mb-4 p-4 rounded-lg bg-[rgba(12,193,195,0.1)] border border-[var(--accent)]/40 flex items-start gap-2">
+                <Lock size={18} className="text-[var(--accent)] shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="text-[var(--text-main)] font-medium">
+                    Bu değerlendirme gönderildi
+                    {sectionInfo.submittedAt
+                      ? ` · ${new Date(sectionInfo.submittedAt).toLocaleDateString("tr-TR")}`
+                      : ""}
+                  </p>
+                  <p className="text-[var(--text-muted)]">
+                    Cevaplar salt okunur. Düzeltme gerekiyorsa koordinatörünüzden gönderimi geri
+                    almasını isteyin.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Katkıcı yalnızca kendi bölümlerini görüyor; ilerleme çubuğunun
                 neden anketin tamamını göstermediği açık olsun. */}
             {sectionInfo?.distributed && !sectionInfo.isCoordinator && (
@@ -809,18 +841,27 @@ export default function SurveyClient() {
                     <p className="text-[var(--text-dim)]">Bu bölümde henüz soru bulunmuyor.</p>
                   </div>
                 ) : (
-                  currentQuestions?.map((question) => (
-                    <SurveyQuestion
-                      key={question?.id}
-                      question={question}
-                      value={responses?.[question?.id ?? '']}
-                      onAnswer={handleAnswer}
-                      onUpload={handleUpload}
-                      onRemoveFile={handleRemoveFile}
-                      uploadedFile={uploadedFiles[question?.id ?? '']?.fileName || null}
-                      isUploading={uploading === question?.id}
-                    />
-                  ))
+                  /* Kilitliyken fieldset bütün girdileri tarayıcı düzeyinde
+                     kapatır — klavyeyle dolaşan kullanıcı da dışarıda kalır. */
+                  <fieldset
+                    disabled={sectionInfo?.locked ?? false}
+                    className={`space-y-6 border-0 p-0 m-0 ${
+                      sectionInfo?.locked ? "opacity-75" : ""
+                    }`}
+                  >
+                    {currentQuestions?.map((question) => (
+                      <SurveyQuestion
+                        key={question?.id}
+                        question={question}
+                        value={responses?.[question?.id ?? '']}
+                        onAnswer={handleAnswer}
+                        onUpload={handleUpload}
+                        onRemoveFile={handleRemoveFile}
+                        uploadedFile={uploadedFiles[question?.id ?? '']?.fileName || null}
+                        isUploading={uploading === question?.id}
+                      />
+                    ))}
+                  </fieldset>
                 )}
               </motion.div>
             </AnimatePresence>
