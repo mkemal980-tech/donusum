@@ -43,3 +43,7 @@ tsconfig.tsbuildinfo
 
 # Backup files
 backups/
+
+# Playwright çıktıları
+test-results/
+playwright-report/

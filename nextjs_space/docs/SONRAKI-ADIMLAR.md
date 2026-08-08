@@ -19,8 +19,8 @@ Dört adımlı plan:
 |---|---|---|
 | 1 | `Assessment` nesnesi — cevap/yol haritası/puan geçmişi sahipliği kişiden kuruluşa | ✅ **bitti** (`1574813`) |
 | 2 | Bölüm bazlı görev dağılımı + ankette filtreleme | ✅ **bitti** |
-| 3 | Koordinatör panosu (kim ne kadar doldurdu) | ⬜ sıradaki |
-| 4 | Gönderim / kilit adımı (puan taslak → kesin) | ⬜ |
+| 3 | Koordinatör panosu (kim ne kadar doldurdu) | ✅ **bitti** |
+| 4 | Gönderim / kilit adımı (puan taslak → kesin) | ⬜ sıradaki |
 
 ### 1. adımda ne yapıldı
 
@@ -33,13 +33,14 @@ Dört adımlı plan:
 - Doğrulandı: aynı birimdeki iki kullanıcının girdiği cevaplar tek puanda
   toplanıyor ve ikisi de aynı kurumsal puanı görüyor.
 
-### 1. adımdan kalan iki eksik
+### 1. adımdan kalan eksik
 
-1. **Arayüz etiketleri güncellenmedi.** Yönetici panosu, birim yöneticisi
-   takım tablosu ve benzeri ekranlarda satırlar artık *değerlendirme* ama
-   başlıklar hâlâ "kullanıcı" diyor. Mantık doğru, etiket yanlış.
-2. **Tarayıcıda uçtan uca denenmedi.** Veri katmanı script ile doğrulandı;
-   gerçek akış (anket doldur → puan gör → öneri al) ekrandan geçirilmedi.
+- **Arayüz etiketleri güncellenmedi.** Yönetici panosu, birim yöneticisi
+  takım tablosu ve benzeri ekranlarda satırlar artık *değerlendirme* ama
+  başlıklar hâlâ "kullanıcı" diyor. Mantık doğru, etiket yanlış.
+
+(İkinci eksik — tarayıcıda denenmemiş olması — 3. adımda kapandı:
+`e2e/section-assignment.spec.ts` iki oturumlu gerçek akışı geçiriyor.)
 
 ### 2. adımda ne yapıldı
 
@@ -75,20 +76,34 @@ Kaçırılmaması gereken iki davranış:
 
 ### 2. adımdan kalan
 
-- **Tarayıcıda denenmedi.** Veri katmanı script ile doğrulandı (18 kontrol:
-  koordinatör çözümü, katkıcı filtresi, tekillik, atama kaldırma), `npx next
-  build` ve `npx vitest run` temiz. Gerçek akış (dağıt → katkıcı gir → yalnız
-  kendi bölümünü gör) ekrandan geçirilmedi. 1. adımın aynı eksiğiyle birlikte
-  tek seferde denenebilir.
 - **Bildirim yok.** Bölüm atanan kişiye e-posta gitmiyor; koordinatörün
   haber vermesi gerekiyor.
 
-### 3. adım için not
+### 3. adımda ne yapıldı
 
-Koordinatör panosu `/unit-manager/assignments` ekranının yanına değil,
-muhtemelen içine gelmeli: dağıtım tablosu zaten bölüm × sorumlu; üzerine
-"kaç soru doldu" sütunu eklenince pano oluyor. `getSectionAssignments` ve
-`getContributorCandidates` bu iş için hazır.
+Pano ayrı bir ekran olmadı, dağıtım tablosunun üzerine bindi: sorumluyla
+ilerleme yan yana durmadıkça "kimi arayayım" sorusu cevaplanmıyordu.
+
+- `/api/assessment/sections` artık bölüm başına **cevaplanan soru sayısı** ve
+  **son giriş tarihi** de dönüyor. Cevaplar tek sorguda çekilip bellekte
+  bölümlere dağıtılıyor; bir değerlendirmede en fazla soru sayısı kadar cevap
+  var, bölüm başına ayrı sorgu atmaya değmez.
+- `lib/section-assignment.ts` içine `sectionStatus` (Başlanmadı / Devam ediyor
+  / Bitti) ve `rollupByAssignee` eklendi — ikisi de saf ve testli. Atanmamış
+  bölümler tek bir satırda toplanıyor: koordinatörün üzerinde kalan yük en çok
+  orada birikiyor.
+- Ekranda: anketin durumu (tek çubuk), kategori başına doluluk, bölüm başına
+  durum rozeti + çubuk + son giriş tarihi, ve **"Kim ne kadar doldurdu"**
+  tablosu — en geride kalan üstte, çünkü koordinatörün ilk bakacağı yer orası.
+- `sectionOfQuestion` (soru → bölüm eşlemesi) tek yere alındı; cevap kaydetme
+  yolu da aynı fonksiyonu kullanıyor.
+
+**Tarayıcıda doğrulandı.** `e2e/section-assignment.spec.ts` fikstürünü kendi
+kurup silen, iki oturumlu gerçek bir akış: koordinatör bölümü dağıtıyor →
+katkıcı ankette yalnızca o bölümü görüyor (diğeri ekranda hiç yok) → soruyu
+cevaplıyor → kendine atanmayan bölüme yazma denemesi **403** alıyor →
+koordinatörün panosunda "1/3 soru" ve "Devam ediyor" beliriyor. `npm run
+test:e2e` ile çalışır (çalışan bir veritabanı ister; yoksa test atlanır).
 
 ---
 
@@ -101,6 +116,14 @@ muhtemelen içine gelmeli: dağıtım tablosu zaten bölüm × sorumlu; üzerine
   girilmemiş; hepsi varsayılan "Orta".
 - **`rescale-score-history.ts`** yazıldı ama üretimde çalıştırılmadı
   (geçmiş puan kaydı yok, şimdilik gereksiz).
+- **Duman testi bayat:** `e2e/smoke.spec.ts` içindeki "ana sayfa yüklenir ve
+  giriş bağlantısı görünür" testi kalıyor — açılış sayfasında artık "Giriş"
+  bağlantısı yok, bütün çağrılar `/dashboard`'a gidiyor (oturumsuz kullanıcıyı
+  o sayfa `/login`'e atıyor). Testin beklentisi güncellenmeli; bu işle ilgisi
+  yok, önceden de kalıyordu.
+- **Migration üretime uygulanmadı:** `000006_section_assignments` yalnızca
+  yerel veritabanında. Dağıtım `npm run db:migrate` çalıştırmıyorsa Railway'de
+  elle uygulanmalı.
 
 ---
 
@@ -109,7 +132,8 @@ muhtemelen içine gelmeli: dağıtım tablosu zaten bölüm × sorumlu; üzerine
 ```bash
 npm run dev                 # geliştirme sunucusu
 npx tsc --noEmit            # tip kontrolü
-npx vitest run              # testler
+npx vitest run              # birim testleri
+npm run test:e2e            # tarayıcı testleri (veritabanı ister)
 npx next build              # üretim derlemesi
 npm run db:migrate          # migration uygula
 

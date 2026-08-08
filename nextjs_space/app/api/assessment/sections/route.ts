@@ -10,13 +10,14 @@ import {
   getOrCreateAssessment,
   getSectionAssignments,
 } from "@/lib/assessment";
+import { sectionOfQuestion } from "@/lib/section-assignment";
 
 /**
- * Bölüm bazlı görev dağılımı.
+ * Bölüm bazlı görev dağılımı ve ilerlemesi.
  *
- * GET dağıtım tablosunu kurar: hangi bölüm kimde, kimler katkı verebilir.
- * Katkıcı da okuyabilir — "atık bölümü Ayşe'de" bilgisi ekipte saklanacak bir
- * şey değil; yazma yetkisi koordinatörde.
+ * GET dağıtım tablosunu kurar: hangi bölüm kimde, ne kadarı doldu, kimler
+ * katkı verebilir. Katkıcı da okuyabilir — "atık bölümü Ayşe'de" bilgisi
+ * ekipte saklanacak bir şey değil; yazma yetkisi koordinatörde.
  *
  * Sektör kapsamı dışındaki bölümler listelenmez: kimseye sorulmayacak bir
  * bölümü dağıtmak boş iş yaratır (bkz. lib/sector-scope).
@@ -70,12 +71,61 @@ export async function GET(request: NextRequest) {
       assignments.map((assignment) => [assignment.subCategoryId, assignment.assigneeId])
     );
 
+    /**
+     * İlerleme: kuruluşun bu ankete verdiği cevaplar bölümlere dağıtılır.
+     * Bir değerlendirmede en fazla soru sayısı kadar cevap olduğu için
+     * gruplama bellekte yapılır; bölüm başına ayrı sorgu atmaya değmez.
+     */
+    const responses = context.assessmentId
+      ? await prisma.surveyResponse.findMany({
+          where: { assessmentId: context.assessmentId, question: { archivedAt: null } },
+          select: {
+            value: true,
+            updatedAt: true,
+            question: {
+              select: {
+                categoryId: true,
+                subCategoryId: true,
+                subLevel: { select: { subCategoryId: true } },
+              },
+            },
+          },
+        })
+      : [];
+
+    const answeredBySection = new Map<string, number>();
+    const answeredByCategory = new Map<string, number>();
+    const lastAnsweredAt = new Map<string, Date>();
+
+    for (const response of responses) {
+      // Boş değer cevap sayılmaz; anket ekranı da öyle sayıyor.
+      if (!response.value) continue;
+
+      const sectionId = sectionOfQuestion(response.question);
+
+      if (!sectionId) {
+        const categoryId = response.question.categoryId;
+        if (categoryId) {
+          answeredByCategory.set(categoryId, (answeredByCategory.get(categoryId) ?? 0) + 1);
+        }
+        continue;
+      }
+
+      answeredBySection.set(sectionId, (answeredBySection.get(sectionId) ?? 0) + 1);
+
+      const previous = lastAnsweredAt.get(sectionId);
+      if (!previous || response.updatedAt > previous) {
+        lastAnsweredAt.set(sectionId, response.updatedAt);
+      }
+    }
+
     const shaped = categories
       .map((category) => ({
         id: category.id,
         name: category.name,
         // Doğrudan kategoriye bağlı sorular atanamaz; koordinatörde kalır.
         directQuestionCount: category._count.questions,
+        directAnsweredCount: answeredByCategory.get(category.id) ?? 0,
         sections: category.subCategories
           .filter((subCategory) => scopeOf(subCategory.id).applicable)
           .map((subCategory) => ({
@@ -84,6 +134,8 @@ export async function GET(request: NextRequest) {
             questionCount:
               subCategory._count.questions +
               subCategory.subLevels.reduce((sum, level) => sum + level._count.questions, 0),
+            answeredCount: answeredBySection.get(subCategory.id) ?? 0,
+            lastAnsweredAt: lastAnsweredAt.get(subCategory.id) ?? null,
             assigneeId: assigneeOfSection.get(subCategory.id) ?? null,
           })),
       }))

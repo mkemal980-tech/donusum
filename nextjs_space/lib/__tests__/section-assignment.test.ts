@@ -3,7 +3,9 @@ import {
   type SectionAssignment,
   assigneeOf,
   buildSectionVisibility,
-  sectionCountByAssignee,
+  rollupByAssignee,
+  sectionOfQuestion,
+  sectionStatus,
 } from "../section-assignment";
 
 const AYSE = "kullanici-ayse";
@@ -97,13 +99,82 @@ describe("buildSectionVisibility", () => {
   });
 });
 
-describe("assigneeOf / sectionCountByAssignee", () => {
+describe("assigneeOf", () => {
   it("bölümün sorumlusunu döner", () => {
     expect(assigneeOf(assignments, ENERJI)).toBe(MEHMET);
     expect(assigneeOf(assignments, "bolum-tedarik")).toBeNull();
   });
+});
 
-  it("kişi başına bölüm sayısını çıkarır", () => {
-    expect(sectionCountByAssignee(assignments)).toEqual({ [AYSE]: 2, [MEHMET]: 1 });
+describe("sectionOfQuestion", () => {
+  it("doğrudan bölüme bağlı soruyu o bölüme sayar", () => {
+    expect(sectionOfQuestion({ subCategoryId: ATIK })).toBe(ATIK);
+  });
+
+  it("alt seviyeye bağlı soruyu üstündeki bölüme sayar", () => {
+    expect(sectionOfQuestion({ subCategoryId: null, subLevel: { subCategoryId: ENERJI } })).toBe(
+      ENERJI
+    );
+  });
+
+  it("kategoriye doğrudan bağlı soru hiçbir bölüme ait değildir", () => {
+    expect(sectionOfQuestion({ subCategoryId: null, subLevel: null })).toBeNull();
+  });
+});
+
+describe("sectionStatus", () => {
+  it("hiç cevap yoksa boş, kısmen doluysa devam eder", () => {
+    expect(sectionStatus({ questionCount: 8, answeredCount: 0 })).toBe("EMPTY");
+    expect(sectionStatus({ questionCount: 8, answeredCount: 3 })).toBe("IN_PROGRESS");
+    expect(sectionStatus({ questionCount: 8, answeredCount: 8 })).toBe("DONE");
+  });
+
+  it("sorusu olmayan bölüm bitmiş sayılır", () => {
+    // Panoda kırmızı durup koordinatörü boşuna meşgul etmesin.
+    expect(sectionStatus({ questionCount: 0, answeredCount: 0 })).toBe("DONE");
+  });
+
+  it("beklenenden çok cevap bölümü geri almaz", () => {
+    // Bölümden soru çıkarılırsa cevap sayısı soru sayısını aşabilir.
+    expect(sectionStatus({ questionCount: 3, answeredCount: 5 })).toBe("DONE");
+  });
+});
+
+describe("rollupByAssignee", () => {
+  const sections = [
+    { id: ATIK, assigneeId: AYSE, questionCount: 10, answeredCount: 10 },
+    { id: SOSYAL, assigneeId: AYSE, questionCount: 10, answeredCount: 5 },
+    { id: ENERJI, assigneeId: MEHMET, questionCount: 4, answeredCount: 0 },
+    { id: "bolum-tedarik", assigneeId: null, questionCount: 6, answeredCount: 3 },
+  ];
+
+  it("kişi başına yükü ve doluluğu toplar", () => {
+    const rows = rollupByAssignee(sections);
+
+    expect(rows.find((row) => row.assigneeId === AYSE)).toEqual({
+      assigneeId: AYSE,
+      sections: 2,
+      questionCount: 20,
+      answeredCount: 15,
+      doneSections: 1,
+      percentage: 75,
+    });
+    expect(rows.find((row) => row.assigneeId === MEHMET)?.percentage).toBe(0);
+  });
+
+  it("atanmamış bölümleri tek satırda toplar", () => {
+    // Koordinatörün üzerinde kalan yük de panoda görünmeli.
+    const unassigned = rollupByAssignee(sections).find((row) => row.assigneeId === null);
+
+    expect(unassigned).toMatchObject({ sections: 1, questionCount: 6, answeredCount: 3 });
+  });
+
+  it("sorusuz bölüm yüzdeyi sıfıra bölmez", () => {
+    const rows = rollupByAssignee([
+      { id: ATIK, assigneeId: AYSE, questionCount: 0, answeredCount: 0 },
+    ]);
+
+    expect(rows[0].percentage).toBe(100);
+    expect(rows[0].doneSections).toBe(1);
   });
 });

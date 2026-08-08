@@ -9,6 +9,7 @@ import {
   getOrCreateAssessment,
   getSectionVisibility,
 } from "@/lib/assessment";
+import { sectionOfQuestion } from "@/lib/section-assignment";
 
 function getQuestionSurveyId(question: {
   category?: { surveyId: string | null } | null;
@@ -99,15 +100,15 @@ export async function POST(request: NextRequest) {
         category: { select: { surveyId: true } },
         subCategory: {
           select: {
-            id: true,
             category: { select: { surveyId: true } }
           }
         },
         subLevel: {
           select: {
+            // Sorunun hangi bölüme ait olduğu görev dağılımı için gerekli.
+            subCategoryId: true,
             subCategory: {
               select: {
-                id: true,
                 category: { select: { surveyId: true } }
               }
             }
@@ -168,7 +169,7 @@ export async function POST(request: NextRequest) {
      * tek sorumlu kuralını sessizce delerdi.
      */
     const visibility = await getSectionVisibility(userId, surveyId);
-    const sectionId = question.subCategory?.id ?? question.subLevel?.subCategory?.id ?? null;
+    const sectionId = sectionOfQuestion(question);
     const allowed = sectionId ? visibility.canSee(sectionId) : visibility.canSeeDirect;
 
     if (!allowed) {

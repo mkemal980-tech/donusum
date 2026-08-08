@@ -5,13 +5,18 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Header from "@/components/ui/header";
 import { AlertCircle, ArrowLeft, Info, Loader2, Users } from "lucide-react";
+import { type SectionStatus, rollupByAssignee, sectionStatus } from "@/lib/section-assignment";
 
 /**
- * Bölüm bazlı görev dağılımı ekranı.
+ * Görev dağılımı ve ilerleme panosu.
  *
  * Büyük bir kuruluşta anketi tek kişi dolduramaz: atık çevre biriminde,
  * enerji teknikte, sosyal başlıklar İK'dadır. Bu ekran hangi bölümün kimde
  * olduğunu belirler; katkıcı ankette yalnızca kendi bölümlerini görür.
+ *
+ * Dağıtımdan sonra koordinatörün tek sorusu kalıyor — "kimi arayayım" — bu
+ * yüzden pano ayrı bir ekran değil, dağıtım tablosunun üzerine binen bir
+ * sütun: sorumlu ve ilerleme yan yana durmadıkça soru cevaplanmıyor.
  *
  * Dağıtım isteğe bağlıdır — hiç atama yapılmazsa anket bugünkü gibi herkese
  * açık kalır. Bu yüzden ekran "önce dağıtım yap" diye dayatmaz.
@@ -28,12 +33,15 @@ type Section = {
   id: string;
   name: string;
   questionCount: number;
+  answeredCount: number;
+  lastAnsweredAt: string | null;
   assigneeId: string | null;
 };
 type Category = {
   id: string;
   name: string;
   directQuestionCount: number;
+  directAnsweredCount: number;
   sections: Section[];
 };
 
@@ -41,6 +49,30 @@ const memberLabel = (member: Member) => {
   const name = [member.firstName, member.lastName].filter(Boolean).join(" ").trim();
   return name || member.email;
 };
+
+const STATUS_LABEL: Record<SectionStatus, string> = {
+  EMPTY: "Başlanmadı",
+  IN_PROGRESS: "Devam ediyor",
+  DONE: "Bitti",
+};
+
+const STATUS_STYLE: Record<SectionStatus, string> = {
+  EMPTY: "bg-[var(--bg-card-2)] text-[var(--text-dim)] border-[var(--border-soft)]",
+  IN_PROGRESS: "bg-[var(--warning-bg)] text-[var(--warning)] border-[var(--warning)]/30",
+  DONE: "bg-[rgba(12,193,195,0.15)] text-[var(--accent)] border-[var(--accent)]/50",
+};
+
+/** İnce ilerleme çubuğu — satır yüksekliğini büyütmeden doluluk göstersin. */
+function ProgressBar({ percentage }: { percentage: number }) {
+  return (
+    <span className="block h-1.5 w-full rounded-full bg-[var(--border-soft)] overflow-hidden">
+      <span
+        className="block h-full bg-[var(--accent)] transition-all duration-500"
+        style={{ width: `${percentage}%` }}
+      />
+    </span>
+  );
+}
 
 export default function SectionAssignmentsPage() {
   const router = useRouter();
@@ -142,27 +174,64 @@ export default function SectionAssignmentsPage() {
     }
   };
 
-  const sections = categories.flatMap((category) => category.sections);
+  const sections = useMemo(
+    () => categories.flatMap((category) => category.sections),
+    [categories]
+  );
   const assignedCount = sections.filter((section) => section.assigneeId).length;
   const directQuestionCount = categories.reduce(
     (sum, category) => sum + category.directQuestionCount,
     0
   );
 
-  /** Kişi başına yük — dağıtımın dengesi tek bakışta görünsün. */
+  /** Anketin tamamı — bölümler ve bölüme bağlı olmayan sorular birlikte. */
+  const overall = useMemo(() => {
+    const total =
+      sections.reduce((sum, section) => sum + section.questionCount, 0) +
+      categories.reduce((sum, category) => sum + category.directQuestionCount, 0);
+    const answered =
+      sections.reduce((sum, section) => sum + section.answeredCount, 0) +
+      categories.reduce((sum, category) => sum + category.directAnsweredCount, 0);
+
+    return {
+      total,
+      answered,
+      percentage: total > 0 ? Math.round((answered / total) * 100) : 0,
+    };
+  }, [categories, sections]);
+
+  /**
+   * Kim ne kadar doldurdu. Atanmamış bölümler tek satırda toplanır —
+   * koordinatörün üzerinde kalan yük en çok orada birikiyor.
+   */
   const workload = useMemo(() => {
-    const byMember = new Map<string, { sections: number; questions: number }>();
-    for (const section of sections) {
-      if (!section.assigneeId) continue;
-      const current = byMember.get(section.assigneeId) ?? { sections: 0, questions: 0 };
-      current.sections += 1;
-      current.questions += section.questionCount;
-      byMember.set(section.assigneeId, current);
-    }
-    return members
-      .map((member) => ({ member, ...(byMember.get(member.id) ?? { sections: 0, questions: 0 }) }))
-      .filter((row) => row.sections > 0);
+    const memberById = new Map(members.map((member) => [member.id, member]));
+
+    return rollupByAssignee(sections)
+      .map((row) => ({
+        ...row,
+        label: row.assigneeId
+          ? memberLabel(
+              memberById.get(row.assigneeId) ?? {
+                id: row.assigneeId,
+                email: "Ayrılmış kullanıcı",
+                firstName: null,
+                lastName: null,
+              }
+            )
+          : "Atanmamış (sizde)",
+      }))
+      .sort((a, b) => {
+        // Atanmamış satır en sonda; gerisi en az dolandan başlayarak —
+        // koordinatörün ilk bakacağı yer geride kalanlar.
+        if (a.assigneeId === null) return 1;
+        if (b.assigneeId === null) return -1;
+        return a.percentage - b.percentage;
+      });
   }, [members, sections]);
+
+  const formatDate = (value: string | null) =>
+    value ? new Date(value).toLocaleDateString("tr-TR") : null;
 
   return (
     <div className="min-h-screen bg-[var(--bg-main)]">
@@ -180,7 +249,7 @@ export default function SectionAssignmentsPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-[var(--text-main)] mb-1">Görev Dağılımı</h1>
           <p className="text-[var(--text-muted)]">
-            Anketin hangi bölümünü kimin dolduracağını belirleyin.
+            Anketin hangi bölümünü kimin dolduracağını belirleyin, nerede kalındığını takip edin.
           </p>
         </div>
 
@@ -256,30 +325,68 @@ export default function SectionAssignmentsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {categories.map((category) => (
+            {/* Kuruluşun bu anketteki durumu — panonun tek satırlık özeti. */}
+            <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="font-semibold text-[var(--text-main)]">Anketin durumu</h2>
+                <span className="text-sm text-[var(--text-muted)] tabular-nums">
+                  {overall.answered}/{overall.total} soru · %{overall.percentage}
+                </span>
+              </div>
+              <ProgressBar percentage={overall.percentage} />
+            </div>
+
+            {categories.map((category) => {
+              const categoryTotal =
+                category.sections.reduce((sum, section) => sum + section.questionCount, 0) +
+                category.directQuestionCount;
+              const categoryAnswered =
+                category.sections.reduce((sum, section) => sum + section.answeredCount, 0) +
+                category.directAnsweredCount;
+
+              return (
               <div
                 key={category.id}
                 className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden"
               >
-                <div className="px-4 py-3 border-b border-[var(--border-soft)] flex items-center justify-between">
+                <div className="px-4 py-3 border-b border-[var(--border-soft)] flex flex-wrap items-center justify-between gap-2">
                   <h2 className="font-semibold text-[var(--text-main)]">{category.name}</h2>
                   <span className="text-xs text-[var(--text-dim)] tabular-nums">
                     {category.sections.filter((section) => section.assigneeId).length}/
-                    {category.sections.length} atandı
+                    {category.sections.length} atandı · {categoryAnswered}/{categoryTotal} soru
                   </span>
                 </div>
 
                 <div className="divide-y divide-[var(--border-soft)]">
-                  {category.sections.map((section) => (
+                  {category.sections.map((section) => {
+                    const status = sectionStatus(section);
+                    const percentage =
+                      section.questionCount > 0
+                        ? Math.round((section.answeredCount / section.questionCount) * 100)
+                        : 100;
+                    const lastDate = formatDate(section.lastAnsweredAt);
+
+                    return (
                     <div
                       key={section.id}
                       className="px-4 py-3 flex flex-wrap items-center justify-between gap-3"
                     >
-                      <div className="min-w-[200px]">
-                        <p className="text-[var(--text-main)]">{section.name}</p>
-                        <p className="text-xs text-[var(--text-dim)] tabular-nums">
-                          {section.questionCount} soru
+                      <div className="min-w-[220px] flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-[var(--text-main)]">{section.name}</p>
+                          <span
+                            className={`px-2 py-0.5 rounded-full border text-[11px] ${STATUS_STYLE[status]}`}
+                          >
+                            {STATUS_LABEL[status]}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[var(--text-dim)] tabular-nums mt-0.5">
+                          {section.answeredCount}/{section.questionCount} soru
+                          {lastDate ? ` · son giriş ${lastDate}` : ""}
                         </p>
+                        <span className="block mt-1.5 max-w-[280px]">
+                          <ProgressBar percentage={percentage} />
+                        </span>
                       </div>
 
                       <select
@@ -300,7 +407,8 @@ export default function SectionAssignmentsPage() {
                         ))}
                       </select>
                     </div>
-                  ))}
+                    );
+                  })}
 
                   {category.directQuestionCount > 0 && (
                     // Bu sorular bir bölüme bağlı olmadığı için atanamaz.
@@ -308,7 +416,8 @@ export default function SectionAssignmentsPage() {
                       <div>
                         <p className="text-[var(--text-muted)]">Kategori Soruları</p>
                         <p className="text-xs text-[var(--text-dim)] tabular-nums">
-                          {category.directQuestionCount} soru — bölüme bağlı değil
+                          {category.directAnsweredCount}/{category.directQuestionCount} soru —
+                          bölüme bağlı değil
                         </p>
                       </div>
                       <span className="text-xs text-[var(--text-dim)]">Sizde kalır</span>
@@ -316,21 +425,34 @@ export default function SectionAssignmentsPage() {
                   )}
                 </div>
               </div>
-            ))}
+              );
+            })}
 
             {workload.length > 0 && (
               <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-4">
-                <h2 className="font-semibold text-[var(--text-main)] mb-3">Kişi başına yük</h2>
-                <div className="space-y-2">
+                <h2 className="font-semibold text-[var(--text-main)] mb-1">Kim ne kadar doldurdu</h2>
+                <p className="text-xs text-[var(--text-dim)] mb-3">
+                  En geride kalan üstte; kimi arayacağınız listenin başında.
+                </p>
+                <div className="space-y-3">
                   {workload.map((row) => (
-                    <div
-                      key={row.member.id}
-                      className="flex items-center justify-between text-sm text-[var(--text-muted)]"
-                    >
-                      <span>{memberLabel(row.member)}</span>
-                      <span className="tabular-nums text-[var(--text-dim)]">
-                        {row.sections} bölüm · {row.questions} soru
-                      </span>
+                    <div key={row.assigneeId ?? "atanmamis"}>
+                      <div className="flex items-center justify-between text-sm mb-1 gap-3">
+                        <span
+                          className={
+                            row.assigneeId
+                              ? "text-[var(--text-main)]"
+                              : "text-[var(--text-muted)] italic"
+                          }
+                        >
+                          {row.label}
+                        </span>
+                        <span className="tabular-nums text-[var(--text-dim)] text-xs shrink-0">
+                          {row.doneSections}/{row.sections} bölüm bitti ·{" "}
+                          {row.answeredCount}/{row.questionCount} soru · %{row.percentage}
+                        </span>
+                      </div>
+                      <ProgressBar percentage={row.percentage} />
                     </div>
                   ))}
                 </div>

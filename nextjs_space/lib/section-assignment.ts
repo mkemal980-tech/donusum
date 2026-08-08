@@ -87,6 +87,20 @@ export function buildSectionVisibility(
   };
 }
 
+/**
+ * Sorunun (dolayısıyla cevabın) hangi bölüme ait olduğu.
+ *
+ * Soru ya doğrudan bölüme ya da bölümün bir alt seviyesine bağlıdır. İkisi de
+ * yoksa kategoriye doğrudan bağlıdır ve hiçbir bölüme ait değildir; bu sorular
+ * atanamaz ve koordinatörde kalır.
+ */
+export function sectionOfQuestion(question: {
+  subCategoryId?: string | null;
+  subLevel?: { subCategoryId: string } | null;
+}): string | null {
+  return question.subCategoryId ?? question.subLevel?.subCategoryId ?? null;
+}
+
 /** Bir bölümün sorumlusu; atanmamışsa null. */
 export function assigneeOf(
   assignments: SectionAssignment[],
@@ -96,13 +110,82 @@ export function assigneeOf(
   return found?.assigneeId ?? null;
 }
 
-/** Kişi başına bölüm sayısı — dağıtımın dengeli olup olmadığını göstermek için. */
-export function sectionCountByAssignee(
-  assignments: SectionAssignment[]
-): Record<string, number> {
-  const counts: Record<string, number> = {};
-  for (const assignment of assignments) {
-    counts[assignment.assigneeId] = (counts[assignment.assigneeId] ?? 0) + 1;
+/**
+ * Koordinatör panosu.
+ *
+ * Dağıtımdan sonra koordinatörün tek bir sorusu kalıyor: "kim ne kadar
+ * doldurdu, kimi arayayım?" Cevap bölüm bazlı ilerlemeden çıkar; kişi başına
+ * toplam da aynı veriden türetilir, ayrıca sorgulanmaz.
+ */
+
+export type SectionProgress = {
+  id: string;
+  assigneeId: string | null;
+  questionCount: number;
+  answeredCount: number;
+};
+
+export type SectionStatus = "EMPTY" | "IN_PROGRESS" | "DONE";
+
+/**
+ * Bölümün durumu.
+ *
+ * Sorusuz bölüm "bitti" sayılır: doldurulacak bir şeyi yoktur ve panoda
+ * kırmızı durması koordinatörü boşuna meşgul ederdi.
+ */
+export function sectionStatus(section: {
+  questionCount: number;
+  answeredCount: number;
+}): SectionStatus {
+  if (section.questionCount === 0) return "DONE";
+  if (section.answeredCount === 0) return "EMPTY";
+  return section.answeredCount >= section.questionCount ? "DONE" : "IN_PROGRESS";
+}
+
+export type AssigneeRollup = {
+  /** null → atanmamış bölümler; sorumluluğu koordinatörde. */
+  assigneeId: string | null;
+  sections: number;
+  questionCount: number;
+  answeredCount: number;
+  /** Tamamlanmış bölüm sayısı — "3 bölümün 2'si bitti" demek için. */
+  doneSections: number;
+  percentage: number;
+};
+
+/**
+ * Bölümleri sorumlularına göre toplar.
+ *
+ * Atanmamış bölümler tek bir `null` satırında toplanır; koordinatörün kendi
+ * üzerinde kalan yükü de panoda görünsün diye — dağıtımın unutulan kısmı en
+ * çok orada birikiyor.
+ */
+export function rollupByAssignee(sections: SectionProgress[]): AssigneeRollup[] {
+  const rows = new Map<string | null, AssigneeRollup>();
+
+  for (const section of sections) {
+    const key = section.assigneeId ?? null;
+    const row =
+      rows.get(key) ??
+      {
+        assigneeId: key,
+        sections: 0,
+        questionCount: 0,
+        answeredCount: 0,
+        doneSections: 0,
+        percentage: 0,
+      };
+
+    row.sections += 1;
+    row.questionCount += section.questionCount;
+    row.answeredCount += section.answeredCount;
+    if (sectionStatus(section) === "DONE") row.doneSections += 1;
+    rows.set(key, row);
   }
-  return counts;
+
+  return Array.from(rows.values()).map((row) => ({
+    ...row,
+    percentage:
+      row.questionCount > 0 ? Math.round((row.answeredCount / row.questionCount) * 100) : 100,
+  }));
 }
