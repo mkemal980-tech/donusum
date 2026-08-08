@@ -209,8 +209,10 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <div className="mt-4 pt-4 border-t border-blue-500/20">
+            {/* Cevaplar kişiye değil kuruluşun değerlendirmesine bağlı;
+                "aktif" ölçüsü üzerinde çalışılmış değerlendirme sayısıdır. */}
             <div className="flex justify-between text-sm">
-              <span className="text-[var(--text-muted)]">Aktif</span>
+              <span className="text-[var(--text-muted)]">Çalışılan değerlendirme</span>
               <span className="text-blue-400">{overview?.activeUsers || 0}</span>
             </div>
             <div className="flex justify-between text-sm mt-1">
@@ -370,7 +372,7 @@ export default function AdminDashboardPage() {
             <div className="p-4 rounded-lg bg-[var(--bg-card)] border border-[var(--border-soft)]">
               <div className="flex items-center gap-2 text-[var(--text-muted)] mb-1">
                 <Users className="w-4 h-4" />
-                <span className="text-sm">Tamamlayan Kullanıcı</span>
+                <span className="text-sm">Tamamlayan Değerlendirme</span>
               </div>
               <p className="text-xl font-bold text-[var(--text-main)]">
                 {surveyStats.completedUsers}
@@ -414,7 +416,7 @@ export default function AdminDashboardPage() {
                         </div>
                       </th>
                       <th className="text-center py-3 px-4 text-[var(--text-muted)] font-medium">
-                        Kullanıcı
+                        Değerlendirme
                       </th>
                     </tr>
                   </thead>
@@ -518,7 +520,7 @@ export default function AdminDashboardPage() {
                       <div className="pt-2 border-t border-[var(--border-soft)]">
                         <div className="flex justify-between">
                           <span className="text-sm text-[var(--text-muted)]">
-                            Kullanıcı
+                            Değerlendirme
                           </span>
                           <span className="text-[var(--text-main)]">
                             {sector.userCount}
@@ -538,10 +540,10 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-3">
                 <Users className="w-5 h-5 text-[var(--accent)]" />
                 <h2 className="text-lg font-semibold text-[var(--text-main)]">
-                  Kullanıcı Puanları
+                  Değerlendirme Puanları
                 </h2>
                 <span className="px-2 py-1 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] text-sm">
-                  {userScores.length} kullanıcı
+                  {userScores.length} değerlendirme
                 </span>
               </div>
 
@@ -565,8 +567,10 @@ export default function AdminDashboardPage() {
                       <th className="text-left py-3 px-4 text-[var(--text-muted)] font-medium">
                         #
                       </th>
+                      {/* Satır bir kuruluşun değerlendirmesi; ad olarak kuruluş,
+                          tek kişilik değerlendirmede sahibi gösterilir. */}
                       <th className="text-left py-3 px-4 text-[var(--text-muted)] font-medium">
-                        Kullanıcı
+                        Değerlendirme
                       </th>
                       <th className="text-left py-3 px-4 text-[var(--text-muted)] font-medium">
                         Kuruluş
@@ -671,8 +675,8 @@ export default function AdminDashboardPage() {
             ) : (
               <p className="text-[var(--text-muted)] text-center py-8">
                 {searchQuery
-                  ? "Arama kriterine uygun kullanıcı bulunamadı."
-                  : "Bu anket için henüz kullanıcı puanları bulunmuyor."}
+                  ? "Arama kriterine uygun değerlendirme bulunamadı."
+                  : "Bu anket için henüz değerlendirme puanı bulunmuyor."}
               </p>
             )}
           </div>

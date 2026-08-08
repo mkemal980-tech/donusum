@@ -32,96 +32,90 @@ export async function GET(request: NextRequest) {
     }
 
     /**
-     * Cevaplar artık kuruluşun değerlendirmesine bağlı, kişiye değil.
-     * Bu yüzden takım tablosu birimin değerlendirmeleri üzerinden kurulur:
-     * bir satır = bir değerlendirme (kuruluşun bir anketi), kişi başına
-     * ayrı puan yok — zaten amaç tek kurumsal puan üretmekti.
+     * Cevaplar kuruluşun değerlendirmesine bağlı, kişiye değil. Bu yüzden
+     * tablonun satırı da kişi değil değerlendirme: bir satır = bir kuruluşun
+     * bir anketi. Kişi başına ayrı puan yok — amaç zaten tek kurumsal puandı.
+     *
+     * Kişi düzeyindeki soru ("kim ne kadar doldurdu") görev dağılımı
+     * ekranında cevaplanıyor; burada tekrarlanmıyor.
      */
-    const managedUnits = await prisma.assessment.findMany({
+    const assessments = await prisma.assessment.findMany({
       where: { unitId: { in: managedUnitIds } },
       include: {
-        unit: { select: { id: true, name: true } },
+        unit: { select: { id: true, name: true, description: true } },
         survey: { select: { id: true, name: true } },
         responses: {
-          include: {
-            question: {
-              include: {
-                subLevel: {
-                  include: {
-                    subCategory: {
-                      include: {
-                        category: true,
-                      },
-                    },
-                  },
-                },
-                subCategory: {
-                  include: {
-                    category: true,
-                  },
-                },
-              },
-            },
+          select: {
+            score: true,
+            updatedAt: true,
+            answeredById: true,
+            question: { select: { weight: true } },
           },
         },
       },
     });
 
-    // Her değerlendirme için skor hesapla
-    const teamData = managedUnits.map((assessment) => {
-      {
-        const responses = assessment.responses || [];
-        let totalScore = 0;
-        let totalWeight = 0;
+    const rows = assessments.map((assessment) => {
+      const responses = assessment.responses;
 
-        responses.forEach((response: any) => {
-          const weight = response.question?.weight || 1;
-          totalScore += response.score * weight;
-          totalWeight += weight;
-        });
+      let totalScore = 0;
+      let totalWeight = 0;
+      const contributors = new Set<string>();
+      let lastActivityAt: Date | null = null;
 
-        const averageScore = totalWeight > 0 ? totalScore / totalWeight : 0;
-        const normalizedScore = (averageScore / 5) * 100;
-
-        return {
-          id: assessment.id,
-          email: "-",
-          firstName: assessment.survey.name,
-          lastName: null as string | null,
-          unitId: assessment.unit?.id ?? "",
-          unitName: assessment.unit?.name ?? "-",
-          sector: null as string | null,
-          subSector: null as string | null,
-          responseCount: responses.length,
-          score: Math.round(normalizedScore * 10) / 10,
-          maturityScore: Math.round(averageScore * 100) / 100,
-        };
+      for (const response of responses) {
+        const weight = response.question?.weight || 1;
+        totalScore += response.score * weight;
+        totalWeight += weight;
+        if (response.answeredById) contributors.add(response.answeredById);
+        if (!lastActivityAt || response.updatedAt > lastActivityAt) {
+          lastActivityAt = response.updatedAt;
+        }
       }
-    });
 
-    // Birim özeti
-    const unitSummaries = managedUnits.map((assessment) => {
-      const unit = assessment.unit;
-      const unitUsers = teamData.filter((u) => u.unitId === (unit?.id ?? ""));
-      const avgScore =
-        unitUsers.length > 0
-          ? unitUsers.reduce((sum, u) => sum + u.score, 0) / unitUsers.length
-          : 0;
-      const completedUsers = unitUsers.filter((u) => u.responseCount > 0).length;
+      const averageScore = totalWeight > 0 ? totalScore / totalWeight : 0;
 
       return {
-        id: unit?.id ?? assessment.id,
-        name: unit?.name ?? "-",
-        description: null as string | null,
-        userCount: unitUsers.length,
-        completedUsers,
-        averageScore: Math.round(avgScore * 10) / 10,
+        id: assessment.id,
+        unitId: assessment.unit?.id ?? "",
+        unitName: assessment.unit?.name ?? "-",
+        surveyId: assessment.survey.id,
+        surveyName: assessment.survey.name,
+        responseCount: responses.length,
+        /** Cevaba dokunmuş kişi sayısı (denetim izi answeredById üzerinden). */
+        contributorCount: contributors.size,
+        lastActivityAt,
+        score: Math.round((averageScore / 5) * 100 * 10) / 10,
+        maturityScore: Math.round(averageScore * 100) / 100,
       };
     });
 
+    // Birim özeti: her birim bir kez: bir birimin birden çok anketi olabilir.
+    const unitSummaries = managedUnitIds
+      .map((unitId) => {
+        const unitRows = rows.filter((row) => row.unitId === unitId);
+        if (unitRows.length === 0) return null;
+
+        const started = unitRows.filter((row) => row.responseCount > 0);
+        const averageScore =
+          started.length > 0
+            ? started.reduce((sum, row) => sum + row.score, 0) / started.length
+            : 0;
+
+        return {
+          id: unitId,
+          name: unitRows[0].unitName,
+          description: null as string | null,
+          assessmentCount: unitRows.length,
+          startedCount: started.length,
+          averageScore: Math.round(averageScore * 10) / 10,
+        };
+      })
+      .filter((summary): summary is NonNullable<typeof summary> => summary !== null);
+
     return NextResponse.json({
       units: unitSummaries,
-      team: teamData,
+      assessments: rows,
     });
   } catch (error) {
     console.error("Takım verisi getirme hatası:", error);

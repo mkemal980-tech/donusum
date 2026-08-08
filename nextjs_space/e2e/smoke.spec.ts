@@ -5,11 +5,11 @@ import { test, expect } from "@playwright/test";
  * Tarayıcı kurulumundan sonra `npm run test:e2e` ile çalışır.
  */
 
-test("ana sayfa yüklenir ve giriş bağlantısı görünür", async ({ page }) => {
+test("ana sayfa yüklenir ve panoya çağrı bağlantısı görünür", async ({ page }) => {
   await page.goto("/");
-  // Landing sayfasında giriş/kayıt bağlantıları bulunmalı
-  const loginLink = page.getByRole("link", { name: /giriş|login/i }).first();
-  await expect(loginLink).toBeVisible();
+  // Açılış sayfasında ayrı bir "Giriş" bağlantısı yok; bütün çağrılar panoya
+  // gider ve oturumsuz kullanıcıyı /dashboard'ın kendisi /login'e yönlendirir.
+  await expect(page.locator('a[href="/dashboard"]').first()).toBeVisible();
 });
 
 test("giriş sayfası e-posta ve şifre alanları içerir", async ({ page }) => {

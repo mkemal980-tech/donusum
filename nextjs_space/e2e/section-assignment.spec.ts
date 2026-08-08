@@ -113,6 +113,25 @@ async function login(browser: Browser, email: string): Promise<Page> {
   return page;
 }
 
+/**
+ * Sayfayı açar ve beklenen metni görene kadar tazeler.
+ *
+ * Geliştirme sunucusu bir rotayı ilk kez derlerken tek tük istek düşürüyor;
+ * ekran o zaman "liste alınamadı" diyor. Uygulama hatası değil, ama testi
+ * rastgele düşürüyordu.
+ */
+async function openUntilVisible(page: Page, url: string, text: string) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto(url);
+    try {
+      await expect(page.getByText(text).first()).toBeVisible({ timeout: 15_000 });
+      return;
+    } catch (error) {
+      if (attempt === 2) throw error;
+    }
+  }
+}
+
 test("koordinatör bölüm dağıtır, katkıcı yalnızca kendi bölümünü doldurur", async ({
   browser,
 }) => {
@@ -121,8 +140,7 @@ test("koordinatör bölüm dağıtır, katkıcı yalnızca kendi bölümünü do
 
   // --- koordinatör dağıtır ---
   const coordinator = await login(browser, COORDINATOR);
-  await coordinator.goto("/unit-manager/assignments");
-  await expect(coordinator.getByText(SECTION_MINE)).toBeVisible({ timeout: 15_000 });
+  await openUntilVisible(coordinator, "/unit-manager/assignments", SECTION_MINE);
   await expect(coordinator.getByText(SECTION_OTHER)).toBeVisible();
 
   // 0: anket seçici, 1: Atık Yönetimi, 2: Enerji Verimliliği
@@ -131,10 +149,7 @@ test("koordinatör bölüm dağıtır, katkıcı yalnızca kendi bölümünü do
 
   // --- katkıcı yalnızca kendi bölümünü görür ---
   const contributor = await login(browser, CONTRIBUTOR);
-  await contributor.goto("/survey");
-  await expect(contributor.getByText("Size atanan 1 bölüm gösteriliyor.")).toBeVisible({
-    timeout: 20_000,
-  });
+  await openUntilVisible(contributor, "/survey", "Size atanan 1 bölüm gösteriliyor.");
   await expect(contributor.getByText(SECTION_MINE).first()).toBeVisible();
   await expect(contributor.getByText(SECTION_OTHER)).toHaveCount(0);
 
@@ -162,4 +177,9 @@ test("koordinatör bölüm dağıtır, katkıcı yalnızca kendi bölümünü do
   await expect(coordinator.getByText("1/3 soru").first()).toBeVisible({ timeout: 20_000 });
   await expect(coordinator.getByText("Devam ediyor")).toBeVisible();
   await expect(coordinator.getByText("Başlanmadı")).toBeVisible();
+
+  // --- birim panosunun satırı kişi değil değerlendirme ---
+  await openUntilVisible(coordinator, "/unit-manager", SURVEY);
+  await expect(coordinator.getByRole("columnheader", { name: "Değerlendirme" })).toBeVisible();
+  await expect(coordinator.getByText("1 kişi")).toBeVisible();
 });

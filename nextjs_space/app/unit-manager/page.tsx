@@ -22,16 +22,20 @@ import {
   FileText,
 } from "lucide-react";
 
-interface TeamMember {
+/**
+ * Tablonun satırı kişi değil değerlendirme: cevaplar kuruluşun
+ * değerlendirmesine bağlı ve amaç tek kurumsal puan. "Kim ne kadar doldurdu"
+ * sorusu görev dağılımı ekranında cevaplanıyor.
+ */
+interface AssessmentRow {
   id: string;
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
   unitId: string;
   unitName: string;
-  sector: string | null;
-  subSector: string | null;
+  surveyId: string;
+  surveyName: string;
   responseCount: number;
+  contributorCount: number;
+  lastActivityAt: string | null;
   score: number;
   maturityScore: number;
 }
@@ -40,8 +44,8 @@ interface UnitSummary {
   id: string;
   name: string;
   description: string | null;
-  userCount: number;
-  completedUsers: number;
+  assessmentCount: number;
+  startedCount: number;
   averageScore: number;
 }
 
@@ -89,7 +93,7 @@ export default function UnitManagerPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [units, setUnits] = useState<UnitSummary[]>([]);
-  const [team, setTeam] = useState<TeamMember[]>([]);
+  const [assessments, setAssessments] = useState<AssessmentRow[]>([]);
   const [expandedUnits, setExpandedUnits] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<"team" | "documents">("team");
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -118,7 +122,7 @@ export default function UnitManagerPage() {
       if (res.ok) {
         const data = await res.json();
         setUnits(data.units || []);
-        setTeam(data.team || []);
+        setAssessments(data.assessments || []);
         setExpandedUnits(new Set(data.units?.map((u: UnitSummary) => u.id) || []));
       }
     } catch (error) {
@@ -208,9 +212,13 @@ export default function UnitManagerPage() {
     );
   }
 
-  const totalUsers = team.length;
-  const completedUsers = team.filter((m) => m.responseCount > 0).length;
-  const avgScore = totalUsers > 0 ? team.reduce((sum, m) => sum + m.score, 0) / totalUsers : 0;
+  const totalAssessments = assessments.length;
+  // Başlanmış olanlar: hiç cevabı olmayan değerlendirme ortalamayı aşağı çekmesin.
+  const startedAssessments = assessments.filter((row) => row.responseCount > 0);
+  const avgScore =
+    startedAssessments.length > 0
+      ? startedAssessments.reduce((sum, row) => sum + row.score, 0) / startedAssessments.length
+      : 0;
 
   return (
     <div className="min-h-screen bg-[var(--bg-main)]">
@@ -272,8 +280,8 @@ export default function UnitManagerPage() {
                 <Users className="text-[var(--accent)] " size={24} />
               </div>
               <div>
-                <p className="text-sm text-[var(--text-dim)] ">Toplam Kullanıcı</p>
-                <p className="text-2xl font-bold text-[var(--text-main)] ">{totalUsers}</p>
+                <p className="text-sm text-[var(--text-dim)] ">Değerlendirme</p>
+                <p className="text-2xl font-bold text-[var(--text-main)] ">{totalAssessments}</p>
               </div>
             </div>
           </motion.div>
@@ -289,9 +297,9 @@ export default function UnitManagerPage() {
                 <CheckCircle className="text-[var(--accent)] " size={24} />
               </div>
               <div>
-                <p className="text-sm text-[var(--text-dim)] ">Anketi Tamamlayan</p>
+                <p className="text-sm text-[var(--text-dim)] ">Başlanan</p>
                 <p className="text-2xl font-bold text-[var(--text-main)] ">
-                  {completedUsers} / {totalUsers}
+                  {startedAssessments.length} / {totalAssessments}
                 </p>
               </div>
             </div>
@@ -326,7 +334,7 @@ export default function UnitManagerPage() {
             }`}
           >
             <Users size={18} />
-            Ekip Üyeleri
+            Değerlendirmeler
           </button>
           <button
             onClick={() => setActiveTab("documents")}
@@ -350,7 +358,7 @@ export default function UnitManagerPage() {
         {activeTab === "team" ? (
         <div className="space-y-6">
           {units.map((unit) => {
-            const unitMembers = team.filter((m) => m.unitId === unit.id);
+            const unitAssessments = assessments.filter((row) => row.unitId === unit.id);
             const isExpanded = expandedUnits.has(unit.id);
 
             return (
@@ -381,12 +389,14 @@ export default function UnitManagerPage() {
                     </div>
                     <div className="flex items-center gap-6">
                       <div className="text-center">
-                        <p className="text-sm text-[var(--text-dim)]">Kullanıcı</p>
-                        <p className="font-semibold text-[var(--text-main)]">{unit.userCount}</p>
+                        <p className="text-sm text-[var(--text-dim)]">Değerlendirme</p>
+                        <p className="font-semibold text-[var(--text-main)]">
+                          {unit.assessmentCount}
+                        </p>
                       </div>
                       <div className="text-center">
-                        <p className="text-sm text-[var(--text-dim)]">Tamamlayan</p>
-                        <p className="font-semibold text-[var(--accent)]">{unit.completedUsers}</p>
+                        <p className="text-sm text-[var(--text-dim)]">Başlanan</p>
+                        <p className="font-semibold text-[var(--accent)]">{unit.startedCount}</p>
                       </div>
                       <div className="text-center">
                         <p className="text-sm text-[var(--text-dim)]">Ort. Skor</p>
@@ -397,16 +407,16 @@ export default function UnitManagerPage() {
                 </div>
 
                 {/* Team Members */}
-                {isExpanded && unitMembers.length > 0 && (
+                {isExpanded && unitAssessments.length > 0 && (
                   <div className="border-t">
                     <table className="w-full">
                       <thead className="bg-[var(--bg-main)]">
                         <tr>
                           <th className="px-6 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">
-                            Kullanıcı
+                            Değerlendirme
                           </th>
                           <th className="px-6 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">
-                            Sektör
+                            Katkı veren
                           </th>
                           <th className="px-6 py-3 text-center text-sm font-semibold text-[var(--text-muted)]">
                             Durum
@@ -420,29 +430,33 @@ export default function UnitManagerPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {unitMembers.map((member) => {
-                          const maturity = getMaturityLabel(member.maturityScore);
+                        {unitAssessments.map((row) => {
+                          const maturity = getMaturityLabel(row.maturityScore);
                           return (
-                            <tr key={member.id} className="hover:bg-[var(--bg-main)]">
+                            <tr key={row.id} className="hover:bg-[var(--bg-main)]">
                               <td className="px-6 py-4">
                                 <div>
                                   <p className="font-medium text-[var(--text-main)]">
-                                    {member.firstName} {member.lastName}
+                                    {row.surveyName}
                                   </p>
-                                  <p className="text-sm text-[var(--text-dim)]">{member.email}</p>
+                                  <p className="text-sm text-[var(--text-dim)] tabular-nums">
+                                    {row.responseCount} cevap
+                                    {row.lastActivityAt
+                                      ? ` · son giriş ${new Date(
+                                          row.lastActivityAt
+                                        ).toLocaleDateString("tr-TR")}`
+                                      : ""}
+                                  </p>
                                 </div>
                               </td>
-                              <td className="px-6 py-4 text-sm text-[var(--text-muted)]">
-                                {member.sector || "-"}
-                                {member.subSector && (
-                                  <span className="text-[var(--text-dim)]"> / {member.subSector}</span>
-                                )}
+                              <td className="px-6 py-4 text-sm text-[var(--text-muted)] tabular-nums">
+                                {row.contributorCount > 0 ? `${row.contributorCount} kişi` : "-"}
                               </td>
                               <td className="px-6 py-4 text-center">
-                                {member.responseCount > 0 ? (
+                                {row.responseCount > 0 ? (
                                   <span className="inline-flex items-center gap-1 px-2 py-1 bg-[rgba(12,193,195,0.15)] text-[var(--accent)] rounded-full text-xs font-medium">
                                     <CheckCircle size={12} />
-                                    Tamamlandı
+                                    Başlandı
                                   </span>
                                 ) : (
                                   <span className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--warning-bg)] text-[var(--warning)] rounded-full text-xs font-medium">
@@ -454,18 +468,18 @@ export default function UnitManagerPage() {
                               <td className="px-6 py-4 text-center">
                                 <span
                                   className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(
-                                    member.score
+                                    row.score
                                   )}`}
                                 >
                                   <BarChart3 size={14} />
-                                  %{member.score}
+                                  %{row.score}
                                 </span>
                               </td>
                               <td className="px-6 py-4 text-center">
                                 <span className={`font-medium ${maturity.color}`}>
-                                  {member.maturityScore > 0 ? (
+                                  {row.maturityScore > 0 ? (
                                     <>
-                                      {member.maturityScore.toFixed(1)} - {maturity.label}
+                                      {row.maturityScore.toFixed(1)} - {maturity.label}
                                     </>
                                   ) : (
                                     "-"
@@ -480,9 +494,9 @@ export default function UnitManagerPage() {
                   </div>
                 )}
 
-                {isExpanded && unitMembers.length === 0 && (
+                {isExpanded && unitAssessments.length === 0 && (
                   <div className="border-t p-8 text-center text-[var(--text-dim)]">
-                    Bu birimde henüz kullanıcı yok
+                    Bu birimde henüz değerlendirme başlatılmadı
                   </div>
                 )}
               </motion.div>

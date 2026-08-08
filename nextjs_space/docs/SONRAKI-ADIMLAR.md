@@ -33,14 +33,17 @@ Dört adımlı plan:
 - Doğrulandı: aynı birimdeki iki kullanıcının girdiği cevaplar tek puanda
   toplanıyor ve ikisi de aynı kurumsal puanı görüyor.
 
-### 1. adımdan kalan eksik
+### 1. adımdan kalan eksikler — kapandı
 
-- **Arayüz etiketleri güncellenmedi.** Yönetici panosu, birim yöneticisi
-  takım tablosu ve benzeri ekranlarda satırlar artık *değerlendirme* ama
-  başlıklar hâlâ "kullanıcı" diyor. Mantık doğru, etiket yanlış.
-
-(İkinci eksik — tarayıcıda denenmemiş olması — 3. adımda kapandı:
-`e2e/section-assignment.spec.ts` iki oturumlu gerçek akışı geçiriyor.)
+- **Arayüz etiketleri.** Satırlar artık *değerlendirme*, başlıklar da öyle
+  diyor. Birim yöneticisi tablosu en kötüsüydü: API anket adını `firstName`
+  alanına koyup e-postayı `-` yapıyordu; satır kişi kılığındaydı. Artık
+  değerlendirme şeklinde dönüyor (`assessments`) ve tabloda anket adı, katkı
+  veren kişi sayısı, son giriş tarihi, durum ve puan var. Birim özeti de her
+  birimi bir kez sayıyor (önce her değerlendirme için tekrar ediyordu).
+- **Tarayıcıda denenmemiş olması.** `e2e/section-assignment.spec.ts` iki
+  oturumlu gerçek akışı geçiriyor; birim panosunun yeni sözleşmesini de
+  doğruluyor.
 
 ### 2. adımda ne yapıldı
 
@@ -116,14 +119,16 @@ test:e2e` ile çalışır (çalışan bir veritabanı ister; yoksa test atlanır
   girilmemiş; hepsi varsayılan "Orta".
 - **`rescale-score-history.ts`** yazıldı ama üretimde çalıştırılmadı
   (geçmiş puan kaydı yok, şimdilik gereksiz).
-- **Duman testi bayat:** `e2e/smoke.spec.ts` içindeki "ana sayfa yüklenir ve
-  giriş bağlantısı görünür" testi kalıyor — açılış sayfasında artık "Giriş"
-  bağlantısı yok, bütün çağrılar `/dashboard`'a gidiyor (oturumsuz kullanıcıyı
-  o sayfa `/login`'e atıyor). Testin beklentisi güncellenmeli; bu işle ilgisi
-  yok, önceden de kalıyordu.
-- **Migration üretime uygulanmadı:** `000006_section_assignments` yalnızca
-  yerel veritabanında. Dağıtım `npm run db:migrate` çalıştırmıyorsa Railway'de
-  elle uygulanmalı.
+- **Migration'lar elle uygulanmıyor:** `railway.json` içindeki
+  `preDeployCommand: npm run db:migrate` her dağıtımdan önce çalışıyor.
+  `000006_section_assignments` bu yolla üretime geçti; `prisma migrate status`
+  ile doğrulandı ("Database schema is up to date"). Yeni migration için
+  yapılacak tek şey master'a göndermek.
+- **Dev sunucusu ilk derlemede istek düşürüyor.** Bir rota ilk kez derlenirken
+  tek tük istek hata dönüyor ve ekran "liste alınamadı" diyor. E2E testinde
+  sayfayı tazeleyerek aşıldı (`openUntilVisible`). Üretim derlemesinde
+  görülmedi; yine de istemci tarafında bir kez otomatik tekrar denemeye
+  değebilir.
 
 ---
 
