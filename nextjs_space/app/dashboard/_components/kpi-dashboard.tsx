@@ -21,6 +21,7 @@ import {
   Minus,
   ClipboardList,
   ArrowRight,
+  Info,
 } from "lucide-react";
 
 interface KPIData {
@@ -205,6 +206,8 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
     {
       title: 'Toplam Soru',
       value: data.overview.totalQuestions,
+      description:
+        'Bu ankette tanımlı soru sayısı. Sorular kategorilere, kategoriler bölümlere ayrılır; puanınız bu soruların tamamı üzerinden hesaplanır.',
       icon: Layers,
       color: '#6366f1',
       bgColor: 'rgba(99, 102, 241, 0.1)',
@@ -213,6 +216,8 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
     {
       title: 'Tamamlanan',
       value: data.overview.answeredQuestions,
+      description:
+        'Cevaplanan soru sayısı. Sayı kuruluşun tamamına aittir: bölümler farklı kişilere dağıtıldıysa herkesin girdiği cevaplar burada toplanır. Boş sorular puanı düşürür, çünkü cevaplanmamış soru "yok" sayılır.',
       icon: CheckCircle2,
       color: '#22c55e',
       bgColor: 'rgba(34, 197, 94, 0.1)',
@@ -222,6 +227,8 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
     {
       title: 'Olgunluk Puanı',
       value: data.overview.overallScore.toFixed(1),
+      description:
+        'Genel olgunluğunuz, 1-5 ölçeğinde. Hız ve Dayanıklılık eksenlerinin soru ağırlıklarına göre birleşimidir. %0 başarı 1.0\'a, %100 başarı 5.0\'a karşılık gelir; yani 1.0 "puan yok" demek değil, en düşük basamak demektir.',
       suffix: '/5',
       icon: Gauge,
       color: data.overview.maturityLevel.color,
@@ -231,6 +238,8 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
     {
       title: 'Olgunluk Yüzde',
       value: Math.round(data.overview.overallPercentage),
+      description:
+        'Aynı sonucun yüzde hâli: aldığınız puanın alabileceğiniz en yüksek puana oranı. Seviye bu yüzdenin düştüğü basamaktır — %20 Farkındalık, %40 Gelişen, %60 Olgun, %80 ve üzeri Lider.',
       suffix: '%',
       icon: Target,
       color: '#f59e0b',
@@ -240,6 +249,8 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
     {
       title: 'Velocity (Hız)',
       value: data.ironman.velocity.toFixed(1),
+      description:
+        'Aksiyon alma hızınız. Uygulamaya, projeye ve harekete geçmeye bakan sorulardan gelir. Yüksek puan çabuk hareket ettiğinizi gösterir; tek başına yüksek olması ise attığınız adımların kalıcı olduğu anlamına gelmez.',
       suffix: '/5',
       icon: Zap,
       color: '#3b82f6',
@@ -250,8 +261,10 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
       trend: data.ironman.velocityVsSector,
     },
     {
-      title: 'Endurance (Olgunluk)',
+      title: 'Endurance (Dayanıklılık)',
       value: data.ironman.endurance.toFixed(1),
+      description:
+        'Yaptığınız işin kalıcılığı. Politika, dokümantasyon, süreç ve süreklilik sorularından gelir. Yüksek puan, kişilere değil sisteme bağlı çalıştığınızı gösterir.',
       suffix: '/5',
       icon: Activity,
       color: '#14b8a6',
@@ -264,6 +277,8 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
     {
       title: 'Ironman Durumu',
       value: data.ironman.quadrantInfo.title,
+      description:
+        'İki eksenin kesişimi; eşik her iki eksende de 3.0. İkisi de 3.0 üstündeyse Demir Adam (hem hızlı hem kalıcı), yalnızca hız yüksekse Sprinter (hızlı ama kalıcılığı zayıf), yalnızca dayanıklılık yüksekse Maraton Koşucusu (sağlam ama yavaş), ikisi de düşükse Yaya (Walker).',
       icon: Award,
       color: data.ironman.quadrantInfo.color,
       bgColor: `${data.ironman.quadrantInfo.color}20`,
@@ -272,6 +287,8 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
     {
       title: 'Toplam Öneri',
       value: data.recommendations.total,
+      description:
+        'Cevaplarınıza göre şu an size gösterilen öneri sayısı — ankette tanımlı tüm öneriler değil. Bir öneri ancak ilgili puanınız eşiğin altındaysa ya da bağlı olduğu soruya belirli bir cevap verdiyseniz açılır. Quick Win, kısa sürede ve düşük maliyetle yapılabilecek olanlar.',
       icon: Lightbulb,
       color: '#f97316',
       bgColor: 'rgba(249, 115, 22, 0.1)',
@@ -289,8 +306,20 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-soft)] hover:border-[var(--accent)]/30 transition-all duration-300 hover:shadow-lg"
+            tabIndex={0}
+            className="group relative bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-soft)] hover:border-[var(--accent)]/30 transition-all duration-300 hover:shadow-lg focus:outline-none focus:border-[var(--accent)]/50"
           >
+            {/* Sayının ne anlama geldiği. Kartın altına, kart genişliğinde
+                açılır: yana taşarsa son sütunda ekrandan çıkardı. */}
+            {card.description && (
+              <div
+                role="tooltip"
+                className="pointer-events-none absolute left-0 right-0 top-full z-30 mt-2 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card-2)] p-3 text-xs leading-relaxed text-[var(--text-muted)] shadow-xl opacity-0 translate-y-1 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0"
+              >
+                {card.description}
+              </div>
+            )}
+
             <div className="flex items-start justify-between mb-3">
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center"
@@ -306,7 +335,16 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
               {card.suffix && <span className="text-sm text-[var(--text-dim)]">{card.suffix}</span>}
             </div>
             
-            <p className="text-xs text-[var(--text-muted)] mt-1">{card.title}</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1 flex items-center gap-1">
+              {card.title}
+              {card.description && (
+                <Info
+                  size={12}
+                  className="shrink-0 opacity-40 group-hover:opacity-100 transition-opacity"
+                  aria-hidden
+                />
+              )}
+            </p>
             <p className="text-xs mt-1" style={{ color: card.color }}>{card.subtitle}</p>
             
             {card.progress !== undefined && (
