@@ -3,7 +3,11 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
-import { buildSurveyQuestionWhere, calculateUserScore } from "@/lib/scoring";
+import {
+  buildSurveyQuestionWhere,
+  calculateUserScore,
+  getRecommendationsForUser
+} from "@/lib/scoring";
 import { getAssessmentContext, getAssessmentIds } from "@/lib/assessment";
 
 /**
@@ -101,43 +105,14 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      // 4. Recommendations - 3 yol ile bağlı önerileri çek
-      (async () => {
-        // First get all categories for this survey
-        const surveyCategories = await prisma.category.findMany({
-          where: { surveyId },
-          select: { id: true }
-        });
-        const categoryIds = surveyCategories.map(c => c.id);
-
-        return prisma.recommendation.findMany({
-          where: {
-            OR: [
-              { categoryId: { in: categoryIds } },
-              { subCategory: { categoryId: { in: categoryIds } } },
-              { subLevel: { subCategory: { categoryId: { in: categoryIds } } } }
-            ]
-          },
-          select: {
-            id: true,
-            title: true,
-            description: true,
-            categoryId: true,
-            subCategoryId: true,
-            subLevelId: true,
-            strategicType: true,
-            videoUrl: true,
-            minScoreThreshold: true,
-            maxScoreThreshold: true,
-            subCategory: {
-              select: { categoryId: true }
-            },
-            subLevel: {
-              select: { subCategory: { select: { categoryId: true } } }
-            }
-          }
-        });
-      })(),
+      /**
+       * 4. Öneriler — ankette tanımlı olanlar değil, kullanıcıya gösterilenler.
+       *
+       * Kategori kartlarındaki öneri sayısı buradan çıkıyor. Tanımlı sayıyı
+       * göstermek, kullanıcıyı Öneriler ekranında bulamayacağı önerileri
+       * aramaya iter (bkz. /api/dashboard/kpi'deki aynı düzeltme).
+       */
+      getRecommendationsForUser(userId, { surveyId }),
 
       // 5. Category Scores - Bu hesaplama zaten var, kullanıyoruz
       fetchCategoryScores(userId, surveyId),

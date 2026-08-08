@@ -26,6 +26,9 @@ const SECTION_OTHER = "Enerji Verimliliği";
 let seeded = false;
 
 async function removeFixture() {
+  // Öneriler ankete değil bölüme bağlı; anket silinince bağları boşalır ama
+  // kayıtlar kalır. Açıkça silinmeli.
+  await prisma.recommendation.deleteMany({ where: { title: { startsWith: "E2E " } } });
   // Kopyalar "E2E Anket (kopya)" adıyla oluşuyor; onlar da temizlenmeli.
   await prisma.survey.deleteMany({ where: { name: { startsWith: SURVEY } } });
   await prisma.user.deleteMany({ where: { email: { in: [COORDINATOR, CONTRIBUTOR, ADMIN] } } });
@@ -298,4 +301,60 @@ test("yönetici anketi her şeyiyle kopyalar", async ({ browser }) => {
   for (const question of copiedSections.flatMap((s) => s.questions)) {
     expect(originalIds.has(question.id)).toBe(false);
   }
+});
+
+test("panodaki öneri sayısı, kullanıcının gerçekten göreceği sayıdır", async ({ browser }) => {
+  test.skip(!seeded, "Fikstür kurulamadı (veritabanı yok)");
+  test.setTimeout(120_000);
+
+  const section = await prisma.subCategory.findFirst({
+    where: { name: SECTION_MINE, category: { survey: { name: SURVEY } } },
+    select: { id: true },
+  });
+  expect(section).not.toBeNull();
+
+  /**
+   * İki öneri: biri her puanda geçerli, diğeri yalnızca %90 üstünde.
+   * Katkıcı üç sorudan birine "4" verdiği için bölüm puanı %30 civarında —
+   * yani ikincisi tetiklenmemeli.
+   *
+   * Pano bir zamanlar ankette TANIMLI öneri sayısını gösteriyordu; kullanıcı
+   * panoda 76, Öneriler ekranında 40 görüp "24'ü nerede" diye soruyordu.
+   */
+  await prisma.recommendation.createMany({
+    data: [
+      {
+        title: "E2E her puanda geçerli",
+        description: "Test",
+        subCategoryId: section!.id,
+        minScoreThreshold: 0,
+        maxScoreThreshold: 100,
+      },
+      {
+        title: "E2E yalnızca yüksek puanda",
+        description: "Test",
+        subCategoryId: section!.id,
+        minScoreThreshold: 90,
+        maxScoreThreshold: 100,
+      },
+    ],
+  });
+
+  const contributor = await login(browser, CONTRIBUTOR);
+  const assigned = await (await contributor.request.get("/api/survey/assigned")).json();
+  const surveyId = assigned.find((survey: any) => survey.name === SURVEY)?.id;
+  expect(surveyId).toBeTruthy();
+
+  const shown = await (
+    await contributor.request.get(`/api/recommendations?surveyId=${surveyId}`)
+  ).json();
+  const kpi = await (
+    await contributor.request.get(`/api/dashboard/kpi?surveyId=${surveyId}`)
+  ).json();
+
+  // Tanımlı iki öneriden yalnızca biri tetikleniyor.
+  expect(shown).toHaveLength(1);
+  expect(shown[0].title).toBe("E2E her puanda geçerli");
+  // Panodaki sayı Öneriler ekranıyla aynı olmalı — asıl kontrol bu.
+  expect(kpi.recommendations.total).toBe(shown.length);
 });

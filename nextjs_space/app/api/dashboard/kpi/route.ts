@@ -3,7 +3,7 @@ import { withAuth } from '@/lib/api-utils';
 import { prisma } from '@/lib/db';
 import { getAssessmentIds } from '@/lib/assessment';
 import { getAccessibleSurveyIds } from '@/lib/scoring';
-import { calculateUserScore } from '@/lib/scoring';
+import { calculateUserScore, getRecommendationsForUser } from '@/lib/scoring';
 
 export const dynamic = 'force-dynamic';
 
@@ -191,18 +191,17 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Öneriler - tüm bağlantı yollarını kontrol et (categoryId, subCategoryId, subLevelId)
-    const categoryIds = categories.map(c => c.id);
-    const recommendations = await prisma.recommendation.findMany({
-      where: surveyId && categoryIds.length > 0 
-        ? {
-            OR: [
-              { categoryId: { in: categoryIds } },
-              { subCategory: { categoryId: { in: categoryIds } } },
-              { subLevel: { subCategory: { categoryId: { in: categoryIds } } } }
-            ]
-          }
-        : {},
+    /**
+     * Öneriler: ankette TANIMLI olanlar değil, kullanıcıya GÖSTERİLENLER.
+     *
+     * Kart "Toplam Öneri" diyor ve kullanıcının kendi panosunda duruyor;
+     * tıklayınca gideceği Öneriler ekranıyla aynı sayıyı vermeli. Ankette
+     * tanımlı 76 öneriden cevaplarına göre 40'ı tetikleniyorsa, panoda 76
+     * yazması "40 nerede kayboldu" sorusunu doğuruyordu. PDF raporu da zaten
+     * bu süzülmüş listeyi kullanıyor.
+     */
+    const recommendations = await getRecommendationsForUser(userId, {
+      surveyId: surveyId ?? undefined,
     });
 
     const quickWins = recommendations.filter(r => r.strategicType === 'QUICK_WIN').length;
