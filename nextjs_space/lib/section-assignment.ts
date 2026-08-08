@@ -142,6 +142,49 @@ export function sectionStatus(section: {
   return section.answeredCount >= section.questionCount ? "DONE" : "IN_PROGRESS";
 }
 
+/**
+ * Kime ne kadar iş kaldığı — hatırlatma göndermek için.
+ *
+ * Her atamada tek tek posta atmak spam olur ve bildirimler okunmaz hâle
+ * gelir: koordinatör on iki bölümü tek tek dağıtırken aynı kişiye on iki
+ * posta gider. Bunun yerine kişi başına tek özet çıkarılır ve gönderme anını
+ * koordinatör seçer.
+ *
+ * Bölümünü bitirmiş kişi listeye girmez: hatırlatılacak bir şeyi yok.
+ */
+export function pendingByAssignee(
+  sections: Array<SectionProgress & { name: string }>
+): Array<{
+  assigneeId: string;
+  sections: Array<{ name: string; questionCount: number; answeredCount: number }>;
+  missingQuestions: number;
+}> {
+  const byAssignee = new Map<
+    string,
+    { assigneeId: string; sections: Array<{ name: string; questionCount: number; answeredCount: number }>; missingQuestions: number }
+  >();
+
+  for (const section of sections) {
+    if (!section.assigneeId) continue;
+    const missing = section.questionCount - Math.min(section.answeredCount, section.questionCount);
+    if (missing === 0) continue;
+
+    const row =
+      byAssignee.get(section.assigneeId) ??
+      { assigneeId: section.assigneeId, sections: [], missingQuestions: 0 };
+
+    row.sections.push({
+      name: section.name,
+      questionCount: section.questionCount,
+      answeredCount: section.answeredCount,
+    });
+    row.missingQuestions += missing;
+    byAssignee.set(section.assigneeId, row);
+  }
+
+  return Array.from(byAssignee.values());
+}
+
 export type AssigneeRollup = {
   /** null → atanmamış bölümler; sorumluluğu koordinatörde. */
   assigneeId: string | null;

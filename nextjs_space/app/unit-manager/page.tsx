@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Header from "@/components/ui/header";
+import { getWithRetry } from "@/lib/retrying-fetch";
 import { toast } from "sonner";
 import {
   Users,
@@ -118,7 +119,7 @@ export default function UnitManagerPage() {
 
   const fetchTeamData = async () => {
     try {
-      const res = await fetch("/api/unit-manager/team");
+      const res = await getWithRetry("/api/unit-manager/team");
       if (res.ok) {
         const data = await res.json();
         setUnits(data.units || []);
@@ -135,7 +136,7 @@ export default function UnitManagerPage() {
   const fetchDocuments = useCallback(async () => {
     setLoadingDocs(true);
     try {
-      const res = await fetch("/api/unit-manager/documents");
+      const res = await getWithRetry("/api/unit-manager/documents");
       if (res.ok) {
         const data = await res.json();
         setDocuments(data);

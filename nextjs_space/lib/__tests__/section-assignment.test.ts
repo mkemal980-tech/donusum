@@ -3,6 +3,7 @@ import {
   type SectionAssignment,
   assigneeOf,
   buildSectionVisibility,
+  pendingByAssignee,
   rollupByAssignee,
   sectionOfQuestion,
   sectionStatus,
@@ -137,6 +138,45 @@ describe("sectionStatus", () => {
   it("beklenenden çok cevap bölümü geri almaz", () => {
     // Bölümden soru çıkarılırsa cevap sayısı soru sayısını aşabilir.
     expect(sectionStatus({ questionCount: 3, answeredCount: 5 })).toBe("DONE");
+  });
+});
+
+describe("pendingByAssignee", () => {
+  const sections = [
+    { id: ATIK, name: "Atık", assigneeId: AYSE, questionCount: 10, answeredCount: 10 },
+    { id: SOSYAL, name: "Sosyal", assigneeId: AYSE, questionCount: 10, answeredCount: 4 },
+    { id: ENERJI, name: "Enerji", assigneeId: MEHMET, questionCount: 4, answeredCount: 0 },
+    { id: "bolum-tedarik", name: "Tedarik", assigneeId: null, questionCount: 6, answeredCount: 0 },
+  ];
+
+  it("kişi başına yalnızca eksik bölümleri toplar", () => {
+    const pending = pendingByAssignee(sections);
+
+    expect(pending).toEqual([
+      {
+        assigneeId: AYSE,
+        sections: [{ name: "Sosyal", questionCount: 10, answeredCount: 4 }],
+        missingQuestions: 6,
+      },
+      {
+        assigneeId: MEHMET,
+        sections: [{ name: "Enerji", questionCount: 4, answeredCount: 0 }],
+        missingQuestions: 4,
+      },
+    ]);
+  });
+
+  it("atanmamış bölüm hatırlatılacak kimseye yazılmaz", () => {
+    // Sahibi yok; koordinatörün kendi işi, posta gidecek adres değil.
+    expect(pendingByAssignee(sections).some((row) => row.assigneeId === null)).toBe(false);
+  });
+
+  it("hepsini bitirmiş kişi listeye girmez", () => {
+    const pending = pendingByAssignee([
+      { id: ATIK, name: "Atık", assigneeId: AYSE, questionCount: 3, answeredCount: 3 },
+    ]);
+
+    expect(pending).toEqual([]);
   });
 });
 

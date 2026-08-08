@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   Lock
 } from "lucide-react";
+import { getWithRetry } from "@/lib/retrying-fetch";
 import {
   buildSteps,
   categoryProgress,
@@ -124,7 +125,7 @@ export default function SurveyClient() {
   useEffect(() => {
     const fetchAssignedSurveys = async () => {
       try {
-        const res = await fetch("/api/survey/assigned");
+        const res = await getWithRetry("/api/survey/assigned");
         if (!res.ok) {
           setAssignmentError(true);
           return;
@@ -154,9 +155,9 @@ export default function SurveyClient() {
       try {
         const surveyParam = `?surveyId=${selectedSurveyId}`;
         const [structureRes, responsesRes, sectionsRes] = await Promise.all([
-          fetch(`/api/survey/structure${surveyParam}`),
-          fetch(`/api/survey/responses${surveyParam}`),
-          fetch(`/api/assessment/sections${surveyParam}`)
+          getWithRetry(`/api/survey/structure${surveyParam}`),
+          getWithRetry(`/api/survey/responses${surveyParam}`),
+          getWithRetry(`/api/assessment/sections${surveyParam}`)
         ]);
 
         let structure: Category[] = [];

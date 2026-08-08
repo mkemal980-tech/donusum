@@ -4,9 +4,20 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Header from "@/components/ui/header";
-import { AlertCircle, ArrowLeft, Info, Loader2, Lock, Send, Unlock, Users } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  Info,
+  Loader2,
+  Lock,
+  Mail,
+  Send,
+  Unlock,
+  Users,
+} from "lucide-react";
 import { type SectionStatus, rollupByAssignee, sectionStatus } from "@/lib/section-assignment";
 import { readinessSummary, submissionReadiness } from "@/lib/submission";
+import { getWithRetry } from "@/lib/retrying-fetch";
 
 /**
  * Görev dağılımı ve ilerleme panosu.
@@ -90,13 +101,14 @@ export default function SectionAssignmentsPage() {
   /** Gönderim iki adımlı: düğme önce neyin eksik olduğunu gösterir. */
   const [confirmingSubmit, setConfirmingSubmit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [notifying, setNotifying] = useState(false);
 
   useEffect(() => {
     // Anket seçilirse yükleme göstergesini loadSections devralır; anket yoksa
     // burada kapatılır, aksi hâlde ekran sonsuza kadar dönerdi.
     const load = async () => {
       try {
-        const res = await fetch("/api/survey/assigned");
+        const res = await getWithRetry("/api/survey/assigned");
         if (!res.ok) {
           setError("Anket listesi alınamadı. Sayfayı yenilemeyi deneyin.");
           setLoading(false);
@@ -124,7 +136,7 @@ export default function SectionAssignmentsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/assessment/sections?surveyId=${surveyId}`);
+      const res = await getWithRetry(`/api/assessment/sections?surveyId=${surveyId}`);
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Görev dağılımı alınamadı");
@@ -264,6 +276,33 @@ export default function SectionAssignmentsPage() {
       ]),
     [categories, sections]
   );
+
+  /**
+   * Hatırlatma. Alıcı listesi "eksiği kalanlar" olduğu için aynı düğme hem
+   * ilk duyuru hem sonraki hatırlatmalar için çalışıyor; işini bitiren kimse
+   * ikinci kez rahatsız edilmiyor.
+   */
+  const notifyContributors = async () => {
+    setNotifying(true);
+    try {
+      const res = await fetch("/api/assessment/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ surveyId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data?.error || "Hatırlatma gönderilemedi");
+        return;
+      }
+      toast.success(data?.message || "Hatırlatma gönderildi");
+    } catch (notifyError) {
+      console.error("Error notifying contributors:", notifyError);
+      toast.error("Hatırlatma gönderilirken hata oluştu");
+    } finally {
+      setNotifying(false);
+    }
+  };
 
   const submitAssessment = async (action: "submit" | "reopen") => {
     setSubmitting(true);
@@ -516,10 +555,33 @@ export default function SectionAssignmentsPage() {
 
             {workload.length > 0 && (
               <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-4">
-                <h2 className="font-semibold text-[var(--text-main)] mb-1">Kim ne kadar doldurdu</h2>
-                <p className="text-xs text-[var(--text-dim)] mb-3">
-                  En geride kalan üstte; kimi arayacağınız listenin başında.
-                </p>
+                <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                  <div>
+                    <h2 className="font-semibold text-[var(--text-main)] mb-1">
+                      Kim ne kadar doldurdu
+                    </h2>
+                    <p className="text-xs text-[var(--text-dim)]">
+                      En geride kalan üstte; kimi arayacağınız listenin başında.
+                    </p>
+                  </div>
+
+                  {/* Aramak yerine tek hamlede hatırlatmak. Yalnızca eksiği
+                      kalanlara gider; bitirenler ikinci kez rahatsız edilmez. */}
+                  {isCoordinator && !locked && (
+                    <button
+                      onClick={notifyContributors}
+                      disabled={notifying}
+                      className="px-3 py-2 rounded-lg border border-[var(--border-soft)] text-sm text-[var(--text-muted)] hover:border-[var(--accent)]/50 hover:text-[var(--text-main)] disabled:opacity-60 flex items-center gap-2"
+                    >
+                      {notifying ? (
+                        <Loader2 size={15} className="animate-spin" />
+                      ) : (
+                        <Mail size={15} />
+                      )}
+                      Eksiği kalanlara hatırlat
+                    </button>
+                  )}
+                </div>
                 <div className="space-y-3">
                   {workload.map((row) => (
                     <div key={row.assigneeId ?? "atanmamis"}>

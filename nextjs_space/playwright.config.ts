@@ -13,7 +13,14 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
   timeout: 30_000,
-  fullyParallel: true,
+  /**
+   * Tek işçi: testler tek bir veritabanını ve tek bir sunucuyu paylaşıyor,
+   * fikstürler de sabit adlarla kuruluyor. Bu boyuttaki bir süitte
+   * paralellikten kazanılacak saniyeler, iki testin aynı kayıtlara aynı anda
+   * dokunma riskine değmez.
+   */
+  fullyParallel: false,
+  workers: 1,
   retries: 0,
   reporter: "list",
   use: {

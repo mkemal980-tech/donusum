@@ -3,7 +3,7 @@
 Bu dosya, yeni bir oturuma başlarken bağlamı hızlıca kurmak için tutulur.
 Bir adım bitince buradaki durumu güncelleyin.
 
-**Son güncelleme:** 2026-08-08 (2. adım)
+**Son güncelleme:** 2026-08-08 (4. adım ve kalan işler)
 
 ---
 
@@ -80,10 +80,19 @@ Kaçırılmaması gereken iki davranış:
    Dağıtım başlayınca koordinatörde kalırlar; dağıtım ekranında bu satır
    "Sizde kalır" diye görünür.
 
-### 2. adımdan kalan
+### 2. adımdan kalan — kapandı
 
-- **Bildirim yok.** Bölüm atanan kişiye e-posta gitmiyor; koordinatörün
-  haber vermesi gerekiyor.
+**Bildirim.** Bölüm atanan kişiye artık e-posta gidebiliyor, ama her atamada
+değil: koordinatör on iki bölümü tek tek dağıtırken aynı kişiye on iki posta
+gitseydi bildirimler okunmaz hâle gelirdi. Bunun yerine dağıtım ekranında
+**"Eksiği kalanlara hatırlat"** düğmesi var — kişi başına tek özet gider ve
+gönderme anını koordinatör seçer.
+
+Alıcı listesi "eksiği kalanlar" olduğu için aynı düğme hem ilk duyuru hem
+sonraki hatırlatmalar için çalışıyor; işini bitiren kimse ikinci kez rahatsız
+edilmiyor. `RESEND_API_KEY`/`EMAIL_FROM` tanımlı değilse uç nokta 503 ve açık
+bir mesaj dönüyor — sessizce başarı dönmek, koordinatöre gönderdiğini
+sandırırdı.
 
 ### 3. adımda ne yapıldı
 
@@ -161,11 +170,17 @@ geri al → cevap yeniden yazılabiliyor.
   `000006_section_assignments` bu yolla üretime geçti; `prisma migrate status`
   ile doğrulandı ("Database schema is up to date"). Yeni migration için
   yapılacak tek şey master'a göndermek.
-- **Dev sunucusu ilk derlemede istek düşürüyor.** Bir rota ilk kez derlenirken
-  tek tük istek hata dönüyor ve ekran "liste alınamadı" diyor. E2E testinde
-  sayfayı tazeleyerek aşıldı (`openUntilVisible`). Üretim derlemesinde
-  görülmedi; yine de istemci tarafında bir kez otomatik tekrar denemeye
-  değebilir.
+- **(Çözüldü — teşhis yanlıştı.)** "Dev sunucusu ilk derlemede istek
+  düşürüyor" diye not düşülen aralıklı e2e hatasının sebebi sunucu değilmiş:
+  giriş formuna hidrasyon bitmeden tıklandığında form gönderilmiyor, adres
+  yine de `/dashboard`'a dönüyor ve oturum kurulmadığı için sonraki bütün
+  istekler 401 alıyordu — ekran da "liste alınamadı" diyordu. Test artık
+  URL'e değil oturumun kendisine bakıyor; sayfa tazeleme sargısı kaldırıldı.
+  Arka arkaya beş koşu temiz.
+- **Not:** istemci tarafındaki tek seferlik tekrar deneme
+  (`lib/retrying-fetch.ts`) bu hatayı çözmek için değil, geçici 5xx ve ağ
+  kopmalarına karşı duruyor. Yalnızca GET, yalnızca 5xx/ağ hatası; POST
+  tekrarlanmıyor.
 
 ---
 

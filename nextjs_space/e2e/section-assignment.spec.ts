@@ -100,36 +100,37 @@ test.afterAll(async () => {
   await prisma.$disconnect();
 });
 
+/**
+ * Giriş yapar ve oturumun gerçekten kurulduğunu doğrular.
+ *
+ * Adres çubuğunun /dashboard'a dönmesi yetmiyor: form hidrasyon bitmeden
+ * tıklanırsa gönderilmiyor, oturum kurulmadan sayfa değişebiliyor ve sonraki
+ * bütün istekler 401 alıyor — ekran da "liste alınamadı" diyor. Testin
+ * rastgele kalmasının sebebi buydu. Ölçüt URL değil, oturumun kendisi.
+ */
 async function login(browser: Browser, email: string): Promise<Page> {
   const context = await browser.newContext();
   const page = await context.newPage();
-  // Hidrasyon bitmeden tıklanırsa form gönderilmez; önce sayfa otursun.
-  await page.goto("/login", { waitUntil: "networkidle" });
-  await page.waitForTimeout(1500);
-  await page.locator('input[type="email"]').fill(email);
-  await page.locator('input[type="password"]').fill(PASSWORD);
-  await page.locator('button[type="submit"]').click();
-  await page.waitForURL(/\/dashboard/, { timeout: 20_000 });
-  return page;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto("/login", { waitUntil: "networkidle" });
+    await page.waitForTimeout(1000);
+    await page.locator('input[type="email"]').fill(email);
+    await page.locator('input[type="password"]').fill(PASSWORD);
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL(/\/dashboard/, { timeout: 20_000 }).catch(() => undefined);
+
+    const session = await (await page.request.get("/api/auth/session")).json();
+    if (session?.user?.email === email) return page;
+  }
+
+  throw new Error(`Giriş yapılamadı: ${email}`);
 }
 
-/**
- * Sayfayı açar ve beklenen metni görene kadar tazeler.
- *
- * Geliştirme sunucusu bir rotayı ilk kez derlerken tek tük istek düşürüyor;
- * ekran o zaman "liste alınamadı" diyor. Uygulama hatası değil, ama testi
- * rastgele düşürüyordu.
- */
-async function openUntilVisible(page: Page, url: string, text: string) {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    await page.goto(url);
-    try {
-      await expect(page.getByText(text).first()).toBeVisible({ timeout: 15_000 });
-      return;
-    } catch (error) {
-      if (attempt === 2) throw error;
-    }
-  }
+/** Sayfayı açar ve beklenen metnin görünmesini bekler. */
+async function open(page: Page, url: string, text: string) {
+  await page.goto(url);
+  await expect(page.getByText(text).first()).toBeVisible({ timeout: 20_000 });
 }
 
 test("dağıt, doldur, gönder: çok kullanıcılı değerlendirmenin tam turu", async ({ browser }) => {
@@ -139,7 +140,7 @@ test("dağıt, doldur, gönder: çok kullanıcılı değerlendirmenin tam turu",
 
   // --- koordinatör dağıtır ---
   const coordinator = await login(browser, COORDINATOR);
-  await openUntilVisible(coordinator, "/unit-manager/assignments", SECTION_MINE);
+  await open(coordinator, "/unit-manager/assignments", SECTION_MINE);
   await expect(coordinator.getByText(SECTION_OTHER)).toBeVisible();
 
   // 0: anket seçici, 1: Atık Yönetimi, 2: Enerji Verimliliği
@@ -148,7 +149,7 @@ test("dağıt, doldur, gönder: çok kullanıcılı değerlendirmenin tam turu",
 
   // --- katkıcı yalnızca kendi bölümünü görür ---
   const contributor = await login(browser, CONTRIBUTOR);
-  await openUntilVisible(contributor, "/survey", "Size atanan 1 bölüm gösteriliyor.");
+  await open(contributor, "/survey", "Size atanan 1 bölüm gösteriliyor.");
   await expect(contributor.getByText(SECTION_MINE).first()).toBeVisible();
   await expect(contributor.getByText(SECTION_OTHER)).toHaveCount(0);
 
@@ -183,13 +184,23 @@ test("dağıt, doldur, gönder: çok kullanıcılı değerlendirmenin tam turu",
   await expect(coordinator.getByText("Devam ediyor")).toBeVisible();
   await expect(coordinator.getByText("Başlanmadı")).toBeVisible();
 
+  /**
+   * Hatırlatma. Sağlayıcı tanımlı değilse sessizce başarı dönmemeli —
+   * koordinatör gönderdiğini sanıp kimse haberdar olmazdı. İki sonuçtan
+   * birini bekliyoruz: gerçek gönderim ya da açık bir "tanımlı değil".
+   */
+  await coordinator.getByRole("button", { name: "Eksiği kalanlara hatırlat" }).click();
+  await expect(
+    coordinator.getByText(/E-posta sağlayıcısı tanımlı değil|hatırlatma gönderildi/)
+  ).toBeVisible({ timeout: 15_000 });
+
   // --- birim panosunun satırı kişi değil değerlendirme ---
-  await openUntilVisible(coordinator, "/unit-manager", SURVEY);
+  await open(coordinator, "/unit-manager", SURVEY);
   await expect(coordinator.getByRole("columnheader", { name: "Değerlendirme" })).toBeVisible();
   await expect(coordinator.getByText("1 kişi")).toBeVisible();
 
   // --- gönderim: eksik varken uyarır, onaydan sonra kilitler ---
-  await openUntilVisible(coordinator, "/unit-manager/assignments", "Değerlendirmeyi gönder");
+  await open(coordinator, "/unit-manager/assignments", "Değerlendirmeyi gönder");
   await expect(coordinator.getByText("2 bölümde 5 soru boş.")).toBeVisible();
 
   await coordinator.getByRole("button", { name: "Değerlendirmeyi gönder" }).click();
@@ -211,13 +222,13 @@ test("dağıt, doldur, gönder: çok kullanıcılı değerlendirmenin tam turu",
   expect(lockedAssignment.status()).toBe(403);
 
   // Katkıcı ankette kilidi görür.
-  await openUntilVisible(contributor, "/survey", "Bu değerlendirme gönderildi");
+  await open(contributor, "/survey", "Bu değerlendirme gönderildi");
 
   // Panoda puan taslak olmaktan çıkar.
-  await openUntilVisible(coordinator, "/dashboard", "Kesin puan");
+  await open(coordinator, "/dashboard", "Kesin puan");
 
   // --- geri alma kilidi açar ---
-  await openUntilVisible(coordinator, "/unit-manager/assignments", "Gönderimi geri al");
+  await open(coordinator, "/unit-manager/assignments", "Gönderimi geri al");
   await coordinator.getByRole("button", { name: "Gönderimi geri al" }).click();
   await expect(coordinator.getByRole("button", { name: "Değerlendirmeyi gönder" })).toBeVisible({
     timeout: 15_000,
