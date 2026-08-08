@@ -12,7 +12,9 @@ import {
   AlertTriangle, 
   XCircle,
   TrendingUp,
-  Server
+  Server,
+  Mail,
+  Send
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -54,6 +56,17 @@ export default function MonitoringPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  /**
+   * E-posta, çalışmadığında sessiz kalan bir bağımlılık: şifre sıfırlama ve
+   * hatırlatmalar "gönderildi" der ama kimseye ulaşmaz. Durumu burada
+   * görünür tutmak, bunu gerçek bir kullanıcıyla öğrenmekten ucuz.
+   */
+  const [emailStatus, setEmailStatus] = useState<{
+    configured: boolean;
+    from: string | null;
+    missing: string[];
+  } | null>(null);
+  const [sendingTest, setSendingTest] = useState(false);
   const [timeRange, setTimeRange] = useState(24); // hours
 
   const fetchCurrentHealth = useCallback(async () => {
@@ -81,17 +94,47 @@ export default function MonitoringPage() {
     }
   }, [timeRange]);
 
+  const fetchEmailStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/email-test');
+      if (res.ok) setEmailStatus(await res.json());
+    } catch (error) {
+      console.error('E-posta durumu alınamadı:', error);
+    }
+  }, []);
+
+  const sendTestEmail = async () => {
+    setSendingTest(true);
+    try {
+      const res = await fetch('/api/admin/email-test', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        // Sağlayıcının kendi metni teşhisi mümkün kılan tek şey; gizlenmez.
+        toast.error(data.providerError ? `${data.error} ${data.providerError}` : data.error, {
+          duration: 12000,
+        });
+        return;
+      }
+      toast.success(`Deneme postası ${data.to} adresine gönderildi.`, { duration: 8000 });
+    } catch (error) {
+      console.error('Deneme postası hatası:', error);
+      toast.error('Deneme postası gönderilemedi');
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
   const refreshAll = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchCurrentHealth(), fetchLogs()]);
+    await Promise.all([fetchCurrentHealth(), fetchLogs(), fetchEmailStatus()]);
     setRefreshing(false);
     toast.success('Veriler güncellendi');
-  }, [fetchCurrentHealth, fetchLogs]);
+  }, [fetchCurrentHealth, fetchLogs, fetchEmailStatus]);
 
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await Promise.all([fetchCurrentHealth(), fetchLogs()]);
+      await Promise.all([fetchCurrentHealth(), fetchLogs(), fetchEmailStatus()]);
       setLoading(false);
     };
     init();
@@ -173,6 +216,55 @@ export default function MonitoringPage() {
           </button>
         </div>
       </div>
+
+      {/* E-posta sağlayıcısı */}
+      {emailStatus && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-soft)]"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center"
+                style={{
+                  backgroundColor: emailStatus.configured
+                    ? 'rgba(34,197,94,0.15)'
+                    : 'rgba(245,158,11,0.15)',
+                }}
+              >
+                <Mail size={22} className={emailStatus.configured ? 'text-[var(--accent)]' : 'text-[var(--warning)]'} />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-[var(--text-main)]">
+                  E-posta Sağlayıcısı: {emailStatus.configured ? 'Tanımlı' : 'Tanımlı değil'}
+                </h2>
+                <p className="text-sm text-[var(--text-muted)]">
+                  {emailStatus.configured ? (
+                    <>Gönderen: <span className="text-[var(--text-main)]">{emailStatus.from}</span></>
+                  ) : (
+                    <>
+                      Eksik değişken: {emailStatus.missing.join(', ')} — şifre sıfırlama, kayıt
+                      doğrulama ve bölüm hatırlatmaları çalışmaz.
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={sendTestEmail}
+              disabled={sendingTest || !emailStatus.configured}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--border-soft)] text-[var(--text-main)] hover:border-[var(--accent)]/50 disabled:opacity-50"
+              title="Kendi adresinize bir deneme postası gönderir"
+            >
+              <Send size={16} className={sendingTest ? 'animate-pulse' : ''} />
+              {sendingTest ? 'Gönderiliyor...' : 'Deneme postası gönder'}
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Current Status */}
       {currentHealth && (
