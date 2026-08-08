@@ -156,6 +156,27 @@ geri al → cevap yeniden yazılabiliyor.
 
 ---
 
+## Anket çoğaltma
+
+Yönetim → Anket Yönetimi → her satırdaki **kopyala** simgesi. Bir sonraki
+yılın ya da başka bir sektörün anketi öncekinin küçük farklarla tekrarı; 13
+bölüm ve 71 soru elle yeniden yazılacak şey değil.
+
+Kopyalanır: kategori → bölüm → alt seviye → soru, öneriler (yeni sorulara
+bağlanmış hâlde), sektör kapsam kuralları, kıyas değerleri.
+
+Kopyalanmaz — ve nedeni: **cevaplar/değerlendirmeler** (bunlar kuruluşun
+verdiği cevaplar, anketin parçası değil), **kullanıcı atamaları** (gözden
+geçirilmemiş anket kimsenin ekranında belirmemeli), **arşivlenmiş içerik**
+(kullanıcı onları silmişti; kopyaya geri getirmek sessizce diriltmek olurdu).
+
+Kopya **pasif** başlar. Aktif etmeden kimse göremez.
+
+Her şey tek transaction içinde yapılıyor: yarım kalmış bir kopya, soruları
+eksik ama kullanılabilir görünen bir anket demek olurdu ve bu fark edilmezdi.
+
+---
+
 ## Açık kalan diğer başlıklar
 
 ### NACE listesi — resmî kaynakla karşılaştırıldı

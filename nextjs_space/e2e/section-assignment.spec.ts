@@ -16,6 +16,7 @@ import { prisma } from "@/lib/db";
 const PASSWORD = "E2eParola!123";
 const COORDINATOR = "e2e-koordinator@example.com";
 const CONTRIBUTOR = "e2e-katkici@example.com";
+const ADMIN = "e2e-yonetici@example.com";
 const UNIT = "E2E Kuruluş";
 const SURVEY = "E2E Anket";
 
@@ -25,8 +26,9 @@ const SECTION_OTHER = "Enerji Verimliliği";
 let seeded = false;
 
 async function removeFixture() {
-  await prisma.survey.deleteMany({ where: { name: SURVEY } });
-  await prisma.user.deleteMany({ where: { email: { in: [COORDINATOR, CONTRIBUTOR] } } });
+  // Kopyalar "E2E Anket (kopya)" adıyla oluşuyor; onlar da temizlenmeli.
+  await prisma.survey.deleteMany({ where: { name: { startsWith: SURVEY } } });
+  await prisma.user.deleteMany({ where: { email: { in: [COORDINATOR, CONTRIBUTOR, ADMIN] } } });
   await prisma.unit.deleteMany({ where: { name: UNIT } });
 }
 
@@ -60,6 +62,17 @@ test.beforeAll(async () => {
       firstName: "Ayşe",
       lastName: "Katkıcı",
       unitId: unit.id,
+      emailVerified: true,
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: ADMIN,
+      password,
+      firstName: "Deniz",
+      lastName: "Yönetici",
+      role: "ADMIN",
       emailVerified: true,
     },
   });
@@ -238,4 +251,51 @@ test("dağıt, doldur, gönder: çok kullanıcılı değerlendirmenin tam turu",
     data: { questionId: mineQuestionId, value: "3" },
   });
   expect(reopenedAnswer.status()).toBe(200);
+});
+
+test("yönetici anketi her şeyiyle kopyalar", async ({ browser }) => {
+  test.skip(!seeded, "Fikstür kurulamadı (veritabanı yok)");
+  test.setTimeout(120_000);
+
+  const admin = await login(browser, ADMIN);
+  // Kopyalama onay soruyor; testte otomatik kabul.
+  admin.on("dialog", (dialog) => dialog.accept());
+
+  await open(admin, "/admin/surveys", SURVEY);
+
+  // Başlık her ankette kendi adını taşıyor; kart içinde arama gerekmiyor.
+  await admin.getByTitle(`"${SURVEY}" anketini her şeyiyle kopyala`, { exact: false }).click();
+
+  await expect(admin.getByText(/oluşturuldu —/)).toBeVisible({ timeout: 30_000 });
+
+  const copy = await prisma.survey.findFirst({
+    where: { name: { startsWith: `${SURVEY} (kopya` } },
+    include: {
+      categories: {
+        include: { subCategories: { include: { questions: true } }, questions: true },
+      },
+    },
+  });
+
+  expect(copy).not.toBeNull();
+  // Kopya gözden geçirilmeden kullanıcıya görünmemeli.
+  expect(copy!.isActive).toBe(false);
+  expect(copy!.categories).toHaveLength(1);
+
+  const copiedSections = copy!.categories[0].subCategories;
+  expect(copiedSections.map((s) => s.name).sort()).toEqual([SECTION_MINE, SECTION_OTHER].sort());
+  expect(copiedSections.flatMap((s) => s.questions)).toHaveLength(6);
+
+  // Sorular kopyaya bağlanmış olmalı, aslına değil.
+  const originalIds = new Set(
+    (
+      await prisma.question.findMany({
+        where: { subCategory: { category: { survey: { name: SURVEY } } } },
+        select: { id: true },
+      })
+    ).map((q) => q.id)
+  );
+  for (const question of copiedSections.flatMap((s) => s.questions)) {
+    expect(originalIds.has(question.id)).toBe(false);
+  }
 });

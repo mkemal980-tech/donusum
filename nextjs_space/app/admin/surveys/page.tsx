@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, FileText, X, Save, CheckCircle, XCircle, AlertTriangle, Loader2, Eye } from "lucide-react";
+import { Plus, Edit, Trash2, FileText, X, Save, CheckCircle, XCircle, AlertTriangle, Loader2, Eye, Copy } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -50,6 +50,8 @@ export default function SurveysPage() {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<Survey | null>(null);
   const [formData, setFormData] = useState<Partial<Survey>>({});
+  /** Kopyalanmakta olan anket — düğme iki kez basılmasın. */
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   
   // Silme onay state'i
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState>({
@@ -111,6 +113,45 @@ export default function SurveysPage() {
   };
 
   // Silme işlemini başlat - önce etki analizi yap
+  /**
+   * Anketi her şeyiyle çoğaltır.
+   *
+   * Kopya pasif başlar ve kimseye atanmaz; kullanıcıların ekranında ancak
+   * gözden geçirilip aktif edildikten sonra belirir.
+   */
+  const duplicateSurvey = async (survey: Survey) => {
+    if (!confirm(`"${survey.name}" anketinin tam bir kopyası oluşturulacak.\n\nKopya pasif başlar; cevaplar ve kullanıcı atamaları kopyalanmaz.`)) {
+      return;
+    }
+
+    setDuplicatingId(survey.id);
+    try {
+      const res = await fetch('/api/admin/surveys/duplicate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ surveyId: survey.id }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || 'Anket kopyalanamadı');
+        return;
+      }
+
+      const s = data.summary;
+      toast.success(
+        `"${data.survey.name}" oluşturuldu — ${s.categories} kategori, ${s.subCategories} bölüm, ${s.questions} soru, ${s.recommendations} öneri.`,
+        { duration: 6000 }
+      );
+      fetchSurveys();
+    } catch (error) {
+      console.error('Kopyalama hatası:', error);
+      toast.error('Kopyalama sırasında hata oluştu');
+    } finally {
+      setDuplicatingId(null);
+    }
+  };
+
   const initiateDelete = async (survey: Survey) => {
     setDeleteConfirm({
       show: true,
@@ -283,6 +324,18 @@ export default function SurveysPage() {
                     title="Düzenle"
                   >
                     <Edit size={18} />
+                  </button>
+                  <button
+                    onClick={() => duplicateSurvey(survey)}
+                    disabled={duplicatingId === survey.id}
+                    className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--accent)] disabled:opacity-50"
+                    title={`"${survey.name}" anketini her şeyiyle kopyala — sorular, öneriler, kapsam kuralları`}
+                  >
+                    {duplicatingId === survey.id ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <Copy size={18} />
+                    )}
                   </button>
                   <button 
                     onClick={() => initiateDelete(survey)} 
