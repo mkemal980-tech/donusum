@@ -37,6 +37,7 @@ interface UserType {
   lastName: string | null;
   organization: string | null;
   role: "USER" | "UNIT_MANAGER" | "ADMIN";
+  emailVerified: boolean;
   unitId: string | null;
   sectorId: string | null;
   subSectorId: string | null;
@@ -81,6 +82,8 @@ export default function UsersPage() {
     lastName: "",
     organization: "",
     role: "USER" as "USER" | "UNIT_MANAGER" | "ADMIN",
+    // Yönetici hesabı elle açıyorsa adresi zaten doğruluyor demektir.
+    emailVerified: true,
     unitId: "",
     sectorId: "",
     subSectorId: "",
@@ -184,6 +187,7 @@ export default function UsersPage() {
       lastName: user.lastName || "",
       organization: user.organization || "",
       role: user.role,
+      emailVerified: user.emailVerified,
       unitId: user.unitId || "",
       sectorId: user.sectorId || "",
       subSectorId: user.subSectorId || "",
@@ -248,6 +252,7 @@ export default function UsersPage() {
       lastName: "",
       organization: "",
       role: "USER",
+      emailVerified: true,
       unitId: "",
       sectorId: "",
       subSectorId: "",
@@ -536,6 +541,23 @@ export default function UsersPage() {
                   <option value="UNIT_MANAGER">Birim Yöneticisi</option>
                   <option value="ADMIN">Yönetici</option>
                 </select>
+              </div>
+
+              {/* Doğrulanmamış hesap giriş yapamaz. E-posta sağlayıcısı
+                  tanımlı olmayan kurulumda doğrulama postası hiç gitmediği
+                  için tek çare yöneticinin buradan işaretlemesi. */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-[var(--text-muted)]">
+                  <input
+                    type="checkbox"
+                    checked={formData.emailVerified}
+                    onChange={(e) =>
+                      setFormData({ ...formData, emailVerified: e.target.checked })
+                    }
+                    className="w-4 h-4 accent-[var(--accent)]"
+                  />
+                  E-posta doğrulanmış (işaretli değilse kullanıcı giriş yapamaz)
+                </label>
               </div>
 
               <div>

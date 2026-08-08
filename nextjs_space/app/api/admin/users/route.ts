@@ -34,7 +34,11 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(users);
+    // Parola özeti tarayıcıya hiç gitmemeli: yönetici ekranının ona ihtiyacı
+    // yok ve listeyi gören herkesin eline kırılmaya hazır bir özet geçer.
+    const safeUsers = users.map(({ password, ...user }) => user);
+
+    return NextResponse.json(safeUsers);
   } catch (error) {
     console.error("Kullanıcıları getirme hatası:", error);
     return NextResponse.json(
@@ -94,6 +98,17 @@ export async function POST(request: NextRequest) {
         unitId: unitId || null,
         sectorId: sectorId || null,
         subSectorId: subSectorId || null,
+        /**
+         * Yöneticinin açtığı hesap doğrulanmış sayılır.
+         *
+         * Doğrulama akışı kendi kaydolan kullanıcı için var: adresin gerçekten
+         * o kişiye ait olduğunu kanıtlar. Yönetici bir hesabı elle açarken bu
+         * güvenceyi zaten veriyor. Aksi hâlde panelden açılan hesap giriş
+         * yapamıyordu — giriş emailVerified şartı arıyor, yöneticinin bunu
+         * düzeltecek bir düğmesi yoktu ve e-posta sağlayıcısı tanımlı
+         * olmayan kurulumda doğrulama postası da hiç gitmiyor.
+         */
+        emailVerified: true,
       },
       include: {
         unit: true,
@@ -129,6 +144,7 @@ export async function PUT(request: NextRequest) {
       unitId,
       sectorId,
       subSectorId,
+      emailVerified,
     } = body;
 
     if (!id) {
@@ -171,6 +187,12 @@ export async function PUT(request: NextRequest) {
 
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    // Doğrulama durumu yöneticiden düzenlenebilir: sağlayıcı tanımlı değilse
+    // doğrulama postası hiç gitmiyor ve kullanıcı kilitli kalıyordu.
+    if (typeof emailVerified === "boolean") {
+      updateData.emailVerified = emailVerified;
     }
 
     const user = await prisma.user.update({
