@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, FileText, X, Save, CheckCircle, XCircle, AlertTriangle, Loader2, Eye, Copy } from "lucide-react";
+import { Plus, Edit, Trash2, FileText, X, Save, CheckCircle, XCircle, AlertTriangle, Loader2, Eye, Copy, Download } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -334,6 +334,15 @@ export default function SurveysPage() {
                   >
                     <Edit size={18} />
                   </button>
+                  {/* Kategori/soru tanımı bitince öneri yazma sırası gelir;
+                      şablon o anketin soru ve şıklarıyla hazır iner. */}
+                  <a
+                    href={`/api/admin/recommendations/template?surveyId=${survey.id}`}
+                    className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--warning)]"
+                    title={`"${survey.name}" için öneri şablonu indir — her soru ve şık için hazır satır`}
+                  >
+                    <Download size={18} />
+                  </a>
                   <button
                     onClick={() => duplicateSurvey(survey)}
                     disabled={duplicatingId === survey.id}

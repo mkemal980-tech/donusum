@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import * as XLSX from "xlsx";
 import {
   RECOMMENDATION_COLUMNS,
+  buildAiBriefSheet,
   buildCascadeGuideSheet,
   buildColumnGuideSheet,
   buildExampleRows,
+  buildPrefilledRows,
   buildQuestionReferenceSheet,
   buildRecommendationSheet,
   templateColumnKeys,
@@ -79,13 +81,18 @@ describe("şablon kolonları", () => {
 
 describe("şablon → Excel → okuma → doğrulama zinciri", () => {
   const parsed = roundtrip(buildExampleRows());
+  // Örnekler bilinçli olarak çeşitli: dört basamaklı bir merdiven, merdiven
+  // kurulamayan tek şıklık bir öneri ve ölçek sorusundan bir örnek. Zincir
+  // testleri merdiven kısmına bakar; diğerleri kendi kurallarıyla sınanır.
+  const ladder = parsed.filter((row) => row.soru_metni === question.text);
 
   it("örnek satırların tamamı geri okunur", () => {
-    expect(parsed).toHaveLength(4);
+    expect(parsed.length).toBe(buildExampleRows().length);
+    expect(ladder).toHaveLength(4);
   });
 
-  it("geri okunan satırlar hatasız doğrulanır", () => {
-    for (const row of parsed) {
+  it("merdiven satırları hatasız doğrulanır", () => {
+    for (const row of ladder) {
       const match = matchQuestion(row, [question]);
       expect(match.found).toBe(true);
       expect(validateRecommendationRow(row, match.found ? match.question : null)).toEqual([]);
@@ -93,22 +100,31 @@ describe("şablon → Excel → okuma → doğrulama zinciri", () => {
   });
 
   it("örnek merdiven eksiksizdir — uyarı üretmez", () => {
-    expect(checkLadders(parsed, [question])).toEqual([]);
+    expect(checkLadders(ladder, [question])).toEqual([]);
   });
 
   it("kademe eşikleri şık puanlarıyla birebir eşleşir", () => {
-    const thresholds = parsed.map(
+    const thresholds = ladder.map(
       (row, index) => buildRecommendationPayload(row, question, index + 1).triggerMaxAnswerScore
     );
     expect(thresholds).toEqual([0, 1, 2, 3]);
   });
 
-  it("örneklerin hepsi kademelidir — puan alanı boş kalır", () => {
-    for (const [index, row] of parsed.entries()) {
+  it("kademeli örneklerde puan alanı boş kalır", () => {
+    // Katkı basamaktan türetilir; elle puan girmek çift sayım olurdu.
+    for (const [index, row] of ladder.entries()) {
       const payload = buildRecommendationPayload(row, question, index + 1);
       expect(payload.triggerOptions).toBeNull();
       expect(payload.points).toBe(0);
     }
+  });
+
+  it("kademesiz örnek tek şıkka bağlanır ve puanını kendisi taşır", () => {
+    // Merdiven kurulamayan soruda devralma yok; katkı türetilemediği için
+    // puan elle verilir. Örnek sayfası bu farkı göstermek zorunda.
+    const single = parsed.find((row) => row.kademeli?.toUpperCase() === "HAYIR");
+    expect(single).toBeTruthy();
+    expect(Number(String(single!.puan).replace(",", "."))).toBeGreaterThan(0);
   });
 });
 
@@ -131,5 +147,59 @@ describe("yardım sayfaları", () => {
     const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as string[][];
     expect(rows[1][0]).toBe(question.text);
     expect(rows[1][1]).toBe("Takip yok (0)");
+  });
+});
+
+describe("buildPrefilledRows", () => {
+  const questions = [
+    {
+      text: "Emisyon takibi nasıl yapılıyor?",
+      choices: [
+        { label: "Dijital takip", score: 2 },
+        { label: "Takip yok", score: 0 },
+        { label: "Manuel takip", score: 1 },
+      ],
+    },
+    { text: "Açık uçlu soru", choices: [] },
+  ];
+
+  it("her şık için bir satır üretir", () => {
+    expect(buildPrefilledRows(questions)).toHaveLength(3);
+  });
+
+  it("satırları en düşük basamaktan yükseğe sıralar", () => {
+    // Merdiven gözle görünsün: alt satır "hiç yapmıyor", üst satır "en olgun".
+    expect(buildPrefilledRows(questions).map((row) => row.tetikleyici)).toEqual([
+      "Takip yok",
+      "Manuel takip",
+      "Dijital takip",
+    ]);
+  });
+
+  it("soru metnini ve şık etiketini hazır doldurur", () => {
+    // Elle kopyalamak en büyük hata kaynağıydı: metin eşleşmesi birebir.
+    const [first] = buildPrefilledRows(questions);
+    expect(first.soru_metni).toBe("Emisyon takibi nasıl yapılıyor?");
+    expect(first.kademeli).toBe("EVET");
+    expect(first.baslik).toBe("");
+  });
+
+  it("şıksız soruyu atlar", () => {
+    // Tetikleyici yazılamayan soruya satır üretmek yükleme hatası doğururdu.
+    expect(buildPrefilledRows(questions).every((row) => row.soru_metni !== "Açık uçlu soru")).toBe(
+      true
+    );
+  });
+});
+
+describe("buildAiBriefSheet", () => {
+  it("anket adını yönergeye yazar", () => {
+    const sheet = buildAiBriefSheet("Tersane 2026");
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as string[][];
+    expect(rows.some((row) => row[1] === "Tersane 2026")).toBe(true);
+  });
+
+  it("anket verilmediğinde de bozulmaz", () => {
+    expect(() => buildAiBriefSheet()).not.toThrow();
   });
 });

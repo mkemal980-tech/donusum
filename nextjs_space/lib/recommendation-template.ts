@@ -167,6 +167,39 @@ export function buildExampleRows(): TemplateRow[] {
       etki: "9",
       sira: "4",
     },
+    // Merdiven kurulamayan soru: şıklar birbirinin alternatifi, biri
+    // diğerinden "daha olgun" değil. Devralma olmadığı için puan elle verilir.
+    {
+      soru_metni: "Atık sularınızı hangi yöntemle arıtıyorsunuz?",
+      tetikleyici: "Arıtma yok, doğrudan deşarj",
+      kademeli: "HAYIR",
+      baslik: "Atık su arıtma ünitesi kurun",
+      aciklama:
+        "Tersane atık suyunda yağ, boya ve ağır metal bulunur. Fiziksel-kimyasal arıtma ünitesi kurup deşarj öncesi analiz zorunluluğu getirin.",
+      vade: "UZUN",
+      strateji: "BUYUK_YATIRIM",
+      maliyet: "CAPEX",
+      etki: "9",
+      puan: "1",
+      video_url: "",
+      sira: "1",
+    },
+    // Ölçek sorusu: tetikleyici, şık etiketi yerine 1-5 arası sayı.
+    {
+      soru_metni: "İş sağlığı ve güvenliği eğitimlerinin kapsamını nasıl değerlendirirsiniz?",
+      tetikleyici: "2",
+      kademeli: "EVET",
+      baslik: "Saha personeline yılda iki kez İSG tazeleme eğitimi verin",
+      aciklama:
+        "Alt yüklenici çalışanlarını da kapsayacak şekilde yükseklik, sıcak iş ve kapalı alan başlıklarında eğitim planı kurun; katılımı imzayla kayıt altına alın.",
+      vade: "KISA",
+      strateji: "HIZLI_KAZANIM",
+      maliyet: "OPEX",
+      etki: "7",
+      puan: "",
+      video_url: "",
+      sira: "1",
+    },
   ];
 }
 
@@ -235,6 +268,50 @@ export function buildCascadeGuideSheet(): XLSX.WorkSheet {
   return sheet;
 }
 
+/**
+ * Anketin her sorusu × her şıkkı için hazır satır üretir.
+ *
+ * Şablonun boş gelmesi, doldurma işinin en yorucu kısmını yöneticiye
+ * bırakıyordu: soru metnini ve şık etiketini elle kopyalamak. Metin
+ * eşleştirmesiyle çalışan bir içe aktarmada bu aynı zamanda en büyük hata
+ * kaynağı — tek harflik fark satırı düşürüyor.
+ *
+ * Satırlar en düşük şıktan en yükseğe sıralanır: merdiven gözle görünür olur
+ * ve yukarı çıktıkça önerinin de olgunlaşması gerektiği kendiliğinden anlaşılır.
+ * En üst basamak çoğu soruda öneri istemez (kullanıcı zaten en iyisini
+ * yapıyordur); o satır silinebilir.
+ */
+export function buildPrefilledRows(
+  questions: { text: string; choices: { label: string; score: number }[] }[]
+): TemplateRow[] {
+  const rows: TemplateRow[] = [];
+
+  for (const question of questions) {
+    if (question.choices.length === 0) continue; // şıksız soruya tetikleyici yazılamaz
+
+    const ordered = [...question.choices].sort((a, b) => a.score - b.score);
+    ordered.forEach((choice, index) => {
+      rows.push({
+        soru_metni: question.text,
+        tetikleyici: choice.label,
+        // Merdiven kurmak yaygın hâl; tek şıkka özel öneri için HAYIR yapılır.
+        kademeli: "EVET",
+        baslik: "",
+        aciklama: "",
+        vade: "",
+        strateji: "",
+        maliyet: "",
+        etki: "",
+        puan: "",
+        video_url: "",
+        sira: String(index + 1),
+      });
+    });
+  }
+
+  return rows;
+}
+
 /** Anketteki soruları ve şıklarını yöneticinin kopyalayabilmesi için listeler. */
 export function buildQuestionReferenceSheet(
   questions: { text: string; choices: { label: string; score: number }[] }[]
@@ -245,6 +322,126 @@ export function buildQuestionReferenceSheet(
   ]);
   const sheet = XLSX.utils.aoa_to_sheet([["soru_metni", "şıklar (puan)"], ...rows]);
   sheet["!cols"] = [{ wch: 70 }, { wch: 70 }];
+  return sheet;
+}
+
+
+/**
+ * Yapay zekâya verilecek yönerge sayfası.
+ *
+ * Şablonu bir modele "şunu doldur" diye vermek işe yaramıyor: model ürünü
+ * tanımadan öneri yazınca genel geçer cümleler üretiyor ("sürdürülebilirlik
+ * politikanızı geliştirin") ve kolon kurallarını uydurmaya başlıyor. Bu sayfa
+ * modelin bilmesi gereken her şeyi tek yerde veriyor: önerinin nerede
+ * göründüğü, hangi kuralla tetiklendiği, hangi kolona ne yazılacağı ve neyin
+ * yapılmayacağı.
+ */
+export function buildAiBriefSheet(surveyName?: string): XLSX.WorkSheet {
+  const rows: string[][] = [
+    ["YAPAY ZEKÂ YÖNERGESİ — bu dosyayı doldururken uyulacak kurallar", ""],
+    ["", ""],
+    ["Anket", surveyName ?? "(şablon anket seçilmeden indirildi)"],
+    ["", ""],
+
+    ["1. BAĞLAM — bu öneriler nerede kullanılıyor?", ""],
+    [
+      "Ürün",
+      "Kuruluşlar bir olgunluk anketini dolduruyor. Her sorunun şıkları bir olgunluk basamağını temsil ediyor ve verilen cevaplardan 1-5 arası bir puan çıkıyor.",
+    ],
+    [
+      "Öneri nedir",
+      "Kuruluşun bir sonraki adımı. Kullanıcı anketi bitirince Öneriler ekranında ve yol haritasında bunları görür; seçtiklerini görev olarak üstlenir ve tamamlayınca puanı yükselir.",
+    ],
+    [
+      "Kime yazıyorsun",
+      "Cevabı veren kuruluşun sorumlusuna. Konuyu bilir ama uzmanı değildir; ne yapacağını somut olarak bilmek ister.",
+    ],
+    ["", ""],
+
+    ["2. GÖREV", ""],
+    [
+      "Ne yapacaksın",
+      '"Öneriler" sayfasındaki her satır için öneri yazacaksın. Satırların soru_metni ve tetikleyici kolonları HAZIR GELİYOR; onlara dokunma.',
+    ],
+    [
+      "Dolduracağın kolonlar",
+      "baslik, aciklama, vade, strateji, maliyet, etki. Gerekirse kademeli ve sira kolonlarını da düzeltebilirsin.",
+    ],
+    [
+      "Satır silme",
+      "En üst basamak (en yüksek puanlı şık) çoğu soruda öneri istemez — kullanıcı zaten en iyisini yapıyordur. O satırı silebilirsin.",
+    ],
+    ["", ""],
+
+    ["3. TETİKLEME MANTIĞI — en kritik kısım", ""],
+    [
+      "Satırlar merdiven",
+      "Aynı sorunun satırları en düşük şıktan en yükseğe sıralı. Alt satır 'hiç yapmıyor', üst satır 'en olgun' demek.",
+    ],
+    [
+      "kademeli = EVET (varsayılan)",
+      "Öneri, o şıkta VE ondan daha düşük tüm şıklarda gösterilir. Yani 'Dijital takip' için yazdığın öneriyi 'Takip yok' diyen de görür, ama sırası gelince yapabilir.",
+    ],
+    [
+      "Bunun sana anlamı",
+      "Her satır, O BASAMAKTAN BİR ÜSTE ÇIKMAK için yapılacak işi anlatmalı. 'Takip yok' satırı ilk ölçümü kurdurur; 'Dijital takip' satırı hedef koydurur. Aynı işi iki satıra yazma.",
+    ],
+    [
+      "kademeli = HAYIR",
+      "Yalnızca o şıkkı seçene gösterilir, devralma olmaz. Basamak ilişkisi kurulamayan sorularda kullan (örn. birbirinin alternatifi olan şıklar).",
+    ],
+    ["", ""],
+
+    ["4. KOLON KURALLARI", ""],
+    ["baslik", "Emir kipiyle tek cümle, en fazla ~80 karakter. Ne yapılacağını söyler. Örn: 'Kapsam 1-2 emisyon envanteri oluşturun'."],
+    [
+      "aciklama",
+      "2-4 cümle. NASIL yapılacağını anlatır: ilk adım, kullanılacak standart/araç, kimin sorumlu olacağı. Somut ol; 'iyileştirin', 'gözden geçirin' gibi boş fiillerden kaçın.",
+    ],
+    ["vade", "Yalnızca KISA (0-6 ay), ORTA (6-18 ay) veya UZUN (18+ ay). Başka değer yazma."],
+    [
+      "strateji",
+      "Yalnızca HIZLI_KAZANIM (düşük maliyet, hızlı sonuç), PROJE (planlama ve kaynak ister) veya BUYUK_YATIRIM (ciddi bütçe/dönüşüm).",
+    ],
+    ["maliyet", "OPEX (işletme gideri) veya CAPEX (yatırım). Boş bırakırsan OPEX sayılır."],
+    [
+      "etki",
+      "1-10 arası tam sayı. Kuruluşun olgunluğuna yapacağı katkı. Alt basamaklardaki temel adımlar genelde 6-8, üst basamaktaki ileri işler 8-10, küçük düzenlemeler 3-5.",
+    ],
+    ["sira", "Aynı sorudaki öneriler arasında sıra. Hazır geliyor, dokunmana gerek yok."],
+    ["puan", "kademeli = EVET ise BOŞ BIRAK. Sistem katkıyı basamaktan hesaplar."],
+    ["video_url", "Varsa 'nasıl yapılır' videosu. Yoksa boş bırak — uydurma."],
+    ["", ""],
+
+    ["5. YAZIM KURALLARI", ""],
+    ["Dil", "Türkçe, kuruluşa 'siz' diye hitap et."],
+    ["Somutluk", "Ölçülebilir ve uygulanabilir yaz. 'Sürdürülebilirlik bilincini artırın' değil; 'Yılda iki kez, tüm saha personeline atık ayrıştırma eğitimi verin' gibi."],
+    ["Sektör dili", "Anketin sektörünü kullan. Tersane anketinde 'atölye', 'havuz', 'boya kabini' gibi o dünyanın kelimeleri geçmeli."],
+    ["Tekrar", "Aynı öneriyi farklı sorulara kopyalama. Her satır kendi sorusunun cevabı olmalı."],
+    ["Uzunluk", "Başlık kısa, açıklama 2-4 cümle. Uzun metin okunmuyor."],
+    ["", ""],
+
+    ["6. YAPMAYACAKLARIN", ""],
+    ["Kolon ekleme/çıkarma", "Kolon başlıklarını ve sırasını değiştirme. Yükleyici bunlara göre okuyor."],
+    ["soru_metni'ni değiştirme", "Eşleştirme birebir metinle yapılıyor; tek harflik fark satırı düşürür."],
+    ["Şık etiketini değiştirme", "tetikleyici kolonundaki etiket ankettekiyle aynı kalmalı."],
+    ["Serbest değer yazma", "vade/strateji/maliyet kolonlarında yukarıdaki sabit değerler dışında bir şey yazma."],
+    ["Boş bırakma", "baslik, vade, strateji ve etki zorunlu. Boş satır yükleme sırasında reddedilir."],
+    ["", ""],
+
+    ["7. TESLİM", ""],
+    [
+      "Çıktı",
+      'Yalnızca "Öneriler" sayfasını doldurup dosyayı geri ver. Diğer sayfalar (Örnekler, Açıklamalar, Anket Soruları, bu sayfa) rehberdir; yükleme sırasında okunmaz.',
+    ],
+    [
+      "Kontrol listesi",
+      "Her satırda baslik/vade/strateji/etki dolu mu · sabit değerler doğru mu · aynı sorunun satırları birbirini tekrar etmiyor mu · en üst basamak satırı gerekli mi?",
+    ],
+  ];
+
+  const sheet = XLSX.utils.aoa_to_sheet(rows);
+  sheet["!cols"] = [{ wch: 32 }, { wch: 110 }];
   return sheet;
 }
 
