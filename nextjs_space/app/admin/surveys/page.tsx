@@ -10,6 +10,7 @@ interface Survey {
   name: string;
   description: string | null;
   isActive: boolean;
+  isDemo: boolean;
   order: number;
   _count: {
     categories: number;
@@ -285,6 +286,14 @@ export default function SurveysPage() {
                         <XCircle size={12} /> Pasif
                       </span>
                     )}
+                    {survey.isDemo && (
+                      <span
+                        className="px-2 py-0.5 bg-[rgba(99,102,241,0.15)] text-[#818cf8] rounded text-xs"
+                        title="Kayıt olan kullanıcılara otomatik atanır; değerlendirmeleri yönetici raporlarına girmez"
+                      >
+                        Tanıtım
+                      </span>
+                    )}
                     {/* Boş anket uyarısı */}
                     {survey._count.categories === 0 && (
                       <span className="flex items-center gap-1 px-2 py-0.5 bg-[var(--warning)]/15 text-[var(--warning)] rounded text-xs" title="Bu ankette kategori veya soru bulunmuyor">
@@ -429,6 +438,26 @@ export default function SurveysPage() {
                       className="w-5 h-5 text-[var(--accent)] rounded"
                     />
                     <span className="text-sm text-[var(--text-muted)]">Aktif</span>
+                  </label>
+                </div>
+
+                {/* Tanıtım anketi: yeni kayıtlara otomatik atanır ve
+                    raporlardan dışlanır. İkisi de aynı işaretten geliyor. */}
+                <div className="col-span-2">
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isDemo ?? false}
+                      onChange={(e) => setFormData({ ...formData, isDemo: e.target.checked })}
+                      className="w-5 h-5 mt-0.5 text-[var(--accent)] rounded"
+                    />
+                    <span className="text-sm text-[var(--text-muted)]">
+                      Tanıtım anketi
+                      <span className="block text-xs text-[var(--text-dim)]">
+                        Kayıt olan kullanıcılara otomatik atanır. Bu ankete verilen cevaplar
+                        yönetici raporlarındaki puan ortalamalarına girmez.
+                      </span>
+                    </span>
                   </label>
                 </div>
               </div>

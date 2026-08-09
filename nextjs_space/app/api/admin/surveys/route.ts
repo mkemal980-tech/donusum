@@ -127,13 +127,14 @@ export async function POST(request: Request) {
   if (!auth.success) return auth.response;
 
   try {
-    const { name, description, isActive, order } = await request.json();
+    const { name, description, isActive, isDemo, order } = await request.json();
     
     const survey = await prisma.survey.create({
       data: {
         name,
         description,
         isActive: isActive ?? true,
+        isDemo: isDemo ?? false,
         order: order || 0
       }
     });
@@ -151,7 +152,7 @@ export async function PUT(request: Request) {
   if (!auth.success) return auth.response;
 
   try {
-    const { id, name, description, isActive, order } = await request.json();
+    const { id, name, description, isActive, isDemo, order } = await request.json();
     
     // Eğer anket aktif edilmeye çalışılıyorsa, içeriğini kontrol et
     if (isActive === true) {
@@ -214,6 +215,7 @@ export async function PUT(request: Request) {
         name,
         description,
         isActive,
+        ...(typeof isDemo === 'boolean' ? { isDemo } : {}),
         order
       }
     });

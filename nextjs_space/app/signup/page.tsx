@@ -74,6 +74,11 @@ export default function SignupPage() {
       return;
     }
 
+    if (!formData?.sectorId) {
+      setError("Lütfen sektörünüzü seçin");
+      return;
+    }
+
     // Sunucudaki kuralın aynısı (bkz. lib/api-utils validators.password).
     // Ekran 6 karakter derken sunucu 8 + büyük harf + rakam istiyordu;
     // kullanıcı formu doldurup gönderdikten sonra beklemediği bir hata alıyordu.
@@ -256,7 +261,9 @@ export default function SignupPage() {
             {!loadingSectors && sectors.length > 0 && (
               <>
                 <div>
-                  <label className="block text-sm font-semibold text-[var(--text-main)] mb-2">Sektör</label>
+                  <label className="block text-sm font-semibold text-[var(--text-main)] mb-2">
+                    Sektör <span className="text-[var(--accent)]">*</span>
+                  </label>
                   <div className="relative">
                     <Factory className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--accent)]" size={20} />
                     <select
@@ -264,8 +271,9 @@ export default function SignupPage() {
                       value={formData.sectorId}
                       onChange={handleChange}
                       className={selectClasses}
+                      required
                     >
-                      <option value="">Sektör seçin (opsiyonel)</option>
+                      <option value="">Sektör seçin</option>
                       {sectors.map(sector => (
                         <option key={sector.id} value={sector.id}>
                           {sector.name.startsWith('[') || !sector.naicsCode ? sector.name : `[${sector.naicsCode}] ${sector.name}`}
@@ -273,6 +281,12 @@ export default function SignupPage() {
                       ))}
                     </select>
                   </div>
+                  {/* Zorunlu olmasının sebebi sorulmadan söylensin: sektör
+                      olmadan kıyas ve sektöre özel kapsam çalışmıyor. */}
+                  <p className="text-xs text-[var(--text-dim)] mt-1.5">
+                    Puanınız sektörünüzün ortalamasıyla karşılaştırılır ve sorular sektörünüze
+                    göre ağırlıklandırılır. Sonradan değiştirebilirsiniz.
+                  </p>
                 </div>
 
                 {selectedSector && selectedSector.subSectors?.length > 0 && (

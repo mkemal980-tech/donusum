@@ -32,8 +32,15 @@ export async function GET(req: NextRequest) {
     // Admin kullanıcıları hariç aktif kullanıcılar
     // Cevaplar artık kuruluşun değerlendirmesine bağlı; "aktif" ölçüsü de
     // kişi değil, üzerinde çalışılmış değerlendirme sayısıdır.
+    /**
+     * Tanıtım anketi sayılmaz. Kendi kaydolan ziyaretçilere otomatik
+     * atanıyor ve rastgele cevaplarla dolduruluyor; bu satırlar gerçek
+     * değerlendirmelerle aynı ortalamaya girerse rapor yalan söyler.
+     */
+    const realAssessment = { survey: { isDemo: false } };
+
     const activeUsers = await prisma.assessment.count({
-      where: { responses: { some: {} } },
+      where: { ...realAssessment, responses: { some: {} } },
     });
 
     // Son 7 günde yanıt veren kullanıcılar
@@ -41,6 +48,7 @@ export async function GET(req: NextRequest) {
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const recentActiveUsers = await prisma.assessment.count({
       where: {
+        ...realAssessment,
         responses: {
           some: {
             updatedAt: { gte: sevenDaysAgo },
@@ -50,7 +58,9 @@ export async function GET(req: NextRequest) {
     });
 
     // Toplam yanıt sayısı
-    const totalResponses = await prisma.surveyResponse.count();
+    const totalResponses = await prisma.surveyResponse.count({
+      where: { assessment: realAssessment },
+    });
 
     // Anket listesi
     const surveys = await prisma.survey.findMany({
@@ -193,6 +203,7 @@ export async function GET(req: NextRequest) {
         // Kullanıcı puanları
         const usersWithResponses = await prisma.assessment.findMany({
           where: {
+            ...realAssessment,
             responses: {
               some: {
                 question: {

@@ -26,6 +26,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    /**
+     * Sektör zorunlu: puanın yarısı ona bağlı. Sektörü olmayan kullanıcı
+     * kıyas göremiyor ("Benchmark yok") ve sektöre göre kapsam kuralları
+     * devreye girmiyor — yani anketi doldurup eksik bir sonuç alıyor.
+     * Sonradan yöneticiden düzeltmesini istemek yerine baştan sorulur.
+     */
+    if (!sectorId) {
+      return NextResponse.json(
+        { error: "Sektör seçimi gerekli" },
+        { status: 400 }
+      );
+    }
+
     // Email validation
     if (!validators.email(email)) {
       return NextResponse.json(
@@ -80,6 +93,34 @@ export async function POST(request: NextRequest) {
         isActive: true
       }
     }));
+
+    /**
+     * Tanıtım anketini otomatik ata.
+     *
+     * Aksi hâlde yeni kullanıcı e-postasını doğrulayıp giriş yapıyor ve
+     * "Henüz Anket Atanmadı" görüyor: yönetici ona bir anket atayana kadar
+     * yapabileceği hiçbir şey yok. Tanıtım anketiyle döngüyü kendi başına
+     * görebiliyor — doldur, puanı gör, önerileri al.
+     *
+     * Bu değerlendirmeler yönetici raporlarına girmez (bkz. Survey.isDemo);
+     * ziyaretçinin rastgele cevapları sektör ortalamalarını bozmamalı.
+     * Kayıt bu yüzden başarısız sayılmaz: atama yapılamazsa hesap yine açılır.
+     */
+    try {
+      const demoSurveys = await prisma.survey.findMany({
+        where: { isDemo: true, isActive: true, archivedAt: null },
+        select: { id: true },
+      });
+
+      if (demoSurveys.length > 0) {
+        await prisma.userSurveyAssignment.createMany({
+          data: demoSurveys.map((survey) => ({ userId: user.id, surveyId: survey.id })),
+          skipDuplicates: true,
+        });
+      }
+    } catch (assignError) {
+      console.error("Tanıtım anketi atanamadı:", assignError);
+    }
 
     // Hoşgeldin ve Email Doğrulama maili gönder
     const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
