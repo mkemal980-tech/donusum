@@ -140,8 +140,11 @@ test("ekranda arama ile daraltılan liste seçilip silinir", async ({ page }) =>
   const rows = page.locator("tbody tr");
   await expect(rows).toHaveCount(3);
 
-  await page.getByLabel("Listedeki tüm önerileri seç").check();
+  // "Tümünü seç" düğmesi de tablo başlığındaki kutuyla aynı kapsamı alır:
+  // yalnızca filtreden geçen satırlar.
+  await page.getByRole("button", { name: "Tümünü seç (3)" }).click();
   await expect(page.getByText("3 öneri seçildi")).toBeVisible();
+  await expect(page.getByLabel("Listedeki tüm önerileri seç")).toBeChecked();
 
   await page.getByRole("button", { name: /Seçilenleri sil/ }).click();
 

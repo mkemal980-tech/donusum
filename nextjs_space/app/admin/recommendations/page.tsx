@@ -620,6 +620,16 @@ export default function RecommendationsPage() {
               <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
           </select>
+          {/* Tablo başlığındaki kutu da aynı işi yapar; 284 satırlık bir listede
+              o kutuyu aramak yerine düğme filtrenin yanında duruyor. */}
+          <button
+            onClick={toggleAllVisible}
+            disabled={filteredRecs.length === 0}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors disabled:opacity-50"
+          >
+            <CheckSquare size={18} />
+            {allVisibleSelected ? 'Seçimi temizle' : `Tümünü seç (${filteredRecs.length})`}
+          </button>
         </div>
       </div>
 
