@@ -74,8 +74,12 @@ export default function SignupPage() {
       return;
     }
 
-    if ((formData?.password?.length ?? 0) < 6) {
-      setError("Şifre en az 6 karakter olmalıdır");
+    // Sunucudaki kuralın aynısı (bkz. lib/api-utils validators.password).
+    // Ekran 6 karakter derken sunucu 8 + büyük harf + rakam istiyordu;
+    // kullanıcı formu doldurup gönderdikten sonra beklemediği bir hata alıyordu.
+    const password = formData?.password ?? "";
+    if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setError("Şifre en az 8 karakter olmalı, bir büyük harf ve bir rakam içermelidir");
       return;
     }
 
@@ -264,7 +268,7 @@ export default function SignupPage() {
                       <option value="">Sektör seçin (opsiyonel)</option>
                       {sectors.map(sector => (
                         <option key={sector.id} value={sector.id}>
-                          {sector.naicsCode ? `[${sector.naicsCode}] ` : ''}{sector.name}
+                          {sector.name.startsWith('[') || !sector.naicsCode ? sector.name : `[${sector.naicsCode}] ${sector.name}`}
                         </option>
                       ))}
                     </select>
@@ -304,10 +308,14 @@ export default function SignupPage() {
                     value={formData.password}
                     onChange={handleChange}
                     className={inputClasses}
-                    placeholder="En az 6 karakter"
+                    placeholder="En az 8 karakter"
                     required
                   />
                 </div>
+                {/* Kural gönderdikten sonra değil, yazarken görünsün. */}
+                <p className="text-xs text-[var(--text-dim)] mt-1.5">
+                  En az 8 karakter, bir büyük harf ve bir rakam
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-semibold text-[var(--text-main)] mb-2">Şifre Tekrar</label>

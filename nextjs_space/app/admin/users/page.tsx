@@ -586,7 +586,7 @@ export default function UsersPage() {
                   <option value="">Sektör Seçiniz</option>
                   {sectors.map((sector) => (
                     <option key={sector.id} value={sector.id}>
-                      {sector.naicsCode ? `[${sector.naicsCode}] ` : ''}{sector.name}
+                      {sector.name.startsWith('[') || !sector.naicsCode ? sector.name : `[${sector.naicsCode}] ${sector.name}`}
                     </option>
                   ))}
                 </select>
