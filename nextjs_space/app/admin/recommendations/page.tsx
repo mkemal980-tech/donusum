@@ -213,6 +213,11 @@ export default function RecommendationsPage() {
   const [modalQuestionId, setModalQuestionId] = useState('');
   const [selectedTriggerOptions, setSelectedTriggerOptions] = useState<string[]>([]);
   const [showBulkPanel, setShowBulkPanel] = useState(false);
+  // Toplu silme için seçilen öneriler. Yalnızca listede görünen satırlar
+  // seçili kalır (aşağıdaki useEffect budar) — filtre değiştikten sonra
+  // ekranda olmayan bir öneriyi silmek sürpriz olur.
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -297,9 +302,39 @@ export default function RecommendationsPage() {
     if (!confirm('Bu öneriyi silmek istediğinizden emin misiniz?')) return;
     try {
       await fetch(`/api/admin/recommendations?id=${id}`, { method: 'DELETE' });
+      setSelectedIds(prev => prev.filter(selected => selected !== id));
       fetchData();
     } catch (error) {
       console.error('Error deleting:', error);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Seçili ${selectedIds.length} öneri silinecek. Bu işlem geri alınamaz. Devam edilsin mi?`)) return;
+
+    setBulkDeleting(true);
+    try {
+      const response = await fetch('/api/admin/recommendations/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        alert('Silme hatası: ' + (data?.error || 'Bilinmeyen hata'));
+        return;
+      }
+
+      setSelectedIds([]);
+      await fetchData();
+      alert(`${data?.deleted ?? 0} öneri silindi.`);
+    } catch (error) {
+      console.error('Error bulk deleting:', error);
+      alert('Bağlantı hatası oluştu!');
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -455,6 +490,28 @@ export default function RecommendationsPage() {
     return matchSearch && matchCategory && matchSurvey;
   });
 
+  const visibleIds = filteredRecs.map(rec => rec.id);
+  const selectedVisibleCount = visibleIds.filter(id => selectedIds.includes(id)).length;
+  const allVisibleSelected = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
+
+  // Filtre ya da arama değişince ekrandan kalkan satırların seçimi düşer.
+  useEffect(() => {
+    setSelectedIds(prev => {
+      const kept = prev.filter(id => visibleIds.includes(id));
+      return kept.length === prev.length ? prev : kept;
+    });
+    // Kimlik listesi metne çevrilir: her render'da yeni dizi oluştuğu için
+    // referans karşılaştırması sonsuz döngü yaratırdı.
+  }, [visibleIds.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const toggleOne = (id: string) => {
+    setSelectedIds(prev => (prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]));
+  };
+
+  const toggleAllVisible = () => {
+    setSelectedIds(prev => (allVisibleSelected ? prev.filter(id => !visibleIds.includes(id)) : visibleIds));
+  };
+
   // Anket adını bul
   const getSurveyName = (rec: Recommendation) => {
     if (rec.subLevel?.subCategory?.category?.surveyId) {
@@ -566,11 +623,51 @@ export default function RecommendationsPage() {
         </div>
       </div>
 
+      {/* Seçim çubuğu — yalnızca seçim varken görünür */}
+      {selectedIds.length > 0 && (
+        <div className="bg-[var(--bg-card)] rounded-xl shadow-soft p-4 mb-4 flex items-center justify-between gap-4 flex-wrap">
+          <p className="text-[var(--text-main)] font-medium">
+            {selectedIds.length} öneri seçildi
+            <span className="text-[var(--text-dim)] font-normal"> · listede {filteredRecs.length} öneri var</span>
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedIds([])}
+              className="px-4 py-2 rounded-lg bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+            >
+              Seçimi temizle
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--error)] text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              <Trash2 size={18} />
+              {bulkDeleting ? 'Siliniyor…' : `Seçilenleri sil (${selectedIds.length})`}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-[var(--bg-card)] rounded-xl shadow-soft overflow-hidden">
         <table className="w-full">
           <thead className="bg-[var(--bg-card-2)]">
             <tr>
+              <th className="p-4 w-12">
+                <input
+                  type="checkbox"
+                  checked={allVisibleSelected}
+                  // Bir kısmı seçiliyse kutu "kararsız" görünür: tık hepsini seçer.
+                  ref={(el) => {
+                    if (el) el.indeterminate = selectedVisibleCount > 0 && !allVisibleSelected;
+                  }}
+                  onChange={toggleAllVisible}
+                  disabled={filteredRecs.length === 0}
+                  aria-label="Listedeki tüm önerileri seç"
+                  className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
+                />
+              </th>
               <th className="text-left p-4 font-semibold text-[var(--text-muted)]">Başlık</th>
               <th className="text-left p-4 font-semibold text-[var(--text-muted)]">Anket</th>
               <th className="text-left p-4 font-semibold text-[var(--text-muted)]">Tetikleyici</th>
@@ -585,8 +682,21 @@ export default function RecommendationsPage() {
               const surveyName = getSurveyName(rec);
               const triggerInfo = getTriggerInfo(rec);
               const stratType = strategicTypes.find(t => t.value === rec.strategicType);
+              const selected = selectedIds.includes(rec.id);
               return (
-                <tr key={rec.id} className="border-t hover:bg-[var(--bg-card-2)]">
+                <tr
+                  key={rec.id}
+                  className={`border-t hover:bg-[var(--bg-card-2)] ${selected ? 'bg-[var(--bg-card-2)]' : ''}`}
+                >
+                  <td className="p-4">
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => toggleOne(rec.id)}
+                      aria-label={`${rec.title} önerisini seç`}
+                      className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
+                    />
+                  </td>
                   <td className="p-4">
                     <p className="font-medium text-[var(--text-main)]">{rec.title}</p>
                     <p className="text-sm text-[var(--text-dim)] truncate max-w-xs">{rec.description}</p>
