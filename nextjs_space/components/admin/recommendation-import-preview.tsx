@@ -62,11 +62,23 @@ const inputClass =
   "w-full px-2 py-1.5 text-sm bg-[var(--bg-card)] border border-[var(--border-soft)] rounded " +
   "text-[var(--text-main)] focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent";
 
+/**
+ * Bir seferde çizilecek satır sayısı.
+ *
+ * 284 satırlık bir yüklemede her satır kendi soru listesini de çizdiği için
+ * (71 şık × 284 satır ≈ 20 bin öğe) tarayıcı kilitleniyordu. Satırlar artık
+ * parça parça açılır; onay düğmesi listenin altında beklemez.
+ */
+const PAGE_SIZE = 25;
+
 export default function RecommendationImportPreview({ payload, saving, onCancel, onConfirm }: Props) {
   const [rows, setRows] = useState<RecommendationImportRow[]>(() =>
     payload.rows.map((row) => ({ ...row.values }))
   );
   const [onlyErrors, setOnlyErrors] = useState(false);
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  // Soru listesi ağır olduğu için yalnızca değiştirilmek istenen satırda açılır.
+  const [questionEditing, setQuestionEditing] = useState<number[]>([]);
 
   const questions = payload.questions;
 
@@ -106,9 +118,11 @@ export default function RecommendationImportPreview({ payload, saving, onCancel,
     setRows((current) => current.filter((_, index) => rowErrors[index].length === 0));
   };
 
-  const visibleIndexes = rows
+  const matchingIndexes = rows
     .map((_, index) => index)
     .filter((index) => !onlyErrors || rowErrors[index].length > 0);
+  const visibleIndexes = matchingIndexes.slice(0, limit);
+  const hiddenCount = matchingIndexes.length - visibleIndexes.length;
 
   const errorFor = (index: number, field: RecommendationImportField) =>
     rowErrors[index].filter((error) => error.field === field);
@@ -239,23 +253,37 @@ export default function RecommendationImportPreview({ payload, saving, onCancel,
 
               <div>
                 <label className="block text-[11px] text-[var(--text-dim)] mb-0.5">Soru</label>
-                <select
-                  className={cellClass(index, "soru_metni")}
-                  value={row.soru_metni ?? ""}
-                  onChange={(event) => updateRow(index, "soru_metni", event.target.value)}
-                >
-                  <option value="">— Soru seçin —</option>
-                  {/* Dosyadaki metin ankette yoksa seçim kaybolmasın diye korunur */}
-                  {row.soru_metni &&
-                    !questions.some((question) => question.text === row.soru_metni) && (
-                      <option value={row.soru_metni}>{row.soru_metni} (eşleşmiyor)</option>
-                    )}
-                  {questions.map((question) => (
-                    <option key={question.id} value={question.text}>
-                      {question.text}
-                    </option>
-                  ))}
-                </select>
+                {/* Soru listesi anketin bütün sorularını taşır; eşleşen satırda
+                    metni göstermek yeterli, liste ancak istendiğinde açılır. */}
+                {questionEditing.includes(index) || errorFor(index, "soru_metni").length > 0 ? (
+                  <select
+                    className={cellClass(index, "soru_metni")}
+                    value={row.soru_metni ?? ""}
+                    onChange={(event) => updateRow(index, "soru_metni", event.target.value)}
+                  >
+                    <option value="">— Soru seçin —</option>
+                    {/* Dosyadaki metin ankette yoksa seçim kaybolmasın diye korunur */}
+                    {row.soru_metni &&
+                      !questions.some((question) => question.text === row.soru_metni) && (
+                        <option value={row.soru_metni}>{row.soru_metni} (eşleşmiyor)</option>
+                      )}
+                    {questions.map((question) => (
+                      <option key={question.id} value={question.text}>
+                        {question.text}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm text-[var(--text-main)]">{row.soru_metni}</p>
+                    <button
+                      onClick={() => setQuestionEditing((current) => [...current, index])}
+                      className="shrink-0 text-xs text-[var(--accent)] hover:underline"
+                    >
+                      Değiştir
+                    </button>
+                  </div>
+                )}
                 {fieldMessages(index, "soru_metni")}
               </div>
 
@@ -431,10 +459,27 @@ export default function RecommendationImportPreview({ payload, saving, onCancel,
             </div>
           );
         })}
+
+        {hiddenCount > 0 && (
+          <div className="flex items-center justify-center gap-2 py-2">
+            <button
+              onClick={() => setLimit((current) => current + PAGE_SIZE)}
+              className="px-4 py-2 rounded-lg text-sm bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:text-[var(--accent)]"
+            >
+              {hiddenCount} satır daha var — {Math.min(PAGE_SIZE, hiddenCount)} tanesini göster
+            </button>
+            <button
+              onClick={() => setLimit(matchingIndexes.length)}
+              className="px-4 py-2 rounded-lg text-sm text-[var(--text-dim)] hover:text-[var(--text-main)]"
+            >
+              Tümünü göster
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Eylemler */}
-      <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-soft)]">
+      {/* Eylemler — kaydetmek için satırların sonuna inmek gerekmez */}
+      <div className="sticky bottom-0 flex items-center justify-end gap-2 pt-2 bg-[var(--bg-card)] border-t border-[var(--border-soft)]">
         <button
           onClick={onCancel}
           disabled={saving}
