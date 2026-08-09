@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
 import { buildSurveyQuestionWhere } from "@/lib/scoring";
 import { derivePosition } from "@/lib/recommendation-position";
+import { deriveCostLevels } from "@/lib/recommendation-cost";
 import {
   type QuestionContext,
   type RecommendationImportRow,
@@ -102,11 +103,19 @@ async function commitRows(rows: RecommendationImportRow[], questions: QuestionCo
         timeframe: payload.timeframe,
         estimatedImpact: payload.estimatedImpact,
       });
+      // Şablonda maliyetin türü var, büyüklüğü yok; seviyeler türetilir,
+      // yoksa bütün öneriler listede tek dolar işaretiyle görünür.
+      const costLevels = deriveCostLevels({
+        costType: payload.costType,
+        strategicType: payload.strategicType,
+        timeframe: payload.timeframe,
+      });
 
       return prisma.recommendation.create({
         data: {
           ...payload,
           ...position,
+          ...costLevels,
           costType: payload.costType as "OPEX" | "CAPEX",
           timeframe: payload.timeframe as "SHORT_TERM" | "MEDIUM_TERM" | "LONG_TERM",
           strategicType: payload.strategicType as "QUICK_WIN" | "PROJECT" | "BIG_BET",
