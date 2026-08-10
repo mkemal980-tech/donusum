@@ -171,8 +171,12 @@
    Koyu tema tek satır değişmez; açık tema aynı token adlarını marka
    değerleriyle yeniden tanımlar. Uygulamadaki 3.400'den fazla `var(--…)`
    kullanımı bu yüzden kendiliğinden uyum sağlar — bileşenlerde tema koşulu
-   yazmak gerekmez. Renkleri esg-lab-design-system.css'ten birebir gelir. */
-html[data-theme="light"] {
+   yazmak gerekmez. Renkleri esg-lab-design-system.css'ten birebir gelir.
+
+   Seçici `html` ile sınırlı değil: tanıtım sayfası gibi tema tercihinden
+   bağımsız olarak marka kimliğiyle görünmesi gereken bölümler kendi
+   sarmalayıcısına data-theme="light" koyup paleti oracıkta açabilsin diye. */
+[data-theme="light"] {
   --bg-main: #f6f8fb;
   /* Koyuda "daha derin" olan yüzey, açıkta beyaz panele karşılık gelir;
      ayrıca vurgu üzerindeki metin rengi de bu token'dan okunur. */

@@ -148,7 +148,14 @@ const resources = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)]">
+    /* Tanıtım sayfası marka kimliğidir; kullanıcının koyu tema tercihi
+       uygulamanın içinde geçerli, burada değil. Palet <html> yerine bu
+       sarmalayıcıda açılır — böylece ilk karede de doğru renkler gelir,
+       tercihe dokunulmaz. */
+    <div
+      data-theme="light"
+      className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)]"
+    >
       {/* ===== Üst bar ===== */}
       <header className="sticky top-0 z-50 border-b border-[var(--border-soft)] bg-[var(--bg-card)]/85 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-[1220px] items-center gap-8 px-6">

@@ -46,3 +46,23 @@ test("açık tema ESG LAB kimliğiyle gelir", async ({ page }) => {
   await expect(heading).toBeVisible();
   expect(await heading.evaluate((el) => getComputedStyle(el).fontFamily)).toContain("Space_Grotesk");
 });
+
+test("tanıtım sayfası tema tercihinden bağımsız olarak marka kimliğiyle gelir", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.evaluate(() => window.localStorage.setItem("theme", "dark"));
+  await page.reload({ waitUntil: "networkidle" });
+
+  // Kullanıcının tercihi duruyor...
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+
+  // ...ama sayfa kendi paletini açıyor: turuncu vurgu, açık zemin.
+  const brand = await page.evaluate(() => {
+    const wrap = document.querySelector('div[data-theme="light"]') as HTMLElement;
+    return {
+      accent: getComputedStyle(wrap).getPropertyValue("--accent").trim().toLowerCase(),
+      background: getComputedStyle(wrap).backgroundColor,
+    };
+  });
+  expect(brand.accent).toBe("#fa541c");
+  expect(brand.background).toBe("rgb(246, 248, 251)");
+});
