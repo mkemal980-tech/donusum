@@ -16,11 +16,11 @@ const badgeVariants = cva(
           'border-transparent bg-[var(--error)] text-white hover:opacity-90',
         outline: 'text-[var(--text-main)] border-[var(--border-soft)]',
         success:
-          'border-transparent bg-[rgba(12,193,195,0.15)] text-[var(--accent)]',
+          'border-transparent bg-[var(--accent-soft)] text-[var(--accent)]',
         warning:
-          'border-transparent bg-[rgba(245,158,11,0.15)] text-[var(--warning)]',
+          'border-transparent bg-[var(--warning-bg)] text-[var(--warning)]',
         info:
-          'border-transparent bg-[rgba(46,134,255,0.15)] text-[var(--blue-main)]',
+          'border-transparent bg-[var(--info-bg)] text-[var(--blue-main)]',
       },
     },
     defaultVariants: {

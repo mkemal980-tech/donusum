@@ -96,12 +96,14 @@ interface Survey {
 }
 
 // Theme colors - Cyan/Teal tones (matching template)
+// Kategori çubukları olgunluk skalasının renklerini paylaşır; temaya göre
+// değişmesi için sabit değer değil token kullanılır.
 const categoryColors = [
-  "#22d3ee",
-  "#38bdf8",
-  "#2dd4bf",
-  "#5eead4",
-  "#67e8f9"
+  "var(--level-5)",
+  "var(--level-3)",
+  "var(--level-4)",
+  "var(--level-2)",
+  "var(--level-1)"
 ];
 
 /**

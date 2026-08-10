@@ -510,14 +510,14 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                       )}
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {recommendation.triggerMaxAnswerScore !== null ? (
-                          <span className="text-[11px] px-2 py-0.5 rounded bg-[rgba(12,193,195,0.15)] text-[var(--accent)]">
+                          <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)]">
                             {cascadeLabel(recommendation.triggerMaxAnswerScore)} ve altındaki cevaplarda
                           </span>
                         ) : triggers.length > 0 ? (
                           triggers.map((trigger) => (
                             <span
                               key={trigger}
-                              className="text-[11px] px-2 py-0.5 rounded bg-[rgba(12,193,195,0.15)] text-[var(--accent)]"
+                              className="text-[11px] px-2 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)]"
                             >
                               {triggerLabel(trigger)} cevabında
                             </span>
@@ -547,7 +547,7 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                       </button>
                       <button
                         onClick={() => handleDelete(recommendation)}
-                        className="p-1.5 rounded hover:bg-[rgba(239,68,68,0.15)] text-[var(--error)]"
+                        className="p-1.5 rounded hover:bg-[var(--error-bg)] text-[var(--error)]"
                         title="Sil"
                       >
                         <Trash2 size={16} />
@@ -567,7 +567,7 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                   {form.id ? "Öneriyi Düzenle" : "Yeni Öneri"}
                 </h3>
                 {draftQueue.length > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs bg-[rgba(12,193,195,0.15)] text-[var(--accent)]">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs bg-[var(--accent-soft)] text-[var(--accent)]">
                     <Sparkles size={12} />
                     AI taslağı — sırada {draftQueue.length} tane daha
                   </span>
@@ -644,7 +644,7 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                         key={choice.value}
                         className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer border text-sm ${
                           form.triggers.includes(choice.value)
-                            ? "bg-[rgba(12,193,195,0.15)] border-[var(--accent)] text-[var(--accent)]"
+                            ? "bg-[var(--accent-soft)] border-[var(--accent)] text-[var(--accent)]"
                             : "bg-[var(--bg-card-2)] border-[var(--border-soft)] text-[var(--text-muted)]"
                         }`}
                       >

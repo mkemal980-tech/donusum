@@ -429,7 +429,7 @@ export default function UsersPage() {
                       title="Anket Ata"
                       variant="ghost"
                       size="icon"
-                      className="text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[rgba(12,193,195,0.1)]"
+                      className="text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]"
                     >
                       <FileText size={16} />
                     </Button>
@@ -447,7 +447,7 @@ export default function UsersPage() {
                       title="Sil"
                       variant="ghost"
                       size="icon"
-                      className="text-[var(--text-dim)] hover:text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)]"
+                      className="text-[var(--text-dim)] hover:text-[var(--error)] hover:bg-[var(--error-bg)]"
                     >
                       <Trash2 size={16} />
                     </Button>
@@ -673,7 +673,7 @@ export default function UsersPage() {
                     {userAssignments.map((assignment) => (
                       <div
                         key={assignment.id}
-                        className="flex items-center justify-between p-3 bg-[rgba(12,193,195,0.1)] border border-[var(--accent)] rounded-lg"
+                        className="flex items-center justify-between p-3 bg-[var(--accent-soft)] border border-[var(--accent)] rounded-lg"
                       >
                         <div className="flex items-center gap-3">
                           <FileText size={18} className="text-[var(--accent)]" />
@@ -689,7 +689,7 @@ export default function UsersPage() {
                           title="Atamayı Kaldır"
                           variant="ghost"
                           size="icon"
-                          className="text-[var(--error)] hover:bg-[rgba(239,68,68,0.15)]"
+                          className="text-[var(--error)] hover:bg-[var(--error-bg)]"
                         >
                           <Trash2 size={16} />
                         </Button>

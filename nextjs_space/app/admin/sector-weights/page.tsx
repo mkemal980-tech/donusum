@@ -30,7 +30,7 @@ const LEVEL_STYLE: Record<ScopeLevelKey, string> = {
   EXCLUDED: "bg-[var(--bg-card-2)] text-[var(--text-dim)] border-[var(--border-soft)]",
   LOW: "bg-[rgba(148,163,184,0.15)] text-[var(--text-muted)] border-[var(--border-soft)]",
   NORMAL: "bg-[var(--bg-card)] text-[var(--text-main)] border-[var(--border-soft)]",
-  HIGH: "bg-[rgba(12,193,195,0.15)] text-[var(--accent)] border-[var(--accent)]/50",
+  HIGH: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/50",
 };
 
 export default function SectorScopePage() {

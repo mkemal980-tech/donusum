@@ -137,7 +137,7 @@ function VerifyEmailContent() {
             <div className="text-center">
               <div
                 className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: "rgba(34, 197, 94, 0.1)" }}
+                style={{ backgroundColor: "var(--success-bg)" }}
               >
                 <CheckCircle2 className="w-10 h-10 text-[var(--success)]" />
               </div>
@@ -172,7 +172,7 @@ function VerifyEmailContent() {
             <div className="text-center">
               <div
                 className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: "rgba(239, 68, 68, 0.1)" }}
+                style={{ backgroundColor: "var(--error-bg)" }}
               >
                 <XCircle className="w-10 h-10 text-[var(--error)]" />
               </div>
@@ -228,7 +228,7 @@ function VerifyEmailContent() {
               ) : (
                 <div
                   className="p-4 rounded-lg"
-                  style={{ backgroundColor: "rgba(34, 197, 94, 0.1)" }}
+                  style={{ backgroundColor: "var(--success-bg)" }}
                 >
                   <p className="text-sm text-[var(--success)]">
                     ✅ Eğer email adresi kayıtlıysa, doğrulama linki gönderildi.
@@ -243,7 +243,7 @@ function VerifyEmailContent() {
             <div className="text-center">
               <div
                 className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: "rgba(12, 193, 195, 0.1)" }}
+                style={{ backgroundColor: "var(--accent-soft)" }}
               >
                 <Mail className="w-10 h-10" style={{ color: "var(--accent)" }} />
               </div>
@@ -299,7 +299,7 @@ function VerifyEmailContent() {
               ) : (
                 <div
                   className="p-4 rounded-lg"
-                  style={{ backgroundColor: "rgba(34, 197, 94, 0.1)" }}
+                  style={{ backgroundColor: "var(--success-bg)" }}
                 >
                   <p className="text-sm text-[var(--success)]">
                     ✅ Eğer email adresi kayıtlıysa, doğrulama linki gönderildi.

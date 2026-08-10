@@ -634,7 +634,7 @@ export default function CategoriesPage() {
           <span className="text-xs px-2 py-1 bg-[var(--bg-card-2)] text-[var(--accent)] rounded">
             {questionTypes.find(t => t.value === question.type)?.label}
           </span>
-          <span className="text-xs px-2 py-1 bg-[rgba(12,193,195,0.15)] text-[var(--accent)] rounded">
+          <span className="text-xs px-2 py-1 bg-[var(--accent-soft)] text-[var(--accent)] rounded">
             Ağırlık: {question.weight || 1}x
           </span>
           {question.requiresEvidence && (
@@ -695,7 +695,7 @@ export default function CategoriesPage() {
         </button>
         <button 
           onClick={() => handleDelete('question', question.id)} 
-          className="p-1.5 hover:bg-[rgba(239,68,68,0.15)] rounded text-[var(--error)]" 
+          className="p-1.5 hover:bg-[var(--error-bg)] rounded text-[var(--error)]" 
           title="Sil"
         >
           <Trash2 size={16} />
@@ -810,7 +810,7 @@ export default function CategoriesPage() {
                 {/* Doğrudan Kategoriye Bağlı Sorular */}
                 {(category.questions?.length > 0 || category.subCategories?.length === 0) && (
                   <div className="border border-[var(--accent)]/30 rounded-lg overflow-hidden mb-4">
-                    <div className="flex items-center justify-between p-3 bg-[rgba(12,193,195,0.15)]">
+                    <div className="flex items-center justify-between p-3 bg-[var(--accent-soft)]">
                       <div className="flex items-center gap-2">
                         <FileText size={16} className="text-[var(--accent)]" />
                         <span className="font-medium text-[var(--accent)]">Kategori Soruları</span>
@@ -892,7 +892,7 @@ export default function CategoriesPage() {
                         </button>
                         <button 
                           onClick={() => handleDelete('subcategory', subCat.id)} 
-                          className="p-1.5 hover:bg-[rgba(239,68,68,0.15)] rounded text-[var(--error)]" 
+                          className="p-1.5 hover:bg-[var(--error-bg)] rounded text-[var(--error)]" 
                           title="Sil"
                         >
                           <Trash2 size={16} />
@@ -908,7 +908,7 @@ export default function CategoriesPage() {
                           <>
                             {subCat.subLevels?.map((subLevel) => (
                               <div key={subLevel.id} className="border rounded-lg bg-[var(--bg-card)] overflow-hidden">
-                                <div className="flex items-center justify-between p-3 bg-[rgba(99,102,241,0.1)]">
+                                <div className="flex items-center justify-between p-3 bg-[var(--info-bg)]">
                                   <div className="flex items-center gap-3 cursor-pointer" onClick={() => toggleExpand(`level-${subLevel.id}`)}>
                                     {expanded[`level-${subLevel.id}`] ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                     <span className="font-medium text-[var(--blue-main)]">{subLevel.name}</span>
@@ -916,7 +916,7 @@ export default function CategoriesPage() {
                                     <span className={`text-xs px-2 py-0.5 rounded ${
                                       subLevel.axisType === 'VELOCITY' 
                                         ? 'bg-[var(--bg-card-2)] text-[var(--accent)]' 
-                                        : 'bg-[rgba(12,193,195,0.15)] text-[var(--accent)]'
+                                        : 'bg-[var(--accent-soft)] text-[var(--accent)]'
                                     }`}>
                                       {subLevel.axisType === 'VELOCITY' ? 'X: Velocity' : 'Y: Endurance'}
                                     </span>
@@ -931,7 +931,7 @@ export default function CategoriesPage() {
                                     </button>
                                     <button 
                                       onClick={() => openBulkUploadModal(subLevel.id, false)} 
-                                      className="p-1.5 hover:bg-[rgba(12,193,195,0.15)] rounded text-[var(--accent)]" 
+                                      className="p-1.5 hover:bg-[var(--accent-soft)] rounded text-[var(--accent)]" 
                                       title="Excel'den Toplu Yükle"
                                     >
                                       <Upload size={16} />
@@ -945,7 +945,7 @@ export default function CategoriesPage() {
                                     </button>
                                     <button 
                                       onClick={() => handleDelete('sublevel', subLevel.id)} 
-                                      className="p-1.5 hover:bg-[rgba(239,68,68,0.15)] rounded text-[var(--error)]" 
+                                      className="p-1.5 hover:bg-[var(--error-bg)] rounded text-[var(--error)]" 
                                       title="Sil"
                                     >
                                       <Trash2 size={16} />
@@ -1399,7 +1399,7 @@ export default function CategoriesPage() {
               </div>
 
               {/* File Upload */}
-              <div className="p-4 bg-[rgba(12,193,195,0.1)] rounded-lg border border-[var(--accent)]">
+              <div className="p-4 bg-[var(--accent-soft)] rounded-lg border border-[var(--accent)]">
                 <h3 className="font-medium text-[var(--accent-bright)] mb-2 flex items-center gap-2">
                   <Upload size={18} />
                   2. Doldurduğunuz Dosyayı Yükleyin
@@ -1426,7 +1426,7 @@ export default function CategoriesPage() {
 
               {/* Results */}
               {bulkUploadResult && (
-                <div className={`p-4 rounded-lg border ${bulkUploadResult.success ? 'bg-[var(--success-bg)] border-[var(--success)]' : 'bg-[rgba(239,68,68,0.1)] border-[var(--error)]/50'}`}>
+                <div className={`p-4 rounded-lg border ${bulkUploadResult.success ? 'bg-[var(--success-bg)] border-[var(--success)]' : 'bg-[var(--error-bg)] border-[var(--error)]/50'}`}>
                   <h3 className={`font-medium mb-3 flex items-center gap-2 ${bulkUploadResult.success ? 'text-[var(--success)]' : 'text-[var(--error)]'}`}>
                     {bulkUploadResult.success ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
                     Yükleme Sonucu
@@ -1558,7 +1558,7 @@ export default function CategoriesPage() {
               </div>
 
               {/* File Upload */}
-              <div className="p-4 bg-[rgba(12,193,195,0.1)] rounded-lg border border-[var(--accent)]">
+              <div className="p-4 bg-[var(--accent-soft)] rounded-lg border border-[var(--accent)]">
                 <h3 className="font-medium text-[var(--accent-bright)] mb-2 flex items-center gap-2">
                   <Upload size={18} />
                   2. Doldurduğunuz Dosyayı Yükleyin
@@ -1585,7 +1585,7 @@ export default function CategoriesPage() {
 
               {/* Results */}
               {surveyBulkUploadResult && (
-                <div className={`p-4 rounded-lg border ${surveyBulkUploadResult.success ? 'bg-[var(--success-bg)] border-[var(--success)]' : 'bg-[rgba(239,68,68,0.1)] border-[var(--error)]/50'}`}>
+                <div className={`p-4 rounded-lg border ${surveyBulkUploadResult.success ? 'bg-[var(--success-bg)] border-[var(--success)]' : 'bg-[var(--error-bg)] border-[var(--error)]/50'}`}>
                   <h3 className={`font-medium mb-3 flex items-center gap-2 ${surveyBulkUploadResult.success ? 'text-[var(--success)]' : 'text-[var(--error)]'}`}>
                     {surveyBulkUploadResult.success ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
                     Yükleme Sonucu

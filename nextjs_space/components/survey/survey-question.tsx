@@ -264,7 +264,7 @@ export default function SurveyQuestion({
       {q?.requiresEvidence && (
         <div className="mt-6 pt-6 border-t border-[var(--border-soft)]">
           <p className="text-sm text-[var(--text-muted)] mb-3 flex items-center gap-2">
-            <FileText size={16} className="text-[#a78bfa]" />
+            <FileText size={16} className="text-[var(--accent-alt)]" />
             Bu soru için kanıt belgesi gereklidir
           </p>
           
@@ -280,13 +280,13 @@ export default function SurveyQuestion({
               <span className="text-[var(--accent)] text-sm">Dosya yükleniyor...</span>
             </div>
           ) : uploadedFile ? (
-            <div className="flex items-center justify-between p-3 bg-[rgba(12,193,195,0.1)] rounded-lg border border-[var(--accent)]">
+            <div className="flex items-center justify-between p-3 bg-[var(--accent-soft)] rounded-lg border border-[var(--accent)]">
               <span className="text-[var(--accent)] text-sm flex items-center gap-2">
                 <Check size={16} /> {uploadedFile}
               </span>
               <button 
                 onClick={() => onRemoveFile?.(q?.id)}
-                className="text-[var(--text-dim)] hover:text-[var(--error)] transition-colors p-1 rounded hover:bg-[rgba(239,68,68,0.1)]"
+                className="text-[var(--text-dim)] hover:text-[var(--error)] transition-colors p-1 rounded hover:bg-[var(--error-bg)]"
                 title="Dosyayı kaldır"
               >
                 <X size={16} />
@@ -310,8 +310,8 @@ export default function SurveyQuestion({
               }}
               className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
                 dragActive
-                  ? "border-[#a78bfa] bg-[var(--accent)]/10"
-                  : "border-[var(--border-soft)] hover:border-[#a78bfa] hover:bg-[var(--bg-card-2)]"
+                  ? "border-[var(--accent-alt)] bg-[var(--accent)]/10"
+                  : "border-[var(--border-soft)] hover:border-[var(--accent-alt)] hover:bg-[var(--bg-card-2)]"
               }`}
             >
               <Upload className="mx-auto text-[var(--text-dim)] mb-2" size={24} />

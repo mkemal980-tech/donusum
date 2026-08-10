@@ -75,11 +75,11 @@ interface Document {
 }
 
 const getScoreColor = (score: number) => {
-  if (score >= 80) return "text-[var(--accent)] bg-[rgba(12,193,195,0.15)]";
-  if (score >= 60) return "text-[var(--blue-main)] bg-[rgba(46,134,255,0.15)]";
+  if (score >= 80) return "text-[var(--accent)] bg-[var(--accent-soft)]";
+  if (score >= 60) return "text-[var(--blue-main)] bg-[var(--info-bg)]";
   if (score >= 40) return "text-[var(--accent)] bg-[var(--accent)]/15";
   if (score >= 20) return "text-[var(--warning)] bg-[var(--warning-bg)]";
-  return "text-[var(--error)] bg-[rgba(239,68,68,0.15)]";
+  return "text-[var(--error)] bg-[var(--error-bg)]";
 };
 
 const getMaturityLabel = (score: number) => {
@@ -261,7 +261,7 @@ export default function UnitManagerPage() {
             className="bg-[var(--bg-card)]  rounded-xl shadow-md p-6 border border-[var(--border-soft)] "
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[rgba(46,134,255,0.15)]  rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-[var(--info-bg)]  rounded-lg flex items-center justify-center">
                 <Building2 className="text-[var(--accent)] " size={24} />
               </div>
               <div>
@@ -295,7 +295,7 @@ export default function UnitManagerPage() {
             className="bg-[var(--bg-card)]  rounded-xl shadow-md p-6 border border-[var(--border-soft)] "
           >
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[rgba(12,193,195,0.15)]  rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 bg-[var(--accent-soft)]  rounded-lg flex items-center justify-center">
                 <CheckCircle className="text-[var(--accent)] " size={24} />
               </div>
               <div>
@@ -456,7 +456,7 @@ export default function UnitManagerPage() {
                               </td>
                               <td className="px-6 py-4 text-center">
                                 {row.responseCount > 0 ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-[rgba(12,193,195,0.15)] text-[var(--accent)] rounded-full text-xs font-medium">
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--accent-soft)] text-[var(--accent)] rounded-full text-xs font-medium">
                                     <CheckCircle size={12} />
                                     Başlandı
                                   </span>
@@ -583,7 +583,7 @@ export default function UnitManagerPage() {
                               title="İndir"
                               variant="ghost"
                               size="icon"
-                              className="text-[var(--accent)] hover:bg-[rgba(46,134,255,0.15)]"
+                              className="text-[var(--accent)] hover:bg-[var(--info-bg)]"
                             >
                               <Download size={18} />
                             </Button>

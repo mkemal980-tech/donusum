@@ -407,7 +407,7 @@ export default function BenchmarksPage() {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         b.level === "OVERALL" ? "bg-[var(--bg-card-2)] text-[var(--accent)]" :
                         b.level === "CATEGORY" ? "bg-[var(--accent)]/15 text-[var(--accent)]" :
-                        "bg-[rgba(12,193,195,0.15)] text-[var(--accent)]"
+                        "bg-[var(--accent-soft)] text-[var(--accent)]"
                       }`}>
                         {b.level === "OVERALL" ? "Genel" : b.level === "CATEGORY" ? "Kategori" : "Alt Kategori"}
                       </span>
@@ -422,7 +422,7 @@ export default function BenchmarksPage() {
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => handleDelete(b.id)}
-                        className="p-1 text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)] rounded transition-colors"
+                        className="p-1 text-[var(--error)] hover:bg-[var(--error-bg)] rounded transition-colors"
                       >
                         <Trash2 size={18} />
                       </button>

@@ -26,12 +26,12 @@ const buttonVariants = cva(
         default: "bg-[var(--accent)] text-[var(--bg-deep)] hover:bg-[var(--accent-dark)]",
         destructive: "bg-[var(--error)] text-white hover:opacity-90",
         outline:
-          "border border-[var(--accent)] text-[var(--accent)] bg-transparent hover:bg-[rgba(12,193,195,0.1)]",
+          "border border-[var(--accent)] text-[var(--accent)] bg-transparent hover:bg-[var(--accent-soft)]",
         secondary:
           "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:text-[var(--text-main)]",
         ghost: "text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] hover:text-[var(--text-main)]",
         link: "text-[var(--accent)] underline-offset-4 hover:underline",
-        soft: "bg-[rgba(12,193,195,0.1)] text-[var(--accent)] hover:bg-[rgba(12,193,195,0.2)]",
+        soft: "bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent-soft)]",
       },
       size: {
         sm: "h-9 px-3 text-xs",

@@ -34,9 +34,9 @@ const timeframeLabels: Record<string, string> = {
 };
 
 const strategicColors: Record<string, string> = {
-  QUICK_WIN: "bg-[rgba(12,193,195,0.15)] text-[var(--accent)]",
+  QUICK_WIN: "bg-[var(--accent-soft)] text-[var(--accent)]",
   BIG_BET: "bg-[var(--accent)]/15 text-[var(--accent)]",
-  PROJECT: "bg-[rgba(46,134,255,0.15)] text-[var(--blue-main)]"
+  PROJECT: "bg-[var(--info-bg)] text-[var(--blue-main)]"
 };
 
 const strategicLabels: Record<string, string> = {
@@ -55,13 +55,13 @@ const statusConfig: Record<CompletionStatus, { label: string; color: string; bgC
   IN_PROGRESS: { 
     label: "Devam Ediyor", 
     color: "text-[var(--warning)]", 
-    bgColor: "bg-[rgba(245,158,11,0.15)]",
+    bgColor: "bg-[var(--warning-bg)]",
     icon: Play 
   },
   COMPLETED: { 
     label: "Tamamlandı", 
     color: "text-[var(--accent)]", 
-    bgColor: "bg-[rgba(12,193,195,0.15)]",
+    bgColor: "bg-[var(--accent-soft)]",
     icon: CheckCircle2 
   }
 };
@@ -108,7 +108,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
         locked ? 'opacity-60 ' : ''
       }${
         currentStatus === 'COMPLETED' 
-          ? 'border-[var(--accent)] bg-[rgba(12,193,195,0.05)]' 
+          ? 'border-[var(--accent)] bg-[var(--accent-tint)]' 
           : currentStatus === 'IN_PROGRESS' 
             ? 'border-[var(--warning)]/50 bg-[rgba(245,158,11,0.05)]' 
             : 'border-[var(--border-soft)]'
@@ -125,7 +125,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
           </span>
         </div>
       ) : stepDistance === 0 && rec?.stepDistance !== undefined ? (
-        <div className="inline-flex items-center gap-1.5 mb-3 px-2 py-0.5 rounded-full text-xs font-semibold bg-[rgba(12,193,195,0.15)] text-[var(--accent)]">
+        <div className="inline-flex items-center gap-1.5 mb-3 px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--accent-soft)] text-[var(--accent)]">
           <Target size={13} />
           Sıradaki adım
         </div>
@@ -217,7 +217,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
         title={locked ? "Önce bir önceki basamağı tamamlayın" : undefined}
         className={`w-full py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
           rec?.isInRoadmap
-            ? "bg-[rgba(12,193,195,0.15)] text-[var(--accent)] cursor-default"
+            ? "bg-[var(--accent-soft)] text-[var(--accent)] cursor-default"
             : locked
               ? "bg-[var(--bg-card-2)] text-[var(--text-dim)] cursor-not-allowed"
               : "bg-[var(--accent)] text-[var(--bg-deep)] hover:bg-[var(--accent-bright)]"

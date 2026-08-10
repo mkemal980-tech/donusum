@@ -124,7 +124,7 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
     <div className="space-y-4">
       {/* Info Box */}
       {hasDelta && (
-        <div className="bg-[rgba(34,197,94,0.1)] border border-[rgba(34,197,94,0.3)] rounded-xl p-4 flex items-start gap-3">
+        <div className="bg-[var(--success-bg)] border border-[rgba(34,197,94,0.3)] rounded-xl p-4 flex items-start gap-3">
           <TrendingUp className="text-[#22c55e] mt-0.5 flex-shrink-0" size={20} />
           <div>
             <p className="font-medium text-[#22c55e]">Gelişim Kaydedildi!</p>
@@ -142,7 +142,7 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
           onClick={() => setViewMode('subcategory')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             viewMode === 'subcategory'
-              ? 'bg-[rgba(245,158,11,0.2)] text-[#f59e0b]'
+              ? 'bg-[var(--warning-bg)] text-[#f59e0b]'
               : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--bg-card)]'
           }`}
         >

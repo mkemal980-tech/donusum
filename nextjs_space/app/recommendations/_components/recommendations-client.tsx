@@ -399,7 +399,7 @@ export default function RecommendationsClient() {
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-[rgba(245,158,11,0.15)] rounded-lg">
+              <div className="p-2 bg-[var(--warning-bg)] rounded-lg">
                 <Play size={20} className="text-[var(--warning)]" />
               </div>
               <div>
@@ -416,7 +416,7 @@ export default function RecommendationsClient() {
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-[rgba(12,193,195,0.15)] rounded-lg">
+              <div className="p-2 bg-[var(--accent-soft)] rounded-lg">
                 <CheckCircle2 size={20} className="text-[var(--accent)]" />
               </div>
               <div>
@@ -604,7 +604,7 @@ export default function RecommendationsClient() {
                 className="mb-10"
               >
                 <h2 className="text-xl font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[rgba(12,193,195,0.1)]0" />
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent-soft)]0" />
                   Hızlı Kazanımlar ({quickWins?.length ?? 0})
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

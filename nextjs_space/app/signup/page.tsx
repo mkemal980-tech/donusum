@@ -184,7 +184,7 @@ export default function SignupPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", duration: 0.6 }}
-            className="w-20 h-20 bg-gradient-to-br from-[var(--accent)] to-[var(--blue-main)] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg"
+            className="w-20 h-20 bg-[image:var(--brand-gradient)] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg"
           >
             <Sparkles className="w-10 h-10 text-white" />
           </motion.div>

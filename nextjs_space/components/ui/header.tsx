@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { LayoutDashboard, ClipboardList, Lightbulb, Map, User, Settings, Building2, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
+import ThemeSwitch from "./theme-switch";
 
 const baseNavItems = [
   { href: "/dashboard", label: "Ana Sayfa", icon: LayoutDashboard, roles: ["USER", "UNIT_MANAGER", "ADMIN"] },
@@ -39,8 +40,8 @@ export default function Header() {
             <div 
               className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
               style={{ 
-                background: 'linear-gradient(135deg, var(--accent), var(--blue-main))',
-                boxShadow: '0 0 20px rgba(12, 193, 195, 0.3)'
+                background: 'var(--brand-gradient)',
+                boxShadow: '0 0 20px var(--accent-glow)'
               }}
             >
               <span className="text-white font-bold text-lg">T</span>
@@ -73,9 +74,9 @@ export default function Header() {
                     whileTap={{ scale: 0.98 }}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium transition-all duration-200"
                     style={isActive ? {
-                      background: 'linear-gradient(135deg, var(--accent), var(--blue-main))',
+                      background: 'var(--brand-gradient)',
                       color: 'var(--bg-deep)',
-                      boxShadow: '0 0 15px rgba(12, 193, 195, 0.4)'
+                      boxShadow: '0 0 15px var(--accent-glow)'
                     } : {
                       color: 'var(--text-muted)'
                     }}
@@ -90,6 +91,8 @@ export default function Header() {
 
           {/* Right Section */}
           <div className="flex items-center gap-3">
+            {/* Tema seçimi elin altında dursun; ayrıntılı ayar /settings'te */}
+            <ThemeSwitch compact />
             {/* User Info */}
             <div 
               className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl shadow-lg border"
@@ -101,7 +104,7 @@ export default function Header() {
               <div 
                 className="w-8 h-8 rounded-lg flex items-center justify-center"
                 style={{ 
-                  background: 'linear-gradient(135deg, var(--accent), var(--blue-main))' 
+                  background: 'var(--brand-gradient)' 
                 }}
               >
                 <User size={16} className="text-white" />

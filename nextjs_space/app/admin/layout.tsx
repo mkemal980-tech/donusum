@@ -91,7 +91,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="max-w-[1400px] mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(12, 193, 195, 0.1)' }}>
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent-soft)' }}>
                 <Settings className="w-6 h-6" style={{ color: 'var(--accent)' }} />
               </div>
               <div>

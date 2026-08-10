@@ -10,11 +10,11 @@ interface MaturityGaugeProps {
 
 // Template-matching cyan/teal colors
 const levels = [
-  { value: 5, label: "Lider", lightColor: "#0891b2", darkColor: "#22d3ee", minPercent: 80 },
-  { value: 4, label: "Olgun", lightColor: "#0d9488", darkColor: "#2dd4bf", minPercent: 60 },
-  { value: 3, label: "Gelişen", lightColor: "#0ea5e9", darkColor: "#38bdf8", minPercent: 40 },
-  { value: 2, label: "Farkındalık", lightColor: "#14b8a6", darkColor: "#5eead4", minPercent: 20 },
-  { value: 1, label: "Başlangıç", lightColor: "#06b6d4", darkColor: "#67e8f9", minPercent: 0 },
+  { value: 5, label: "Lider", lightColor: "var(--level-5)", darkColor: "var(--level-5)", minPercent: 80 },
+  { value: 4, label: "Olgun", lightColor: "var(--level-4)", darkColor: "var(--level-4)", minPercent: 60 },
+  { value: 3, label: "Gelişen", lightColor: "var(--level-3)", darkColor: "var(--level-3)", minPercent: 40 },
+  { value: 2, label: "Farkındalık", lightColor: "var(--level-2)", darkColor: "var(--level-2)", minPercent: 20 },
+  { value: 1, label: "Başlangıç", lightColor: "var(--level-1)", darkColor: "var(--level-1)", minPercent: 0 },
 ];
 
 /**
@@ -26,11 +26,11 @@ const levels = [
 export const getScoreLevel = (score: number): { label: string; color: string; darkColor: string } => {
   const percentage = ((score - 1) / 4) * 100;
   
-  if (percentage >= 80) return { label: "Lider", color: "#0891b2", darkColor: "#22d3ee" };
-  if (percentage >= 60) return { label: "Olgun", color: "#0d9488", darkColor: "#2dd4bf" };
-  if (percentage >= 40) return { label: "Gelişen", color: "#0ea5e9", darkColor: "#38bdf8" };
-  if (percentage >= 20) return { label: "Farkındalık", color: "#14b8a6", darkColor: "#5eead4" };
-  return { label: "Başlangıç", color: "#06b6d4", darkColor: "#67e8f9" };
+  if (percentage >= 80) return { label: "Lider", color: "var(--level-5)", darkColor: "var(--level-5)" };
+  if (percentage >= 60) return { label: "Olgun", color: "var(--level-4)", darkColor: "var(--level-4)" };
+  if (percentage >= 40) return { label: "Gelişen", color: "var(--level-3)", darkColor: "var(--level-3)" };
+  if (percentage >= 20) return { label: "Farkındalık", color: "var(--level-2)", darkColor: "var(--level-2)" };
+  return { label: "Başlangıç", color: "var(--level-1)", darkColor: "var(--level-1)" };
 };
 
 export const percentageToScore = (percentage: number): number => {

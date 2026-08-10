@@ -290,7 +290,7 @@ export default function UnitsPage() {
                 title="Alt Birim Ekle"
                 variant="ghost"
                 size="icon"
-                className="text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[rgba(12,193,195,0.1)]"
+                className="text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]"
               >
                 <Plus size={16} />
               </Button>
@@ -308,7 +308,7 @@ export default function UnitsPage() {
                 title="Sil"
                 variant="ghost"
                 size="icon"
-                className="text-[var(--text-dim)] hover:text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)]"
+                className="text-[var(--text-dim)] hover:text-[var(--error)] hover:bg-[var(--error-bg)]"
               >
                 <Trash2 size={16} />
               </Button>

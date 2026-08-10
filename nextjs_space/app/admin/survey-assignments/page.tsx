@@ -259,7 +259,7 @@ export default function SurveyAssignmentsPage() {
 
       {message && (
         <div className={`p-4 rounded-lg ${
-          message.type === "success" ? "bg-[rgba(12,193,195,0.1)] text-[var(--accent)] border border-[var(--accent)]" : "bg-[rgba(239,68,68,0.1)] text-[var(--error)] border border-[var(--error)]/50"
+          message.type === "success" ? "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]" : "bg-[var(--error-bg)] text-[var(--error)] border border-[var(--error)]/50"
         }`}>
           {message.text}
           <button onClick={() => setMessage(null)} className="float-right font-bold">×</button>
@@ -403,7 +403,7 @@ export default function SurveyAssignmentsPage() {
                   const daysLeft = assignment.deadline ? getDaysRemaining(assignment.deadline) : null;
                   
                   return (
-                  <tr key={assignment.id} className={`hover:bg-[var(--bg-card-2)] ${expired ? 'bg-[rgba(239,68,68,0.05)]' : ''}`}>
+                  <tr key={assignment.id} className={`hover:bg-[var(--bg-card-2)] ${expired ? 'bg-[var(--error-bg)]' : ''}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 flex items-center justify-center">
@@ -459,13 +459,13 @@ export default function SurveyAssignmentsPage() {
                     </td>
                     <td className="px-4 py-3">
                       {expired ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgba(239,68,68,0.15)] text-[var(--error)]">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--error-bg)] text-[var(--error)]">
                           Süresi Doldu
                         </span>
                       ) : (
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           assignment.isActive
-                            ? "bg-[rgba(12,193,195,0.15)] text-[var(--accent-bright)]"
+                            ? "bg-[var(--accent-soft)] text-[var(--accent-bright)]"
                             : "bg-[var(--bg-card-2)] text-[var(--text-main)]"
                         }`}>
                           {assignment.isActive ? "Aktif" : "Pasif"}
@@ -515,7 +515,7 @@ export default function SurveyAssignmentsPage() {
                           title="Atamayı Kaldır"
                           variant="ghost"
                           size="icon"
-                          className="text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)]"
+                          className="text-[var(--error)] hover:bg-[var(--error-bg)]"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

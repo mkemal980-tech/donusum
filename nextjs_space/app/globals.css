@@ -87,7 +87,145 @@
   --radius-md: 10px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+
+  /* Yazı aileleri — koyu tema Poppins/Roboto ile gelir. */
+  --font-head: var(--font-poppins), system-ui, sans-serif;
+  --font-body: var(--font-poppins), system-ui, sans-serif;
+  --font-mono: var(--font-roboto), system-ui, sans-serif;
+
+  /* ESG LAB sözlüğü: yeni bileşenler marka kılavuzundaki adlarla yazılabilsin
+     diye mevcut token'lara bağlanır. Tek kaynak yine yukarıdaki değerlerdir. */
+  --bg: var(--bg-main);
+  --surface: var(--bg-card);
+  --surface-2: var(--bg-card-2);
+  --surface-3: var(--border-soft);
+  --line: var(--border-soft);
+  --line-strong: var(--ui-passive);
+  --ink: var(--text-main);
+  --ink-2: var(--text-muted);
+  --ink-3: var(--text-dim);
+  --accent-2: var(--accent-bright);
+  --accent-soft: rgba(12, 193, 195, 0.15);
+  --on-accent: var(--bg-deep);
+  --danger: var(--error);
+  --radius: var(--radius-lg);
+  --radius-pill: 999px;
+
+  /* Çok hafif vurgu zemini (tamamlanmış kart gibi) */
+  --accent-tint: rgba(12, 193, 195, 0.05);
+  /* Gölge/parıltı: vurgu renginin yarı saydam hâli */
+  --accent-glow: rgba(12, 193, 195, 0.3);
+
+  /* Olgunluk basamakları (Başlangıç → Lider) */
+  --level-1: #67e8f9;
+  --level-2: #5eead4;
+  --level-3: #38bdf8;
+  --level-4: #2dd4bf;
+  --level-5: #22d3ee;
+
+  /* İkincil vurgu (bölüm rozeti, kaydediliyor göstergesi) */
+  --accent-alt: #a78bfa;
+
+  /* Marka gradyanı — logo, aktif menü ve rozetlerde. */
+  --brand-gradient: linear-gradient(135deg, var(--accent), var(--blue-main));
+
+  /* 8 tabanlı boşluk skalası */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
 }
+
+/* ===== AÇIK TEMA — "ESG LAB" =====
+   Koyu tema tek satır değişmez; açık tema aynı token adlarını marka
+   değerleriyle yeniden tanımlar. Uygulamadaki 3.400'den fazla `var(--…)`
+   kullanımı bu yüzden kendiliğinden uyum sağlar — bileşenlerde tema koşulu
+   yazmak gerekmez. Renkleri esg-lab-design-system.css'ten birebir gelir. */
+html[data-theme="light"] {
+  --bg-main: #f6f8fb;
+  /* Koyuda "daha derin" olan yüzey, açıkta beyaz panele karşılık gelir;
+     ayrıca vurgu üzerindeki metin rengi de bu token'dan okunur. */
+  --bg-deep: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-2: #eef2f7;
+
+  --border-soft: #e1e8f0;
+  --divider: #e1e8f0;
+
+  --text-main: #0d1a2d;
+  --text-muted: #46586e;
+  --text-dim: #7e8ea3;
+
+  --accent: #fa541c;
+  --accent-dark: #d8410f;
+  --accent-bright: #ff7a45;
+  --accent-cyan: #ff7a45;
+
+  --blue-main: #2563eb;
+  --blue-dark: #1d4ed8;
+  --blue-light: #3b82f6;
+  --blue-teal: #0e7490;
+
+  --ui-passive: #7e8ea3;
+
+  --success: #1f8a5b;
+  --success-bg: rgba(31, 138, 91, 0.12);
+  --warning: #c77700;
+  --warning-bg: rgba(199, 119, 0, 0.14);
+  --error: #d92d20;
+  --error-bg: rgba(217, 45, 32, 0.12);
+  --info: #2563eb;
+  --info-bg: rgba(37, 99, 235, 0.12);
+
+  --chart-1: #2563eb;
+  --chart-2: #1d4ed8;
+  --chart-3: #3b82f6;
+  --chart-4: #0e7490;
+  --chart-5: #fa541c;
+  --chart-gradient-start: #2563eb;
+  --chart-gradient-end: rgba(37, 99, 235, 0.1);
+
+  --shadow-sm: 0 1px 2px rgba(13, 26, 45, 0.05);
+  --shadow-md: 0 1px 2px rgba(13, 26, 45, 0.04), 0 8px 28px -12px rgba(13, 26, 45, 0.14);
+  --shadow-lg: 0 4px 12px rgba(13, 26, 45, 0.08), 0 24px 60px -20px rgba(13, 26, 45, 0.28);
+  --shadow-card: 0 1px 2px rgba(13, 26, 45, 0.05);
+  --shadow-glow: 0 1px 2px rgba(13, 26, 45, 0.04), 0 8px 28px -12px rgba(13, 26, 45, 0.14);
+
+  --border-card: #e1e8f0;
+
+  /* Marka köşe ölçüleri: kart 14, küçük 9 */
+  --radius-sm: 9px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --font-head: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-body: var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --line-strong: #cdd8e4;
+  --accent-soft: rgba(250, 84, 28, 0.12);
+  /* Turuncu ile mavi arasındaki geçiş açık zeminde çamurlu duruyor;
+     marka gradyanı burada turuncunun kendi tonlarıyla kurulur. */
+  --brand-gradient: linear-gradient(135deg, var(--accent), var(--accent-bright));
+  /* Mor, açık kurumsal palette yok; ikincil vurgu markanın mavisidir. */
+  --accent-alt: var(--blue-main);
+  /* Açık zeminde parlak turkuazlar okunmuyor; basamaklar açıktan koyuya
+     giden tek renkli mavi bir skalaya çevrildi — olgunluk arttıkça koyulaşır. */
+  --accent-tint: rgba(250, 84, 28, 0.05);
+  --accent-glow: rgba(250, 84, 28, 0.25);
+  --level-1: #93c5fd;
+  --level-2: #60a5fa;
+  --level-3: #3b82f6;
+  --level-4: #2563eb;
+  --level-5: #1d4ed8;
+  /* Marka turuncusu üzerinde beyaz metin (kılavuzdaki --on-accent). */
+  --on-accent: #ffffff;
+}
+
+/* Vurgu rengi seçenekleri — açık temada geçerli, varsayılan turuncu. */
+html[data-theme="light"][data-accent="blue"]   { --accent: #2563eb; --accent-dark: #1d4ed8; --accent-bright: #3b82f6; --accent-soft: rgba(37, 99, 235, 0.12); }
+html[data-theme="light"][data-accent="indigo"] { --accent: #4f46e5; --accent-dark: #4338ca; --accent-bright: #6366f1; --accent-soft: rgba(79, 70, 229, 0.12); }
+html[data-theme="light"][data-accent="cyan"]   { --accent: #0e7490; --accent-dark: #0c5f75; --accent-bright: #0891b2; --accent-soft: rgba(14, 116, 144, 0.12); }
+html[data-theme="light"][data-accent="green"]  { --accent: #1f8a5b; --accent-dark: #19714a; --accent-bright: #22a06b; --accent-soft: rgba(31, 138, 91, 0.12); }
 
 [data-hydration-error] {
   display: none !important;
@@ -95,7 +233,7 @@
 
 /* ===== BASE BODY STYLING ===== */
 html, body {
-  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-family: var(--font-body);
   font-weight: 400;
   line-height: 1.5;
   letter-spacing: 0.01em;
@@ -105,15 +243,15 @@ html, body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* KPI ve Sayısal Veriler için Roboto */
+/* KPI ve sayısal veriler: temanın teknik yazı ailesi */
 .font-mono, .font-numeric, [data-numeric], .stat-number, .kpi-value {
-  font-family: var(--font-roboto), system-ui, sans-serif;
+  font-family: var(--font-mono);
   font-weight: 600;
 }
 
 /* Başlık fontları */
 h1, h2, h3, h4, h5, h6, .heading {
-  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-family: var(--font-head);
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--text-main);
@@ -603,21 +741,21 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 /* ===== STATS / KPI ===== */
 .stat-number {
-  font-family: var(--font-roboto), system-ui, sans-serif;
+  font-family: var(--font-mono);
   font-weight: 700;
   font-size: 2.5rem;
   color: var(--text-main);
 }
 
 .stat-number-accent {
-  font-family: var(--font-roboto), system-ui, sans-serif;
+  font-family: var(--font-mono);
   font-weight: 700;
   font-size: 2.5rem;
   color: var(--accent);
 }
 
 .kpi-value {
-  font-family: var(--font-roboto), system-ui, sans-serif;
+  font-family: var(--font-mono);
   font-weight: 600;
 }
 
@@ -699,7 +837,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .donut-value {
-  font-family: var(--font-roboto), system-ui, sans-serif;
+  font-family: var(--font-mono);
   font-weight: 700;
   font-size: 1.875rem;
   color: var(--accent);
@@ -771,7 +909,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .avatar-text {
-  font-family: var(--font-poppins), system-ui, sans-serif;
+  font-family: var(--font-head);
   font-weight: 600;
   color: var(--accent);
 }

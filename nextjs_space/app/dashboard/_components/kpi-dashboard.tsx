@@ -210,7 +210,7 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
         'Bu ankette tanımlı soru sayısı. Sorular kategorilere, kategoriler bölümlere ayrılır; puanınız bu soruların tamamı üzerinden hesaplanır.',
       icon: Layers,
       color: '#6366f1',
-      bgColor: 'rgba(99, 102, 241, 0.1)',
+      bgColor: 'var(--info-bg)',
       subtitle: `${data.categories.total} kategori`,
     },
     {
@@ -220,7 +220,7 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
         'Cevaplanan soru sayısı. Sayı kuruluşun tamamına aittir: bölümler farklı kişilere dağıtıldıysa herkesin girdiği cevaplar burada toplanır. Boş sorular puanı düşürür, çünkü cevaplanmamış soru "yok" sayılır.',
       icon: CheckCircle2,
       color: '#22c55e',
-      bgColor: 'rgba(34, 197, 94, 0.1)',
+      bgColor: 'var(--success-bg)',
       subtitle: `%${data.overview.completionPercentage} tamamlandı`,
       progress: data.overview.completionPercentage,
     },
@@ -243,7 +243,7 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
       suffix: '%',
       icon: Target,
       color: '#f59e0b',
-      bgColor: 'rgba(245, 158, 11, 0.1)',
+      bgColor: 'var(--warning-bg)',
       subtitle: `Seviye ${data.overview.maturityLevel.level}`,
     },
     {

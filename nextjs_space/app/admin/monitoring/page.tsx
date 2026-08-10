@@ -230,8 +230,8 @@ export default function MonitoringPage() {
                 className="w-12 h-12 rounded-full flex items-center justify-center"
                 style={{
                   backgroundColor: emailStatus.configured
-                    ? 'rgba(34,197,94,0.15)'
-                    : 'rgba(245,158,11,0.15)',
+                    ? 'var(--success-bg)'
+                    : 'var(--warning-bg)',
                 }}
               >
                 <Mail size={22} className={emailStatus.configured ? 'text-[var(--accent)]' : 'text-[var(--warning)]'} />

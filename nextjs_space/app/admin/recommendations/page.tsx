@@ -127,9 +127,9 @@ const timeframes = [
 ];
 
 const strategicTypes = [
-  { value: 'QUICK_WIN', label: 'Hızlı Kazanım', color: 'bg-[rgba(12,193,195,0.15)] text-[var(--accent)]' },
+  { value: 'QUICK_WIN', label: 'Hızlı Kazanım', color: 'bg-[var(--accent-soft)] text-[var(--accent)]' },
   { value: 'PROJECT', label: 'Proje', color: 'bg-[var(--warning-bg)] text-[var(--warning)]' },
-  { value: 'BIG_BET', label: 'Büyük Yatırım', color: 'bg-[rgba(239,68,68,0.15)] text-[var(--error)]' },
+  { value: 'BIG_BET', label: 'Büyük Yatırım', color: 'bg-[var(--error-bg)] text-[var(--error)]' },
 ];
 
 const DollarIndicator = ({ level, max = 5 }: { level: number; max?: number }) => (
@@ -729,14 +729,14 @@ export default function RecommendationsPage() {
                   <td className="p-4">
                     {triggerInfo ? (
                       <div className="flex flex-col gap-1">
-                        <span className="px-2 py-1 bg-[rgba(12,193,195,0.15)] text-[var(--accent)] rounded text-xs flex items-center gap-1 w-fit">
+                        <span className="px-2 py-1 bg-[var(--accent-soft)] text-[var(--accent)] rounded text-xs flex items-center gap-1 w-fit">
                           <HelpCircle size={12} />
                           Soru Bağlı
                         </span>
                         <span className="text-xs text-[var(--text-dim)]">{triggerInfo.optionsCount} şık</span>
                       </div>
                     ) : (
-                      <span className="px-2 py-1 bg-[rgba(245,158,11,0.15)] text-[var(--warning)] rounded text-xs">
+                      <span className="px-2 py-1 bg-[var(--warning-bg)] text-[var(--warning)] rounded text-xs">
                         Puan Aralığı: %{rec.minScoreThreshold}-{rec.maxScoreThreshold}
                       </span>
                     )}
@@ -756,7 +756,7 @@ export default function RecommendationsPage() {
                     <button onClick={() => openModal(rec)} className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]">
                       <Edit size={18} />
                     </button>
-                    <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-[rgba(239,68,68,0.15)] rounded text-[var(--error)]">
+                    <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-[var(--error-bg)] rounded text-[var(--error)]">
                       <Trash2 size={18} />
                     </button>
                   </td>
@@ -824,7 +824,7 @@ export default function RecommendationsPage() {
               </div>
               
               {/* Hedef Alan Seçimi - Kademeli */}
-              <div className="p-4 bg-[rgba(99,102,241,0.1)] rounded-lg">
+              <div className="p-4 bg-[var(--info-bg)] rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
                   <FolderTree size={18} className="text-[var(--blue-main)]" />
                   <label className="text-sm font-medium text-[var(--blue-main)]">Hedef Alan Seçimi</label>
@@ -924,7 +924,7 @@ export default function RecommendationsPage() {
               </div>
 
               {/* SORU-CEVAP BAZLI TETİKLEME - YENİ */}
-              <div className="p-4 bg-[rgba(12,193,195,0.1)] rounded-lg border-2 border-[var(--accent)]">
+              <div className="p-4 bg-[var(--accent-soft)] rounded-lg border-2 border-[var(--accent)]">
                 <div className="flex items-center gap-2 mb-3">
                   <CheckSquare size={18} className="text-[var(--accent)]" />
                   <label className="text-sm font-medium text-[var(--accent-bright)]">Şık Bazlı Tetikleme (Yeni!)</label>
@@ -968,7 +968,7 @@ export default function RecommendationsPage() {
                               key={opt.value} 
                               className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
                                 selectedTriggerOptions.includes(opt.value) 
-                                  ? 'bg-[rgba(12,193,195,0.15)] border-[var(--accent)]' 
+                                  ? 'bg-[var(--accent-soft)] border-[var(--accent)]' 
                                   : 'bg-[var(--bg-card)] hover:bg-[var(--bg-card-2)]'
                               }`}
                             >
@@ -989,7 +989,7 @@ export default function RecommendationsPage() {
                           ))}
                         </div>
                         {selectedTriggerOptions.length > 0 && (
-                          <p className="mt-2 text-xs text-[var(--accent)] bg-[rgba(12,193,195,0.15)] p-2 rounded">
+                          <p className="mt-2 text-xs text-[var(--accent)] bg-[var(--accent-soft)] p-2 rounded">
                             ✅ Seçili {selectedTriggerOptions.length} şıktan birine cevap verildiğinde bu öneri gösterilecek.
                           </p>
                         )}

@@ -198,7 +198,7 @@ export default function IronmanBenchmarksPage() {
           </div>
         </div>
         <div className="mt-3 grid grid-cols-4 gap-2 text-xs">
-          <div className="bg-[rgba(239,68,68,0.15)] text-[var(--error)] p-2 rounded text-center">
+          <div className="bg-[var(--error-bg)] text-[var(--error)] p-2 rounded text-center">
             <strong>Walker</strong><br />Düşük Hız + Düşük Olgunluk
           </div>
           <div className="bg-[var(--warning-bg)] text-[var(--warning)] p-2 rounded text-center">
@@ -207,7 +207,7 @@ export default function IronmanBenchmarksPage() {
           <div className="bg-[var(--accent)]/15 text-[var(--accent)] p-2 rounded text-center">
             <strong>Marathon Runner</strong><br />Düşük Hız + Yüksek Olgunluk
           </div>
-          <div className="bg-[rgba(12,193,195,0.15)] text-[var(--accent)] p-2 rounded text-center">
+          <div className="bg-[var(--accent-soft)] text-[var(--accent)] p-2 rounded text-center">
             <strong>Iron Man</strong><br />Yüksek Hız + Yüksek Olgunluk
           </div>
         </div>
@@ -295,7 +295,7 @@ export default function IronmanBenchmarksPage() {
                         title="Sil"
                         variant="ghost"
                         size="icon"
-                        className="hover:bg-[rgba(239,68,68,0.15)] text-[var(--error)]"
+                        className="hover:bg-[var(--error-bg)] text-[var(--error)]"
                       >
                         <Trash2 size={18} />
                       </Button>
@@ -347,7 +347,7 @@ export default function IronmanBenchmarksPage() {
 
               {/* Tüm Alt Sektörlere Uygula Checkbox */}
               {formData.sectorId && selectedSector?.subSectors && selectedSector.subSectors.length > 0 && !editItem && (
-                <div className="p-4 bg-[rgba(245,158,11,0.1)] border border-[var(--warning)]/50 rounded-lg">
+                <div className="p-4 bg-[var(--warning-bg)] border border-[var(--warning)]/50 rounded-lg">
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input
                       type="checkbox"

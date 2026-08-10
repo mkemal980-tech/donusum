@@ -59,7 +59,7 @@ export function ProgressBenchmarkChart({
             initial={{ width: 0 }}
             animate={{ width: `${surveyPercent}%` }}
             transition={{ duration: 0.8, delay: 0.1 }}
-            className="absolute top-1/2 -translate-y-1/2 h-5 bg-gradient-to-r from-[var(--accent)] to-[var(--blue-main)] rounded-l-full flex items-center justify-end pr-1"
+            className="absolute top-1/2 -translate-y-1/2 h-5 bg-[image:var(--brand-gradient)] rounded-l-full flex items-center justify-end pr-1"
             style={{ minWidth: item.surveyScore > 0 ? '30px' : '0' }}
           >
             <span className="text-[10px] font-bold text-white drop-shadow">
@@ -112,7 +112,7 @@ export function ProgressBenchmarkChart({
         {/* Overall Summary */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--blue-main)] flex items-center justify-center text-sm font-bold text-white shadow-lg">
+            <div className="w-8 h-8 rounded-full bg-[image:var(--brand-gradient)] flex items-center justify-center text-sm font-bold text-white shadow-lg">
               {overall.surveyScore.toFixed(2)}
             </div>
             <TrendingUp size={20} className="text-[var(--muted-foreground)]" />
@@ -144,7 +144,7 @@ export function ProgressBenchmarkChart({
       {/* Legend */}
       <div className="flex items-center justify-center gap-8 mt-4 pt-4 border-t border-[var(--border)]">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 rounded bg-gradient-to-r from-[var(--accent)] to-[var(--blue-main)]" />
+          <div className="w-4 h-4 rounded bg-[image:var(--brand-gradient)]" />
           <span className="text-sm text-[var(--muted-foreground)]">Anket</span>
         </div>
         <div className="flex items-center gap-2">

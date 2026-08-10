@@ -244,7 +244,7 @@ export default function SectorsPage() {
                       className="px-2 py-1 border rounded focus:ring-2 focus:ring-[var(--accent)] outline-none"
                       autoFocus
                     />
-                    <button onClick={() => handleUpdateSector(sector.id)} className="p-1 text-[var(--accent)] hover:bg-[rgba(12,193,195,0.1)] rounded">
+                    <button onClick={() => handleUpdateSector(sector.id)} className="p-1 text-[var(--accent)] hover:bg-[var(--accent-soft)] rounded">
                       <Save size={18} />
                     </button>
                     <button onClick={() => { setEditingSector(null); setEditSectorNaicsCode(""); }} className="p-1 text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] rounded">
@@ -278,7 +278,7 @@ export default function SectorsPage() {
                   onClick={() => handleDeleteSector(sector.id)}
                   variant="ghost"
                   size="icon"
-                  className="text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)]"
+                  className="text-[var(--error)] hover:bg-[var(--error-bg)]"
                 >
                   <Trash2 size={18} />
                 </Button>
@@ -301,7 +301,7 @@ export default function SectorsPage() {
                               className="px-2 py-1 border rounded focus:ring-2 focus:ring-[var(--accent)] outline-none text-sm"
                               autoFocus
                             />
-                            <button onClick={() => handleUpdateSubSector(sub.id)} className="p-1 text-[var(--accent)] hover:bg-[rgba(12,193,195,0.1)] rounded">
+                            <button onClick={() => handleUpdateSubSector(sub.id)} className="p-1 text-[var(--accent)] hover:bg-[var(--accent-soft)] rounded">
                               <Save size={16} />
                             </button>
                             <button onClick={() => setEditingSubSector(null)} className="p-1 text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] rounded">
@@ -321,7 +321,7 @@ export default function SectorsPage() {
                         </button>
                         <button
                           onClick={() => handleDeleteSubSector(sub.id)}
-                          className="p-1 text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)] rounded"
+                          className="p-1 text-[var(--error)] hover:bg-[var(--error-bg)] rounded"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -340,7 +340,7 @@ export default function SectorsPage() {
                         className="flex-1 px-2 py-1 border rounded focus:ring-2 focus:ring-[var(--accent)] outline-none text-sm"
                         autoFocus
                       />
-                      <button onClick={() => handleCreateSubSector(sector.id)} className="p-1 text-[var(--accent)] hover:bg-[rgba(12,193,195,0.1)] rounded">
+                      <button onClick={() => handleCreateSubSector(sector.id)} className="p-1 text-[var(--accent)] hover:bg-[var(--accent-soft)] rounded">
                         <Save size={16} />
                       </button>
                       <button onClick={() => { setShowNewSubSector(null); setNewSubSectorName(""); }} className="p-1 text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] rounded">

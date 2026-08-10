@@ -72,7 +72,7 @@ const STATUS_LABEL: Record<SectionStatus, string> = {
 const STATUS_STYLE: Record<SectionStatus, string> = {
   EMPTY: "bg-[var(--bg-card-2)] text-[var(--text-dim)] border-[var(--border-soft)]",
   IN_PROGRESS: "bg-[var(--warning-bg)] text-[var(--warning)] border-[var(--warning)]/30",
-  DONE: "bg-[rgba(12,193,195,0.15)] text-[var(--accent)] border-[var(--accent)]/50",
+  DONE: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/50",
 };
 
 /** İnce ilerleme çubuğu — satır yüksekliğini büyütmeden doluluk göstersin. */
@@ -392,7 +392,7 @@ export default function SectionAssignmentsPage() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-[var(--error-bg,rgba(239,68,68,0.1))] border border-[var(--error)]/30 flex items-center gap-2 text-sm text-[var(--error)]">
+          <div className="mb-4 p-3 rounded-lg bg-[var(--error-bg,var(--error-bg))] border border-[var(--error)]/30 flex items-center gap-2 text-sm text-[var(--error)]">
             <AlertCircle size={16} />
             {error}
           </div>
@@ -401,7 +401,7 @@ export default function SectionAssignmentsPage() {
         {/* Kilit bandı en üstte: ekranın geri kalanı neden donuk, önce o
             anlaşılsın. */}
         {!loading && locked && (
-          <div className="mb-4 p-4 rounded-lg bg-[rgba(12,193,195,0.1)] border border-[var(--accent)]/40 flex flex-wrap items-center justify-between gap-3">
+          <div className="mb-4 p-4 rounded-lg bg-[var(--accent-soft)] border border-[var(--accent)]/40 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-start gap-2">
               <Lock size={18} className="text-[var(--accent)] shrink-0 mt-0.5" />
               <div className="text-sm">

@@ -25,9 +25,9 @@ interface RoadmapItem {
 
 const statusConfig = {
   NOT_STARTED: { label: 'Başlanmadı', color: 'var(--ui-passive)', bgColor: 'var(--bg-card-2)', icon: Clock, contribution: 0 },
-  IN_PROGRESS: { label: 'Devam Ediyor', color: 'var(--blue-main)', bgColor: 'rgba(46, 134, 255, 0.15)', icon: PlayCircle, contribution: 50 },
-  COMPLETED: { label: 'Tamamlandı', color: 'var(--success)', bgColor: 'rgba(16, 185, 129, 0.15)', icon: CheckCircle, contribution: 100 },
-  CANCELLED: { label: 'İptal', color: 'var(--error)', bgColor: 'rgba(239, 68, 68, 0.15)', icon: XCircle, contribution: 0 },
+  IN_PROGRESS: { label: 'Devam Ediyor', color: 'var(--blue-main)', bgColor: 'var(--info-bg)', icon: PlayCircle, contribution: 50 },
+  COMPLETED: { label: 'Tamamlandı', color: 'var(--success)', bgColor: 'var(--success-bg)', icon: CheckCircle, contribution: 100 },
+  CANCELLED: { label: 'İptal', color: 'var(--error)', bgColor: 'var(--error-bg)', icon: XCircle, contribution: 0 },
 };
 
 export default function RoadmapClient() {
@@ -180,7 +180,7 @@ export default function RoadmapClient() {
             <div className="flex items-center gap-3">
               <div 
                 className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: 'rgba(12, 193, 195, 0.15)' }}
+                style={{ backgroundColor: 'var(--accent-soft)' }}
               >
                 <Calendar style={{ color: 'var(--accent)' }} size={20} />
               </div>
@@ -201,7 +201,7 @@ export default function RoadmapClient() {
             <div className="flex items-center gap-3">
               <div 
                 className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}
+                style={{ backgroundColor: 'var(--success-bg)' }}
               >
                 <CheckCircle style={{ color: 'var(--success)' }} size={20} />
               </div>
@@ -222,7 +222,7 @@ export default function RoadmapClient() {
             <div className="flex items-center gap-3">
               <div 
                 className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: 'rgba(46, 134, 255, 0.15)' }}
+                style={{ backgroundColor: 'var(--info-bg)' }}
               >
                 <PlayCircle style={{ color: 'var(--blue-main)' }} size={20} />
               </div>
@@ -243,7 +243,7 @@ export default function RoadmapClient() {
             <div className="flex items-center gap-3">
               <div 
                 className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: 'rgba(12, 193, 195, 0.15)' }}
+                style={{ backgroundColor: 'var(--accent-soft)' }}
               >
                 <TrendingUp style={{ color: 'var(--accent)' }} size={20} />
               </div>
@@ -262,8 +262,8 @@ export default function RoadmapClient() {
             animate={{ opacity: 1 }}
             className="rounded-xl p-4 mb-8 flex items-start gap-3 border"
             style={{ 
-              backgroundColor: 'rgba(12, 193, 195, 0.1)', 
-              borderColor: 'rgba(12, 193, 195, 0.3)' 
+              backgroundColor: 'var(--accent-soft)', 
+              borderColor: 'var(--accent-glow)' 
             }}
           >
             <Info style={{ color: 'var(--accent)' }} className="mt-0.5 flex-shrink-0" size={20} />
@@ -364,7 +364,7 @@ export default function RoadmapClient() {
               style={{ 
                 backgroundColor: 'var(--accent)', 
                 color: 'var(--bg-deep)',
-                boxShadow: '0 0 20px rgba(12, 193, 195, 0.3)'
+                boxShadow: '0 0 20px var(--accent-glow)'
               }}
             >
               Önerilere Göz At

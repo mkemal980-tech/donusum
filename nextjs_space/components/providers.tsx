@@ -99,13 +99,19 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
+    // Vurgu rengi tercihi cihazda saklanır; temayı next-themes yazar, bunu biz.
+    const accent = window.localStorage.getItem("esg-accent");
+    if (accent) document.documentElement.setAttribute("data-accent", accent);
   }, []);
 
   return (
     <SessionProvider>
+      {/* Tema <html data-theme="…"> ile seçilir; globals.css'teki token
+          blokları buna bakar. Varsayılan koyu tema — mevcut görünüm. */}
       <ThemeProvider
-        attribute="class"
+        attribute="data-theme"
         defaultTheme="dark"
+        themes={["dark", "light"]}
         enableSystem={false}
         disableTransitionOnChange={false}
       >

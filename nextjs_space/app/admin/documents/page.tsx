@@ -184,7 +184,7 @@ export default function DocumentsPage() {
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Yüklenen Dosyalar</h1>
           <p className="text-[var(--text-dim)]  mt-1">Kullanıcıların yüklediği kanıt dosyaları</p>
         </div>
-        <div className="flex items-center gap-2 bg-[rgba(6,182,212,0.15)]  px-4 py-2 rounded-lg">
+        <div className="flex items-center gap-2 bg-[var(--accent-soft)]  px-4 py-2 rounded-lg">
           <FileText className="text-[var(--accent-cyan)] " size={20} />
           <span className="font-semibold text-[var(--accent)] ">{documents.length} dosya</span>
         </div>
@@ -313,7 +313,7 @@ export default function DocumentsPage() {
                           title="İndir"
                           variant="ghost"
                           size="icon"
-                          className="text-[var(--accent-cyan)] hover:bg-[rgba(6,182,212,0.15)]"
+                          className="text-[var(--accent-cyan)] hover:bg-[var(--accent-soft)]"
                         >
                           <Download size={18} />
                         </Button>
@@ -323,7 +323,7 @@ export default function DocumentsPage() {
                         title="Sil"
                         variant="ghost"
                         size="icon"
-                        className="text-[var(--error)] hover:bg-[rgba(239,68,68,0.15)]"
+                        className="text-[var(--error)] hover:bg-[var(--error-bg)]"
                       >
                         <Trash2 size={18} />
                       </Button>

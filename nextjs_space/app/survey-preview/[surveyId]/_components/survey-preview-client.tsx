@@ -308,7 +308,7 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
                     {currentSection.categoryName}
                   </span>
                   <span className="text-[var(--text-dim)]">›</span>
-                  <span className="px-2.5 py-1 bg-[#a78bfa] text-white rounded-lg">
+                  <span className="px-2.5 py-1 bg-[var(--accent-alt)] text-white rounded-lg">
                     {currentSection.subCategoryName ?? "Doğrudan Sorular"}
                   </span>
                   {currentSection.subLevelName && (
@@ -440,7 +440,7 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
                               En yüksek puan {maxScoreOf(question)}
                             </span>
                             {question.requiresEvidence && (
-                              <span className="px-2 py-0.5 rounded bg-[#a78bfa]/20 text-[#a78bfa]">
+                              <span className="px-2 py-0.5 rounded bg-[var(--accent-alt)]/20 text-[var(--accent-alt)]">
                                 Kanıt zorunlu
                               </span>
                             )}

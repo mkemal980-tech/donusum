@@ -71,7 +71,7 @@ function ResetPasswordForm() {
           animate={{ opacity: 1, scale: 1 }}
           className="bg-[var(--bg-card)] rounded-2xl shadow-2xl p-8 w-full max-w-md text-center"
         >
-          <div className="w-16 h-16 bg-[rgba(12,193,195,0.15)] rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[var(--accent-soft)] rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="text-[var(--accent)]" size={32} />
           </div>
           <h2 className="text-2xl font-bold text-[var(--text-main)] mb-2">Şifre Güncellendi</h2>
@@ -91,7 +91,7 @@ function ResetPasswordForm() {
           animate={{ opacity: 1, scale: 1 }}
           className="bg-[var(--bg-card)] rounded-2xl shadow-2xl p-8 w-full max-w-md text-center"
         >
-          <div className="w-16 h-16 bg-[rgba(239,68,68,0.15)] rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[var(--error-bg)] rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="text-[var(--error)]" size={32} />
           </div>
           <h2 className="text-2xl font-bold text-[var(--text-main)] mb-2">Geçersiz Link</h2>
@@ -117,7 +117,7 @@ function ResetPasswordForm() {
         className="bg-[var(--bg-card)] rounded-2xl shadow-2xl p-8 w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-[rgba(46,134,255,0.15)] rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[var(--info-bg)] rounded-full flex items-center justify-center mx-auto mb-4">
             <Lock className="text-[var(--accent)]" size={32} />
           </div>
           <h1 className="text-2xl font-bold text-[var(--text-main)]">Yeni Şifre Belirle</h1>
@@ -127,7 +127,7 @@ function ResetPasswordForm() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-[rgba(239,68,68,0.1)] border border-[var(--error)]/50 rounded-lg flex items-center gap-2 text-[var(--error)]">
+          <div className="mb-4 p-3 bg-[var(--error-bg)] border border-[var(--error)]/50 rounded-lg flex items-center gap-2 text-[var(--error)]">
             <AlertCircle size={18} />
             {error}
           </div>

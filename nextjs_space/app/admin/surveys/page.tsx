@@ -278,7 +278,7 @@ export default function SurveysPage() {
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-[var(--text-main)]">{survey.name}</h3>
                     {survey.isActive ? (
-                      <span className="flex items-center gap-1 px-2 py-0.5 bg-[rgba(12,193,195,0.15)] text-[var(--accent)] rounded text-xs">
+                      <span className="flex items-center gap-1 px-2 py-0.5 bg-[var(--accent-soft)] text-[var(--accent)] rounded text-xs">
                         <CheckCircle size={12} /> Aktif
                       </span>
                     ) : (
@@ -364,7 +364,7 @@ export default function SurveysPage() {
                     title="Sil"
                     variant="ghost"
                     size="icon"
-                    className="hover:bg-[rgba(239,68,68,0.15)] text-[var(--error)]"
+                    className="hover:bg-[var(--error-bg)] text-[var(--error)]"
                   >
                     <Trash2 size={18} />
                   </Button>

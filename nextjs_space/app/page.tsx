@@ -216,8 +216,8 @@ export default function LandingPage() {
             <div
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-8"
               style={{
-                backgroundColor: "rgba(12, 193, 195, 0.1)",
-                border: "1px solid rgba(12, 193, 195, 0.3)",
+                backgroundColor: "var(--accent-soft)",
+                border: "1px solid var(--accent-glow)",
                 color: "var(--accent)",
               }}
             >
@@ -249,7 +249,7 @@ export default function LandingPage() {
                 style={{
                   backgroundColor: "var(--accent)",
                   color: "var(--bg-deep)",
-                  boxShadow: "0 0 30px rgba(12, 193, 195, 0.3)",
+                  boxShadow: "0 0 30px var(--accent-glow)",
                 }}
               >
                 Hemen Başla
@@ -340,7 +340,7 @@ export default function LandingPage() {
                 <div
                   className="w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110"
                   style={{
-                    backgroundColor: "rgba(12, 193, 195, 0.1)",
+                    backgroundColor: "var(--accent-soft)",
                   }}
                 >
                   <feature.icon
@@ -582,7 +582,7 @@ export default function LandingPage() {
                   >
                     <div
                       className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: "rgba(12, 193, 195, 0.1)" }}
+                      style={{ backgroundColor: "var(--accent-soft)" }}
                     >
                       <benefit.icon
                         className="w-6 h-6"
@@ -700,7 +700,7 @@ export default function LandingPage() {
               style={{
                 backgroundColor: "var(--accent)",
                 color: "var(--bg-deep)",
-                boxShadow: "0 0 50px rgba(12, 193, 195, 0.4)",
+                boxShadow: "0 0 50px var(--accent-glow)",
               }}
             >
               Dashboard&apos;a Git

@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { Poppins, Roboto } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans, Poppins, Roboto, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/providers";
 
 /**
- * Tipografi tek yerden: gövde ve başlık Poppins, sayısal göstergeler Roboto.
+ * Tipografi tek yerden — iki tema, iki yazı ailesi.
+ *
+ * Koyu tema (varsayılan) Poppins + Roboto kullanır; açık "ESG LAB" teması
+ * marka kılavuzundaki Space Grotesk + IBM Plex Sans/Mono ile gelir. Hangisinin
+ * kullanılacağını globals.css'teki --font-head/--font-body/--font-mono
+ * seçer, bileşenler bu üç değişkenden başkasını bilmez.
  *
  * Fontlar Google'dan `@import` ile değil `next/font` ile alınır; dosyalar
  * derlemede uygulamayla birlikte sunulur, dış istek yok. `latin-ext` şart:
@@ -28,6 +33,31 @@ const roboto = Roboto({
   variable: "--font-roboto",
   display: "swap",
 });
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
+
+const plexSans = IBM_Plex_Sans({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600"],
+  variable: "--font-plex-sans",
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500"],
+  variable: "--font-plex-mono",
+  display: "swap",
+});
+
+const fontVariables = [poppins, roboto, spaceGrotesk, plexSans, plexMono]
+  .map((font) => font.variable)
+  .join(" ");
 
 export const dynamic = "force-dynamic";
 
@@ -54,8 +84,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="tr" suppressHydrationWarning>
-      <body className={`${poppins.variable} ${roboto.variable}`} suppressHydrationWarning>
+    // data-accent marka vurgusunu seçer; data-theme'i next-themes yazar.
+    // Font değişkenleri <html> üzerinde: tema token'ları :root'ta tanımlı ve
+    // orada --font-poppins gibi bir değişkeni okuyabilmeleri gerekiyor. body'ye
+    // konulduğunda :root'taki --font-head geçersize düşüp yazı Times'a iniyordu.
+    <html lang="tr" data-accent="orange" className={fontVariables} suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

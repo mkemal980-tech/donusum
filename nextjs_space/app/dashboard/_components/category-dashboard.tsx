@@ -130,7 +130,7 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
         <div 
           className="rounded-2xl p-6 shadow-lg border"
           style={{ 
-            background: 'linear-gradient(135deg, var(--accent), var(--blue-main))',
+            background: 'var(--brand-gradient)',
             borderColor: 'var(--border-soft)'
           }}
         >
@@ -206,7 +206,7 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
       <div 
         className="rounded-2xl p-6 shadow-lg border"
         style={{ 
-          background: 'linear-gradient(135deg, var(--accent), var(--blue-main))',
+          background: 'var(--brand-gradient)',
           borderColor: 'var(--border-soft)'
         }}
       >

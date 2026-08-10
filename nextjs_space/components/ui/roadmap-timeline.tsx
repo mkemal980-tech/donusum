@@ -122,7 +122,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                   </div>
                   <button
                     onClick={() => onRemove?.(item?.recommendationId)}
-                    className="p-1 rounded transition-colors flex-shrink-0 hover:bg-[rgba(239,68,68,0.1)]0/20"
+                    className="p-1 rounded transition-colors flex-shrink-0 hover:bg-[var(--error-bg)]0/20"
                     style={{ color: 'var(--ui-passive)' }}
                   >
                     <X size={14} />
@@ -195,7 +195,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                   className="flex-1 min-h-[200px] rounded-xl p-3 border-2 border-dashed transition-all"
                   style={{ 
                     borderColor: isDropTarget ? 'var(--accent)' : 'var(--border-soft)',
-                    backgroundColor: isDropTarget ? 'rgba(12, 193, 195, 0.05)' : 'var(--bg-card-2)'
+                    backgroundColor: isDropTarget ? 'var(--accent-tint)' : 'var(--bg-card-2)'
                   }}
                 >
                   {(quarterItems?.length ?? 0) > 0 ? (
@@ -226,7 +226,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                             </div>
                             <button
                               onClick={() => onRemove?.(item?.recommendationId)}
-                              className="p-0.5 rounded transition-colors flex-shrink-0 hover:bg-[rgba(239,68,68,0.1)]0/20"
+                              className="p-0.5 rounded transition-colors flex-shrink-0 hover:bg-[var(--error-bg)]0/20"
                               style={{ color: 'var(--ui-passive)' }}
                             >
                               <X size={12} />

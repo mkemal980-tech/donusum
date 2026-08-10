@@ -553,7 +553,7 @@ export default function SurveyClient() {
         <Header />
         <div className="max-w-[800px] mx-auto px-6 py-16">
           <div className="bg-[var(--bg-card)] rounded-2xl shadow-lg p-8 text-center border border-[var(--error)]/30">
-            <div className="w-20 h-20 bg-[rgba(239,68,68,0.1)] rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="w-20 h-20 bg-[var(--error-bg)] rounded-full flex items-center justify-center mx-auto mb-6">
               <Lock size={40} className="text-[var(--error)]" />
             </div>
             <h2 className="text-2xl font-bold text-[var(--text-main)] mb-3">Anket Süresi Doldu</h2>
@@ -640,8 +640,8 @@ export default function SurveyClient() {
             animate={{ opacity: 1, y: 0 }}
             className={`rounded-xl shadow-md p-4 mb-6 flex items-center gap-3 ${
               new Date(selectedSurvey.deadline).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000
-                ? 'bg-[rgba(239,68,68,0.1)] border border-[var(--error)]/30'
-                : 'bg-[rgba(245,158,11,0.1)] border border-[var(--warning)]/30'
+                ? 'bg-[var(--error-bg)] border border-[var(--error)]/30'
+                : 'bg-[var(--warning-bg)] border border-[var(--warning)]/30'
             }`}
           >
             <Clock size={20} className={
@@ -682,8 +682,8 @@ export default function SurveyClient() {
             </div>
             <div className="flex items-center gap-2 text-sm md:justify-end md:text-right shrink-0">
               {saving ? (
-                <span className="text-[#a78bfa] flex items-center gap-1">
-                  <div className="w-3 h-3 border-2 border-[#a78bfa] border-t-transparent rounded-full animate-spin" />
+                <span className="text-[var(--accent-alt)] flex items-center gap-1">
+                  <div className="w-3 h-3 border-2 border-[var(--accent-alt)] border-t-transparent rounded-full animate-spin" />
                   Kaydediliyor...
                 </span>
               ) : savedOnce ? (
@@ -743,7 +743,7 @@ export default function SurveyClient() {
             {/* Kilit önce söylenir: kullanıcı cevabı değiştirmeyi denemeden
                 önce neden değiştiremeyeceğini bilsin. */}
             {sectionInfo?.locked && (
-              <div className="mb-4 p-4 rounded-lg bg-[rgba(12,193,195,0.1)] border border-[var(--accent)]/40 flex items-start gap-2">
+              <div className="mb-4 p-4 rounded-lg bg-[var(--accent-soft)] border border-[var(--accent)]/40 flex items-start gap-2">
                 <Lock size={18} className="text-[var(--accent)] shrink-0 mt-0.5" />
                 <div className="text-sm">
                   <p className="text-[var(--text-main)] font-medium">
@@ -804,7 +804,7 @@ export default function SurveyClient() {
                       title={`${summary.categoryName} — ${progress.answered}/${progress.total} soru`}
                       className={`flex-1 min-w-[92px] text-left px-2.5 py-1.5 rounded-lg border transition-colors ${
                         isActive
-                          ? "border-[var(--accent)] bg-[rgba(12,193,195,0.12)]"
+                          ? "border-[var(--accent)] bg-[var(--accent-soft)]"
                           : "border-[var(--border-soft)] bg-[var(--bg-card)] hover:border-[var(--accent)]/50"
                       }`}
                     >
@@ -840,7 +840,7 @@ export default function SurveyClient() {
                   {currentStep?.categoryName ?? "Kategori"}
                 </span>
                 <ChevronRight size={16} className="text-[var(--text-dim)]" />
-                <span className="flex items-center gap-1 px-2.5 py-1 bg-[#a78bfa] text-white rounded-lg">
+                <span className="flex items-center gap-1 px-2.5 py-1 bg-[var(--accent-alt)] text-white rounded-lg">
                   <Layers size={14} />
                   {currentStep?.subCategoryName ?? "Bölüm"}
                 </span>
@@ -919,7 +919,7 @@ export default function SurveyClient() {
             {/* Eksik soru uyarısı — kaydırmalı düzenin bilinen tek zaafı soru
                 atlanması; bölümden çıkarken hatırlatılır ama engellenmez. */}
             {pendingStepIndex !== null && (
-              <div className="mb-4 p-4 rounded-xl bg-[rgba(245,158,11,0.1)] border border-[var(--warning)]/40">
+              <div className="mb-4 p-4 rounded-xl bg-[var(--warning-bg)] border border-[var(--warning)]/40">
                 <div className="flex items-start gap-3">
                   <AlertTriangle size={20} className="text-[var(--warning)] shrink-0 mt-0.5" />
                   <div className="flex-1">

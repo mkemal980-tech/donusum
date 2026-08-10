@@ -96,7 +96,7 @@ export default function LoginPage() {
             className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6"
             style={{ 
               background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)',
-              boxShadow: '0 0 30px rgba(12, 193, 195, 0.3)'
+              boxShadow: '0 0 30px var(--accent-glow)'
             }}
           >
             <Sparkles className="w-10 h-10" style={{ color: 'var(--bg-deep)' }} />
@@ -119,9 +119,9 @@ export default function LoginPage() {
                 animate={{ opacity: 1, x: 0 }}
                 className="p-4 rounded-lg"
                 style={{
-                  background: showResendVerification ? 'rgba(12, 193, 195, 0.1)' : 'var(--error-bg)', 
+                  background: showResendVerification ? 'var(--accent-soft)' : 'var(--error-bg)', 
                   color: showResendVerification ? 'var(--accent)' : 'var(--error)',
-                  border: showResendVerification ? '1px solid rgba(12, 193, 195, 0.3)' : '1px solid rgba(229, 77, 77, 0.3)'
+                  border: showResendVerification ? '1px solid var(--accent-glow)' : '1px solid rgba(229, 77, 77, 0.3)'
                 }}
               >
                 <div className="flex items-center gap-3">
@@ -193,7 +193,7 @@ export default function LoginPage() {
               type="submit"
               size="lg"
               loading={loading}
-              className="w-full font-semibold shadow-[0_4px_15px_rgba(12,193,195,0.3)]"
+              className="w-full font-semibold shadow-[0_4px_15px_var(--accent-glow)]"
             >
               {!loading && <LogIn size={20} />}
               {loading ? "Giriş yapılıyor..." : "Giriş Yap"}

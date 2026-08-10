@@ -169,7 +169,7 @@ export default function RecommendationImportPreview({
       {/* Özet */}
       <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-[var(--bg-card-2)] border border-[var(--border-soft)]">
         {payload.source === "ai" && (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold bg-[rgba(12,193,195,0.15)] text-[var(--accent)]">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold bg-[var(--accent-soft)] text-[var(--accent)]">
             <Sparkles size={13} /> AI taslağı
           </span>
         )}
@@ -216,7 +216,7 @@ export default function RecommendationImportPreview({
 
       {/* Tek satır bile eşleşmediyse suç dosyada değil, seçilen ankettedir */}
       {allUnmatched && (
-        <div className="p-3 rounded-lg bg-[rgba(239,68,68,0.1)] border border-[var(--error)]/40">
+        <div className="p-3 rounded-lg bg-[var(--error-bg)] border border-[var(--error)]/40">
           <p className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--error)] mb-1">
             <AlertCircle size={15} /> Hiçbir satır ankete bağlanamadı
           </p>
@@ -234,7 +234,7 @@ export default function RecommendationImportPreview({
 
       {/* AI kısmi başarısızlıkları — sessizce yutulmaz */}
       {payload.failures && payload.failures.length > 0 && (
-        <div className="p-3 rounded-lg bg-[rgba(245,158,11,0.1)] border border-[var(--warning)]/40">
+        <div className="p-3 rounded-lg bg-[var(--warning-bg)] border border-[var(--warning)]/40">
           <p className="text-sm font-medium text-[var(--warning)] mb-1">
             Bazı sorular için taslak üretilemedi
           </p>
@@ -255,7 +255,7 @@ export default function RecommendationImportPreview({
 
       {/* Merdiven uyarıları — hata değil, ama onaylamadan önce görülmeli */}
       {warnings.length > 0 && (
-        <div className="p-3 rounded-lg bg-[rgba(245,158,11,0.1)] border border-[var(--warning)]/40">
+        <div className="p-3 rounded-lg bg-[var(--warning-bg)] border border-[var(--warning)]/40">
           <p className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--warning)] mb-1">
             <AlertTriangle size={15} /> Merdiven kontrolü
           </p>
@@ -283,7 +283,7 @@ export default function RecommendationImportPreview({
               key={index}
               className={`p-3 rounded-lg border space-y-2 ${
                 rowErrors[index].length > 0
-                  ? "border-[var(--error)]/50 bg-[rgba(239,68,68,0.05)]"
+                  ? "border-[var(--error)]/50 bg-[var(--error-bg)]"
                   : "border-[var(--border-soft)] bg-[var(--bg-card-2)]"
               }`}
             >
@@ -291,7 +291,7 @@ export default function RecommendationImportPreview({
                 <span className="text-xs text-[var(--text-dim)]">Satır {index + 1}</span>
                 <button
                   onClick={() => removeRow(index)}
-                  className="p-1 rounded hover:bg-[rgba(239,68,68,0.15)] text-[var(--error)]"
+                  className="p-1 rounded hover:bg-[var(--error-bg)] text-[var(--error)]"
                   title="Satırı çıkar"
                 >
                   <Trash2 size={14} />

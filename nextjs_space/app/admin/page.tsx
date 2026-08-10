@@ -69,7 +69,7 @@ export default function AdminDashboard() {
           count: overview.users.total,
           hint: `${overview.users.active} aktif • ${overview.users.admins} yönetici`,
           icon: Users,
-          bgColor: "rgba(46, 134, 255, 0.15)",
+          bgColor: "var(--info-bg)",
           iconColor: "#2E86FF",
           href: "/admin/users",
         },
@@ -78,7 +78,7 @@ export default function AdminDashboard() {
           count: overview.units.total,
           hint: "Kayıtlı kuruluş birimi",
           icon: Building2,
-          bgColor: "rgba(12, 193, 195, 0.15)",
+          bgColor: "var(--accent-soft)",
           iconColor: "#0CC1C3",
           href: "/admin/units",
         },
@@ -89,7 +89,7 @@ export default function AdminDashboard() {
             ? `${overview.surveys.archived} arşivlenmiş`
             : "Arşivlenmiş anket yok",
           icon: FileText,
-          bgColor: "rgba(10, 125, 175, 0.15)",
+          bgColor: "var(--info-bg)",
           iconColor: "#0A7DAF",
           href: "/admin/surveys",
         },
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
           count: overview.assessments.inProgress,
           hint: `Son 30 günde ${overview.activity.responsesLast30Days} cevap girildi`,
           icon: AlertTriangle,
-          bgColor: "rgba(245, 166, 35, 0.15)",
+          bgColor: "var(--warning-bg)",
           iconColor: "#F5A623",
           href: "/admin/dashboard",
         },
@@ -194,8 +194,8 @@ export default function AdminDashboard() {
               href="/admin/survey-assignments"
               className="block p-4 rounded-lg transition-all duration-200"
               style={{
-                background: "rgba(46, 134, 255, 0.1)",
-                border: "1px solid rgba(46, 134, 255, 0.2)",
+                background: "var(--info-bg)",
+                border: "1px solid var(--info-bg)",
               }}
             >
               <p className="font-medium" style={{ color: "var(--blue-main)" }}>
@@ -209,8 +209,8 @@ export default function AdminDashboard() {
               href="/admin/users"
               className="block p-4 rounded-lg transition-all duration-200"
               style={{
-                background: "rgba(12, 193, 195, 0.1)",
-                border: "1px solid rgba(12, 193, 195, 0.2)",
+                background: "var(--accent-soft)",
+                border: "1px solid var(--accent-soft)",
               }}
             >
               <p className="font-medium" style={{ color: "#0CC1C3" }}>
@@ -224,8 +224,8 @@ export default function AdminDashboard() {
               href="/admin/categories"
               className="block p-4 rounded-lg transition-all duration-200"
               style={{
-                background: "rgba(245, 166, 35, 0.1)",
-                border: "1px solid rgba(245, 166, 35, 0.2)",
+                background: "var(--warning-bg)",
+                border: "1px solid var(--warning-bg)",
               }}
             >
               <p className="font-medium" style={{ color: "#F5A623" }}>
