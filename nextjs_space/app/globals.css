@@ -125,6 +125,19 @@
   --chart-peer: rgba(96, 165, 250, 0.6);
   --chart-point-ring: #ffffff;
 
+  /* Pano kısayol kartları. Koyu temada bugünkü üç renkli gradyan; açık temada
+     marka üçlüsü: vurgu, mürekkep ve kenarlıklı beyaz. Turuncu-mavi-turuncu
+     dizilimi açık zeminde birbirini kesiyordu. */
+  --quick-1-bg: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  --quick-1-fg: #ffffff;
+  --quick-1-border: transparent;
+  --quick-2-bg: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
+  --quick-2-fg: #ffffff;
+  --quick-2-border: transparent;
+  --quick-3-bg: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  --quick-3-fg: #ffffff;
+  --quick-3-border: transparent;
+
   /* Veri serileri — kategorik palet, iki temada da aynı. */
   --series-current: #ec4899;
   --series-target: #3b82f6;
@@ -230,6 +243,16 @@ html[data-theme="light"] {
   --accent-alt: var(--blue-main);
   /* Açık zeminde parlak turkuazlar okunmuyor; basamaklar açıktan koyuya
      giden tek renkli mavi bir skalaya çevrildi — olgunluk arttıkça koyulaşır. */
+  --quick-1-bg: var(--accent);
+  --quick-1-fg: #ffffff;
+  --quick-1-border: transparent;
+  --quick-2-bg: var(--text-main);
+  --quick-2-fg: #ffffff;
+  --quick-2-border: transparent;
+  --quick-3-bg: var(--bg-card);
+  --quick-3-fg: var(--text-main);
+  --quick-3-border: var(--line-strong);
+
   --chart-surface: #ffffff;
   --chart-quadrant: #f6f8fb;
   --chart-quadrant-hi: rgba(250, 84, 28, 0.07);

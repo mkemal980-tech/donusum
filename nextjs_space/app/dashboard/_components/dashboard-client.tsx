@@ -1646,10 +1646,11 @@ export default function DashboardClient() {
         >
           <button
             onClick={() => router.push("/survey")}
-            className="bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white  rounded-2xl p-6 text-left hover:shadow-xl  transition-all duration-200 hover:-translate-y-1"
+            className="rounded-2xl p-6 text-left border transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
+            style={{ background: "var(--quick-1-bg)", color: "var(--quick-1-fg)", borderColor: "var(--quick-1-border)" }}
           >
             <ClipboardList size={32} className="mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Ankete Devam Et</h3>
+            <h3 className="text-lg font-semibold mb-2 text-inherit">Ankete Devam Et</h3>
             <p className="text-sm opacity-80 mb-4">Olgunluk değerlendirmenizi tamamlayın</p>
             <span className="inline-flex items-center gap-2 text-sm font-medium">
               Başla <ArrowRight size={16} />
@@ -1658,10 +1659,11 @@ export default function DashboardClient() {
 
           <button
             onClick={() => router.push("/recommendations")}
-            className="bg-gradient-to-br from-[var(--secondary)] to-[var(--secondary-dark)] text-white  rounded-2xl p-6 text-left hover:shadow-xl  transition-all duration-200 hover:-translate-y-1"
+            className="rounded-2xl p-6 text-left border transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
+            style={{ background: "var(--quick-2-bg)", color: "var(--quick-2-fg)", borderColor: "var(--quick-2-border)" }}
           >
             <Lightbulb size={32} className="mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Önerileri Görüntüle</h3>
+            <h3 className="text-lg font-semibold mb-2 text-inherit">Önerileri Görüntüle</h3>
             <p className="text-sm opacity-80 mb-4">Geliştirme fırsatlarını keşfedin</p>
             <span className="inline-flex items-center gap-2 text-sm font-medium">
               İncele <ArrowRight size={16} />
@@ -1670,10 +1672,11 @@ export default function DashboardClient() {
 
           <button
             onClick={() => router.push("/roadmap")}
-            className="bg-gradient-to-br from-[var(--accent)] to-[var(--accent-dark)] text-white  rounded-2xl p-6 text-left hover:shadow-xl  transition-all duration-200 hover:-translate-y-1"
+            className="rounded-2xl p-6 text-left border transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
+            style={{ background: "var(--quick-3-bg)", color: "var(--quick-3-fg)", borderColor: "var(--quick-3-border)" }}
           >
             <Map size={32} className="mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Yol Haritası Oluştur</h3>
+            <h3 className="text-lg font-semibold mb-2 text-inherit">Yol Haritası Oluştur</h3>
             <p className="text-sm opacity-80 mb-4">Dönüşüm yolculuğunuzu planlayın</p>
             <span className="inline-flex items-center gap-2 text-sm font-medium">
               Planla <ArrowRight size={16} />
