@@ -111,6 +111,26 @@
   --radius: var(--radius-lg);
   --radius-pill: 999px;
 
+  /* Ironman grafiği tuvale çizilir; JS bu değerleri okur.
+     Koyu temadaki değerler bugünkü grafiğin birebir aynısıdır. */
+  --chart-surface: #1e293b;
+  --chart-quadrant: #1e293b;
+  --chart-quadrant-hi: rgba(59, 130, 246, 0.08);
+  --chart-grid: rgba(100, 116, 139, 0.25);
+  --chart-axis-line: rgba(148, 163, 184, 0.3);
+  --chart-axis-text: #94a3b8;
+  --chart-label: #64748b;
+  --chart-label-hi: #818cf8;
+  --chart-ref: rgba(99, 102, 241, 0.5);
+  --chart-peer: rgba(96, 165, 250, 0.6);
+  --chart-point-ring: #ffffff;
+
+  /* Veri serileri — kategorik palet, iki temada da aynı. */
+  --series-current: #ec4899;
+  --series-target: #3b82f6;
+  --series-sector-current: #8b5cf6;
+  --series-sector-target: #f97316;
+
   /* Çok hafif vurgu zemini (tamamlanmış kart gibi) */
   --accent-tint: rgba(12, 193, 195, 0.05);
   /* Gölge/parıltı: vurgu renginin yarı saydam hâli */
@@ -210,6 +230,17 @@ html[data-theme="light"] {
   --accent-alt: var(--blue-main);
   /* Açık zeminde parlak turkuazlar okunmuyor; basamaklar açıktan koyuya
      giden tek renkli mavi bir skalaya çevrildi — olgunluk arttıkça koyulaşır. */
+  --chart-surface: #ffffff;
+  --chart-quadrant: #f6f8fb;
+  --chart-quadrant-hi: rgba(250, 84, 28, 0.07);
+  --chart-grid: rgba(13, 26, 45, 0.10);
+  --chart-axis-line: rgba(13, 26, 45, 0.18);
+  --chart-axis-text: #46586e;
+  --chart-label: #7e8ea3;
+  --chart-label-hi: #fa541c;
+  --chart-ref: rgba(37, 99, 235, 0.45);
+  --chart-peer: rgba(37, 99, 235, 0.45);
+
   --accent-tint: rgba(250, 84, 28, 0.05);
   --accent-glow: rgba(250, 84, 28, 0.25);
   --level-1: #93c5fd;

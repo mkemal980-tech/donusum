@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, Globe, Target, Plus, X, ChevronDown, Check, Factory } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -195,6 +196,20 @@ export function IronmanChart() {
 
   const currentSubSectors = sectors.find(s => s.id === selectedSector)?.subSectors || [];
 
+  // Tema değişince tuval yeniden çizilir; renkler CSS'ten okunuyor.
+  const { theme } = useTheme();
+
+  /**
+   * Grafik tuvale çizildiği için renkleri CSS'ten okumak zorunda: `var(--…)`
+   * canvas'ta çalışmaz. Değerler çizim anında :root'tan alınır, böylece tema
+   * değişince aynı kod diğer paletle çizer.
+   */
+  const token = (name: string, fallback: string) => {
+    if (typeof window === "undefined") return fallback;
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+  };
+
   const drawChart = useCallback(() => {
     if (!canvasRef.current || !data || !mounted) return;
 
@@ -216,32 +231,34 @@ export function IronmanChart() {
     ctx.clearRect(0, 0, size, size);
 
     // Colors - Dark Theme
-    const gridColor = 'rgba(100, 116, 139, 0.25)';
-    const axisColor = '#94a3b8';
-    const labelColor = '#94a3b8';
+    const gridColor = token('--chart-grid', 'rgba(100, 116, 139, 0.25)');
+    const axisColor = token('--chart-axis-text', '#94a3b8');
+    const labelColor = axisColor;
 
-    // Draw background - dark
-    ctx.fillStyle = '#1e293b';
+    // Zemin — temaya göre
+    ctx.fillStyle = token('--chart-surface', '#1e293b');
     ctx.fillRect(padding, padding, chartSize, chartSize);
 
     // Draw quadrant backgrounds with subtle dark colors
     const midX = padding + chartSize / 2;
     const midY = padding + chartSize / 2;
 
+    const quadrantColor = token('--chart-quadrant', 'rgba(30, 41, 59, 1)');
+
     // Walker (bottom-left)
-    ctx.fillStyle = 'rgba(30, 41, 59, 1)';
+    ctx.fillStyle = quadrantColor;
     ctx.fillRect(padding, midY, chartSize / 2, chartSize / 2);
 
     // Sprinter (bottom-right)
-    ctx.fillStyle = 'rgba(30, 41, 59, 1)';
+    ctx.fillStyle = quadrantColor;
     ctx.fillRect(midX, midY, chartSize / 2, chartSize / 2);
 
     // Marathon Runner (top-left)
-    ctx.fillStyle = 'rgba(30, 41, 59, 1)';
+    ctx.fillStyle = quadrantColor;
     ctx.fillRect(padding, padding, chartSize / 2, chartSize / 2);
 
     // Iron Man (top-right) - subtle blue tint
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
+    ctx.fillStyle = token('--chart-quadrant-hi', 'rgba(59, 130, 246, 0.08)');
     ctx.fillRect(midX, padding, chartSize / 2, chartSize / 2);
 
     // Draw grid lines
@@ -260,7 +277,7 @@ export function IronmanChart() {
     }
 
     // Draw center lines (thicker)
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+    ctx.strokeStyle = token('--chart-axis-line', 'rgba(148, 163, 184, 0.3)');
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(midX, padding);
@@ -272,7 +289,7 @@ export function IronmanChart() {
     ctx.stroke();
 
     // Draw diagonal reference line (Iron Man line)
-    ctx.strokeStyle = 'rgba(99, 102, 241, 0.5)';
+    ctx.strokeStyle = token('--chart-ref', 'rgba(99, 102, 241, 0.5)');
     ctx.lineWidth = 2;
     ctx.setLineDash([8, 4]);
     ctx.beginPath();
@@ -299,12 +316,12 @@ export function IronmanChart() {
     ctx.font = 'bold 11px system-ui';
     ctx.textAlign = 'center';
     
-    ctx.fillStyle = '#64748b';
+    ctx.fillStyle = token('--chart-label', '#64748b');
     ctx.fillText('Yaya', padding + chartSize / 4, padding + chartSize - 12);
     ctx.fillText('Sprinter', padding + chartSize * 3 / 4, padding + chartSize - 12);
     ctx.fillText('Maraton Koşucusu', padding + chartSize / 4, padding + 18);
     
-    ctx.fillStyle = '#818cf8';
+    ctx.fillStyle = token('--chart-label-hi', '#818cf8');
     ctx.fillText('Demir Adam', padding + chartSize * 3 / 4, padding + 18);
 
     // Helper function to convert score to position
@@ -318,7 +335,7 @@ export function IronmanChart() {
     };
 
     // Draw other companies as small blue dots
-    ctx.fillStyle = 'rgba(96, 165, 250, 0.6)';
+    ctx.fillStyle = token('--chart-peer', 'rgba(96, 165, 250, 0.6)');
     otherCompanies.forEach(company => {
       const x = scoreToPos(company.velocity, 'x');
       const y = scoreToPos(company.endurance, 'y');
@@ -340,29 +357,29 @@ export function IronmanChart() {
     ctx.lineTo(targetX, targetY);
     ctx.stroke();
 
-    // Draw target point (blue)
-    ctx.fillStyle = '#3b82f6';
+    // Draw target point
+    ctx.fillStyle = token('--series-target', '#3b82f6');
     ctx.beginPath();
     ctx.arc(targetX, targetY, 10, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#fff';
+    ctx.strokeStyle = token('--chart-point-ring', '#ffffff');
     ctx.lineWidth = 2;
     ctx.stroke();
 
     // Draw current point (pink) - larger
     ctx.shadowColor = 'rgba(219, 39, 119, 0.4)';
     ctx.shadowBlur = 12;
-    ctx.fillStyle = '#ec4899';
+    ctx.fillStyle = token('--series-current', '#ec4899');
     ctx.beginPath();
     ctx.arc(currentX, currentY, 14, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = '#fff';
+    ctx.strokeStyle = token('--chart-point-ring', '#ffffff');
     ctx.lineWidth = 2;
     ctx.stroke();
 
     // Axis titles
-    ctx.fillStyle = '#94a3b8';
+    ctx.fillStyle = axisColor;
     ctx.font = 'bold 12px system-ui';
     ctx.textAlign = 'center';
     ctx.fillText('Velocity', size / 2, size - 5);
@@ -373,7 +390,7 @@ export function IronmanChart() {
     ctx.fillText('Endurance', 0, 0);
     ctx.restore();
 
-  }, [data, mounted, otherCompanies]);
+  }, [data, mounted, otherCompanies, theme]);
 
   useEffect(() => {
     drawChart();
@@ -421,19 +438,19 @@ export function IronmanChart() {
             {/* Legend */}
             <div className="flex flex-wrap justify-center gap-4 mt-4 text-xs text-[var(--text-muted)]">
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[var(--accent-bright)]" />
+                <span className="w-3 h-3 rounded-full bg-[var(--series-current)]" />
                 <span>Mevcut durumunuz ({data.current?.date || '-'})</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[var(--info-bg)]0" />
+                <span className="w-3 h-3 rounded-full bg-[var(--series-target)]" />
                 <span>Hedefiniz ({data.target?.date || '-'})</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[var(--blue-light)]" />
+                <span className="w-3 h-3 rounded-full bg-[var(--chart-peer)]" />
                 <span>Diğer şirketler (mevcut - {data.current?.date || '-'})</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-6 border-t-2 border-dashed border-[var(--blue-main)]" />
+                <span className="w-6 border-t-2 border-dashed border-[var(--chart-ref)]" />
                 <span>Referans çizgisi (Iron Man)</span>
               </div>
             </div>
@@ -456,7 +473,7 @@ export function IronmanChart() {
                     className="absolute h-6 flex items-center justify-end pr-1 z-10"
                     style={{ width: `${((data.current?.velocity ?? 1) / 5) * 100}%` }}
                   >
-                    <div className="bg-[#ec4899] h-5 rounded-full flex items-center justify-center px-2 text-[10px] text-white font-medium min-w-[32px]">
+                    <div className="bg-[var(--series-current)] h-5 rounded-full flex items-center justify-center px-2 text-[10px] text-white font-medium min-w-[32px]">
                       {(data.current?.velocity ?? 1).toFixed(1)}
                     </div>
                   </div>
@@ -465,7 +482,7 @@ export function IronmanChart() {
                     className="absolute h-6 flex items-center z-10"
                     style={{ left: `${((data.target?.velocity ?? 3) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                   >
-                    <div className="bg-[#3b82f6] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                    <div className="bg-[var(--series-target)] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
                       {(data.target?.velocity ?? 3).toFixed(1)}
                     </div>
                   </div>
@@ -476,7 +493,7 @@ export function IronmanChart() {
                         className="absolute h-6 flex items-center z-10"
                         style={{ left: `${((data.benchmark.current?.velocity ?? 2.5) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
-                        <div className="bg-[#8b5cf6] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                        <div className="bg-[var(--series-sector-current)] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
                           {(data.benchmark.current?.velocity ?? 2.5).toFixed(1)}
                         </div>
                       </div>
@@ -484,7 +501,7 @@ export function IronmanChart() {
                         className="absolute h-6 flex items-center z-10"
                         style={{ left: `${((data.benchmark.target?.velocity ?? 3.0) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
-                        <div className="bg-[#f97316] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                        <div className="bg-[var(--series-sector-target)] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
                           {(data.benchmark.target?.velocity ?? 3.0).toFixed(1)}
                         </div>
                       </div>
@@ -504,7 +521,7 @@ export function IronmanChart() {
                     className="absolute h-6 flex items-center justify-end pr-1 z-10"
                     style={{ width: `${((data.current?.endurance ?? 1) / 5) * 100}%` }}
                   >
-                    <div className="bg-[#ec4899] h-5 rounded-full flex items-center justify-center px-2 text-[10px] text-white font-medium min-w-[32px]">
+                    <div className="bg-[var(--series-current)] h-5 rounded-full flex items-center justify-center px-2 text-[10px] text-white font-medium min-w-[32px]">
                       {(data.current?.endurance ?? 1).toFixed(1)}
                     </div>
                   </div>
@@ -513,7 +530,7 @@ export function IronmanChart() {
                     className="absolute h-6 flex items-center z-10"
                     style={{ left: `${((data.target?.endurance ?? 3) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                   >
-                    <div className="bg-[#3b82f6] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                    <div className="bg-[var(--series-target)] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
                       {(data.target?.endurance ?? 3).toFixed(1)}
                     </div>
                   </div>
@@ -524,7 +541,7 @@ export function IronmanChart() {
                         className="absolute h-6 flex items-center z-10"
                         style={{ left: `${((data.benchmark.current?.endurance ?? 2.5) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
-                        <div className="bg-[#8b5cf6] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                        <div className="bg-[var(--series-sector-current)] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
                           {(data.benchmark.current?.endurance ?? 2.5).toFixed(1)}
                         </div>
                       </div>
@@ -532,7 +549,7 @@ export function IronmanChart() {
                         className="absolute h-6 flex items-center z-10"
                         style={{ left: `${((data.benchmark.target?.endurance ?? 3.0) / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
-                        <div className="bg-[#f97316] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
+                        <div className="bg-[var(--series-sector-target)] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
                           {(data.benchmark.target?.endurance ?? 3.0).toFixed(1)}
                         </div>
                       </div>
@@ -544,19 +561,19 @@ export function IronmanChart() {
               {/* Legend */}
               <div className="flex flex-wrap gap-3 text-[10px] text-[var(--text-muted)] mt-3">
                 <div className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#ec4899]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[var(--series-current)]" />
                   <span>Mevcut</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[var(--series-target)]" />
                   <span>Hedef</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#8b5cf6]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[var(--series-sector-current)]" />
                   <span>Sektör Ort. Mevcut</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#f97316]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[var(--series-sector-target)]" />
                   <span>Sektör Ort. Hedef</span>
                 </div>
               </div>
