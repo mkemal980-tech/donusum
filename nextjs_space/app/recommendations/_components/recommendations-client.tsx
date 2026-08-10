@@ -18,8 +18,6 @@ import {
   Play,
   Circle,
   BarChart3,
-  Sparkles,
-  Loader2,
   Video,
   ExternalLink,
   X,
@@ -49,20 +47,11 @@ interface Recommendation {
   stepDistance?: number;
   /** Yumuşak kilit: sırası gelmemiş basamak ilerletilemez. */
   isActionable?: boolean;
-  // AI zenginleştirme alanları
-  aiPriority?: number;
-  aiNote?: string;
 }
 
 interface AssignedSurvey {
   id: string;
   name: string;
-}
-
-interface AIEnhancement {
-  id: string;
-  priority: number;
-  note: string;
 }
 
 interface CompletionRecord {
@@ -91,13 +80,7 @@ export default function RecommendationsClient() {
     costType: "all",
     strategicType: "all"
   });
-  
-  // AI zenginleştirme state'leri
-  const [aiEnhancements, setAiEnhancements] = useState<AIEnhancement[]>([]);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiEnabled, setAiEnabled] = useState(false);
-  const [aiFromCache, setAiFromCache] = useState(false);
-  
+
   // Video oynatıcı state'leri
   const [activeVideo, setActiveVideo] = useState<{ url: string; title: string } | null>(null);
   const [videoSize, setVideoSize] = useState({ width: 800, height: 450 });
@@ -135,55 +118,6 @@ export default function RecommendationsClient() {
     }
   };
 
-  // AI Zenginleştirme fonksiyonu
-  const handleAIEnhance = async () => {
-    if (recommendations.length === 0) {
-      toast.error("Öneri bulunamadı");
-      return;
-    }
-
-    setAiLoading(true);
-
-    try {
-      // Öneri listesi, kullanıcı ve puan profili sunucuda oturumdan
-      // türetilir; istemci yalnızca isteği başlatır.
-      const res = await fetch("/api/recommendations/ai-enhance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ surveyId: selectedSurveyId })
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "AI zenginleştirme başarısız");
-      }
-
-      const data = await res.json();
-      setAiEnhancements(data.recommendations || []);
-      setAiEnabled(true);
-      setAiFromCache(data.fromCache || false);
-      
-      toast.success(
-        data.fromCache 
-          ? "AI önerileri önbellekten yüklendi" 
-          : "AI önerileri oluşturuldu",
-        { description: "Öneriler öncelik sırasına göre düzenlendi" }
-      );
-    } catch (error) {
-      console.error("AI Enhance error:", error);
-      toast.error(error instanceof Error ? error.message : "AI zenginleştirme hatası");
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
-  // AI zenginleştirmeyi kapat
-  const handleDisableAI = () => {
-    setAiEnabled(false);
-    setAiEnhancements([]);
-    toast.info("AI önerileri kapatıldı");
-  };
-
   // Erişilebilir anketler — kullanıcıda atananlar, adminde tüm aktif anketler.
   useEffect(() => {
     const loadSurveys = async () => {
@@ -209,9 +143,6 @@ export default function RecommendationsClient() {
     if (!selectedSurveyId) return;
     const loadData = async () => {
       setLoading(true);
-      // Anket değişti: eski anketin AI sıralaması artık geçerli değil.
-      setAiEnabled(false);
-      setAiEnhancements([]);
       await Promise.all([fetchRecommendations(selectedSurveyId), fetchCompletions()]);
       setLoading(false);
     };
@@ -297,32 +228,14 @@ export default function RecommendationsClient() {
     }
   };
 
-  // Merge completions and AI enhancements with recommendations
-  const recommendationsWithStatus = (recommendations ?? []).map(rec => {
-    const aiEnhancement = aiEnhancements.find(ai => ai.id === rec.id);
-    return {
-      ...rec,
-      completionStatus: completions[rec.id] || 'NOT_STARTED',
-      aiPriority: aiEnhancement?.priority,
-      aiNote: aiEnhancement?.note
-    };
-  });
+  // Tamamlanma durumu önerilere iliştirilir; sıra sunucudan geldiği gibi
+  // kalır — merdiven basamağı, etki, maliyet ve vade zaten sırayı belirler.
+  const recommendationsWithStatus = (recommendations ?? []).map(rec => ({
+    ...rec,
+    completionStatus: completions[rec.id] || 'NOT_STARTED'
+  }));
 
-  // AI etkinse öncelik sırasına göre sırala — ancak kademe sırası bağlayıcıdır,
-  // bir üst basamak alt basamaktan önce gelemez. AI yalnızca aynı basamak
-  // içinde sıralama yapar.
-  const stepRank = (rec: { stepDistance?: number }) => {
-    const step = rec.stepDistance ?? 0;
-    return step < 0 ? 1000 - step : step;
-  };
-  const sortedRecommendations = aiEnabled
-    ? [...recommendationsWithStatus].sort(
-        (a, b) =>
-          stepRank(a) - stepRank(b) || (a.aiPriority || 999) - (b.aiPriority || 999)
-      )
-    : recommendationsWithStatus;
-
-  const filteredRecommendations = sortedRecommendations.filter(rec => {
+  const filteredRecommendations = recommendationsWithStatus.filter(rec => {
     const matchesSearch = (rec?.title ?? '').toLowerCase().includes((searchTerm ?? '').toLowerCase()) ||
                           (rec?.description ?? '').toLowerCase().includes((searchTerm ?? '').toLowerCase());
     const matchesTimeframe = filters?.timeframe === "all" || rec?.timeframe === filters?.timeframe;
@@ -409,37 +322,6 @@ export default function RecommendationsClient() {
               </select>
             )}
 
-            {/* AI Zenginleştirme Butonu */}
-            {recommendations.length > 0 && (
-              aiEnabled ? (
-                <button
-                  onClick={handleDisableAI}
-                  className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg shadow-sm transition-all hover:opacity-90"
-                >
-                  <Sparkles size={18} />
-                  <span className="hidden sm:inline">AI Aktif</span>
-                  {aiFromCache && (
-                    <span className="text-xs opacity-75">(Önbellek)</span>
-                  )}
-                </button>
-              ) : (
-                <button
-                  onClick={handleAIEnhance}
-                  disabled={aiLoading}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-bright)] text-white rounded-lg shadow-sm transition-all hover:opacity-90 disabled:opacity-50"
-                >
-                  {aiLoading ? (
-                    <Loader2 size={18} className="animate-spin" />
-                  ) : (
-                    <Sparkles size={18} />
-                  )}
-                  <span className="hidden sm:inline">
-                    {aiLoading ? "Analiz ediliyor..." : "AI ile Önceliklendir"}
-                  </span>
-                </button>
-              )
-            )}
-            
             {/* View Mode Toggle */}
             <div className="flex bg-[var(--bg-card)] rounded-lg shadow-sm border border-[var(--border-soft)] p-1">
               <button
