@@ -48,9 +48,9 @@ export function MaturityLevelBar({ score, isPercentage = true }: MaturityLevelBa
         {currentLevel.label}
       </motion.div>
       
-      <div className="flex items-stretch gap-4 flex-1">
-        {/* Levels Labels */}
-        <div className="flex flex-col justify-between py-2">
+      <div className="flex items-start gap-4">
+        {/* Levels Labels — yükseklik çubukla aynı, satırlar basamaklara denk gelsin */}
+        <div className="flex flex-col justify-between h-64 py-1">
           {levels.map((level) => (
             <div key={level.value} className="flex items-center gap-2">
               <div 
@@ -67,49 +67,60 @@ export function MaturityLevelBar({ score, isPercentage = true }: MaturityLevelBa
           ))}
         </div>
         
-        {/* Vertical Bar */}
-        <div className="relative w-16 h-64 bg-[var(--border-light)] rounded-full overflow-hidden">
-          {/* Gradient Background */}
-          <div 
-            className="absolute inset-x-0 bottom-0 rounded-full"
+        {/*
+          Çubuk ile gösterge iki ayrı katman: gösterge çubuğun içindeyken hem
+          onun genişliğinin dörtte üçünü kaplıyor hem de `overflow-hidden`
+          yüzünden uçlarda kırpılıyordu. Çubuk 48px, gösterge 32px: gösterge
+          çubuğun üçte ikisi kadar ve kırpılmayan bir katmanda.
+        */}
+        <div className="relative h-64 w-12">
+          <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-12 rounded-full overflow-hidden bg-[var(--border-light)]">
+            {/* Gradient Background */}
+            <div
+              className="absolute inset-x-0 bottom-0"
+              style={{
+                background: "linear-gradient(to top, var(--level-1), var(--level-2), var(--level-3), var(--level-4), var(--level-5))",
+                height: "100%",
+                opacity: 0.3
+              }}
+            />
+
+            {/* Filled Progress */}
+            <motion.div
+              initial={{ height: 0 }}
+              animate={{ height: `${barPosition}%` }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="absolute inset-x-0 bottom-0 rounded-full"
+              style={{
+                background: "linear-gradient(to top, var(--level-1), var(--level-2), var(--level-3), var(--level-4), var(--level-5))",
+              }}
+            />
+
+            {/* Level Markers */}
+            <div className="absolute inset-0 flex flex-col justify-between py-3">
+              {[5, 4, 3, 2, 1].map((val) => (
+                <div key={val} className="w-full flex items-center justify-center">
+                  <div className="w-2 h-0.5 bg-[var(--bg-card)]/40" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/*
+            Gösterge yalnızca yüzdeyle konumlanırsa 0 ve 100'de yarısı çubuğun
+            dışında kalıyor. Merkez, çubuğun içinde bir uçtan diğerine gider:
+            16px (yarıçap) ile yükseklik - 16px arası.
+          */}
+          <div
+            className="absolute left-1/2 -translate-x-1/2 translate-y-1/2 w-8 h-8 rounded-full bg-[var(--bg-card)] shadow-lg flex items-center justify-center border-2 transition-[bottom] duration-700 ease-out"
             style={{
-              background: "linear-gradient(to top, var(--level-1), var(--level-2), var(--level-3), var(--level-4), var(--level-5))",
-              height: "100%",
-              opacity: 0.3
+              borderColor: currentLevel.color,
+              bottom: `calc(16px + (100% - 32px) * ${barPosition / 100})`,
             }}
-          />
-          
-          {/* Filled Progress */}
-          <motion.div
-            initial={{ height: 0 }}
-            animate={{ height: `${barPosition}%` }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            className="absolute inset-x-0 bottom-0 rounded-full"
-            style={{
-              background: "linear-gradient(to top, var(--level-1), var(--level-2), var(--level-3), var(--level-4), var(--level-5))",
-            }}
-          />
-          
-          {/* Score Indicator */}
-          <motion.div
-            initial={{ bottom: 0 }}
-            animate={{ bottom: `${barPosition}%` }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-[var(--bg-card)]  shadow-lg flex items-center justify-center border-4"
-            style={{ borderColor: currentLevel.color }}
           >
-            <span className="text-base font-bold" style={{ color: currentLevel.color }}>
+            <span className="text-[11px] font-bold" style={{ color: currentLevel.color }}>
               {scoreOn5.toFixed(1)}
             </span>
-          </motion.div>
-          
-          {/* Level Markers */}
-          <div className="absolute inset-0 flex flex-col justify-between py-3">
-            {[5, 4, 3, 2, 1].map((val, i) => (
-              <div key={val} className="w-full flex items-center justify-center">
-                <div className="w-2 h-0.5 bg-[var(--bg-card)]/40" />
-              </div>
-            ))}
           </div>
         </div>
       </div>

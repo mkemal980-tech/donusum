@@ -390,6 +390,9 @@ export function IronmanChart() {
     ctx.fillText('Endurance', 0, 0);
     ctx.restore();
 
+    // `theme` kodda geçmiyor ama bağımlılık: renkler CSS'ten okunuyor, tema
+    // değişince aynı veriyle yeniden çizilmesi gerekiyor.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, mounted, otherCompanies, theme]);
 
   useEffect(() => {
