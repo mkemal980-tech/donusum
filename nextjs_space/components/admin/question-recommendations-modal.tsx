@@ -9,6 +9,7 @@ import {
   type RecommendationImportRow,
   buildRecommendationPayload,
 } from "@/lib/recommendation-import";
+import { Button } from "@/components/ui/button";
 
 type QuestionForRecommendations = {
   id: string;
@@ -908,13 +909,14 @@ export default function QuestionRecommendationsModal({ question, target, onClose
 
               <div className="flex justify-end gap-2 pt-1">
                 {draftQueue.length > 0 && (
-                  <button
+                  <Button
                     onClick={() => loadNextDraft(draftQueue)}
                     disabled={saving}
-                    className="px-4 py-2 rounded-lg text-sm bg-[var(--bg-card-2)] text-[var(--text-muted)] disabled:opacity-50"
+                    variant="secondary"
+                    className="text-sm text-[var(--text-muted)]"
                   >
                     Bu taslağı atla
-                  </button>
+                  </Button>
                 )}
                 <button
                   onClick={() => {
@@ -939,22 +941,24 @@ export default function QuestionRecommendationsModal({ question, target, onClose
             </div>
           ) : (
             <div className="space-y-2">
-              <button
+              <Button
                 onClick={startCreate}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-dashed border-[var(--accent)]/60 text-[var(--accent)] hover:bg-[rgba(12,193,195,0.08)]"
+                variant="outline"
+                className="w-full text-[var(--accent)] hover:bg-[rgba(12,193,195,0.08)]"
               >
                 <Plus size={18} />
                 Bu soruya öneri ekle
-              </button>
+              </Button>
               {cascadeByChoice && (
-                <button
+                <Button
                   onClick={draftWithAI}
                   disabled={drafting}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:text-[var(--accent)] disabled:opacity-50"
+                  variant="secondary"
+                  className="w-full text-sm text-[var(--text-muted)] hover:text-[var(--accent)]"
                 >
                   {drafting ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                   {drafting ? "Taslak üretiliyor..." : "AI ile her şık için taslak üret"}
-                </button>
+                </Button>
               )}
             </div>
           )}

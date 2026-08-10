@@ -17,12 +17,12 @@ import { CategoryProgressChart } from "./category-progress-chart";
 const ChunkErrorFallback = ({ componentName }: { componentName: string }) => (
   <div className="p-6 bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] text-center">
     <p className="text-[var(--text-muted)]">{componentName} yüklenemedi.</p>
-    <button 
+    <Button
       onClick={() => window.location.reload()} 
-      className="mt-2 px-4 py-2 bg-[var(--accent)] text-[var(--bg-deep)] rounded-lg text-sm"
+      className="mt-2 text-[var(--bg-deep)] text-sm"
     >
       Sayfayı Yenile
-    </button>
+    </Button>
   </div>
 );
 
@@ -71,6 +71,7 @@ import {
   Download,
   ChevronDown
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface CategoryScore {
   score: number;
@@ -1287,12 +1288,12 @@ export default function DashboardClient() {
             </div>
             <h2 className="text-xl font-semibold text-[var(--text-main)] mb-2">Bir Sorun Oluştu</h2>
             <p className="text-[var(--text-muted)] mb-6">{errorState.message}</p>
-            <button
+            <Button
               onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-[var(--accent)] text-[var(--bg-deep)] font-medium rounded-lg hover:opacity-90 transition-opacity"
+              className="text-[var(--bg-deep)] font-medium"
             >
               Sayfayı Yenile
-            </button>
+            </Button>
           </div>
         </div>
       </div>

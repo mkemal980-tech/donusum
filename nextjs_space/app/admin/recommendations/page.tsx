@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import RecommendationBulkPanel from "@/components/admin/recommendation-bulk-panel";
 import { Plus, Edit, Trash2, X, Search, FileText, DollarSign, Target, FolderTree, HelpCircle, CheckSquare, TrendingUp, FileSpreadsheet } from "lucide-react";
 import { derivePosition } from "@/lib/recommendation-position";
+import { Button } from "@/components/ui/button";
 
 interface Survey {
   id: string;
@@ -561,18 +562,19 @@ export default function RecommendationsPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Öneri Yönetimi</h1>
         <div className="flex items-center gap-2">
-          <button
+          <Button
             onClick={() => setShowBulkPanel(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[var(--bg-card-2)] text-[var(--text-muted)] rounded-lg hover:text-[var(--accent)] transition-colors"
+            variant="secondary"
+            className="text-[var(--text-muted)] hover:text-[var(--accent)]"
           >
             <FileSpreadsheet size={20} /> Toplu Kurulum
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => openModal()}
-            className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)] transition-colors"
+            className="hover:bg-[var(--accent)]"
           >
             <Plus size={20} /> Yeni Öneri
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -623,14 +625,15 @@ export default function RecommendationsPage() {
           </select>
           {/* Tablo başlığındaki kutu da aynı işi yapar; 284 satırlık bir listede
               o kutuyu aramak yerine düğme filtrenin yanında duruyor. */}
-          <button
+          <Button
             onClick={toggleAllVisible}
             disabled={filteredRecs.length === 0}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors disabled:opacity-50"
+            variant="secondary"
+            className="text-[var(--text-muted)] hover:text-[var(--accent)]"
           >
             <CheckSquare size={18} />
             {allVisibleSelected ? 'Seçimi temizle' : `Tümünü seç (${filteredRecs.length})`}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -642,20 +645,21 @@ export default function RecommendationsPage() {
             <span className="text-[var(--text-dim)] font-normal"> · listede {filteredRecs.length} öneri var</span>
           </p>
           <div className="flex items-center gap-2">
-            <button
+            <Button
               onClick={() => setSelectedIds([])}
-              className="px-4 py-2 rounded-lg bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+              variant="secondary"
+              className="text-[var(--text-muted)]"
             >
               Seçimi temizle
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleBulkDelete}
               disabled={bulkDeleting}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--error)] text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+              variant="destructive"
             >
               <Trash2 size={18} />
               {bulkDeleting ? 'Siliniyor…' : `Seçilenleri sil (${selectedIds.length})`}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -1167,18 +1171,18 @@ export default function RecommendationsPage() {
 
               {/* Kaydet/İptal */}
               <div className="flex justify-end gap-3 pt-4 border-t">
-                <button
+                <Button
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border rounded-lg hover:bg-[var(--bg-card-2)]"
+                  variant="outline"
                 >
                   İptal
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleSave}
-                  className="px-6 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)] transition-colors"
+                  className="hover:bg-[var(--accent)]"
                 >
                   Kaydet
-                </button>
+                </Button>
               </div>
             </div>
           </div>

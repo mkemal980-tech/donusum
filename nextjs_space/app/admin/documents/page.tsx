@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { FileText, Download, Trash2, User, Building2, Search, Filter, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface Document {
   id: string;
@@ -307,21 +308,25 @@ export default function DocumentsPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       {doc.downloadUrl && (
-                        <button
+                        <Button
                           onClick={() => handleDownload(doc)}
-                          className="p-2 text-[var(--accent-cyan)]  hover:bg-[rgba(6,182,212,0.15)]  rounded-lg transition-colors"
                           title="İndir"
+                          variant="ghost"
+                          size="icon"
+                          className="text-[var(--accent-cyan)] hover:bg-[rgba(6,182,212,0.15)]"
                         >
                           <Download size={18} />
-                        </button>
+                        </Button>
                       )}
-                      <button
+                      <Button
                         onClick={() => handleDelete(doc.id)}
-                        className="p-2 text-[var(--error)]  hover:bg-[rgba(239,68,68,0.15)]  rounded-lg transition-colors"
                         title="Sil"
+                        variant="ghost"
+                        size="icon"
+                        className="text-[var(--error)] hover:bg-[rgba(239,68,68,0.15)]"
                       >
                         <Trash2 size={18} />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>

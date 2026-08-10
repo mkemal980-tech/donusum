@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Edit, Trash2, FileText, X, Save, CheckCircle, XCircle, AlertTriangle, Loader2, Eye, Copy, Download } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface Survey {
   id: string;
@@ -257,12 +258,11 @@ export default function SurveysPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Anket Yönetimi</h1>
-        <button
+        <Button
           onClick={() => openModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)]"
         >
           <Plus size={20} /> Yeni Anket
-        </button>
+        </Button>
       </div>
 
       {/* Survey List */}
@@ -327,13 +327,15 @@ export default function SurveysPage() {
                   >
                     <FileText size={18} />
                   </Link>
-                  <button 
+                  <Button
                     onClick={() => openModal(survey)} 
-                    className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]" 
                     title="Düzenle"
+                    variant="ghost"
+                    size="icon"
+                    className="text-[var(--blue-main)]"
                   >
                     <Edit size={18} />
-                  </button>
+                  </Button>
                   {/* Kategori/soru tanımı bitince öneri yazma sırası gelir;
                       şablon o anketin soru ve şıklarıyla hazır iner. */}
                   <a
@@ -343,25 +345,29 @@ export default function SurveysPage() {
                   >
                     <Download size={18} />
                   </a>
-                  <button
+                  <Button
                     onClick={() => duplicateSurvey(survey)}
                     disabled={duplicatingId === survey.id}
-                    className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--accent)] disabled:opacity-50"
                     title={`"${survey.name}" anketini her şeyiyle kopyala — sorular, öneriler, kapsam kuralları`}
+                    variant="ghost"
+                    size="icon"
+                    className="text-[var(--accent)]"
                   >
                     {duplicatingId === survey.id ? (
                       <Loader2 size={18} className="animate-spin" />
                     ) : (
                       <Copy size={18} />
                     )}
-                  </button>
-                  <button 
+                  </Button>
+                  <Button
                     onClick={() => initiateDelete(survey)} 
-                    className="p-2 hover:bg-[rgba(239,68,68,0.15)] rounded text-[var(--error)]" 
                     title="Sil"
+                    variant="ghost"
+                    size="icon"
+                    className="hover:bg-[rgba(239,68,68,0.15)] text-[var(--error)]"
                   >
                     <Trash2 size={18} />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -386,12 +392,11 @@ export default function SurveysPage() {
           <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-8 text-center">
             <FileText className="mx-auto text-[var(--text-dim)] mb-4" size={48} />
             <p className="text-[var(--text-dim)] mb-4">Henüz anket oluşturulmamış</p>
-            <button
+            <Button
               onClick={() => openModal()}
-              className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)]"
             >
               İlk Anketi Oluştur
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -473,19 +478,19 @@ export default function SurveysPage() {
             </div>
             
             <div className="flex justify-end gap-3 mt-6">
-              <button
+              <Button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] rounded-lg"
+                variant="ghost"
+                className="text-[var(--text-muted)]"
               >
                 İptal
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSave}
-                className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] flex items-center gap-2"
               >
                 <Save size={18} />
                 {editItem ? 'Güncelle' : 'Kaydet'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -594,13 +599,14 @@ export default function SurveysPage() {
                 
                 {/* Butonlar */}
                 <div className="flex justify-end gap-3">
-                  <button
+                  <Button
                     onClick={cancelDelete}
                     disabled={deleteConfirm.deleting}
-                    className="px-4 py-2 text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] rounded-lg disabled:opacity-50"
+                    variant="ghost"
+                    className="text-[var(--text-muted)]"
                   >
                     İptal
-                  </button>
+                  </Button>
                   <button
                     onClick={handleDelete}
                     disabled={deleteConfirm.confirmText !== deleteConfirm.surveyName || deleteConfirm.deleting}

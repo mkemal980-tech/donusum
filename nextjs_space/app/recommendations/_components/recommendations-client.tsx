@@ -24,6 +24,7 @@ import {
   Maximize2,
   Minimize2
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 type CompletionStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
@@ -754,12 +755,14 @@ export default function RecommendationsClient() {
                   <Maximize2 size={16} />
                 </button>
                 {/* Kapat Butonu */}
-                <button
+                <Button
                   onClick={() => setActiveVideo(null)}
-                  className="p-2 rounded-lg bg-[var(--error)]/20 text-[var(--error)] hover:bg-[var(--error)]/30 transition-colors ml-2"
+                  variant="ghost"
+                  size="icon"
+                  className="text-[var(--error)] ml-2"
                 >
                   <X size={16} />
-                </button>
+                </Button>
               </div>
             </div>
             

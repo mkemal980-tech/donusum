@@ -12,6 +12,7 @@ import {
   Check,
   AlertCircle
 } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 
 interface TableOption {
   id: string;
@@ -231,11 +232,11 @@ export default function ExportPage(): JSX.Element {
             </div>
 
             {/* Export Butonu */}
-            <button
+            <Button
               type="button"
               onClick={handleExport}
               disabled={loading}
-              className="w-full mt-4 py-3 px-4 rounded-lg bg-[var(--accent)] text-[var(--bg-deep)] font-medium hover:bg-[var(--accent-bright)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full mt-4 text-[var(--bg-deep)] font-medium"
             >
               {loading ? (
                 <>
@@ -248,7 +249,7 @@ export default function ExportPage(): JSX.Element {
                   Dışa Aktar
                 </>
               )}
-            </button>
+            </Button>
           </motion.div>
         </div>
 
@@ -263,20 +264,22 @@ export default function ExportPage(): JSX.Element {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-[var(--text-main)]">Tablolar</h2>
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
                   onClick={selectAll}
-                  className="px-3 py-1.5 text-sm rounded-lg bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                  variant="secondary"
+                  className="text-sm text-[var(--text-muted)]"
                 >
                   Tümünü Seç
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={selectNone}
-                  className="px-3 py-1.5 text-sm rounded-lg bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                  variant="secondary"
+                  className="text-sm text-[var(--text-muted)]"
                 >
                   Hiçbirini Seçme
-                </button>
+                </Button>
               </div>
             </div>
 

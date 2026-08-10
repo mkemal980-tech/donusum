@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Search,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface OverviewStats {
   totalUsers: number;
@@ -178,16 +179,17 @@ export default function AdminDashboardPage() {
             Tüm sistem istatistiklerini görüntüleyin
           </p>
         </div>
-        <button
+        <Button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--bg-card-2)] border border-[var(--border-soft)] text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors"
+          variant="secondary"
+          className="text-[var(--text-main)] hover:bg-[var(--bg-card)]"
         >
           <RefreshCw
             className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
           />
           Yenile
-        </button>
+        </Button>
       </div>
 
       {/* Overview Cards */}
@@ -300,9 +302,10 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="relative">
-          <button
+          <Button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="w-full md:w-80 flex items-center justify-between px-4 py-3 rounded-lg bg-[var(--bg-card-2)] border border-[var(--border-soft)] text-[var(--text-main)] hover:border-[var(--accent)] transition-colors"
+            variant="secondary"
+            className="w-full text-[var(--text-main)]"
           >
             <span>
               {selectedSurvey
@@ -314,7 +317,7 @@ export default function AdminDashboardPage() {
                 showDropdown ? "rotate-180" : ""
               }`}
             />
-          </button>
+          </Button>
 
           <AnimatePresence>
             {showDropdown && (

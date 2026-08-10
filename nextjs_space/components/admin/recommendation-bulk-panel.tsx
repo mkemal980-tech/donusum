@@ -6,6 +6,7 @@ import type { RecommendationImportRow } from "@/lib/recommendation-import";
 import RecommendationImportPreview, {
   type RecommendationPreviewPayload,
 } from "./recommendation-import-preview";
+import { Button } from "@/components/ui/button";
 
 /**
  * Toplu öneri kurulumunun tek giriş noktası.
@@ -328,14 +329,14 @@ export default function RecommendationBulkPanel({
                   </p>
                 </div>
 
-                <button
+                <Button
                   onClick={handleAiDraft}
                   disabled={busy !== null || !aiTarget}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm bg-[var(--accent)] text-[var(--bg-deep)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-sm text-[var(--bg-deep)] disabled:cursor-not-allowed"
                 >
                   {busy === "ai" ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                   {busy === "ai" ? "Taslak üretiliyor..." : "Taslak üret"}
-                </button>
+                </Button>
               </div>
             </div>
           )}

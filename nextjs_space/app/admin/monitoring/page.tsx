@@ -17,6 +17,7 @@ import {
   Send
 } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface HealthCheck {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -206,14 +207,13 @@ export default function MonitoringPage() {
             />
             Otomatik yenile (30s)
           </label>
-          <button
+          <Button
             onClick={refreshAll}
             disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:opacity-90 disabled:opacity-50"
           >
             <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
             Yenile
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -253,15 +253,16 @@ export default function MonitoringPage() {
               </div>
             </div>
 
-            <button
+            <Button
               onClick={sendTestEmail}
               disabled={sendingTest || !emailStatus.configured}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-[var(--border-soft)] text-[var(--text-main)] hover:border-[var(--accent)]/50 disabled:opacity-50"
               title="Kendi adresinize bir deneme postası gönderir"
+              variant="outline"
+              className="text-[var(--text-main)]"
             >
               <Send size={16} className={sendingTest ? 'animate-pulse' : ''} />
               {sendingTest ? 'Gönderiliyor...' : 'Deneme postası gönder'}
-            </button>
+            </Button>
           </div>
         </motion.div>
       )}

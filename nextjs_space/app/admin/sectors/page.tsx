@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Factory, Layers, ChevronDown, ChevronRight, Save, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface SubSector {
   id: string;
@@ -173,13 +174,12 @@ export default function SectorsPage() {
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Sektör Yönetimi</h1>
           <p className="text-[var(--text-muted)] mt-1">Sektör ve alt sektörleri tanımlayın</p>
         </div>
-        <button
+        <Button
           onClick={() => setShowNewSector(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] transition-colors"
         >
           <Plus size={20} />
           Yeni Sektör
-        </button>
+        </Button>
       </div>
 
       {showNewSector && (
@@ -200,18 +200,20 @@ export default function SectorsPage() {
               className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none"
               autoFocus
             />
-            <button
+            <Button
               onClick={handleCreateSector}
-              className="p-2 bg-[rgba(12,193,195,0.1)]0 text-white rounded-lg hover:bg-[var(--accent-dark)]"
+              size="icon"
             >
               <Save size={20} />
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => { setShowNewSector(false); setNewSectorName(""); setNewSectorNaicsCode(""); }}
-              className="p-2 bg-[var(--ui-passive)] text-[var(--text-muted)] rounded-lg hover:bg-[var(--ui-passive)]"
+              variant="secondary"
+              size="icon"
+              className="text-[var(--text-muted)] hover:bg-[var(--ui-passive)]"
             >
               <X size={20} />
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -264,18 +266,22 @@ export default function SectorsPage() {
                 <span className="text-sm text-[var(--text-dim)] mr-2">
                   {sector.subSectors.length} alt sektör | {sector._count?.users || 0} kullanıcı
                 </span>
-                <button
+                <Button
                   onClick={() => { setEditingSector(sector.id); setEditSectorName(sector.name); setEditSectorNaicsCode(sector.naicsCode || ""); }}
-                  className="p-2 text-[var(--blue-main)] hover:bg-[var(--bg-card-2)] rounded-lg"
+                  variant="ghost"
+                  size="icon"
+                  className="text-[var(--blue-main)]"
                 >
                   <Edit2 size={18} />
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => handleDeleteSector(sector.id)}
-                  className="p-2 text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)] rounded-lg"
+                  variant="ghost"
+                  size="icon"
+                  className="text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)]"
                 >
                   <Trash2 size={18} />
-                </button>
+                </Button>
               </div>
             </div>
 

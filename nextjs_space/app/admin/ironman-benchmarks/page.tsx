@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Plus, Edit, Trash2, X, Activity, Factory, Layers, Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Sector {
   id: string;
@@ -176,12 +177,11 @@ export default function IronmanBenchmarksPage() {
           </h1>
           <p className="text-[var(--text-dim)] mt-1">Sektör bazlı Velocity (Hız) ve Endurance (Olgunluk) değerlerini yönetin</p>
         </div>
-        <button
+        <Button
           onClick={() => openModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)]"
         >
           <Plus size={20} /> Yeni Benchmark
-        </button>
+        </Button>
       </div>
 
       {/* Info Box */}
@@ -281,20 +281,24 @@ export default function IronmanBenchmarksPage() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <button
+                      <Button
                         onClick={() => openModal(benchmark)}
-                        className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]"
                         title="Düzenle"
+                        variant="ghost"
+                        size="icon"
+                        className="text-[var(--blue-main)]"
                       >
                         <Edit size={18} />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => handleDelete(benchmark.id)}
-                        className="p-2 hover:bg-[rgba(239,68,68,0.15)] rounded text-[var(--error)]"
                         title="Sil"
+                        variant="ghost"
+                        size="icon"
+                        className="hover:bg-[rgba(239,68,68,0.15)] text-[var(--error)]"
                       >
                         <Trash2 size={18} />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -481,19 +485,19 @@ export default function IronmanBenchmarksPage() {
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
-              <button
+              <Button
                 onClick={() => setShowModal(false)}
-                className="px-4 py-2 border border-[var(--border-soft)] rounded-lg hover:bg-[var(--bg-card-2)] text-[var(--text-muted)]"
+                variant="outline"
+                className="text-[var(--text-muted)]"
               >
                 İptal
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleSave}
                 disabled={saving || !formData.sectorId}
-                className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] disabled:opacity-50"
               >
                 {saving ? 'Kaydediliyor...' : 'Kaydet'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

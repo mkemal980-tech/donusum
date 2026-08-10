@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Building2, Plus, Edit, Trash2, X, Save, Users, UserCircle, ChevronDown, ChevronRight, Shield, Crown } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface User {
   id: string;
@@ -284,27 +285,33 @@ export default function UnitsPage() {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <button
+              <Button
                 onClick={() => openCreateModal(unit.id)}
-                className="p-2 text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[rgba(12,193,195,0.1)] rounded-lg transition-colors"
                 title="Alt Birim Ekle"
+                variant="ghost"
+                size="icon"
+                className="text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[rgba(12,193,195,0.1)]"
               >
                 <Plus size={16} />
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => openEditModal(unit)}
-                className="p-2 text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[var(--bg-card-2)] rounded-lg transition-colors"
                 title="Düzenle"
+                variant="ghost"
+                size="icon"
+                className="text-[var(--text-dim)] hover:text-[var(--accent)]"
               >
                 <Edit size={16} />
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => handleDelete(unit.id)}
-                className="p-2 text-[var(--text-dim)] hover:text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)] rounded-lg transition-colors"
                 title="Sil"
+                variant="ghost"
+                size="icon"
+                className="text-[var(--text-dim)] hover:text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)]"
               >
                 <Trash2 size={16} />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -382,13 +389,12 @@ export default function UnitsPage() {
           <Building2 className="text-[var(--accent)]" size={28} />
           <h1 className="text-2xl font-bold text-[var(--text-main)]">Birim Yönetimi</h1>
         </div>
-        <button
+        <Button
           onClick={() => openCreateModal()}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] transition-colors"
         >
           <Plus size={20} />
           Yeni Birim
-        </button>
+        </Button>
       </div>
 
       {/* Info */}
@@ -421,12 +427,13 @@ export default function UnitsPage() {
               <h2 className="text-lg font-semibold text-[var(--text-main)]">
                 {editingUnit ? "Birim Düzenle" : formData.parentId ? "Alt Birim Ekle" : "Yeni Birim"}
               </h2>
-              <button
+              <Button
                 onClick={() => setShowModal(false)}
-                className="p-2 hover:bg-[var(--bg-card-2)] rounded-lg"
+                variant="ghost"
+                size="icon"
               >
                 <X size={20} />
-              </button>
+              </Button>
             </div>
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div>
@@ -545,20 +552,19 @@ export default function UnitsPage() {
               )}
 
               <div className="flex justify-end gap-3 pt-4">
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border rounded-lg hover:bg-[var(--bg-card-2)] transition-colors"
+                  variant="outline"
                 >
                   İptal
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] transition-colors"
                 >
                   <Save size={18} />
                   Kaydet
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -573,12 +579,13 @@ export default function UnitsPage() {
               <h2 className="text-lg font-semibold text-[var(--text-main)]">
                 {showUsersModal.name} - Kullanıcılar
               </h2>
-              <button
+              <Button
                 onClick={() => setShowUsersModal(null)}
-                className="p-2 hover:bg-[var(--bg-card-2)] rounded-lg"
+                variant="ghost"
+                size="icon"
               >
                 <X size={20} />
-              </button>
+              </Button>
             </div>
             <div className="p-4 flex-1 overflow-y-auto">
               {/* Current Users */}

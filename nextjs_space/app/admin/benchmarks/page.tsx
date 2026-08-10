@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { BarChart3, Save, Trash2, Plus, FileText, Factory, Layers } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Survey {
   id: string;
@@ -358,10 +359,10 @@ export default function BenchmarksPage() {
           </div>
         </div>
 
-        <button
+        <Button
           onClick={handleSave}
           disabled={saving || !selectedSurvey || !selectedSector}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-[var(--bg-deep)] font-medium rounded-lg hover:brightness-110 transition-all disabled:opacity-50"
+          className="text-[var(--bg-deep)] font-medium"
         >
           {saving ? (
             <div className="w-5 h-5 border-2 border-[var(--bg-deep)] border-t-transparent rounded-full animate-spin" />
@@ -369,7 +370,7 @@ export default function BenchmarksPage() {
             <Save size={20} />
           )}
           Kaydet
-        </button>
+        </Button>
       </div>
 
       {/* Existing Benchmarks */}

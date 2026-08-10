@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { useState, useEffect, Component, ReactNode } from "react";
 import { Toaster } from "sonner";
 import { RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Global Error Boundary for catching chunk loading errors
 interface ErrorBoundaryProps {
@@ -70,13 +71,13 @@ class ChunkErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryStat
               </p>
             )}
             <div className="flex items-center justify-center gap-2 flex-wrap">
-              <button
+              <Button
                 onClick={this.handleReload}
-                className="px-6 py-3 bg-[var(--accent)] text-[var(--bg-deep)] font-medium rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
+                className="text-[var(--bg-deep)] font-medium"
               >
                 <RefreshCw className="w-4 h-4" />
                 Sayfayı Yenile
-              </button>
+              </Button>
               <a
                 href="/"
                 className="px-6 py-3 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"

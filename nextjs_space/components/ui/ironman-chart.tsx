@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, Globe, Target, Plus, X, ChevronDown, Check, Factory } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface IronmanData {
   current: {
@@ -787,10 +788,10 @@ export function IronmanChart() {
                 )}
 
                 {/* Seçim Butonu */}
-                <button
+                <Button
                   onClick={handleSelectComparison}
                   disabled={!selectedSector || loadingComparison}
-                  className="w-full py-3 px-4 rounded-xl bg-[var(--accent)] text-white font-medium hover:bg-[var(--accent)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                  className="w-full rounded-xl font-medium disabled:cursor-not-allowed"
                 >
                   {loadingComparison ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -800,7 +801,7 @@ export function IronmanChart() {
                       Karşılaştır
                     </>
                   )}
-                </button>
+                </Button>
               </div>
             </motion.div>
           </motion.div>

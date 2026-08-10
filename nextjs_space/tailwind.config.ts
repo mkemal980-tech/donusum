@@ -188,8 +188,8 @@ const config: Config = {
         'gradient-card': 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-2) 100%)',
       },
       fontFamily: {
-        sans: ['Poppins', 'system-ui', 'sans-serif'],
-        numeric: ['Roboto', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-poppins)', 'system-ui', 'sans-serif'],
+        numeric: ['var(--font-roboto)', 'system-ui', 'sans-serif'],
       },
       keyframes: {
         'accordion-down': {

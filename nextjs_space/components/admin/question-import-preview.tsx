@@ -13,6 +13,7 @@ import {
   validateQuestionRow,
 } from "@/lib/question-import";
 import { parseScoredOptions } from "@/lib/question-options";
+import { Button } from "@/components/ui/button";
 
 export type PreviewPayload = {
   rows: { rowNumber: number; values: ImportRow; errors: FieldError[] }[];
@@ -266,14 +267,15 @@ export default function QuestionImportPreview({
           Sadece hatalılar
         </button>
         {errorCount > 0 && (
-          <button
+          <Button
             type="button"
             onClick={removeErrorRows}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--error)] border border-[var(--error)]/40"
+            variant="outline"
+            className="text-sm text-[var(--error)]"
           >
             <Trash2 size={15} />
             Hatalı {errorCount} satırı sil
-          </button>
+          </Button>
         )}
         <span className="text-xs text-[var(--text-dim)] ml-auto">
           Değişiklikler yalnızca bu ekranda; Excel dosyanız değişmez.

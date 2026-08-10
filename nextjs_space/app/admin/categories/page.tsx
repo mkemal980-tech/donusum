@@ -12,6 +12,7 @@ import {
 import type { ImportRow } from "@/lib/question-import";
 import QuestionImportPreview, { type PreviewPayload } from "@/components/admin/question-import-preview";
 import QuestionRecommendationsModal, { type RecommendationTarget } from "@/components/admin/question-recommendations-modal";
+import { Button } from "@/components/ui/button";
 
 interface Question {
   id: string;
@@ -715,12 +716,11 @@ export default function CategoriesPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Kategoriler & Sorular</h1>
-        <button
+        <Button
           onClick={() => openModal('category')}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)]"
         >
           <Plus size={20} /> Yeni Kategori
-        </button>
+        </Button>
       </div>
 
       {/* Anket Seçimi */}
@@ -777,27 +777,30 @@ export default function CategoriesPage() {
                 <span className="text-white/70 text-sm">({category.subCategories?.length || 0} alt kategori)</span>
               </div>
               <div className="flex items-center gap-2">
-                <button 
+                <Button
                   onClick={() => openModal('subcategory', category.id)} 
-                  className="p-2 hover:bg-[var(--bg-card)]/20 rounded" 
                   title="Alt Kategori Ekle"
+                  variant="ghost"
+                  size="icon"
                 >
                   <Plus size={18} />
-                </button>
-                <button 
+                </Button>
+                <Button
                   onClick={() => openModal('category', undefined, category)} 
-                  className="p-2 hover:bg-[var(--bg-card)]/20 rounded" 
                   title="Düzenle"
+                  variant="ghost"
+                  size="icon"
                 >
                   <Edit size={18} />
-                </button>
-                <button 
+                </Button>
+                <Button
                   onClick={() => handleDelete('category', category.id)} 
-                  className="p-2 hover:bg-[rgba(239,68,68,0.1)]0 rounded" 
                   title="Sil"
+                  variant="ghost"
+                  size="icon"
                 >
                   <Trash2 size={18} />
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -813,13 +816,13 @@ export default function CategoriesPage() {
                         <span className="font-medium text-[var(--accent)]">Kategori Soruları</span>
                         <span className="text-[var(--text-dim)] text-sm">({category.questions?.length || 0} soru)</span>
                       </div>
-                      <button
+                      <Button
                         onClick={() => openModal('question', category.id, undefined, { isCategory: true })}
-                        className="flex items-center gap-1 px-3 py-1 bg-[var(--accent)] text-white rounded hover:bg-[var(--accent-dark)] text-sm"
+                        className="text-sm"
                       >
                         <Plus size={14} />
                         Soru Ekle
-                      </button>
+                      </Button>
                     </div>
                     {category.questions?.length > 0 && (
                       <div className="p-3 space-y-2">
@@ -993,12 +996,12 @@ export default function CategoriesPage() {
         {categories.length === 0 && (
           <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-8 text-center">
             <p className="text-[var(--text-dim)]">Henüz kategori eklenmemiş</p>
-            <button
+            <Button
               onClick={() => openModal('category')}
-              className="mt-4 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)]"
+              className="mt-4"
             >
               İlk Kategoriyi Ekle
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -1335,19 +1338,19 @@ export default function CategoriesPage() {
             </div>
             
             <div className="flex justify-end gap-3 mt-6">
-              <button
+              <Button
                 onClick={() => setShowModal(null)}
-                className="px-4 py-2 text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] rounded-lg"
+                variant="ghost"
+                className="text-[var(--text-muted)]"
               >
                 İptal
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={handleModalSubmit}
-                className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] flex items-center gap-2"
               >
                 <Save size={18} />
                 {showModal.editItem ? 'Güncelle' : 'Kaydet'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

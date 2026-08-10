@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -104,13 +105,9 @@ export default function ForgotPasswordPage() {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-[var(--accent)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50"
-          >
+          <Button type="submit" size="lg" loading={loading} className="w-full">
             {loading ? "Gönderiliyor..." : "Sıfırlama Linki Gönder"}
-          </button>
+          </Button>
         </form>
 
         <div className="mt-6 text-center">

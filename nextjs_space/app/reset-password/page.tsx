@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();
@@ -171,13 +172,9 @@ function ResetPasswordForm() {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-[var(--accent)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-50"
-          >
+          <Button type="submit" size="lg" loading={loading} className="w-full">
             {loading ? "Güncelleniyor..." : "Şifreyi Güncelle"}
-          </button>
+          </Button>
         </form>
 
         <div className="mt-6 text-center">

@@ -22,6 +22,7 @@ import {
   User,
   FileText,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 /**
  * Tablonun satırı kişi değil değerlendirme: cevaplar kuruluşun
@@ -241,13 +242,13 @@ export default function UnitManagerPage() {
             </div>
 
             {/* Anketin hangi bölümünü kimin dolduracağı buradan belirlenir. */}
-            <button
+            <Button
               onClick={() => router.push("/unit-manager/assignments")}
-              className="px-4 py-2.5 bg-[var(--accent)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors flex items-center gap-2"
+              className="font-medium"
             >
               <ListChecks size={18} />
               Görev Dağılımı
-            </button>
+            </Button>
           </div>
         </motion.div>
 
@@ -577,13 +578,15 @@ export default function UnitManagerPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           {doc.downloadUrl && (
-                            <button
+                            <Button
                               onClick={() => handleDownload(doc)}
-                              className="p-2 text-[var(--accent)]  hover:bg-[rgba(46,134,255,0.15)]  rounded-lg transition-colors"
                               title="İndir"
+                              variant="ghost"
+                              size="icon"
+                              className="text-[var(--accent)] hover:bg-[rgba(46,134,255,0.15)]"
                             >
                               <Download size={18} />
-                            </button>
+                            </Button>
                           )}
                         </td>
                       </tr>

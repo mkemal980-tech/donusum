@@ -2,8 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ===== GOOGLE FONTS ===== */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@400;500;600;700&display=swap');
+/* Fontlar next/font ile yüklenir (app/layout.tsx); burada yalnızca kullanılır. */
 
 /* ===== DARK DASHBOARD THEME - GLOBAL TOKENS ===== */
 :root {
@@ -96,7 +95,7 @@
 
 /* ===== BASE BODY STYLING ===== */
 html, body {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-poppins), system-ui, sans-serif;
   font-weight: 400;
   line-height: 1.5;
   letter-spacing: 0.01em;
@@ -108,13 +107,13 @@ html, body {
 
 /* KPI ve Sayısal Veriler için Roboto */
 .font-mono, .font-numeric, [data-numeric], .stat-number, .kpi-value {
-  font-family: 'Roboto', sans-serif;
+  font-family: var(--font-roboto), system-ui, sans-serif;
   font-weight: 600;
 }
 
 /* Başlık fontları */
 h1, h2, h3, h4, h5, h6, .heading {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-poppins), system-ui, sans-serif;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--text-main);
@@ -604,21 +603,21 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 /* ===== STATS / KPI ===== */
 .stat-number {
-  font-family: 'Roboto', sans-serif;
+  font-family: var(--font-roboto), system-ui, sans-serif;
   font-weight: 700;
   font-size: 2.5rem;
   color: var(--text-main);
 }
 
 .stat-number-accent {
-  font-family: 'Roboto', sans-serif;
+  font-family: var(--font-roboto), system-ui, sans-serif;
   font-weight: 700;
   font-size: 2.5rem;
   color: var(--accent);
 }
 
 .kpi-value {
-  font-family: 'Roboto', sans-serif;
+  font-family: var(--font-roboto), system-ui, sans-serif;
   font-weight: 600;
 }
 
@@ -700,7 +699,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .donut-value {
-  font-family: 'Roboto', sans-serif;
+  font-family: var(--font-roboto), system-ui, sans-serif;
   font-weight: 700;
   font-size: 1.875rem;
   color: var(--accent);
@@ -772,7 +771,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .avatar-text {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-poppins), system-ui, sans-serif;
   font-weight: 600;
   color: var(--accent);
 }

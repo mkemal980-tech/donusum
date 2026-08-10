@@ -17,6 +17,7 @@ import {
   matchQuestion,
   validateRecommendationRow,
 } from "@/lib/recommendation-import";
+import { Button } from "@/components/ui/button";
 
 /**
  * Toplu öneri yüklemenin ve AI taslaklarının ortak onay ekranı.
@@ -508,12 +509,13 @@ export default function RecommendationImportPreview({
 
         {hiddenCount > 0 && (
           <div className="flex items-center justify-center gap-2 py-2">
-            <button
+            <Button
               onClick={() => setLimit((current) => current + PAGE_SIZE)}
-              className="px-4 py-2 rounded-lg text-sm bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:text-[var(--accent)]"
+              variant="secondary"
+              className="text-sm text-[var(--text-muted)] hover:text-[var(--accent)]"
             >
               {hiddenCount} satır daha var — {Math.min(PAGE_SIZE, hiddenCount)} tanesini göster
-            </button>
+            </Button>
             <button
               onClick={() => setLimit(matchingIndexes.length)}
               className="px-4 py-2 rounded-lg text-sm text-[var(--text-dim)] hover:text-[var(--text-main)]"
@@ -526,21 +528,22 @@ export default function RecommendationImportPreview({
 
       {/* Eylemler — kaydetmek için satırların sonuna inmek gerekmez */}
       <div className="sticky bottom-0 flex items-center justify-end gap-2 pt-2 bg-[var(--bg-card)] border-t border-[var(--border-soft)]">
-        <button
+        <Button
           onClick={onCancel}
           disabled={saving}
-          className="px-4 py-2 rounded-lg text-sm bg-[var(--bg-card-2)] text-[var(--text-muted)] disabled:opacity-50"
+          variant="secondary"
+          className="text-sm text-[var(--text-muted)]"
         >
           Vazgeç
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => onConfirm(rows)}
           disabled={saving || rows.length === 0 || errorCount > 0}
           title={errorCount > 0 ? "Önce hatalı satırları düzeltin veya çıkarın" : undefined}
-          className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent)] text-[var(--bg-deep)] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-sm font-medium text-[var(--bg-deep)] disabled:cursor-not-allowed"
         >
           {saving ? "Kaydediliyor..." : `${rows.length} öneriyi kaydet`}
-        </button>
+        </Button>
       </div>
     </div>
   );

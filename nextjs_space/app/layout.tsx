@@ -1,9 +1,33 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Poppins, Roboto } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/providers";
 
-const inter = Inter({ subsets: ["latin"] });
+/**
+ * Tipografi tek yerden: gövde ve başlık Poppins, sayısal göstergeler Roboto.
+ *
+ * Fontlar Google'dan `@import` ile değil `next/font` ile alınır; dosyalar
+ * derlemede uygulamayla birlikte sunulur, dış istek yok. `latin-ext` şart:
+ * ğ, ş ve ı yalnızca o alt kümede var, latin ile Türkçe metin yedek fonta
+ * düşüyordu.
+ *
+ * Değişken olarak veriliyorlar — sınıf olarak verilince body'ye yazılan
+ * font-family, globals.css'teki kuralı seçici gücüyle eziyordu: sayfa
+ * Poppins diyor, tarayıcı başka bir font çiziyordu.
+ */
+const poppins = Poppins({
+  subsets: ["latin", "latin-ext"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins",
+  display: "swap",
+});
+
+const roboto = Roboto({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "700"],
+  variable: "--font-roboto",
+  display: "swap",
+});
 
 export const dynamic = "force-dynamic";
 
@@ -30,8 +54,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
+    <html lang="tr" suppressHydrationWarning>
+      <body className={`${poppins.variable} ${roboto.variable}`} suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

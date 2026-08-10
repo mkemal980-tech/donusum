@@ -34,6 +34,7 @@ import {
   stepProgress,
   unansweredInStep,
 } from "@/lib/survey-navigation";
+import { Button } from "@/components/ui/button";
 
 interface Question {
   id: string;
@@ -521,12 +522,12 @@ export default function SurveyClient() {
             </p>
             <div className="flex items-center justify-center gap-2">
               {assignmentError && (
-                <button
+                <Button
                   onClick={() => window.location.reload()}
-                  className="px-6 py-3 bg-[var(--accent)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors"
+                  className="font-medium"
                 >
                   Tekrar Dene
-                </button>
+                </Button>
               )}
               <button
                 onClick={() => router.push("/dashboard")}
@@ -588,12 +589,12 @@ export default function SurveyClient() {
               </div>
             )}
             
-            <button
+            <Button
               onClick={() => router.push("/dashboard")}
-              className="px-6 py-3 bg-[var(--accent)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors"
+              className="font-medium"
             >
               Ana Sayfaya Dön
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -930,18 +931,19 @@ export default function SurveyClient() {
                       tamamlayabilirsiniz. Ancak eksik sorular puanınıza dahil edilmez.
                     </p>
                     <div className="flex gap-2 mt-3">
-                      <button
+                      <Button
                         onClick={() => setPendingStepIndex(null)}
-                        className="px-3 py-1.5 rounded-lg text-sm bg-[var(--accent)] text-[var(--bg-deep)] font-medium"
+                        className="text-sm text-[var(--bg-deep)] font-medium"
                       >
                         Bu bölümde kal
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         onClick={() => jumpTo(pendingStepIndex)}
-                        className="px-3 py-1.5 rounded-lg text-sm bg-[var(--bg-card-2)] text-[var(--text-muted)]"
+                        variant="secondary"
+                        className="text-sm text-[var(--text-muted)]"
                       >
                         Yine de devam et
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -988,13 +990,13 @@ export default function SurveyClient() {
               </div>
 
               {canGoNext ? (
-                <button
+                <Button
                   onClick={goNext}
-                  className="flex items-center gap-2 px-6 py-3 bg-[var(--accent)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors shadow-md"
+                  className="font-medium"
                 >
                   Sonraki
                   <ChevronRight size={20} />
-                </button>
+                </Button>
               ) : (
                 <button
                   onClick={handleComplete}

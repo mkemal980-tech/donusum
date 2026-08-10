@@ -18,6 +18,7 @@ import {
 import { type SectionStatus, rollupByAssignee, sectionStatus } from "@/lib/section-assignment";
 import { readinessSummary, submissionReadiness } from "@/lib/submission";
 import { getWithRetry } from "@/lib/retrying-fetch";
+import { Button } from "@/components/ui/button";
 
 /**
  * Görev dağılımı ve ilerleme panosu.
@@ -415,14 +416,15 @@ export default function SectionAssignmentsPage() {
               </div>
             </div>
             {isCoordinator && (
-              <button
+              <Button
                 onClick={() => submitAssessment("reopen")}
                 disabled={submitting}
-                className="px-4 py-2 rounded-lg border border-[var(--border-soft)] bg-[var(--bg-card)] text-sm text-[var(--text-main)] hover:border-[var(--accent)]/50 disabled:opacity-60 flex items-center gap-2"
+                variant="outline"
+                className="text-sm text-[var(--text-main)]"
               >
                 <Unlock size={16} />
                 Gönderimi geri al
-              </button>
+              </Button>
             )}
           </div>
         )}
@@ -568,10 +570,11 @@ export default function SectionAssignmentsPage() {
                   {/* Aramak yerine tek hamlede hatırlatmak. Yalnızca eksiği
                       kalanlara gider; bitirenler ikinci kez rahatsız edilmez. */}
                   {isCoordinator && !locked && (
-                    <button
+                    <Button
                       onClick={notifyContributors}
                       disabled={notifying}
-                      className="px-3 py-2 rounded-lg border border-[var(--border-soft)] text-sm text-[var(--text-muted)] hover:border-[var(--accent)]/50 hover:text-[var(--text-main)] disabled:opacity-60 flex items-center gap-2"
+                      variant="outline"
+                      className="text-sm text-[var(--text-muted)] hover:text-[var(--text-main)]"
                     >
                       {notifying ? (
                         <Loader2 size={15} className="animate-spin" />
@@ -579,7 +582,7 @@ export default function SectionAssignmentsPage() {
                         <Mail size={15} />
                       )}
                       Eksiği kalanlara hatırlat
-                    </button>
+                    </Button>
                   )}
                 </div>
                 <div className="space-y-3">
@@ -649,28 +652,29 @@ export default function SectionAssignmentsPage() {
                 )}
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <button
+                  <Button
                     onClick={() =>
                       confirmingSubmit || readiness.complete
                         ? submitAssessment("submit")
                         : setConfirmingSubmit(true)
                     }
                     disabled={submitting}
-                    className="px-4 py-2.5 rounded-lg bg-[var(--accent)] text-white font-medium hover:bg-[var(--accent-dark)] transition-colors disabled:opacity-60 flex items-center gap-2"
+                    className="font-medium"
                   >
                     {submitting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                     {confirmingSubmit && !readiness.complete
                       ? "Yine de gönder"
                       : "Değerlendirmeyi gönder"}
-                  </button>
+                  </Button>
 
                   {confirmingSubmit && (
-                    <button
+                    <Button
                       onClick={() => setConfirmingSubmit(false)}
-                      className="px-4 py-2.5 rounded-lg border border-[var(--border-soft)] text-sm text-[var(--text-muted)] hover:text-[var(--text-main)]"
+                      variant="outline"
+                      className="text-sm text-[var(--text-muted)] hover:text-[var(--text-main)]"
                     >
                       Vazgeç
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>

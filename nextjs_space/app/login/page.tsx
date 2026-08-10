@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Mail, Lock, LogIn, AlertCircle, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -188,24 +189,15 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
+            <Button
               type="submit"
-              disabled={loading}
-              className="w-full py-3.5 rounded-lg font-semibold transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
-              style={{ 
-                background: 'var(--accent)',
-                color: 'var(--bg-deep)',
-                boxShadow: '0 4px 15px rgba(12, 193, 195, 0.3)'
-              }}
+              size="lg"
+              loading={loading}
+              className="w-full font-semibold shadow-[0_4px_15px_rgba(12,193,195,0.3)]"
             >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: 'var(--bg-deep)', borderTopColor: 'transparent' }} />
-              ) : (
-                <><LogIn size={20} /> Giriş Yap</>
-              )}
-            </motion.button>
+              {!loading && <LogIn size={20} />}
+              {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
+            </Button>
           </form>
 
           <div className="mt-8 pt-6 text-center" style={{ borderTop: '1px solid var(--divider)' }}>

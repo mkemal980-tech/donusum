@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Users, FileText, Plus, Trash2, Search, UserCheck, Calendar, Building2, Clock, AlertTriangle, RefreshCw, Timer, TimerOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface User {
   id: string;
@@ -342,10 +343,10 @@ export default function SurveyAssignmentsPage() {
           </div>
           
           <div className="flex items-end">
-            <button
+            <Button
               onClick={handleAssign}
               disabled={!selectedUserId || !selectedSurveyId || saving || (hasDeadline && !deadline)}
-              className="w-full px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] disabled:bg-[var(--ui-passive)] disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+              className="w-full disabled:cursor-not-allowed"
             >
               {saving ? (
                 <div className="spinner-sm" />
@@ -353,7 +354,7 @@ export default function SurveyAssignmentsPage() {
                 <Plus className="w-4 h-4" />
               )}
               Ata
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -475,41 +476,49 @@ export default function SurveyAssignmentsPage() {
                       <div className="flex items-center justify-end gap-1">
                         {/* Süre sınırı toggle */}
                         {!assignment.hasDeadline ? (
-                          <button
+                          <Button
                             onClick={() => handleToggleDeadline(assignment, true)}
-                            className="p-2 text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-lg transition-colors"
                             title="Süre sınırı ekle"
+                            variant="ghost"
+                            size="icon"
+                            className="text-[var(--accent)]"
                           >
                             <Timer className="w-4 h-4" />
-                          </button>
+                          </Button>
                         ) : (
                           <>
-                            <button
+                            <Button
                               onClick={() => {
                                 setExtendModal(assignment);
                                 setNewDeadline(assignment.deadline ? new Date(new Date(assignment.deadline).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : '');
                               }}
-                              className="p-2 text-[var(--blue-main)] hover:bg-[var(--blue-main)]/10 rounded-lg transition-colors"
                               title="Süre uzat"
+                              variant="ghost"
+                              size="icon"
+                              className="text-[var(--blue-main)]"
                             >
                               <RefreshCw className="w-4 h-4" />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                               onClick={() => handleToggleDeadline(assignment, false)}
-                              className="p-2 text-[var(--warning)] hover:bg-[var(--warning)]/10 rounded-lg transition-colors"
                               title="Süre sınırını kaldır"
+                              variant="ghost"
+                              size="icon"
+                              className="text-[var(--warning)]"
                             >
                               <TimerOff className="w-4 h-4" />
-                            </button>
+                            </Button>
                           </>
                         )}
-                        <button
+                        <Button
                           onClick={() => handleRemove(assignment.id)}
-                          className="p-2 text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)] rounded-lg transition-colors"
                           title="Atamayı Kaldır"
+                          variant="ghost"
+                          size="icon"
+                          className="text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)]"
                         >
                           <Trash2 className="w-4 h-4" />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -597,22 +606,23 @@ export default function SurveyAssignmentsPage() {
               </div>
               
               <div className="flex gap-3 pt-2">
-                <button
+                <Button
                   onClick={() => {
                     setExtendModal(null);
                     setNewDeadline("");
                   }}
-                  className="flex-1 px-4 py-2 border border-[var(--border-soft)] text-[var(--text-muted)] rounded-lg hover:bg-[var(--bg-card-2)] transition-colors"
+                  variant="outline"
+                  className="flex-1 text-[var(--text-muted)]"
                 >
                   İptal
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleExtendDeadline}
                   disabled={!newDeadline || saving}
-                  className="flex-1 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] disabled:bg-[var(--ui-passive)] disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 disabled:cursor-not-allowed"
                 >
                   {saving ? "Kaydediliyor..." : "Süreyi Uzat"}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

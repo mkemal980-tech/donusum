@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, Building, UserPlus, AlertCircle, Factory, Layers, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface SubSector {
   id: string;
@@ -444,19 +445,15 @@ export default function SignupPage() {
               </div>
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
+            <Button
               type="submit"
-              disabled={loading}
-              className="w-full py-3.5 bg-[var(--accent)] text-[var(--bg-deep)] rounded-xl font-semibold hover:opacity-90 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 shadow-lg shadow-[var(--accent)]/30"
+              size="lg"
+              loading={loading}
+              className="w-full font-semibold shadow-lg shadow-[var(--accent)]/30"
             >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-[var(--bg-deep)] border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <><UserPlus size={20} /> Kayıt Ol</>
-              )}
-            </motion.button>
+              {!loading && <UserPlus size={20} />}
+              {loading ? "Kaydediliyor..." : "Kayıt Ol"}
+            </Button>
           </form>
 
           <div className="mt-8 pt-6 border-t border-[var(--border-soft)] text-center">

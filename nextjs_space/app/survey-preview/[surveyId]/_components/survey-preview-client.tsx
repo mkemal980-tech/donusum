@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import SurveyQuestion from "@/components/survey/survey-question";
+import { Button } from "@/components/ui/button";
 
 type Question = {
   id: string;
@@ -460,13 +461,14 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
 
             {viewMode === "user" ? (
               <div className="flex items-center justify-between pt-4 border-t border-[var(--border-soft)]">
-                <button
+                <Button
                   onClick={() => setStepIndex((current) => Math.max(0, current - 1))}
                   disabled={clampedStepIndex === 0}
-                  className="px-5 py-2.5 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-muted)] border border-[var(--border-soft)] disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="outline"
+                  className="text-sm text-[var(--text-muted)] disabled:cursor-not-allowed"
                 >
                   ← Önceki
-                </button>
+                </Button>
 
                 <span className="text-sm text-[var(--text-dim)] tabular-nums">
                   {clampedStepIndex < sections.length - 1
@@ -475,12 +477,12 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
                 </span>
 
                 {clampedStepIndex < sections.length - 1 ? (
-                  <button
+                  <Button
                     onClick={() => setStepIndex((current) => current + 1)}
-                    className="px-5 py-2.5 rounded-lg text-sm bg-[var(--accent)] text-[var(--bg-deep)] font-medium"
+                    className="text-sm text-[var(--bg-deep)] font-medium"
                   >
                     Sonraki →
-                  </button>
+                  </Button>
                 ) : (
                   <span className="px-5 py-2.5 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-dim)] border border-[var(--border-soft)]">
                     Kullanıcı burada tamamlar

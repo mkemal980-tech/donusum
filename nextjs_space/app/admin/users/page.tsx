@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Users, Plus, Edit, Trash2, X, Save, Search, Filter, Shield, User, Building2, FileText, Check } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface Unit {
   id: string;
@@ -290,17 +291,16 @@ export default function UsersPage() {
           <Users className="text-[var(--accent)]" size={28} />
           <h1 className="text-2xl font-bold text-[var(--text-main)]">Kullanıcı Yönetimi</h1>
         </div>
-        <button
+        <Button
           onClick={() => {
             setEditingUser(null);
             resetForm();
             setShowModal(true);
           }}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] transition-colors"
         >
           <Plus size={20} />
           Yeni Kullanıcı
-        </button>
+        </Button>
       </div>
 
       {/* Filters */}
@@ -424,27 +424,33 @@ export default function UsersPage() {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2">
-                    <button
+                    <Button
                       onClick={() => openAssignModal(user)}
-                      className="p-2 text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[rgba(12,193,195,0.1)] rounded-lg transition-colors"
                       title="Anket Ata"
+                      variant="ghost"
+                      size="icon"
+                      className="text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[rgba(12,193,195,0.1)]"
                     >
                       <FileText size={16} />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => openEditModal(user)}
-                      className="p-2 text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[var(--bg-card-2)] rounded-lg transition-colors"
                       title="Düzenle"
+                      variant="ghost"
+                      size="icon"
+                      className="text-[var(--text-dim)] hover:text-[var(--accent)]"
                     >
                       <Edit size={16} />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => handleDelete(user.id)}
-                      className="p-2 text-[var(--text-dim)] hover:text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)] rounded-lg transition-colors"
                       title="Sil"
+                      variant="ghost"
+                      size="icon"
+                      className="text-[var(--text-dim)] hover:text-[var(--error)] hover:bg-[rgba(239,68,68,0.1)]"
                     >
                       <Trash2 size={16} />
-                    </button>
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -467,12 +473,13 @@ export default function UsersPage() {
               <h2 className="text-lg font-semibold text-[var(--text-main)]">
                 {editingUser ? "Kullanıcı Düzenle" : "Yeni Kullanıcı"}
               </h2>
-              <button
+              <Button
                 onClick={() => setShowModal(false)}
-                className="p-2 hover:bg-[var(--bg-card-2)] rounded-lg"
+                variant="ghost"
+                size="icon"
               >
                 <X size={20} />
-              </button>
+              </Button>
             </div>
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -611,20 +618,19 @@ export default function UsersPage() {
               )}
 
               <div className="flex justify-end gap-3 pt-4">
-                <button
+                <Button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border rounded-lg hover:bg-[var(--bg-card-2)] transition-colors"
+                  variant="outline"
                 >
                   İptal
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent-dark)] transition-colors"
                 >
                   <Save size={18} />
                   Kaydet
-                </button>
+                </Button>
               </div>
             </form>
           </div>
@@ -642,16 +648,17 @@ export default function UsersPage() {
                   {selectedUser.firstName} {selectedUser.lastName} ({selectedUser.email})
                 </p>
               </div>
-              <button
+              <Button
                 onClick={() => {
                   setShowAssignModal(false);
                   setSelectedUser(null);
                   setUserAssignments([]);
                 }}
-                className="p-2 hover:bg-[var(--bg-card-2)] rounded-lg"
+                variant="ghost"
+                size="icon"
               >
                 <X size={20} />
-              </button>
+              </Button>
             </div>
             
             <div className="p-4 space-y-6">
@@ -677,13 +684,15 @@ export default function UsersPage() {
                             </p>
                           </div>
                         </div>
-                        <button
+                        <Button
                           onClick={() => handleRemoveAssignment(assignment.surveyId)}
-                          className="p-2 text-[var(--error)] hover:bg-[rgba(239,68,68,0.15)] rounded-lg transition-colors"
                           title="Atamayı Kaldır"
+                          variant="ghost"
+                          size="icon"
+                          className="text-[var(--error)] hover:bg-[rgba(239,68,68,0.15)]"
                         >
                           <Trash2 size={16} />
-                        </button>
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -714,13 +723,13 @@ export default function UsersPage() {
                             )}
                           </div>
                         </div>
-                        <button
+                        <Button
                           onClick={() => handleAssignSurvey(survey.id)}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-[var(--accent)] text-white text-sm rounded-lg hover:bg-[var(--accent-dark)] transition-colors"
+                          className="text-sm"
                         >
                           <Plus size={14} />
                           Ata
-                        </button>
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -731,16 +740,17 @@ export default function UsersPage() {
             </div>
 
             <div className="p-4 border-t bg-[var(--bg-card-2)]">
-              <button
+              <Button
                 onClick={() => {
                   setShowAssignModal(false);
                   setSelectedUser(null);
                   setUserAssignments([]);
                 }}
-                className="w-full px-4 py-2 border rounded-lg hover:bg-[var(--bg-card)] transition-colors"
+                variant="outline"
+                className="w-full hover:bg-[var(--bg-card)]"
               >
                 Kapat
-              </button>
+              </Button>
             </div>
           </div>
         </div>
