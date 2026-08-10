@@ -579,6 +579,7 @@ export default function RecommendationsPage() {
       {showBulkPanel && (
         <RecommendationBulkPanel
           surveys={surveys}
+          initialSurveyId={filterSurvey}
           onClose={() => setShowBulkPanel(false)}
           onSaved={fetchData}
         />

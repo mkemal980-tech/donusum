@@ -132,6 +132,13 @@ describe("validateRecommendationRow", () => {
     expect(errors.some((error) => error.field === "baslik")).toBe(true);
   });
 
+  it("belirsiz eşleşmede metni kopyalamayı değil, kopya soruyu işaret eder", () => {
+    const errors = validateRecommendationRow(row(), null, "ambiguous");
+    const message = errors.find((error) => error.field === "soru_metni")?.message ?? "";
+    expect(message).toContain("birden fazla soru");
+    expect(message).not.toContain("kopyalayın");
+  });
+
   it("soru eşleşmediyse soru_metni hatası verir", () => {
     const errors = validateRecommendationRow(row({ soru_metni: "yok" }), null);
     expect(errors.some((error) => error.field === "soru_metni")).toBe(true);

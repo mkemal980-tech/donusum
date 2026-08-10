@@ -73,7 +73,7 @@ async function commitRows(rows: RecommendationImportRow[], questions: QuestionCo
   rows.forEach((row, index) => {
     const match = matchQuestion(row, questions);
     const question = match.found ? match.question : null;
-    validateRecommendationRow(row, question).forEach((error) => {
+    validateRecommendationRow(row, question, match.found ? undefined : match.reason).forEach((error) => {
       errors.push({ row: index + 1, field: error.field, message: error.message });
     });
   });
@@ -204,7 +204,11 @@ export async function POST(request: NextRequest) {
         return {
           rowNumber: index + 1,
           values: row,
-          errors: validateRecommendationRow(row, match.found ? match.question : null),
+          errors: validateRecommendationRow(
+            row,
+            match.found ? match.question : null,
+            match.found ? undefined : match.reason
+          ),
         };
       }),
       warnings: checkLadders(rows, questions),

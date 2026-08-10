@@ -183,7 +183,13 @@ export function isCascadeRow(row: RecommendationImportRow): boolean {
  */
 export function validateRecommendationRow(
   row: RecommendationImportRow,
-  question: QuestionContext | null
+  question: QuestionContext | null,
+  /**
+   * Soru eşleşmediyse nedeni. "Bulunamadı" ile "birden fazla eşleşti" aynı
+   * mesajı verirse yönetici olmayan bir sorunu arar: metin doğrudur, ankette
+   * aynı metinli iki soru vardır.
+   */
+  matchReason?: "empty" | "missing" | "ambiguous"
 ): FieldError[] {
   const errors: FieldError[] = [];
 
@@ -196,7 +202,10 @@ export function validateRecommendationRow(
   } else if (!question) {
     errors.push({
       field: "soru_metni",
-      message: "Bu metinle eşleşen bir soru bulunamadı. Soruyu ankette yazıldığı gibi kopyalayın.",
+      message:
+        matchReason === "ambiguous"
+          ? "Bu metinle birden fazla soru eşleşiyor — ankette aynı metinli iki soru var. Fazlasını arşivleyin."
+          : "Bu metinle eşleşen bir soru bulunamadı. Soruyu ankette yazıldığı gibi kopyalayın.",
     });
   }
 

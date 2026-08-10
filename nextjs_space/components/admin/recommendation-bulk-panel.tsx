@@ -25,14 +25,25 @@ type SurveyStructure = {
 
 type Props = {
   surveys: Survey[];
+  /**
+   * Listedeki anket filtresi. Panel kendi başına ilk ankete düşerse yönetici
+   * ekranda "Tersane" görürken dosyayı başka bir ankete yükler ve bütün
+   * satırlar "soru bulunamadı" der; filtre varsa onu devralır.
+   */
+  initialSurveyId?: string;
   onClose: () => void;
   onSaved: () => void;
 };
 
 type Mode = "choose" | "preview";
 
-export default function RecommendationBulkPanel({ surveys, onClose, onSaved }: Props) {
-  const [surveyId, setSurveyId] = useState(surveys[0]?.id ?? "");
+export default function RecommendationBulkPanel({
+  surveys,
+  initialSurveyId,
+  onClose,
+  onSaved,
+}: Props) {
+  const [surveyId, setSurveyId] = useState(initialSurveyId || surveys[0]?.id || "");
   const [mode, setMode] = useState<Mode>("choose");
   const [payload, setPayload] = useState<RecommendationPreviewPayload | null>(null);
   const [busy, setBusy] = useState<"upload" | "ai" | "save" | null>(null);
@@ -201,6 +212,7 @@ export default function RecommendationBulkPanel({ surveys, onClose, onSaved }: P
             <RecommendationImportPreview
               payload={payload}
               saving={busy === "save"}
+              surveyName={surveys.find((survey) => survey.id === surveyId)?.name}
               onCancel={() => {
                 setMode("choose");
                 setPayload(null);

@@ -42,6 +42,8 @@ export type RecommendationPreviewPayload = {
 type Props = {
   payload: RecommendationPreviewPayload;
   saving: boolean;
+  /** Satırların eşleştirildiği anket — hangi ankete baktığımız hep görünür olmalı. */
+  surveyName?: string;
   onCancel: () => void;
   onConfirm: (rows: RecommendationImportRow[]) => void;
 };
@@ -71,7 +73,13 @@ const inputClass =
  */
 const PAGE_SIZE = 25;
 
-export default function RecommendationImportPreview({ payload, saving, onCancel, onConfirm }: Props) {
+export default function RecommendationImportPreview({
+  payload,
+  saving,
+  surveyName,
+  onCancel,
+  onConfirm,
+}: Props) {
   const [rows, setRows] = useState<RecommendationImportRow[]>(() =>
     payload.rows.map((row) => ({ ...row.values }))
   );
@@ -87,7 +95,11 @@ export default function RecommendationImportPreview({ payload, saving, onCancel,
     () =>
       rows.map((row) => {
         const match = matchQuestion(row, questions);
-        return validateRecommendationRow(row, match.found ? match.question : null);
+        return validateRecommendationRow(
+          row,
+          match.found ? match.question : null,
+          match.found ? undefined : match.reason
+        );
       }),
     [rows, questions]
   );
@@ -97,6 +109,17 @@ export default function RecommendationImportPreview({ payload, saving, onCancel,
 
   const errorCount = rowErrors.filter((errors) => errors.length > 0).length;
   const validCount = rows.length - errorCount;
+
+  // Soru metni dolu olduğu hâlde ankette karşılığı bulunamayan satırlar.
+  // Hepsi birden eşleşmiyorsa sorun satırlarda değil, seçilen ankettedir —
+  // 284 satırı tek tek okumak yerine bunu en üstte söylemek gerekir.
+  const unmatchedCount = useMemo(
+    () =>
+      rows.filter((row) => (row.soru_metni ?? "").trim() && !matchQuestion(row, questions).found)
+        .length,
+    [rows, questions]
+  );
+  const allUnmatched = rows.length > 0 && unmatchedCount === rows.length;
 
   const updateRow = (index: number, field: RecommendationImportField, value: string) => {
     setRows((current) =>
@@ -162,6 +185,11 @@ export default function RecommendationImportPreview({ payload, saving, onCancel,
             {payload.skippedRows} boş satır atlandı
           </span>
         )}
+        {/* Satırlar hangi anketle eşleştiriliyor — önizlemede de görünür kalır */}
+        <span className="text-sm text-[var(--text-dim)]">
+          {surveyName ? `Anket: ${surveyName} · ` : ""}
+          {questions.length} soru
+        </span>
 
         <div className="ml-auto flex items-center gap-2">
           <button
@@ -184,6 +212,24 @@ export default function RecommendationImportPreview({ payload, saving, onCancel,
           )}
         </div>
       </div>
+
+      {/* Tek satır bile eşleşmediyse suç dosyada değil, seçilen ankettedir */}
+      {allUnmatched && (
+        <div className="p-3 rounded-lg bg-[rgba(239,68,68,0.1)] border border-[var(--error)]/40">
+          <p className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--error)] mb-1">
+            <AlertCircle size={15} /> Hiçbir satır ankete bağlanamadı
+          </p>
+          <p className="text-xs text-[var(--text-muted)]">
+            Dosyadaki {rows.length} sorunun hiçbiri{" "}
+            {surveyName ? `«${surveyName}» anketinde` : "seçili ankette"} bulunamadı
+            {questions.length === 0
+              ? " — bu ankette hiç soru yok."
+              : ` (ankette ${questions.length} soru var).`}{" "}
+            Büyük ihtimalle yanlış anket seçildi: <strong>Vazgeç</strong> deyip anketi değiştirin ve
+            dosyayı tekrar yükleyin.
+          </p>
+        </div>
+      )}
 
       {/* AI kısmi başarısızlıkları — sessizce yutulmaz */}
       {payload.failures && payload.failures.length > 0 && (

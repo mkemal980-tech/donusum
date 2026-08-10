@@ -15,6 +15,8 @@ import { prisma } from "@/lib/db";
 const ADMIN = "e2e-onizleme-yonetici@example.com";
 const PASSWORD = "E2eParola!123";
 const SURVEY = "E2E Önizleme Anketi";
+/** Dosyanın soruları burada yok: yanlış anket seçilince ne olduğunu bağlar. */
+const OTHER_SURVEY = "E2E Önizleme Anketi (başka)";
 const QUESTION_COUNT = 8; // 8 soru × 4 şık = 32 satır > sayfa boyu (25)
 
 let seeded = false;
@@ -25,7 +27,7 @@ const optionLabel = (index: number, score: number) => `${String.fromCharCode(64 
 
 async function removeFixture() {
   await prisma.recommendation.deleteMany({ where: { title: { startsWith: "E2E Önizleme" } } });
-  await prisma.survey.deleteMany({ where: { name: SURVEY } });
+  await prisma.survey.deleteMany({ where: { name: { in: [SURVEY, OTHER_SURVEY] } } });
   await prisma.user.deleteMany({ where: { email: ADMIN } });
 }
 
@@ -52,6 +54,8 @@ test.beforeAll(async () => {
   const subCategory = await prisma.subCategory.create({
     data: { name: "E2E Bölüm", categoryId: category.id, hasSubLevels: false },
   });
+
+  await prisma.survey.create({ data: { name: OTHER_SURVEY, isActive: true } });
 
   const rows: Record<string, string>[] = [];
 
@@ -154,4 +158,23 @@ test("önizleme satırları parça parça açılır, görünmeyenler de kaydedil
     select: { capexLevel: true, opexLevel: true },
   });
   expect(levels.every((level) => level.capexLevel === 1 && level.opexLevel === 1)).toBe(false);
+});
+
+test("yanlış ankete yüklenen dosyada sebep en üstte yazar", async ({ page }) => {
+  test.skip(!seeded, "Fikstür kurulamadı");
+  test.setTimeout(120_000);
+
+  await login(page);
+  await page.goto("/admin/recommendations");
+  await page.getByRole("heading", { name: "Öneri Yönetimi" }).waitFor();
+  await page.getByRole("button", { name: "Toplu Kurulum" }).click();
+  await page.locator("select").first().selectOption({ label: OTHER_SURVEY });
+  await page.locator('input[type="file"]').setInputFiles(filePath);
+
+  // 32 satırın hepsi "soru bulunamadı" der; asıl sebep tek satırda değil,
+  // seçilen ankettedir — önizleme bunu satırları okumadan söylemeli.
+  await expect(page.getByText("Hiçbir satır ankete bağlanamadı")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText(`Anket: ${OTHER_SURVEY} · 0 soru`)).toBeVisible();
+  // Kaydetme kapalı: eşleşmeyen satır varken hiçbir şey yazılmaz.
+  await expect(page.getByRole("button", { name: "32 öneriyi kaydet" })).toBeDisabled();
 });
