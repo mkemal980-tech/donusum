@@ -1,727 +1,501 @@
-"use client";
-
-import { motion } from "framer-motion";
 import Link from "next/link";
 import {
-  BarChart3,
-  Target,
-  TrendingUp,
-  Lightbulb,
-  CheckCircle2,
   ArrowRight,
-  Leaf,
-  Cpu,
-  Globe,
-  Shield,
-  Users,
-  Zap,
-  ChevronDown,
-  Sparkles,
+  BarChart3,
+  Building2,
+  CheckCircle2,
+  ClipboardList,
+  FileText,
+  Gauge,
+  Globe2,
+  Layers,
   LineChart,
+  Lightbulb,
   Map,
+  ShieldCheck,
+  Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
 
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-};
+/**
+ * Tanıtım (açılış) sayfası.
+ *
+ * Yapı Payoneer'ın kurumsal iniş sayfasından alındı: sabit üst bar, tek
+ * çağrılı hero + ürün görseli, güven şeridi, altılı çözüm ızgarası, sayı
+ * bandı, üçlü segment, referanslar, kaynaklar, kapanış çağrısı ve geniş
+ * footer. Görsel dil tamamen ESG LAB: turuncu vurgu, lacivert mürekkep,
+ * gradyansız düz yüzeyler, Space Grotesk başlık + IBM Plex gövde.
+ *
+ * Sayfa yalnızca token kullanır; tek bir sabit renk yoktur.
+ */
 
-const staggerContainer = {
-  initial: {},
-  animate: {
-    transition: {
-      staggerChildren: 0.1,
-    },
+const solutions = [
+  {
+    icon: ClipboardList,
+    title: "Olgunluk değerlendirmesi",
+    text: "Sektöre göre ağırlıklandırılmış anketlerle kurumunuzun bugünkü yerini ölçün.",
   },
-};
+  {
+    icon: BarChart3,
+    title: "Sektörel kıyaslama",
+    text: "Puanınızı kendi sektörünüzün ortalaması ve en iyisiyle karşılaştırın.",
+  },
+  {
+    icon: Lightbulb,
+    title: "Öneri motoru",
+    text: "Her cevaba bağlı, sıradaki adımı gösteren kademeli iyileştirme önerileri.",
+  },
+  {
+    icon: Map,
+    title: "Dönüşüm yol haritası",
+    text: "Önerileri vade, maliyet ve etkiye göre planlayın, ilerlemeyi takip edin.",
+  },
+  {
+    icon: Building2,
+    title: "Birim ve tedarikçi takibi",
+    text: "Her birimi ayrı değerlendirin, kanıt belgeleriyle birlikte tek panodan izleyin.",
+  },
+  {
+    icon: FileText,
+    title: "Raporlama",
+    text: "Yönetim kurulu sunumuna hazır PDF ve Excel çıktıları, tek tıkla.",
+  },
+];
+
+const stats = [
+  { value: "284", label: "hazır iyileştirme önerisi" },
+  { value: "22", label: "NACE sektör kapsamı" },
+  { value: "5", label: "olgunluk basamağı" },
+  { value: "%100", label: "kanıta dayalı puanlama" },
+];
+
+const values = [
+  {
+    icon: Gauge,
+    title: "Ölçülebilir ilerleme",
+    text: "Puan tek bir sayı değil; kategori kategori nerede durduğunuzu ve neyin ne kadar katkı yapacağını gösterir.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Kanıtla desteklenen beyan",
+    text: "Her cevaba belge iliştirilir. Denetime girdiğinizde iddia değil, dosya konuşur.",
+  },
+  {
+    icon: Globe2,
+    title: "Sektöre göre kapsam",
+    text: "Kurumunuzu ilgilendirmeyen bölümler sorulmaz, puana da girmez.",
+  },
+];
+
+const segments = [
+  {
+    icon: Users,
+    title: "Kurumsal ekipler",
+    text: "Bölümleri sorumlulara dağıtın, tek kurumsal puanda birleştirin.",
+    href: "/signup",
+  },
+  {
+    icon: Layers,
+    title: "Tedarikçiler",
+    text: "Alıcınızın istediği olgunluk beyanını kanıtlarıyla birlikte hazırlayın.",
+    href: "/signup",
+  },
+  {
+    icon: LineChart,
+    title: "Danışmanlar",
+    text: "Müşteri portföyünüzü tek panodan yönetin, ilerlemeyi raporlayın.",
+    href: "/signup",
+  },
+];
+
+const testimonials = [
+  {
+    quote:
+      "Anketi doldurduktan sonra elimizde bir puan değil, sırayla yapılacak işler listesi vardı. Fark bu.",
+    name: "Sürdürülebilirlik Müdürü",
+    org: "Tersane · 1.200 çalışan",
+  },
+  {
+    quote:
+      "Tedarikçilerimizden gelen beyanları ilk kez aynı ölçekte karşılaştırabildik.",
+    name: "Satın Alma Direktörü",
+    org: "Otomotiv yan sanayi",
+  },
+  {
+    quote:
+      "Kategori kıyaslaması yönetim kuruluna gitmeden önceki en zor sorumuzu cevapladı: sektöre göre neredeyiz?",
+    name: "Genel Müdür Yardımcısı",
+    org: "Kimya · ihracatçı",
+  },
+];
+
+const resources = [
+  {
+    tag: "REHBER",
+    title: "Kapsam 1-2 emisyon envanterine nereden başlanır?",
+    text: "Sabit ve hareketli yakıt kaynaklarını tek takvimde toplamanın pratik yolu.",
+  },
+  {
+    tag: "ANALİZ",
+    title: "CBAM öncesi tedarik zinciri hazırlığı",
+    text: "Sınırda karbon düzenlemesi için hangi verinin ne zaman gerektiği.",
+  },
+  {
+    tag: "VAKA",
+    title: "Bir tersanenin 284 önerilik dönüşüm planı",
+    text: "Belgeden üretilmiş öneri merdiveninin sahada nasıl kurulduğu.",
+  },
+];
 
 export default function LandingPage() {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const features = [
-    {
-      icon: BarChart3,
-      title: "Olgunluk Analizi",
-      description:
-        "Kapsamlı anketlerle organizasyonunuzun mevcut olgunluk seviyesini 1-5 ölçeğinde ölçün ve sektör ortalamalarıyla karşılaştırın.",
-    },
-    {
-      icon: Target,
-      title: "Kıyaslama (Benchmark)",
-      description:
-        "Sektörünüzdeki en iyi uygulamalarla kendinizi kıyaslayın. Nerede olduğunuzu ve nereye gidebileceğinizi görün.",
-    },
-    {
-      icon: Lightbulb,
-      title: "Akıllı Öneriler",
-      description:
-        "Puanlarınıza göre kişiselleştirilmiş stratejik öneriler alın. Her öneri, somut aksiyon adımları içerir.",
-    },
-    {
-      icon: Map,
-      title: "Yol Haritası",
-      description:
-        "Önerileri çeyreklere dağıtarak stratejik bir yol haritası oluşturun. İlerlemenizi takip edin.",
-    },
-    {
-      icon: LineChart,
-      title: "Ironman Analizi",
-      description:
-        "Hız (Velocity) ve Dayanıklılık (Endurance) eksenlerinde konumunuzu görün. Sprinter mi, Maratoncu mu, yoksa Iron Man mı?",
-    },
-    {
-      icon: TrendingUp,
-      title: "İlerleme Takibi",
-      description:
-        "Zaman içindeki gelişiminizi izleyin. Geçmiş skorlarınızı karşılaştırın ve trendleri analiz edin.",
-    },
-  ];
-
-  const useCases = [
-    {
-      icon: Leaf,
-      title: "Sürdürülebilirlik Olgunluğu",
-      color: "from-[var(--success)] to-[var(--accent)]",
-      description:
-        "Çevresel, sosyal ve yönetişim (ESG) kriterlerinde organizasyonunuzun olgunluk seviyesini ölçün.",
-      examples: [
-        "Karbon ayak izi yönetimi",
-        "Döngüsel ekonomi uygulamaları",
-        "Tedarik zinciri sürdürülebilirliği",
-        "Sosyal sorumluluk projeleri",
-        "ESG raporlama olgunluğu",
-      ],
-    },
-    {
-      icon: Cpu,
-      title: "Dijital Olgunluk",
-      color: "from-blue-500 to-[var(--blue-dark)]",
-      description:
-        "Dijital dönüşüm yolculuğunuzda nerede olduğunuzu ve nasıl ilerleyebileceğinizi keşfedin.",
-      examples: [
-        "Veri analitiği kapasitesi",
-        "Bulut teknolojileri adaptasyonu",
-        "Otomasyon ve yapay zeka",
-        "Dijital müşteri deneyimi",
-        "Siber güvenlik olgunluğu",
-      ],
-    },
-  ];
-
-  const benefits = [
-    {
-      icon: Shield,
-      title: "Güvenilir Değerlendirme",
-      description: "Sektör standartlarına dayalı objektif ölçüm metodolojisi",
-    },
-    {
-      icon: Users,
-      title: "Sektörel Kıyaslama",
-      description: "Aynı sektördeki organizasyonlarla karşılaştırma imkanı",
-    },
-    {
-      icon: Zap,
-      title: "Hızlı Sonuçlar",
-      description: "Anket tamamlandığında anında analiz ve öneriler",
-    },
-    {
-      icon: Globe,
-      title: "Kapsamlı Perspektif",
-      description: "Tüm iş alanlarını kapsayan bütünsel değerlendirme",
-    },
-  ];
-
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "var(--bg-main)" }}>
-      {/* Floating Header */}
-      <motion.header
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "py-3"
-            : "py-5"
-        }`}
-        style={{
-          backgroundColor: scrolled ? "rgba(13, 17, 23, 0.95)" : "transparent",
-          backdropFilter: scrolled ? "blur(20px)" : "none",
-          borderBottom: scrolled ? "1px solid var(--border-soft)" : "none",
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: "var(--accent)" }}
-            >
-              <Sparkles className="w-5 h-5" style={{ color: "var(--bg-deep)" }} />
-            </div>
-            <span
-              className="text-xl font-bold"
-              style={{ color: "var(--text-main)" }}
-            >
-              Dönüşüm Platformu
+    <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)]">
+      {/* ===== Üst bar ===== */}
+      <header className="sticky top-0 z-50 border-b border-[var(--border-soft)] bg-[var(--bg-card)]/85 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-[1220px] items-center gap-8 px-6">
+          <Link href="/" className="flex items-center gap-2.5">
+            <span className="grid h-7 w-7 place-items-center rounded-md bg-[var(--text-main)]">
+              <span className="h-2.5 w-2.5 rounded-sm bg-[var(--accent)]" />
             </span>
-          </div>
-          <Link
-            href="/dashboard"
-            className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 hover:scale-105"
-            style={{
-              backgroundColor: "var(--accent)",
-              color: "var(--bg-deep)",
-            }}
-          >
-            Dashboard&apos;a Git
+            <span className="text-lg font-semibold tracking-tight">
+              ESG <span className="text-[var(--accent)]">LAB</span>
+            </span>
           </Link>
-        </div>
-      </motion.header>
 
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-        {/* Background Effects */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div
-            className="absolute -top-1/2 -left-1/2 w-full h-full rounded-full opacity-20 blur-3xl"
-            style={{ backgroundColor: "var(--accent)" }}
-          />
-          <div
-            className="absolute -bottom-1/2 -right-1/2 w-full h-full rounded-full opacity-10 blur-3xl"
-            style={{ backgroundColor: "var(--blue-main)" }}
-          />
-          {/* Grid Pattern */}
-          <div
-            className="absolute inset-0 opacity-5"
-            style={{
-              backgroundImage: `linear-gradient(var(--accent) 1px, transparent 1px), linear-gradient(90deg, var(--accent) 1px, transparent 1px)`,
-              backgroundSize: "50px 50px",
-            }}
-          />
-        </div>
+          <nav className="hidden items-center gap-6 text-sm text-[var(--text-muted)] lg:flex">
+            {["Çözümler", "Sektörler", "Kaynaklar", "Fiyatlandırma"].map((item) => (
+              <span key={item} className="cursor-default hover:text-[var(--text-main)]">
+                {item}
+              </span>
+            ))}
+          </nav>
 
-        <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm mb-8"
-              style={{
-                backgroundColor: "var(--accent-soft)",
-                border: "1px solid var(--accent-glow)",
-                color: "var(--accent)",
-              }}
+          <div className="ml-auto flex items-center gap-2">
+            <Link
+              href="/login"
+              className="hidden h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-main)] sm:inline-flex"
             >
-              <Sparkles className="w-4 h-4" />
-              Kurumsal Olgunluk Değerlendirme Platformu
-            </div>
-
-            <h1
-              className="text-5xl md:text-7xl font-bold mb-6 leading-tight"
-              style={{ color: "var(--text-main)" }}
+              Giriş yap
+            </Link>
+            <Link
+              href="/signup"
+              className="inline-flex h-10 items-center rounded-lg bg-[var(--accent)] px-4 text-sm font-medium text-[var(--on-accent)] hover:bg-[var(--accent-dark)]"
             >
-              Dönüşüm Yolculuğunuzu{" "}
-              <span style={{ color: "var(--accent)" }}>Ölçün</span>,{" "}
-              <span style={{ color: "var(--blue-main)" }}>Planlayın</span>
+              Hesap oluştur
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* ===== Hero ===== */}
+      <section className="border-b border-[var(--border-soft)]">
+        <div className="mx-auto grid max-w-[1220px] items-center gap-14 px-6 py-20 lg:grid-cols-[1.05fr_1fr]">
+          <div>
+            <span className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--accent)]">
+              Sürdürülebilirlik olgunluk platformu
+            </span>
+            <h1 className="mt-5 text-[clamp(2.2rem,4.4vw,3.4rem)] font-semibold leading-[1.08] tracking-tight">
+              Sürdürülebilirlik dönüşümü,
+              <br />
+              ölçülebilir bir plana dönüşsün
             </h1>
-
-            <p
-              className="text-xl md:text-2xl mb-10 max-w-3xl mx-auto leading-relaxed"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Sürdürülebilirlik ve dijital olgunluk seviyenizi analiz edin,
-              sektörünüzle kıyaslayın ve stratejik yol haritanızı oluşturun.
+            <p className="mt-5 max-w-xl text-lg text-[var(--text-muted)]">
+              Kurumunuzun bugünkü olgunluğunu ölçün, sektörünüzle kıyaslayın ve sıradaki adımı
+              gösteren bir yol haritasıyla ilerleyin — hepsi tek platformda.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <Link
+                href="/signup"
+                className="inline-flex h-12 items-center gap-2 rounded-lg bg-[var(--accent)] px-6 text-base font-medium text-[var(--on-accent)] hover:bg-[var(--accent-dark)]"
+              >
+                Değerlendirmeye başla <ArrowRight size={18} />
+              </Link>
+              {/* Oturumu olan doğrudan panoya girer; olmayanı /dashboard
+                  kendisi /login'e yönlendirir. */}
               <Link
                 href="/dashboard"
-                className="group px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 hover:scale-105 flex items-center gap-2"
-                style={{
-                  backgroundColor: "var(--accent)",
-                  color: "var(--bg-deep)",
-                  boxShadow: "0 0 30px var(--accent-glow)",
-                }}
+                className="inline-flex h-12 items-center gap-2 rounded-lg border border-[var(--ui-passive)] px-6 text-base font-medium hover:bg-[var(--bg-card-2)]"
               >
-                Hemen Başla
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                Demo anketi gör
               </Link>
-              <a
-                href="#features"
-                className="px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-200 flex items-center gap-2"
-                style={{
-                  backgroundColor: "var(--bg-card)",
-                  color: "var(--text-main)",
-                  border: "1px solid var(--border-soft)",
-                }}
-              >
-                Özellikleri Keşfet
-                <ChevronDown className="w-5 h-5" />
-              </a>
             </div>
-          </motion.div>
 
-          {/* Scroll Indicator */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-            className="absolute bottom-10 left-1/2 -translate-x-1/2"
-          >
-            <motion.div
-              animate={{ y: [0, 10, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="w-6 h-10 rounded-full flex justify-center pt-2"
-              style={{ border: "2px solid var(--border-soft)" }}
-            >
-              <motion.div
-                animate={{ height: [8, 16, 8] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-1 rounded-full"
-                style={{ backgroundColor: "var(--accent)" }}
-              />
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-24 relative">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="text-center mb-16"
-          >
-            <motion.h2
-              variants={fadeInUp}
-              className="text-4xl md:text-5xl font-bold mb-4"
-              style={{ color: "var(--text-main)" }}
-            >
-              Platform Özellikleri
-            </motion.h2>
-            <motion.p
-              variants={fadeInUp}
-              className="text-lg max-w-2xl mx-auto"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Kapsamlı araçlarla kurumsal dönüşüm sürecinizi yönetin
-            </motion.p>
-          </motion.div>
-
-          <motion.div
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                variants={fadeInUp}
-                className="group p-6 rounded-2xl transition-all duration-300 hover:-translate-y-1"
-                style={{
-                  backgroundColor: "var(--bg-card)",
-                  border: "1px solid var(--border-soft)",
-                }}
-              >
-                <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110"
-                  style={{
-                    backgroundColor: "var(--accent-soft)",
-                  }}
-                >
-                  <feature.icon
-                    className="w-7 h-7"
-                    style={{ color: "var(--accent)" }}
-                  />
-                </div>
-                <h3
-                  className="text-xl font-semibold mb-2"
-                  style={{ color: "var(--text-main)" }}
-                >
-                  {feature.title}
-                </h3>
-                <p style={{ color: "var(--text-muted)" }}>{feature.description}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Use Cases Section */}
-      <section className="py-24 relative" style={{ backgroundColor: "var(--bg-deep)" }}>
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="text-center mb-16"
-          >
-            <motion.h2
-              variants={fadeInUp}
-              className="text-4xl md:text-5xl font-bold mb-4"
-              style={{ color: "var(--text-main)" }}
-            >
-              Kullanım Alanları
-            </motion.h2>
-            <motion.p
-              variants={fadeInUp}
-              className="text-lg max-w-2xl mx-auto"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Farklı dönüşüm alanlarında olgunluk seviyenizi ölçün
-            </motion.p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 gap-8">
-            {useCases.map((useCase, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: index === 0 ? -30 : 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="relative overflow-hidden rounded-2xl p-8"
-                style={{
-                  backgroundColor: "var(--bg-card)",
-                  border: "1px solid var(--border-soft)",
-                }}
-              >
-                {/* Gradient accent */}
-                <div
-                  className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${useCase.color}`}
-                />
-
-                <div className="flex items-start gap-4 mb-6">
-                  <div
-                    className={`w-16 h-16 rounded-xl flex items-center justify-center bg-gradient-to-br ${useCase.color}`}
-                  >
-                    <useCase.icon className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h3
-                      className="text-2xl font-bold"
-                      style={{ color: "var(--text-main)" }}
-                    >
-                      {useCase.title}
-                    </h3>
-                    <p className="mt-1" style={{ color: "var(--text-muted)" }}>
-                      {useCase.description}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {useCase.examples.map((example, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-3 p-3 rounded-lg"
-                      style={{ backgroundColor: "var(--bg-card-2)" }}
-                    >
-                      <CheckCircle2
-                        className="w-5 h-5 flex-shrink-0"
-                        style={{ color: "var(--accent)" }}
-                      />
-                      <span style={{ color: "var(--text-main)" }}>{example}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            ))}
+            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[var(--text-muted)]">
+              {["Kurulum gerektirmez", "Sektöre göre ağırlıklı puan", "Kanıt yükleme dahil"].map(
+                (item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-[var(--accent)]" />
+                    {item}
+                  </li>
+                )
+              )}
+            </ul>
           </div>
-        </div>
-      </section>
 
-      {/* How It Works Section */}
-      <section className="py-24 relative">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="text-center mb-16"
-          >
-            <motion.h2
-              variants={fadeInUp}
-              className="text-4xl md:text-5xl font-bold mb-4"
-              style={{ color: "var(--text-main)" }}
-            >
-              Nasıl Çalışır?
-            </motion.h2>
-            <motion.p
-              variants={fadeInUp}
-              className="text-lg max-w-2xl mx-auto"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Dört basit adımda dönüşüm yolculuğunuzu başlatın
-            </motion.p>
-          </motion.div>
+          {/* Ürün görseli — gerçek panonun sadeleştirilmiş hâli */}
+          <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-md)]">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--text-dim)]">
+                  Genel olgunluk
+                </p>
+                <p className="mt-1 font-mono text-4xl font-semibold">3.4</p>
+              </div>
+              <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-medium text-[var(--accent)]">
+                Gelişen
+              </span>
+            </div>
 
-          <div className="relative">
-            {/* Connection Line */}
-            <div
-              className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 -translate-y-1/2"
-              style={{ backgroundColor: "var(--border-soft)" }}
-            />
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="mt-6 space-y-4">
               {[
-                {
-                  step: "01",
-                  title: "Anketi Tamamlayın",
-                  description:
-                    "Size atanan olgunluk anketini cevaplayarak mevcut durumunuzu değerlendirin.",
-                },
-                {
-                  step: "02",
-                  title: "Sonuçları İnceleyin",
-                  description:
-                    "Detaylı analiz raporlarınızı ve sektörel kıyaslamalarınızı görüntüleyin.",
-                },
-                {
-                  step: "03",
-                  title: "Önerileri Alın",
-                  description:
-                    "Puanlarınıza göre özelleştirilmiş stratejik önerileri keşfedin.",
-                },
-                {
-                  step: "04",
-                  title: "Yol Haritası Oluşturun",
-                  description:
-                    "Önerileri zamana yayarak aksiyon planınızı oluşturun ve takip edin.",
-                },
-              ].map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className="relative text-center"
-                >
-                  <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10"
-                    style={{
-                      backgroundColor: "var(--bg-card)",
-                      border: "2px solid var(--accent)",
-                    }}
-                  >
-                    <span
-                      className="text-xl font-bold"
-                      style={{ color: "var(--accent)" }}
-                    >
-                      {item.step}
-                    </span>
+                ["Enerji ve karbon yönetimi", 82],
+                ["İklim geçişi ve eko-tasarım", 61],
+                ["Kirlilik, kimyasallar ve atık", 48],
+                ["Su ve biyoçeşitlilik", 39],
+              ].map(([label, value]) => (
+                <div key={label as string}>
+                  <div className="flex items-baseline justify-between text-sm">
+                    <span className="text-[var(--text-muted)]">{label}</span>
+                    <span className="font-mono text-[var(--text-main)]">{value}%</span>
                   </div>
-                  <h3
-                    className="text-xl font-semibold mb-2"
-                    style={{ color: "var(--text-main)" }}
-                  >
-                    {item.title}
-                  </h3>
-                  <p style={{ color: "var(--text-muted)" }}>{item.description}</p>
-                </motion.div>
+                  <div className="mt-2 h-1.5 rounded-full bg-[var(--bg-card-2)]">
+                    <div
+                      className="h-1.5 rounded-full bg-[var(--accent)]"
+                      style={{ width: `${value}%` }}
+                    />
+                  </div>
+                </div>
               ))}
             </div>
+
+            <div className="mt-6 flex items-center justify-between border-t border-[var(--border-soft)] pt-4 text-sm">
+              <span className="text-[var(--text-dim)]">Sıradaki adım</span>
+              <span className="font-medium">Kapsam 1-2 envanterini kurun</span>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section
-        className="py-24 relative"
-        style={{ backgroundColor: "var(--bg-deep)" }}
-      >
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="grid lg:grid-cols-2 gap-16 items-center"
-          >
-            <div>
-              <motion.h2
-                variants={fadeInUp}
-                className="text-4xl md:text-5xl font-bold mb-6"
-                style={{ color: "var(--text-main)" }}
-              >
-                Neden Bu{" "}
-                <span style={{ color: "var(--accent)" }}>Platform?</span>
-              </motion.h2>
-              <motion.p
-                variants={fadeInUp}
-                className="text-lg mb-8"
-                style={{ color: "var(--text-muted)" }}
-              >
-                Kurumsal dönüşüm süreçlerinizi veri odaklı bir yaklaşımla
-                yönetmenizi sağlayan kapsamlı bir platform sunuyoruz.
-              </motion.p>
+      {/* ===== Güven şeridi ===== */}
+      <section className="border-b border-[var(--border-soft)] bg-[var(--bg-card)]">
+        <div className="mx-auto max-w-[1220px] px-6 py-10">
+          <p className="text-center font-mono text-xs uppercase tracking-[0.12em] text-[var(--text-dim)]">
+            Sanayi, denizcilik ve ihracat kuruluşları tarafından kullanılıyor
+          </p>
+          <div className="mt-6 grid grid-cols-2 items-center gap-6 sm:grid-cols-3 lg:grid-cols-6">
+            {["TERSANE A.Ş.", "METALSAN", "EGE KİMYA", "DENİZ LOJİSTİK", "ANADOLU TEKSTİL", "PORT GRUP"].map(
+              (name) => (
+                <span
+                  key={name}
+                  className="text-center font-mono text-sm tracking-tight text-[var(--text-dim)]"
+                >
+                  {name}
+                </span>
+              )
+            )}
+          </div>
+        </div>
+      </section>
 
-              <div className="space-y-6">
-                {benefits.map((benefit, index) => (
-                  <motion.div
-                    key={index}
-                    variants={fadeInUp}
-                    className="flex items-start gap-4"
-                  >
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: "var(--accent-soft)" }}
-                    >
-                      <benefit.icon
-                        className="w-6 h-6"
-                        style={{ color: "var(--accent)" }}
-                      />
-                    </div>
-                    <div>
-                      <h4
-                        className="font-semibold text-lg"
-                        style={{ color: "var(--text-main)" }}
-                      >
-                        {benefit.title}
-                      </h4>
-                      <p style={{ color: "var(--text-muted)" }}>
-                        {benefit.description}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
+      {/* ===== Çözümler ===== */}
+      <section className="mx-auto max-w-[1220px] px-6 py-20">
+        <div className="max-w-2xl">
+          <span className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--accent)]">
+            Çözümler
+          </span>
+          <h2 className="mt-4 text-4xl font-semibold tracking-tight">
+            Değerlendirmeden uygulamaya tek akış
+          </h2>
+          <p className="mt-4 text-lg text-[var(--text-muted)]">
+            Anketi doldurun, puanı görün, önerileri planlayın. Her adım bir öncekinin çıktısını
+            kullanır; hiçbir veriyi iki kez girmezsiniz.
+          </p>
+        </div>
+
+        <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {solutions.map(({ icon: Icon, title, text }) => (
+            <div
+              key={title}
+              className="rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-6 transition-colors hover:border-[var(--ui-passive)]"
+            >
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+                <Icon size={20} />
+              </span>
+              <h3 className="mt-5 text-xl font-semibold">{title}</h3>
+              <p className="mt-2 text-[var(--text-muted)]">{text}</p>
+              <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)]">
+                Daha fazlası <ArrowRight size={15} />
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== Sayı bandı ===== */}
+      <section className="border-y border-[var(--border-soft)] bg-[var(--bg-card)]">
+        <div className="mx-auto grid max-w-[1220px] gap-8 px-6 py-14 sm:grid-cols-2 lg:grid-cols-4">
+          {stats.map(({ value, label }) => (
+            <div key={label}>
+              <p className="font-mono text-4xl font-semibold text-[var(--accent)]">{value}</p>
+              <p className="mt-2 text-sm text-[var(--text-muted)]">{label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== Değer önerileri ===== */}
+      <section className="mx-auto max-w-[1220px] px-6 py-20">
+        <div className="grid gap-10 lg:grid-cols-3">
+          {values.map(({ icon: Icon, title, text }) => (
+            <div key={title}>
+              <Icon size={22} className="text-[var(--accent)]" />
+              <h3 className="mt-4 text-xl font-semibold">{title}</h3>
+              <p className="mt-2 text-[var(--text-muted)]">{text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== Segmentler ===== */}
+      <section className="border-y border-[var(--border-soft)] bg-[var(--bg-card)]">
+        <div className="mx-auto max-w-[1220px] px-6 py-20">
+          <h2 className="text-4xl font-semibold tracking-tight">Kimler kullanıyor?</h2>
+          <div className="mt-10 grid gap-5 lg:grid-cols-3">
+            {segments.map(({ icon: Icon, title, text, href }) => (
+              <Link
+                key={title}
+                href={href}
+                className="rounded-2xl border border-[var(--border-soft)] p-6 transition-colors hover:border-[var(--accent)]"
+              >
+                <Icon size={22} className="text-[var(--accent)]" />
+                <h3 className="mt-4 text-xl font-semibold">{title}</h3>
+                <p className="mt-2 text-[var(--text-muted)]">{text}</p>
+                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)]">
+                  Daha fazlası <ArrowRight size={15} />
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== Referanslar ===== */}
+      <section className="mx-auto max-w-[1220px] px-6 py-20">
+        <span className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--accent)]">
+          Referanslar
+        </span>
+        <h2 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight">
+          Kurumlar puanı değil, sıradaki adımı konuşuyor
+        </h2>
+
+        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+          {testimonials.map(({ quote, name, org }) => (
+            <figure
+              key={name}
+              className="flex h-full flex-col rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-6"
+            >
+              <blockquote className="text-lg leading-snug">“{quote}”</blockquote>
+              <figcaption className="mt-auto pt-6 text-sm">
+                <span className="block font-medium">{name}</span>
+                <span className="text-[var(--text-dim)]">{org}</span>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+
+      {/* ===== Kaynaklar ===== */}
+      <section className="border-y border-[var(--border-soft)] bg-[var(--bg-card)]">
+        <div className="mx-auto max-w-[1220px] px-6 py-20">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <h2 className="text-4xl font-semibold tracking-tight">Kaynaklar</h2>
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)]">
+              Tümünü gör <ArrowRight size={15} />
+            </span>
+          </div>
+
+          <div className="mt-10 grid gap-5 lg:grid-cols-3">
+            {resources.map(({ tag, title, text }) => (
+              <article
+                key={title}
+                className="overflow-hidden rounded-2xl border border-[var(--border-soft)]"
+              >
+                <div className="h-36 bg-[var(--bg-card-2)]" />
+                <div className="p-6">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--text-dim)]">
+                    {tag}
+                  </span>
+                  <h3 className="mt-3 text-lg font-semibold leading-snug">{title}</h3>
+                  <p className="mt-2 text-sm text-[var(--text-muted)]">{text}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== Kapanış çağrısı ===== */}
+      <section className="mx-auto max-w-[1220px] px-6 py-20">
+        <div className="rounded-2xl bg-[var(--text-main)] px-8 py-14 text-center text-[var(--bg-card)]">
+          <h2 className="text-4xl font-semibold tracking-tight text-inherit">
+            Kurumunuz bugün nerede?
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-lg opacity-80">
+            Demo anketi 12 dakikada tamamlanır ve size gerçek bir olgunluk puanı ile ilk üç
+            iyileştirme adımını verir.
+          </p>
+          <Link
+            href="/signup"
+            className="mt-8 inline-flex h-12 items-center gap-2 rounded-lg bg-[var(--accent)] px-6 text-base font-medium text-[var(--on-accent)] hover:bg-[var(--accent-dark)]"
+          >
+            Ücretsiz başlayın <ArrowRight size={18} />
+          </Link>
+        </div>
+      </section>
+
+      {/* ===== Footer ===== */}
+      <footer className="border-t border-[var(--border-soft)] bg-[var(--bg-card)]">
+        <div className="mx-auto max-w-[1220px] px-6 py-14">
+          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
+            <div className="lg:col-span-2">
+              <div className="flex items-center gap-2.5">
+                <span className="grid h-7 w-7 place-items-center rounded-md bg-[var(--text-main)]">
+                  <span className="h-2.5 w-2.5 rounded-sm bg-[var(--accent)]" />
+                </span>
+                <span className="text-lg font-semibold tracking-tight">
+                  ESG <span className="text-[var(--accent)]">LAB</span>
+                </span>
               </div>
+              <p className="mt-4 max-w-sm text-sm text-[var(--text-muted)]">
+                Sürdürülebilirlik ve dijital olgunluk değerlendirmesi, sektörel kıyaslama ve
+                dönüşüm yol haritası platformu.
+              </p>
             </div>
 
-            <motion.div
-              variants={fadeInUp}
-              className="relative"
-            >
-              {/* Stats Card */}
-              <div
-                className="rounded-2xl p-8"
-                style={{
-                  backgroundColor: "var(--bg-card)",
-                  border: "1px solid var(--border-soft)",
-                }}
-              >
-                <h3
-                  className="text-2xl font-bold mb-8 text-center"
-                  style={{ color: "var(--text-main)" }}
-                >
-                  Platform İstatistikleri
-                </h3>
-                <div className="grid grid-cols-2 gap-6">
-                  {[
-                    { value: "1-5", label: "Olgunluk Ölçeği" },
-                    { value: "4", label: "Kadran Analizi" },
-                    { value: "∞", label: "Özelleştirilebilir Anket" },
-                    { value: "24/7", label: "Erişilebilirlik" },
-                  ].map((stat, index) => (
-                    <div
-                      key={index}
-                      className="text-center p-4 rounded-xl"
-                      style={{ backgroundColor: "var(--bg-card-2)" }}
-                    >
-                      <div
-                        className="text-3xl font-bold mb-1"
-                        style={{ color: "var(--accent)" }}
-                      >
-                        {stat.value}
-                      </div>
-                      <div
-                        className="text-sm"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        {stat.label}
-                      </div>
-                    </div>
+            {[
+              { title: "Çözümler", items: ["Olgunluk değerlendirmesi", "Kıyaslama", "Yol haritası", "Raporlama"] },
+              { title: "Kurumsal", items: ["Hakkımızda", "Kaynaklar", "İletişim", "Kariyer"] },
+              { title: "Destek", items: ["Yardım merkezi", "KVKK", "Gizlilik", "Kullanım şartları"] },
+            ].map(({ title, items }) => (
+              <div key={title}>
+                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--text-dim)]">
+                  {title}
+                </p>
+                <ul className="mt-4 space-y-2.5 text-sm text-[var(--text-muted)]">
+                  {items.map((item) => (
+                    <li key={item} className="cursor-default hover:text-[var(--text-main)]">
+                      {item}
+                    </li>
                   ))}
-                </div>
+                </ul>
               </div>
+            ))}
+          </div>
 
-              {/* Decorative elements */}
-              <div
-                className="absolute -top-4 -right-4 w-24 h-24 rounded-full opacity-20 blur-2xl"
-                style={{ backgroundColor: "var(--accent)" }}
-              />
-              <div
-                className="absolute -bottom-4 -left-4 w-32 h-32 rounded-full opacity-20 blur-2xl"
-                style={{ backgroundColor: "var(--blue-main)" }}
-              />
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-24 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-10 blur-3xl"
-            style={{ backgroundColor: "var(--accent)" }}
-          />
-        </div>
-
-        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <h2
-              className="text-4xl md:text-5xl font-bold mb-6"
-              style={{ color: "var(--text-main)" }}
-            >
-              Dönüşüm Yolculuğunuza Başlayın
-            </h2>
-            <p
-              className="text-xl mb-10"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Kurumunuzun olgunluk seviyesini ölçün, güçlü ve gelişim alanlarınızı
-              belirleyin, stratejik yol haritanızı oluşturun.
-            </p>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 px-10 py-5 rounded-xl font-semibold text-xl transition-all duration-300 hover:scale-105"
-              style={{
-                backgroundColor: "var(--accent)",
-                color: "var(--bg-deep)",
-                boxShadow: "0 0 50px var(--accent-glow)",
-              }}
-            >
-              Dashboard&apos;a Git
-              <ArrowRight className="w-6 h-6" />
-            </Link>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer
-        className="py-8 border-t"
-        style={{
-          backgroundColor: "var(--bg-deep)",
-          borderColor: "var(--border-soft)",
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <p style={{ color: "var(--text-dim)" }}>
-            © {new Date().getFullYear()} Dönüşüm Platformu. Tüm hakları saklıdır.
-          </p>
+          <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--border-soft)] pt-6 text-sm text-[var(--text-dim)]">
+            <span>© 2026 ESG LAB. Tüm hakları saklıdır.</span>
+            <span className="font-mono text-xs">KVKK · ISO 27001 · TSE</span>
+          </div>
         </div>
       </footer>
     </div>

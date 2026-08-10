@@ -5,10 +5,12 @@ import { test, expect } from "@playwright/test";
  * Tarayıcı kurulumundan sonra `npm run test:e2e` ile çalışır.
  */
 
-test("ana sayfa yüklenir ve panoya çağrı bağlantısı görünür", async ({ page }) => {
+test("ana sayfa yüklenir ve iki çağrıyı da gösterir", async ({ page }) => {
   await page.goto("/");
-  // Açılış sayfasında ayrı bir "Giriş" bağlantısı yok; bütün çağrılar panoya
-  // gider ve oturumsuz kullanıcıyı /dashboard'ın kendisi /login'e yönlendirir.
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Sürdürülebilirlik");
+  // Yeni ziyaretçi kayda, mevcut kullanıcı panoya gider; oturumsuz kullanıcıyı
+  // /dashboard'ın kendisi /login'e yönlendirir.
+  await expect(page.locator('a[href="/signup"]').first()).toBeVisible();
   await expect(page.locator('a[href="/dashboard"]').first()).toBeVisible();
 });
 
