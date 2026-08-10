@@ -57,18 +57,33 @@ class ChunkErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryStat
             <h2 className="text-xl font-semibold text-[var(--text-main)] mb-2">
               {isChunkError ? 'Sayfa Yüklenemedi' : 'Bir Hata Oluştu'}
             </h2>
-            <p className="text-[var(--text-muted)] mb-6">
-              {isChunkError 
+            <p className="text-[var(--text-muted)] mb-4">
+              {isChunkError
                 ? 'Ağ bağlantısı sorunu nedeniyle sayfa bileşenleri yüklenemedi. Lütfen sayfayı yenileyin.'
-                : 'Beklenmeyen bir hata oluştu. Lütfen sayfayı yenileyin veya daha sonra tekrar deneyin.'}
+                : 'Beklenmeyen bir hata oluştu. Sayfayı yenilemek çoğu durumda yeterli olur; sorun sürerse aşağıdaki teknik ayrıntıyı bize iletin.'}
             </p>
-            <button
-              onClick={this.handleReload}
-              className="px-6 py-3 bg-[var(--accent)] text-[var(--bg-deep)] font-medium rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 mx-auto"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Sayfayı Yenile
-            </button>
+            {/* Sebebi saklamak kullanıcıya yardımcı olmuyor, destek isteğini de
+                "bir şey oldu"ya indiriyordu. Mesaj olduğu gibi görünür. */}
+            {!isChunkError && this.state.error?.message && (
+              <p className="mb-6 px-3 py-2 rounded-lg bg-[var(--bg-card-2)] text-left text-xs font-mono text-[var(--text-dim)] break-words">
+                {this.state.error.message}
+              </p>
+            )}
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <button
+                onClick={this.handleReload}
+                className="px-6 py-3 bg-[var(--accent)] text-[var(--bg-deep)] font-medium rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Sayfayı Yenile
+              </button>
+              <a
+                href="/"
+                className="px-6 py-3 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+              >
+                Ana sayfaya dön
+              </a>
+            </div>
           </div>
         </div>
       );

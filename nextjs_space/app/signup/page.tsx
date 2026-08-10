@@ -31,6 +31,9 @@ export default function SignupPage() {
     subSectorId: ""
   });
   const [error, setError] = useState("");
+  /** Hatanın türü — ekran buna göre çözüm önerir. */
+  const [errorReason, setErrorReason] = useState("");
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [sectors, setSectors] = useState<Sector[]>([]);
@@ -42,9 +45,13 @@ export default function SignupPage() {
       try {
         const res = await fetch("/api/sectors");
         const data = await res.json();
-        setSectors(data || []);
+        // Uç nokta hata döndüğünde gövde dizi değil `{error}` olur; onu
+        // olduğu gibi state'e koymak aşağıdaki `sectors.find` çağrısını
+        // patlatır ve kullanıcı formu değil boş bir hata ekranı görür.
+        setSectors(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Failed to fetch sectors:", err);
+        setSectors([]);
       } finally {
         setLoadingSectors(false);
       }
@@ -65,9 +72,36 @@ export default function SignupPage() {
 
   const selectedSector = sectors.find(s => s.id === formData.sectorId);
 
+  /** Kayıtlı ama doğrulanmamış hesap için doğrulama postasını yeniden ister. */
+  const handleResendVerification = async () => {
+    setResendState("sending");
+    try {
+      const res = await fetch("/api/auth/verify-email", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email })
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(data?.error || "Doğrulama e-postası gönderilemedi. Lütfen tekrar deneyin.");
+        setErrorReason("");
+        setResendState("idle");
+        return;
+      }
+      setResendState("sent");
+    } catch (err) {
+      console.error("Resend verification failed:", err);
+      setError("Doğrulama e-postası gönderilemedi. Lütfen tekrar deneyin.");
+      setErrorReason("");
+      setResendState("idle");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setErrorReason("");
+    setResendState("idle");
 
     if ((formData?.password ?? '') !== (formData?.confirmPassword ?? '')) {
       setError("Şifreler eşleşmiyor");
@@ -108,7 +142,8 @@ export default function SignupPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data?.error || "Kayıt başarısız");
+        setError(data?.error || "Kayıt tamamlanamadı. Lütfen tekrar deneyin.");
+        setErrorReason(typeof data?.reason === "string" ? data.reason : "");
         setLoading(false);
         return;
       }
@@ -164,10 +199,62 @@ export default function SignupPage() {
                 aria-live="assertive"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="p-4 bg-[var(--error-bg)] rounded-xl flex items-center gap-3 text-[var(--error)] border border-[var(--error)]"
+                className="p-4 bg-[var(--error-bg)] rounded-xl text-[var(--error)] border border-[var(--error)]"
               >
-                <AlertCircle size={20} />
-                <span className="text-sm font-medium">{error}</span>
+                <div className="flex items-center gap-3">
+                  <AlertCircle size={20} />
+                  <span className="text-sm font-medium">{error}</span>
+                </div>
+
+                {/* Hata söylendi; sıradaki soru "peki ne yapacağım" — cevabı
+                    aynı kutuda dursun, kullanıcı çıkış aramasın. */}
+                {errorReason === "email_taken" && (
+                  <div className="mt-3 pt-3 border-t border-[var(--error)]/30 space-y-2">
+                    <p className="text-sm text-[var(--text-muted)]">
+                      Bu adresle daha önce hesap açılmış. Yapabilecekleriniz:
+                    </p>
+                    <ul className="text-sm text-[var(--text-muted)] space-y-1.5 list-disc pl-5">
+                      <li>
+                        Hesap sizinse{" "}
+                        <Link href="/login" className="text-[var(--accent)] font-medium hover:underline">
+                          giriş yapın
+                        </Link>
+                        .
+                      </li>
+                      <li>
+                        Şifrenizi hatırlamıyorsanız{" "}
+                        <Link
+                          href="/forgot-password"
+                          className="text-[var(--accent)] font-medium hover:underline"
+                        >
+                          şifrenizi sıfırlayın
+                        </Link>
+                        .
+                      </li>
+                      <li>
+                        Doğrulama e-postası elinize ulaşmadıysa{" "}
+                        {resendState === "sent" ? (
+                          <span className="text-[var(--success)] font-medium">
+                            gönderildi — e-posta kutunuzu ve spam klasörünü kontrol edin.
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={handleResendVerification}
+                            disabled={resendState === "sending" || !formData.email}
+                            className="text-[var(--accent)] font-medium hover:underline disabled:opacity-50"
+                          >
+                            {resendState === "sending"
+                              ? "gönderiliyor..."
+                              : "yeniden gönderin"}
+                          </button>
+                        )}
+                        .
+                      </li>
+                      <li>Farklı bir e-posta adresiyle kayıt olabilirsiniz.</li>
+                    </ul>
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -257,6 +344,15 @@ export default function SignupPage() {
                 />
               </div>
             </div>
+
+            {/* Sektör zorunlu ama liste gelmediyse alan hiç çizilmiyordu:
+                kullanıcı "sektör seçin" hatası alıp seçecek bir şey bulamıyordu. */}
+            {!loadingSectors && sectors.length === 0 && (
+              <div className="p-4 rounded-xl border border-[var(--warning)] bg-[var(--warning-bg)] text-sm text-[var(--warning)]">
+                Sektör listesi yüklenemedi. Sektör seçimi zorunlu olduğu için kayıt
+                tamamlanamaz — sayfayı yenileyin, sorun sürerse birkaç dakika sonra tekrar deneyin.
+              </div>
+            )}
 
             {!loadingSectors && sectors.length > 0 && (
               <>

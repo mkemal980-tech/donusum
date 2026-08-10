@@ -64,9 +64,15 @@ export async function POST(request: NextRequest) {
     );
 
     if (existingUser) {
+      /**
+       * `reason` ekranın ne önereceğini belirler: "zaten kayıtlı" tek başına
+       * çıkmaz sokak, kullanıcı ne yapacağını bilmez. Hesabın doğrulanmış olup
+       * olmadığı kasten dönülmez — üç seçenek de sunulur, hangisinin işe
+       * yaradığını doğrulama ucu zaten kendisi söyler.
+       */
       return NextResponse.json(
-        { error: "Bu e-posta adresi zaten kayıtlı" },
-        { status: 400 }
+        { error: "Bu e-posta adresi zaten kayıtlı.", reason: "email_taken" },
+        { status: 409 }
       );
     }
 

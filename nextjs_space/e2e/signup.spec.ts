@@ -68,3 +68,46 @@ test("kayıt olan kullanıcıya tanıtım anketi otomatik atanır", async ({ req
   // Tanıtım dışındaki anketler atanmamalı; onları yönetici dağıtır.
   expect(user!.surveyAssignments.every((a) => a.survey.isDemo)).toBe(true);
 });
+
+/**
+ * Aynı adresle ikinci kayıt, kullanıcının en sık düştüğü yer: hesabını
+ * açtığını unutup baştan kaydolmaya çalışıyor. Cevap "hata oluştu" değil,
+ * ne yapacağı olmalı — ve form ayakta kalmalı.
+ */
+test("aynı e-posta ile ikinci kayıt sebebini ve çözümünü söyler", async ({ request, page }) => {
+  test.skip(!sectorId, "Sektör kaydı yok");
+
+  const res = await request.post("/api/signup", {
+    data: { email: EMAIL, password: PASSWORD, firstName: "Deneme", sectorId },
+  });
+
+  expect(res.status()).toBe(409);
+  const body = await res.json();
+  expect(body.error).toContain("zaten kayıtlı");
+  expect(body.reason).toBe("email_taken");
+
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+
+  await page.goto("/signup", { waitUntil: "networkidle" });
+  await page.locator('input[name="firstName"]').fill("Deneme");
+  await page.locator('input[name="lastName"]').fill("Kullanıcı");
+  await page.locator('input[name="email"]').fill(EMAIL);
+  await page.locator('input[name="organization"]').fill("E2E A.Ş.");
+  await page.locator('select[name="sectorId"]').selectOption(sectorId!);
+  await page.locator('input[name="password"]').fill(PASSWORD);
+  await page.locator('input[name="confirmPassword"]').fill(PASSWORD);
+  await page.getByRole("button", { name: "Kayıt Ol" }).click();
+
+  // Next'in yönlendirme duyurucusu da role="alert" taşıyor; form içindekini al.
+  const alert = page.locator('form [role="alert"]');
+  await expect(alert).toContainText("Bu e-posta adresi zaten kayıtlı", { timeout: 20_000 });
+  // Çözüm aynı kutuda: giriş, şifre sıfırlama ve doğrulamayı yeniden gönderme.
+  await expect(alert.getByRole("link", { name: "giriş yapın" })).toBeVisible();
+  await expect(alert.getByRole("link", { name: "şifrenizi sıfırlayın" })).toBeVisible();
+  await expect(alert.getByRole("button", { name: "yeniden gönderin" })).toBeVisible();
+
+  // Sayfa ayakta: hata sınırına düşülmedi, form hâlâ doldurulabilir.
+  await expect(page.getByRole("heading", { name: "Hesap Oluşturun" })).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
