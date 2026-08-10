@@ -68,10 +68,10 @@ export function MaturityLevelBar({ score, isPercentage = true }: MaturityLevelBa
         </div>
         
         {/*
-          Çubuk ile gösterge iki ayrı katman: gösterge çubuğun içindeyken hem
-          onun genişliğinin dörtte üçünü kaplıyor hem de `overflow-hidden`
-          yüzünden uçlarda kırpılıyordu. Çubuk 48px, gösterge 32px: gösterge
-          çubuğun üçte ikisi kadar ve kırpılmayan bir katmanda.
+          Puan göstergesi daire değil, çubuğu enine kesen ince bir çizgi ve
+          yanında sayı. Daire hem kaydırıcı çağrışımı yapıyor ("buraya
+          tıklanır") hem de çubuğun içine sığmak için küçülünce okunmuyordu.
+          Çizgi konumu tam gösterir, sayı okunur boyutta yanda durur.
         */}
         <div className="relative h-64 w-12">
           <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-12 rounded-full overflow-hidden bg-[var(--border-light)]">
@@ -107,22 +107,29 @@ export function MaturityLevelBar({ score, isPercentage = true }: MaturityLevelBa
           </div>
 
           {/*
-            Gösterge yalnızca yüzdeyle konumlanırsa 0 ve 100'de yarısı çubuğun
-            dışında kalıyor. Merkez, çubuğun içinde bir uçtan diğerine gider:
-            16px (yarıçap) ile yükseklik - 16px arası.
+            Çizgi çubuğu tam enine keser; uçlarda yarısı dışarı taşmasın diye
+            merkezi 1px ile yükseklik-1px arasında dolaşır. Sayı çizginin
+            sağında, çubuğun dışında durur — daire içine sıkıştırılınca
+            okunmuyordu.
           */}
           <div
-            className="absolute left-1/2 -translate-x-1/2 translate-y-1/2 w-8 h-8 rounded-full bg-[var(--bg-card)] shadow-lg flex items-center justify-center border-2 transition-[bottom] duration-700 ease-out"
-            style={{
-              borderColor: currentLevel.color,
-              bottom: `calc(16px + (100% - 32px) * ${barPosition / 100})`,
-            }}
+            className="absolute left-0 right-0 flex items-center transition-[bottom] duration-700 ease-out"
+            style={{ bottom: `calc(1px + (100% - 2px) * ${barPosition / 100})` }}
           >
-            <span className="text-[11px] font-bold" style={{ color: currentLevel.color }}>
+            <div
+              className="h-0.5 w-full rounded-full"
+              style={{ backgroundColor: currentLevel.color }}
+            />
+            {/* Sayı mürekkep renginde: seviye rengi açık tonlarda (Başlangıç,
+                Farkındalık) beyaz zeminde okunmuyor. Renk çizgide kalır. */}
+            <span className="absolute left-full ml-2 font-mono text-base font-semibold leading-none -translate-y-1/2 top-1/2 text-[var(--text-main)]">
               {scoreOn5.toFixed(1)}
             </span>
           </div>
         </div>
+
+        {/* Sayı çubuğun sağına taşıyor; sütun onun için yer ayırır. */}
+        <div className="w-10" aria-hidden />
       </div>
     </div>
   );
