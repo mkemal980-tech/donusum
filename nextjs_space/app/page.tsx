@@ -1,510 +1,564 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  BarChart3,
-  Building2,
-  CheckCircle2,
-  ClipboardList,
-  FileText,
-  Gauge,
-  Globe2,
-  Layers,
-  LineChart,
-  Lightbulb,
-  Map,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
+import "./landing.css";
 
 /**
- * Tanıtım (açılış) sayfası.
+ * Tanıtım (açılış) sayfası — ESG Akademi "blueprint" tasarım dili.
  *
- * Yapı Payoneer'ın kurumsal iniş sayfasından alındı: sabit üst bar, tek
- * çağrılı hero + ürün görseli, güven şeridi, altılı çözüm ızgarası, sayı
- * bandı, üçlü segment, referanslar, kaynaklar, kapanış çağrısı ve geniş
- * footer. Görsel dil tamamen ESG LAB: turuncu vurgu, lacivert mürekkep,
- * gradyansız düz yüzeyler, Space Grotesk başlık + IBM Plex gövde.
+ * Görsel dil ve metin, onaylanan tasarım dosyasından birebir taşındı:
+ * Barlow Condensed büyük harf başlıklar, ince çizgili blueprint çerçeveler,
+ * açık gri zemin ve lacivert bantlar. Stiller app/landing.css'te ve
+ * `.esg-landing` altında kapsanmıştır — sınıf adları uygulamanınkilerle
+ * çakışıyor, kapsamsız kalsalar panoyu da boyarlardı.
  *
- * Sayfa yalnızca token kullanır; tek bir sabit renk yoktur.
+ * Sayfa uygulamanın tema token'larını kullanmaz; kendi paletini taşır,
+ * böylece koyu tema seçen kullanıcıda da marka görünümüyle açılır.
  */
 
-const solutions = [
+const featureIcon = {
+  stroke: "var(--color-accent-700)",
+  strokeWidth: 1.5,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  fill: "none",
+};
+
+const features = [
   {
-    icon: ClipboardList,
-    title: "Olgunluk değerlendirmesi",
-    text: "Sektöre göre ağırlıklandırılmış anketlerle kurumunuzun bugünkü yerini ölçün.",
+    title: "Olgunluk Analizi",
+    text: "Kapsamlı anketlerle mevcut seviyenizi 1–5 ölçeğinde ölçün, boyut bazında kırılımı görün.",
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" {...featureIcon}>
+        <line x1="4" y1="20" x2="4" y2="10" />
+        <line x1="10" y1="20" x2="10" y2="4" />
+        <line x1="16" y1="20" x2="16" y2="13" />
+        <line x1="22" y1="20" x2="2" y2="20" />
+      </svg>
+    ),
   },
   {
-    icon: BarChart3,
-    title: "Sektörel kıyaslama",
-    text: "Puanınızı kendi sektörünüzün ortalaması ve en iyisiyle karşılaştırın.",
+    title: "Sektörel Kıyaslama",
+    text: "Skorunuzu sektör ortalaması ve en iyi uygulamalarla yan yana görün; nerede olduğunuzu bilin.",
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" {...featureIcon}>
+        <circle cx="12" cy="12" r="9" />
+        <circle cx="12" cy="12" r="5" />
+        <circle cx="12" cy="12" r="1" />
+      </svg>
+    ),
   },
   {
-    icon: Lightbulb,
-    title: "Öneri motoru",
-    text: "Her cevaba bağlı, sıradaki adımı gösteren kademeli iyileştirme önerileri.",
+    title: "Akıllı Öneriler",
+    text: "Puanlarınıza göre kişiselleştirilmiş stratejik öneriler; her biri somut aksiyon adımlarıyla.",
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" {...featureIcon}>
+        <path d="M9 18h6" />
+        <path d="M10 21h4" />
+        <path d="M12 3a6 6 0 0 0-4 10.5c.6.6 1 1.5 1 2.5h6c0-1 .4-1.9 1-2.5A6 6 0 0 0 12 3z" />
+      </svg>
+    ),
   },
   {
-    icon: Map,
-    title: "Dönüşüm yol haritası",
-    text: "Önerileri vade, maliyet ve etkiye göre planlayın, ilerlemeyi takip edin.",
+    title: "Yol Haritası",
+    text: "Önerileri çeyreklere dağıtın, stratejik planınızı oluşturun ve ilerlemenizi takip edin.",
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" {...featureIcon}>
+        <path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z" />
+        <line x1="9" y1="4" x2="9" y2="18" />
+        <line x1="15" y1="6" x2="15" y2="20" />
+      </svg>
+    ),
   },
   {
-    icon: Building2,
-    title: "Birim ve tedarikçi takibi",
-    text: "Her birimi ayrı değerlendirin, kanıt belgeleriyle birlikte tek panodan izleyin.",
+    title: "İlerleme Takibi",
+    text: "Geçmiş skorlarınızı karşılaştırın, zaman içindeki gelişiminizi ve trendleri analiz edin.",
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" {...featureIcon}>
+        <polyline points="3 17 9 11 13 15 21 7" />
+        <polyline points="15 7 21 7 21 13" />
+      </svg>
+    ),
   },
   {
-    icon: FileText,
-    title: "Raporlama",
-    text: "Yönetim kurulu sunumuna hazır PDF ve Excel çıktıları, tek tıkla.",
+    title: "Hız–Dayanıklılık Analizi",
+    text: "Hız ve dayanıklılık eksenlerinde konumunuzu görün: Sprinter mi, Maratoncu mu, Iron Man mi?",
+    icon: (
+      <svg width="26" height="26" viewBox="0 0 24 24" {...featureIcon}>
+        <line x1="12" y1="20" x2="12" y2="4" />
+        <line x1="4" y1="12" x2="20" y2="12" />
+        <circle cx="17" cy="7" r="2.5" />
+      </svg>
+    ),
   },
+];
+
+const scores = [
+  { label: "Çevresel", value: "3.8", width: "76%" },
+  { label: "Sosyal", value: "3.1", width: "62%" },
+  { label: "Yönetişim", value: "3.3", width: "66%" },
+  { label: "Dijital", value: "2.7", width: "54%" },
 ];
 
 const stats = [
-  { value: "284", label: "hazır iyileştirme önerisi" },
-  { value: "22", label: "NACE sektör kapsamı" },
-  { value: "5", label: "olgunluk basamağı" },
-  { value: "%100", label: "kanıta dayalı puanlama" },
+  { value: "500+", label: "Katılımcı kurum" },
+  { value: "2", label: "Değerlendirme alanı" },
+  { value: "12", label: "Sektör kıyası" },
+  { value: "5", label: "Olgunluk seviyesi" },
 ];
 
-const values = [
+const whyIcon = { ...featureIcon };
+
+const reasons = [
   {
-    icon: Gauge,
-    title: "Ölçülebilir ilerleme",
-    text: "Puan tek bir sayı değil; kategori kategori nerede durduğunuzu ve neyin ne kadar katkı yapacağını gösterir.",
+    title: "Güvenilir metodoloji",
+    text: "Sektör standartlarına dayalı objektif ölçüm; ağırlıklı puanlama ve kanıt talebi.",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" {...whyIcon}>
+        <path d="M12 3l8 3v6c0 4.5-3.2 7.7-8 9-4.8-1.3-8-4.5-8-9V6z" />
+        <polyline points="9 12 11 14 15 10" />
+      </svg>
+    ),
   },
   {
-    icon: ShieldCheck,
-    title: "Kanıtla desteklenen beyan",
-    text: "Her cevaba belge iliştirilir. Denetime girdiğinizde iddia değil, dosya konuşur.",
+    title: "Sektörel kıyas",
+    text: "Aynı sektördeki kurumlarla karşılaştırma; NACE kodlu sektör ve alt sektör eşleşmesi.",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" {...whyIcon}>
+        <circle cx="9" cy="8" r="3" />
+        <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+        <circle cx="17" cy="6" r="2" />
+        <path d="M17 11c2.2 0 4 1.8 4 4" />
+      </svg>
+    ),
   },
   {
-    icon: Globe2,
-    title: "Sektöre göre kapsam",
-    text: "Kurumunuzu ilgilendirmeyen bölümler sorulmaz, puana da girmez.",
+    title: "Hızlı sonuç",
+    text: "Anket tamamlandığı anda analiz, kıyas ve öneriler hazır — beklemek yok.",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" {...whyIcon}>
+        <polygon points="13 2 5 14 11 14 9 22 19 9 13 9" />
+      </svg>
+    ),
+  },
+  {
+    title: "Kapsamlı perspektif",
+    text: "ESG'den dijitale, tüm iş alanlarını kapsayan bütünsel değerlendirme.",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" {...whyIcon}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M3 12h18" />
+        <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18" />
+      </svg>
+    ),
+  },
+  {
+    title: "Birim bazlı yönetim",
+    text: "Birimlerinize anket atayın, tamamlanmayı izleyin, kurum genelinde konsolide skor alın.",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" {...whyIcon}>
+        <rect x="3" y="4" width="18" height="14" />
+        <line x1="3" y1="9" x2="21" y2="9" />
+        <line x1="8" y1="21" x2="16" y2="21" />
+      </svg>
+    ),
+  },
+  {
+    title: "Uzman desteği",
+    text: "ESG Akademi eğitim kadrosu her adımda yanınızda; eğitim ve danışmanlıkla entegre.",
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" {...whyIcon}>
+        <path d="M14 9V5a2 2 0 0 0-2-2l-3 7v11h9.3a2 2 0 0 0 2-1.7l1.2-7a2 2 0 0 0-2-2.3z" />
+        <path d="M9 21H6a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h3" />
+      </svg>
+    ),
   },
 ];
 
-const segments = [
+const audiences = [
   {
-    icon: Users,
-    title: "Kurumsal ekipler",
-    text: "Bölümleri sorumlulara dağıtın, tek kurumsal puanda birleştirin.",
-    href: "/signup",
+    title: "KOBİ'ler",
+    text: "Tedarik zincirlerinin ESG beklentileri hızla artıyor. Olgunluğunuzu ölçün, eksiklerinizi önceliklendirin ve müşterilerinize kanıtlanabilir bir dönüşüm hikâyesi sunun.",
+    caption: "KOBİ görseli",
+    imageFirst: true,
   },
   {
-    icon: Layers,
-    title: "Tedarikçiler",
-    text: "Alıcınızın istediği olgunluk beyanını kanıtlarıyla birlikte hazırlayın.",
-    href: "/signup",
+    title: "Kurumsal gruplar",
+    text: "Birden çok birim ve iştirakte anket atayın, tamamlanmayı tek panelden izleyin. Konsolide skorlar ve birim kıyasları raporlama döneminizi kısaltır.",
+    caption: "Kurumsal grup görseli",
+    imageFirst: false,
   },
   {
-    icon: LineChart,
-    title: "Danışmanlar",
-    text: "Müşteri portföyünüzü tek panodan yönetin, ilerlemeyi raporlayın.",
-    href: "/signup",
-  },
-];
-
-const testimonials = [
-  {
-    quote:
-      "Anketi doldurduktan sonra elimizde bir puan değil, sırayla yapılacak işler listesi vardı. Fark bu.",
-    name: "Sürdürülebilirlik Müdürü",
-    org: "Tersane · 1.200 çalışan",
-  },
-  {
-    quote:
-      "Tedarikçilerimizden gelen beyanları ilk kez aynı ölçekte karşılaştırabildik.",
-    name: "Satın Alma Direktörü",
-    org: "Otomotiv yan sanayi",
-  },
-  {
-    quote:
-      "Kategori kıyaslaması yönetim kuruluna gitmeden önceki en zor sorumuzu cevapladı: sektöre göre neredeyiz?",
-    name: "Genel Müdür Yardımcısı",
-    org: "Kimya · ihracatçı",
+    title: "Danışmanlar ve eğitmenler",
+    text: "Müşterilerinizin mevcut durumunu standart bir metodolojiyle tespit edin; öneri kütüphanesini kendi danışmanlık sürecinize temel yapın.",
+    caption: "Danışmanlık görseli",
+    imageFirst: true,
   },
 ];
 
 const resources = [
   {
-    tag: "REHBER",
-    title: "Kapsam 1-2 emisyon envanterine nereden başlanır?",
-    text: "Sabit ve hareketli yakıt kaynaklarını tek takvimde toplamanın pratik yolu.",
+    title: "ESG raporlama rehberi: nereden başlamalı?",
+    text: "CSRD ve TSRS sonrası raporlama beklentileri ve olgunlukla ilişkisi.",
   },
   {
-    tag: "ANALİZ",
-    title: "CBAM öncesi tedarik zinciri hazırlığı",
-    text: "Sınırda karbon düzenlemesi için hangi verinin ne zaman gerektiği.",
+    title: "Dijital olgunluk nedir, nasıl ölçülür?",
+    text: "Veri, bulut, otomasyon ve siber güvenlik eksenlerinde 5 seviye.",
   },
   {
-    tag: "VAKA",
-    title: "Bir tersanenin 284 önerilik dönüşüm planı",
-    text: "Belgeden üretilmiş öneri merdiveninin sahada nasıl kurulduğu.",
+    title: "Karbon ayak izi 101: Kapsam 1-2-3",
+    text: "Ölçümden doğrulamaya temel kavramlar ve ilk adım planı.",
   },
 ];
 
+const footerColumns = [
+  {
+    title: "Çözümler",
+    items: ["Sürdürülebilirlik Anketi", "Dijital Dönüşüm Anketi", "Kurumsal Paketler"],
+  },
+  { title: "Platform", items: ["Nasıl çalışır", "Fiyatlandırma", "Örnek rapor", "SSS"] },
+  { title: "Kurum", items: ["Hakkımızda", "Eğitimler", "İletişim", "Kariyer"] },
+  {
+    title: "Destek",
+    items: ["Yardım merkezi", "KVKK", "Gizlilik politikası", "Çerez politikası"],
+  },
+];
+
+/** Blueprint çerçevesinin dört köşe işareti. */
+function Corners() {
+  return (
+    <>
+      <i className="corner tl" aria-hidden />
+      <i className="corner tr" aria-hidden />
+      <i className="corner bl" aria-hidden />
+      <i className="corner br" aria-hidden />
+    </>
+  );
+}
+
 export default function LandingPage() {
   return (
-    /* Tanıtım sayfası marka kimliğidir; kullanıcının koyu tema tercihi
-       uygulamanın içinde geçerli, burada değil. Palet <html> yerine bu
-       sarmalayıcıda açılır — böylece ilk karede de doğru renkler gelir,
-       tercihe dokunulmaz. */
-    <div
-      data-theme="light"
-      className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)]"
-    >
-      {/* ===== Üst bar ===== */}
-      <header className="sticky top-0 z-50 border-b border-[var(--border-soft)] bg-[var(--bg-card)]/85 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-[1220px] items-center gap-8 px-6">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="grid h-7 w-7 place-items-center rounded-md bg-[var(--text-main)]">
-              <span className="h-2.5 w-2.5 rounded-sm bg-[var(--accent)]" />
+    <div className="esg-landing">
+      <div className="shell">
+        {/* ===== Üst çubuk ===== */}
+        <div className="topline">
+          <a href="#kaynaklar">Kaynaklar</a>
+          <a href="#neden">Hakkımızda</a>
+          <span>
+            <b>TR</b>{" "}
+            <span style={{ color: "color-mix(in srgb, var(--color-text) 45%, transparent)" }}>
+              / EN
             </span>
-            <span className="text-lg font-semibold tracking-tight">
-              ESG <span className="text-[var(--accent)]">LAB</span>
-            </span>
-          </Link>
-
-          <nav className="hidden items-center gap-6 text-sm text-[var(--text-muted)] lg:flex">
-            {["Çözümler", "Sektörler", "Kaynaklar", "Fiyatlandırma"].map((item) => (
-              <span key={item} className="cursor-default hover:text-[var(--text-main)]">
-                {item}
-              </span>
-            ))}
-          </nav>
-
-          <div className="ml-auto flex items-center gap-2">
-            <Link
-              href="/login"
-              className="hidden h-10 items-center rounded-lg px-4 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-main)] sm:inline-flex"
-            >
-              Giriş yap
-            </Link>
-            <Link
-              href="/signup"
-              className="inline-flex h-10 items-center rounded-lg bg-[var(--accent)] px-4 text-sm font-medium text-[var(--on-accent)] hover:bg-[var(--accent-dark)]"
-            >
-              Hesap oluştur
-            </Link>
-          </div>
+          </span>
         </div>
-      </header>
 
-      {/* ===== Hero ===== */}
-      <section className="border-b border-[var(--border-soft)]">
-        <div className="mx-auto grid max-w-[1220px] items-center gap-14 px-6 py-20 lg:grid-cols-[1.05fr_1fr]">
-          <div>
-            <span className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--accent)]">
-              Sürdürülebilirlik olgunluk platformu
-            </span>
-            <h1 className="mt-5 text-[clamp(2.2rem,4.4vw,3.4rem)] font-semibold leading-[1.08] tracking-tight">
-              Sürdürülebilirlik dönüşümü,
-              <br />
-              ölçülebilir bir plana dönüşsün
-            </h1>
-            <p className="mt-5 max-w-xl text-lg text-[var(--text-muted)]">
-              Kurumunuzun bugünkü olgunluğunu ölçün, sektörünüzle kıyaslayın ve sıradaki adımı
-              gösteren bir yol haritasıyla ilerleyin — hepsi tek platformda.
-            </p>
-
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Link
-                href="/signup"
-                className="inline-flex h-12 items-center gap-2 rounded-lg bg-[var(--accent)] px-6 text-base font-medium text-[var(--on-accent)] hover:bg-[var(--accent-dark)]"
-              >
-                Değerlendirmeye başla <ArrowRight size={18} />
-              </Link>
-              {/* Oturumu olan doğrudan panoya girer; olmayanı /dashboard
-                  kendisi /login'e yönlendirir. */}
-              <Link
-                href="/dashboard"
-                className="inline-flex h-12 items-center gap-2 rounded-lg border border-[var(--ui-passive)] px-6 text-base font-medium hover:bg-[var(--bg-card-2)]"
-              >
-                Demo anketi gör
-              </Link>
-            </div>
-
-            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[var(--text-muted)]">
-              {["Kurulum gerektirmez", "Sektöre göre ağırlıklı puan", "Kanıt yükleme dahil"].map(
-                (item) => (
-                  <li key={item} className="flex items-center gap-2">
-                    <CheckCircle2 size={16} className="text-[var(--accent)]" />
-                    {item}
-                  </li>
-                )
-              )}
-            </ul>
+        <nav className="nav">
+          <span className="brand">
+            ESG Akademi <span>/ Anket</span>
+          </span>
+          <div className="nav-links">
+            <a href="#cozumler">Sürdürülebilirlik</a>
+            <a href="#cozumler">Dijital Dönüşüm</a>
+            <a href="#kimler">Kurumsal</a>
+            <a href="#kaynaklar">Fiyatlandırma</a>
           </div>
+          <div className="nav-actions">
+            <Link href="/login" style={{ fontSize: 14, fontWeight: 500 }}>
+              Giriş Yap
+            </Link>
+            <Link href="/signup" className="btn btn-primary">
+              Kayıt Ol
+            </Link>
+          </div>
+        </nav>
 
-          {/* Ürün görseli — gerçek panonun sadeleştirilmiş hâli */}
-          <div className="rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-6 shadow-[var(--shadow-md)]">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--text-dim)]">
-                  Genel olgunluk
-                </p>
-                <p className="mt-1 font-mono text-4xl font-semibold">3.4</p>
+        {/* ===== Hero ===== */}
+        <div className="band-dark on-dark">
+          <div className="hero">
+            <div>
+              <h1>Kurumsal dönüşüm ölçümü basitleşti</h1>
+              <p className="hero-lede">
+                Sürdürülebilirlik ve dijital olgunluğunuzu tek platformda ölçün, sektörünüzle
+                kıyaslayın ve stratejik önerilerle büyüyün.
+              </p>
+              <div className="hero-actions">
+                {/* Oturumu olan doğrudan panoya girer; olmayanı /dashboard
+                    kendisi /login'e yönlendirir. */}
+                <Link href="/dashboard" className="btn btn-primary btn-lg">
+                  Ankete Başla
+                </Link>
+                <Link href="/signup" className="btn btn-secondary btn-lg">
+                  Örnek raporu inceleyin
+                </Link>
               </div>
-              <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-medium text-[var(--accent)]">
-                Gelişen
-              </span>
             </div>
 
-            <div className="mt-6 space-y-4">
-              {[
-                ["Enerji ve karbon yönetimi", 82],
-                ["İklim geçişi ve eko-tasarım", 61],
-                ["Kirlilik, kimyasallar ve atık", 48],
-                ["Su ve biyoçeşitlilik", 39],
-              ].map(([label, value]) => (
-                <div key={label as string}>
-                  <div className="flex items-baseline justify-between text-sm">
-                    <span className="text-[var(--text-muted)]">{label}</span>
-                    <span className="font-mono text-[var(--text-main)]">{value}%</span>
+            <div className="blueprint score-card">
+              <Corners />
+              <div className="score-head">
+                <span className="kicker">Olgunluk raporu</span>
+                <span className="tag-outline">Örnek</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 14 }}>
+                <span className="score-value">3.4</span>
+                <span
+                  style={{
+                    fontSize: 13,
+                    color: "color-mix(in srgb, var(--color-text) 70%, transparent)",
+                  }}
+                >
+                  / 5 genel olgunluk · sektör ort. 2.9
+                </span>
+              </div>
+              <div className="bars">
+                {scores.map((score) => (
+                  <div key={score.label}>
+                    <div className="bar-label">
+                      <span>{score.label}</span>
+                      <span>{score.value}</span>
+                    </div>
+                    <div className="bar-track">
+                      <div className="bar-fill" style={{ width: score.width }} />
+                    </div>
                   </div>
-                  <div className="mt-2 h-1.5 rounded-full bg-[var(--bg-card-2)]">
-                    <div
-                      className="h-1.5 rounded-full bg-[var(--accent)]"
-                      style={{ width: `${value}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex items-center justify-between border-t border-[var(--border-soft)] pt-4 text-sm">
-              <span className="text-[var(--text-dim)]">Sıradaki adım</span>
-              <span className="font-medium">Kapsam 1-2 envanterini kurun</span>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* ===== Güven şeridi ===== */}
-      <section className="border-b border-[var(--border-soft)] bg-[var(--bg-card)]">
-        <div className="mx-auto max-w-[1220px] px-6 py-10">
-          <p className="text-center font-mono text-xs uppercase tracking-[0.12em] text-[var(--text-dim)]">
-            Sanayi, denizcilik ve ihracat kuruluşları tarafından kullanılıyor
-          </p>
-          <div className="mt-6 grid grid-cols-2 items-center gap-6 sm:grid-cols-3 lg:grid-cols-6">
-            {["TERSANE A.Ş.", "METALSAN", "EGE KİMYA", "DENİZ LOJİSTİK", "ANADOLU TEKSTİL", "PORT GRUP"].map(
+        {/* ===== Güven şeridi ===== */}
+        <div className="trust">
+          <div className="trust-label">
+            Türkiye&apos;nin önde gelen kurumlarının güvendiği platform
+          </div>
+          <div className="trust-logos">
+            {["TERSA", "AKSU ENERJİ", "MERİDYEN", "KARTAL LOJİSTİK", "NOVA TEKSTİL", "EGE KİMYA"].map(
               (name) => (
-                <span
-                  key={name}
-                  className="text-center font-mono text-sm tracking-tight text-[var(--text-dim)]"
-                >
-                  {name}
-                </span>
+                <span key={name}>{name}</span>
               )
             )}
           </div>
         </div>
-      </section>
 
-      {/* ===== Çözümler ===== */}
-      <section className="mx-auto max-w-[1220px] px-6 py-20">
-        <div className="max-w-2xl">
-          <span className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--accent)]">
-            Çözümler
-          </span>
-          <h2 className="mt-4 text-4xl font-semibold tracking-tight">
-            Değerlendirmeden uygulamaya tek akış
-          </h2>
-          <p className="mt-4 text-lg text-[var(--text-muted)]">
-            Anketi doldurun, puanı görün, önerileri planlayın. Her adım bir öncekinin çıktısını
-            kullanır; hiçbir veriyi iki kez girmezsiniz.
-          </p>
-        </div>
-
-        <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {solutions.map(({ icon: Icon, title, text }) => (
-            <div
-              key={title}
-              className="rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-6 transition-colors hover:border-[var(--ui-passive)]"
-            >
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                <Icon size={20} />
-              </span>
-              <h3 className="mt-5 text-xl font-semibold">{title}</h3>
-              <p className="mt-2 text-[var(--text-muted)]">{text}</p>
-              <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)]">
-                Daha fazlası <ArrowRight size={15} />
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ===== Sayı bandı ===== */}
-      <section className="border-y border-[var(--border-soft)] bg-[var(--bg-card)]">
-        <div className="mx-auto grid max-w-[1220px] gap-8 px-6 py-14 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map(({ value, label }) => (
-            <div key={label}>
-              <p className="font-mono text-4xl font-semibold text-[var(--accent)]">{value}</p>
-              <p className="mt-2 text-sm text-[var(--text-muted)]">{label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ===== Değer önerileri ===== */}
-      <section className="mx-auto max-w-[1220px] px-6 py-20">
-        <div className="grid gap-10 lg:grid-cols-3">
-          {values.map(({ icon: Icon, title, text }) => (
-            <div key={title}>
-              <Icon size={22} className="text-[var(--accent)]" />
-              <h3 className="mt-4 text-xl font-semibold">{title}</h3>
-              <p className="mt-2 text-[var(--text-muted)]">{text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ===== Segmentler ===== */}
-      <section className="border-y border-[var(--border-soft)] bg-[var(--bg-card)]">
-        <div className="mx-auto max-w-[1220px] px-6 py-20">
-          <h2 className="text-4xl font-semibold tracking-tight">Kimler kullanıyor?</h2>
-          <div className="mt-10 grid gap-5 lg:grid-cols-3">
-            {segments.map(({ icon: Icon, title, text, href }) => (
-              <Link
-                key={title}
-                href={href}
-                className="rounded-2xl border border-[var(--border-soft)] p-6 transition-colors hover:border-[var(--accent)]"
-              >
-                <Icon size={22} className="text-[var(--accent)]" />
-                <h3 className="mt-4 text-xl font-semibold">{title}</h3>
-                <p className="mt-2 text-[var(--text-muted)]">{text}</p>
-                <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)]">
-                  Daha fazlası <ArrowRight size={15} />
-                </span>
-              </Link>
+        {/* ===== Çözümler ===== */}
+        <div className="section" id="cozumler">
+          <h2 style={{ fontSize: 40, textAlign: "center" }}>Dönüşümünüzü büyütmek için her şey</h2>
+          <p className="section-lede">Ölçümden yol haritasına, tek hesapta.</p>
+          <div className="grid-3">
+            {features.map((feature) => (
+              <div key={feature.title} className="blueprint feature">
+                <Corners />
+                {feature.icon}
+                <h3>{feature.title}</h3>
+                <p>{feature.text}</p>
+                <a className="more" href="#kimler">
+                  Daha fazla →
+                </a>
+              </div>
             ))}
           </div>
         </div>
-      </section>
 
-      {/* ===== Referanslar ===== */}
-      <section className="mx-auto max-w-[1220px] px-6 py-20">
-        <span className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--accent)]">
-          Referanslar
-        </span>
-        <h2 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight">
-          Kurumlar puanı değil, sıradaki adımı konuşuyor
-        </h2>
+        {/* ===== Tanıtım videosu ===== */}
+        <div style={{ padding: "0 var(--gutter) 72px", textAlign: "center" }}>
+          <div className="kicker">Platformla tanışın</div>
+          <h2 style={{ fontSize: 36, marginTop: 12 }}>Size sunacak çok şeyimiz var</h2>
+          <figure className="blueprint" style={{ margin: "36px auto 0", maxWidth: 760 }}>
+            <div className="shot shot-16x9">Tanıtım videosu</div>
+            <Corners />
+            <span className="play" aria-hidden>
+              <span>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--color-bg)">
+                  <polygon points="7,4 20,12 7,20" />
+                </svg>
+              </span>
+            </span>
+          </figure>
+        </div>
 
-        <div className="mt-10 grid gap-5 lg:grid-cols-3">
-          {testimonials.map(({ quote, name, org }) => (
-            <figure
-              key={name}
-              className="flex h-full flex-col rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-6"
-            >
-              <blockquote className="text-lg leading-snug">“{quote}”</blockquote>
-              <figcaption className="mt-auto pt-6 text-sm">
-                <span className="block font-medium">{name}</span>
-                <span className="text-[var(--text-dim)]">{org}</span>
-              </figcaption>
-            </figure>
+        {/* ===== Sayı bandı ===== */}
+        <div className="stats">
+          {stats.map((stat) => (
+            <div key={stat.label} className="stat">
+              <div className="stat-value">{stat.value}</div>
+              <div className="stat-label">{stat.label}</div>
+            </div>
           ))}
         </div>
-      </section>
 
-      {/* ===== Kaynaklar ===== */}
-      <section className="border-y border-[var(--border-soft)] bg-[var(--bg-card)]">
-        <div className="mx-auto max-w-[1220px] px-6 py-20">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <h2 className="text-4xl font-semibold tracking-tight">Kaynaklar</h2>
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)]">
-              Tümünü gör <ArrowRight size={15} />
+        {/* ===== Neden biz ===== */}
+        <div className="section" id="neden">
+          <h2 style={{ fontSize: 36, textAlign: "center" }}>Neden ESG Akademi Anket?</h2>
+          <p className="section-lede">
+            Kurumsal dönüşüm ölçümü karmaşıklaşabilir; biz basitleştirmeyi görev edindik.
+          </p>
+          <div className="grid-why">
+            {reasons.map((reason) => (
+              <div key={reason.title} className="why">
+                {reason.icon}
+                <div>
+                  <h4>{reason.title}</h4>
+                  <p>{reason.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ===== Kimler kullanıyor ===== */}
+        <div className="section section-bordered" id="kimler">
+          <h2 style={{ fontSize: 36, textAlign: "center" }}>Kimler kullanıyor?</h2>
+          {audiences.map((audience) => {
+            const image = (
+              <figure className="blueprint" style={{ margin: 0 }}>
+                <div className="shot shot-8x5">{audience.caption}</div>
+                <Corners />
+              </figure>
+            );
+            const copy = (
+              <div>
+                <h3>{audience.title}</h3>
+                <p>{audience.text}</p>
+                <a className="more" href="#kaynaklar">
+                  Daha fazla →
+                </a>
+              </div>
+            );
+            return (
+              <div key={audience.title} className="split">
+                {audience.imageFirst ? image : copy}
+                {audience.imageFirst ? copy : image}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ===== Başarı hikâyesi ===== */}
+        <div className="section section-bordered">
+          <h2 style={{ fontSize: 36, textAlign: "center" }}>Başarı hikâyeleri</h2>
+          <div className="quote-row">
+            <div>
+              <blockquote>
+                “Anketi iki haftada tüm birimlerimizle tamamladık; çıkan yol haritası yönetim
+                kurulu sunumumuzun omurgası oldu. Nerede olduğumuzu ilk kez sayılarla
+                konuşabildik.”
+              </blockquote>
+              <div style={{ marginTop: 24 }}>
+                <div style={{ fontSize: 15, fontWeight: 700 }}>Elif Demir</div>
+                <div
+                  style={{
+                    fontSize: 14,
+                    color: "color-mix(in srgb, var(--color-text) 70%, transparent)",
+                  }}
+                >
+                  Sürdürülebilirlik Direktörü, Nova Tekstil
+                </div>
+                <span className="tag-outline" style={{ marginTop: 8 }}>
+                  Tekstil · Türkiye
+                </span>
+              </div>
+              <div className="dots" aria-hidden>
+                <i className="on" />
+                <i />
+                <i />
+              </div>
+            </div>
+            <figure className="blueprint" style={{ margin: 0 }}>
+              <div className="shot shot-4x3">Müşteri fotoğrafı</div>
+              <Corners />
+            </figure>
+          </div>
+        </div>
+
+        {/* ===== Kaynaklar ===== */}
+        <div className="section section-bordered" id="kaynaklar">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              gap: 24,
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <div className="kicker">Kaynak merkezi</div>
+              <h2 style={{ fontSize: 36, marginTop: 12 }}>Kaynak merkezimizi ziyaret edin</h2>
+            </div>
+            <Link href="/signup" className="btn btn-secondary">
+              Keşfetmeye başlayın
+            </Link>
+          </div>
+
+          <div className="grid-3" style={{ marginTop: 44 }}>
+            {resources.map((resource) => (
+              <div key={resource.title} className="blueprint resource">
+                <Corners />
+                <div className="shot shot-card">Yazı görseli</div>
+                <div style={{ padding: 20 }}>
+                  <h3>{resource.title}</h3>
+                  <p>{resource.text}</p>
+                  <a className="more" href="#kaynaklar">
+                    Devamını oku →
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="disclaimer">
+            Skorlar kurumların öz-değerlendirme beyanlarına dayanır; sektör kıyasları platformdaki
+            katılımcı verilerinden anonim olarak üretilir. Sonuçlar bağımsız denetim veya
+            sertifikasyon yerine geçmez.
+          </p>
+        </div>
+
+        {/* ===== Footer ===== */}
+        <div className="band-dark on-dark footer">
+          <div className="footer-grid">
+            <div>
+              <div className="brand" style={{ color: "var(--color-bg)" }}>
+                ESG Akademi / Anket
+              </div>
+              <p
+                style={{
+                  fontSize: 13,
+                  lineHeight: "20px",
+                  marginTop: 12,
+                  maxWidth: "30ch",
+                  color: "color-mix(in srgb, var(--color-bg) 65%, transparent)",
+                }}
+              >
+                Sürdürülebilirlik ve dijital olgunluk ölçümü, tek platformda.
+              </p>
+              <Link href="/dashboard" className="btn btn-primary" style={{ marginTop: 20 }}>
+                Ankete Başla
+              </Link>
+            </div>
+
+            {footerColumns.map((column) => (
+              <div key={column.title}>
+                <h5>{column.title}</h5>
+                <div className="footer-links">
+                  {column.items.map((item) => (
+                    <a key={item} href="#kaynaklar">
+                      {item}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="footer-bottom">
+            <span>© 2026 ESG Akademi. Tüm hakları saklıdır.</span>
+            <span style={{ display: "flex", gap: 18 }}>
+              <a href="#kaynaklar">X</a>
+              <a href="#kaynaklar">LinkedIn</a>
+              <a href="#kaynaklar">YouTube</a>
             </span>
           </div>
-
-          <div className="mt-10 grid gap-5 lg:grid-cols-3">
-            {resources.map(({ tag, title, text }) => (
-              <article
-                key={title}
-                className="overflow-hidden rounded-2xl border border-[var(--border-soft)]"
-              >
-                <div className="h-36 bg-[var(--bg-card-2)]" />
-                <div className="p-6">
-                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--text-dim)]">
-                    {tag}
-                  </span>
-                  <h3 className="mt-3 text-lg font-semibold leading-snug">{title}</h3>
-                  <p className="mt-2 text-sm text-[var(--text-muted)]">{text}</p>
-                </div>
-              </article>
-            ))}
-          </div>
         </div>
-      </section>
-
-      {/* ===== Kapanış çağrısı ===== */}
-      <section className="mx-auto max-w-[1220px] px-6 py-20">
-        <div className="rounded-2xl bg-[var(--text-main)] px-8 py-14 text-center text-[var(--bg-card)]">
-          <h2 className="text-4xl font-semibold tracking-tight text-inherit">
-            Kurumunuz bugün nerede?
-          </h2>
-          <p className="mx-auto mt-4 max-w-xl text-lg opacity-80">
-            Demo anketi 12 dakikada tamamlanır ve size gerçek bir olgunluk puanı ile ilk üç
-            iyileştirme adımını verir.
-          </p>
-          <Link
-            href="/signup"
-            className="mt-8 inline-flex h-12 items-center gap-2 rounded-lg bg-[var(--accent)] px-6 text-base font-medium text-[var(--on-accent)] hover:bg-[var(--accent-dark)]"
-          >
-            Ücretsiz başlayın <ArrowRight size={18} />
-          </Link>
-        </div>
-      </section>
-
-      {/* ===== Footer ===== */}
-      <footer className="border-t border-[var(--border-soft)] bg-[var(--bg-card)]">
-        <div className="mx-auto max-w-[1220px] px-6 py-14">
-          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
-            <div className="lg:col-span-2">
-              <div className="flex items-center gap-2.5">
-                <span className="grid h-7 w-7 place-items-center rounded-md bg-[var(--text-main)]">
-                  <span className="h-2.5 w-2.5 rounded-sm bg-[var(--accent)]" />
-                </span>
-                <span className="text-lg font-semibold tracking-tight">
-                  ESG <span className="text-[var(--accent)]">LAB</span>
-                </span>
-              </div>
-              <p className="mt-4 max-w-sm text-sm text-[var(--text-muted)]">
-                Sürdürülebilirlik ve dijital olgunluk değerlendirmesi, sektörel kıyaslama ve
-                dönüşüm yol haritası platformu.
-              </p>
-            </div>
-
-            {[
-              { title: "Çözümler", items: ["Olgunluk değerlendirmesi", "Kıyaslama", "Yol haritası", "Raporlama"] },
-              { title: "Kurumsal", items: ["Hakkımızda", "Kaynaklar", "İletişim", "Kariyer"] },
-              { title: "Destek", items: ["Yardım merkezi", "KVKK", "Gizlilik", "Kullanım şartları"] },
-            ].map(({ title, items }) => (
-              <div key={title}>
-                <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-[var(--text-dim)]">
-                  {title}
-                </p>
-                <ul className="mt-4 space-y-2.5 text-sm text-[var(--text-muted)]">
-                  {items.map((item) => (
-                    <li key={item} className="cursor-default hover:text-[var(--text-main)]">
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-[var(--border-soft)] pt-6 text-sm text-[var(--text-dim)]">
-            <span>© 2026 ESG LAB. Tüm hakları saklıdır.</span>
-            <span className="font-mono text-xs">KVKK · ISO 27001 · TSE</span>
-          </div>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 }

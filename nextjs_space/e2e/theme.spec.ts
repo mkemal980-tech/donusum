@@ -47,7 +47,7 @@ test("açık tema ESG LAB kimliğiyle gelir", async ({ page }) => {
   expect(await heading.evaluate((el) => getComputedStyle(el).fontFamily)).toContain("Space_Grotesk");
 });
 
-test("tanıtım sayfası tema tercihinden bağımsız olarak marka kimliğiyle gelir", async ({ page }) => {
+test("tanıtım sayfası tema tercihinden bağımsız olarak kendi paletiyle gelir", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   await page.evaluate(() => window.localStorage.setItem("theme", "dark"));
   await page.reload({ waitUntil: "networkidle" });
@@ -55,14 +55,20 @@ test("tanıtım sayfası tema tercihinden bağımsız olarak marka kimliğiyle g
   // Kullanıcının tercihi duruyor...
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 
-  // ...ama sayfa kendi paletini açıyor: turuncu vurgu, açık zemin.
+  // ...ama sayfa kendi tasarım sistemini taşıyor: açık gri zemin, mavi vurgu,
+  // Barlow ailesi. Uygulamanın tema token'larına hiç bakmaz.
   const brand = await page.evaluate(() => {
-    const wrap = document.querySelector('div[data-theme="light"]') as HTMLElement;
+    const wrap = document.querySelector(".esg-landing") as HTMLElement;
+    const style = getComputedStyle(wrap);
     return {
-      accent: getComputedStyle(wrap).getPropertyValue("--accent").trim().toLowerCase(),
-      background: getComputedStyle(wrap).backgroundColor,
+      accent: style.getPropertyValue("--color-accent").trim().toLowerCase(),
+      background: style.backgroundColor,
+      body: style.fontFamily,
+      heading: getComputedStyle(document.querySelector(".esg-landing h1")!).fontFamily,
     };
   });
-  expect(brand.accent).toBe("#fa541c");
-  expect(brand.background).toBe("rgb(246, 248, 251)");
+  expect(brand.accent).toBe("#5980a6");
+  expect(brand.background).toBe("rgb(242, 242, 243)");
+  expect(brand.body).toContain("Barlow");
+  expect(brand.heading).toContain("Barlow_Condensed");
 });

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans, Poppins, Roboto, Space_Grotesk } from "next/font/google";
+import { Barlow, Barlow_Condensed, IBM_Plex_Mono, IBM_Plex_Sans, Poppins, Roboto, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/providers";
 
@@ -55,7 +55,22 @@ const plexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
-const fontVariables = [poppins, roboto, spaceGrotesk, plexSans, plexMono]
+/** Tanıtım sayfasının kendi ailesi (bkz. app/landing.css). */
+const barlow = Barlow({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "700"],
+  variable: "--font-barlow",
+  display: "swap",
+});
+
+const barlowCondensed = Barlow_Condensed({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "600"],
+  variable: "--font-barlow-condensed",
+  display: "swap",
+});
+
+const fontVariables = [poppins, roboto, spaceGrotesk, plexSans, plexMono, barlow, barlowCondensed]
   .map((font) => font.variable)
   .join(" ");
 

@@ -7,7 +7,7 @@ import { test, expect } from "@playwright/test";
 
 test("ana sayfa yüklenir ve iki çağrıyı da gösterir", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Sürdürülebilirlik");
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Kurumsal dönüşüm");
   // Yeni ziyaretçi kayda, mevcut kullanıcı panoya gider; oturumsuz kullanıcıyı
   // /dashboard'ın kendisi /login'e yönlendirir.
   await expect(page.locator('a[href="/signup"]').first()).toBeVisible();
