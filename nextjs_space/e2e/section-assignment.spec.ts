@@ -1,0 +1,400 @@
+import { test, expect, type Browser, type Page } from "@playwright/test";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/db";
+
+/**
+ * Çok kullanıcılı değerlendirmenin uçtan uca denemesi.
+ *
+ * Bu akışın parçaları ayrı ayrı birim testli, ama asıl soru bütünde: iki
+ * ayrı oturum, iki ayrı rol ve aralarında bir veritabanı var. Koordinatör bir
+ * bölümü dağıtıyor, katkıcı yalnızca onu görüyor, cevabı kuruluşun tek
+ * değerlendirmesine düşüyor ve koordinatörün panosunda beliriyor.
+ *
+ * Fikstürünü kendi kurar ve siler; DATABASE_URL erişilemezse test atlanır.
+ */
+
+const PASSWORD = "E2eParola!123";
+const COORDINATOR = "e2e-koordinator@example.com";
+const CONTRIBUTOR = "e2e-katkici@example.com";
+const ADMIN = "e2e-yonetici@example.com";
+const UNIT = "E2E Kuruluş";
+const SURVEY = "E2E Anket";
+
+const SECTION_MINE = "Atık Yönetimi";
+const SECTION_OTHER = "Enerji Verimliliği";
+
+let seeded = false;
+
+async function removeFixture() {
+  // Öneriler ankete değil bölüme bağlı; anket silinince bağları boşalır ama
+  // kayıtlar kalır. Açıkça silinmeli.
+  await prisma.recommendation.deleteMany({ where: { title: { startsWith: "E2E " } } });
+  // Kopyalar "E2E Anket (kopya)" adıyla oluşuyor; onlar da temizlenmeli.
+  await prisma.survey.deleteMany({ where: { name: { startsWith: SURVEY } } });
+  await prisma.user.deleteMany({ where: { email: { in: [COORDINATOR, CONTRIBUTOR, ADMIN] } } });
+  await prisma.unit.deleteMany({ where: { name: UNIT } });
+}
+
+test.beforeAll(async () => {
+  try {
+    await removeFixture();
+  } catch (error) {
+    console.warn("Veritabanına ulaşılamadı, test atlanıyor:", error);
+    return;
+  }
+
+  const password = await bcrypt.hash(PASSWORD, 10);
+  const unit = await prisma.unit.create({ data: { name: UNIT } });
+
+  const coordinator = await prisma.user.create({
+    data: {
+      email: COORDINATOR,
+      password,
+      firstName: "Kerem",
+      lastName: "Koordinatör",
+      unitId: unit.id,
+      role: "UNIT_MANAGER",
+      emailVerified: true,
+    },
+  });
+
+  const contributor = await prisma.user.create({
+    data: {
+      email: CONTRIBUTOR,
+      password,
+      firstName: "Ayşe",
+      lastName: "Katkıcı",
+      unitId: unit.id,
+      emailVerified: true,
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: ADMIN,
+      password,
+      firstName: "Deniz",
+      lastName: "Yönetici",
+      role: "ADMIN",
+      emailVerified: true,
+    },
+  });
+
+  // Koordinatörlük rol alanından değil, birim yöneticiliği kaydından geliyor.
+  await prisma.unitAdmin.create({ data: { unitId: unit.id, userId: coordinator.id } });
+
+  const survey = await prisma.survey.create({ data: { name: SURVEY } });
+  const category = await prisma.category.create({
+    data: { name: "Çevre", surveyId: survey.id },
+  });
+
+  for (const [order, name] of [SECTION_MINE, SECTION_OTHER].entries()) {
+    const subCategory = await prisma.subCategory.create({
+      data: { name, categoryId: category.id, order, hasSubLevels: false },
+    });
+    await prisma.question.createMany({
+      data: [0, 1, 2].map((index) => ({
+        text: `${name} sorusu ${index + 1}`,
+        type: "SCALE" as const,
+        subCategoryId: subCategory.id,
+        order: index,
+      })),
+    });
+  }
+
+  for (const user of [coordinator, contributor]) {
+    await prisma.userSurveyAssignment.create({
+      data: { userId: user.id, surveyId: survey.id },
+    });
+  }
+
+  seeded = true;
+});
+
+test.afterAll(async () => {
+  if (seeded) await removeFixture();
+  await prisma.$disconnect();
+});
+
+/**
+ * Giriş yapar ve oturumun gerçekten kurulduğunu doğrular.
+ *
+ * Adres çubuğunun /dashboard'a dönmesi yetmiyor: form hidrasyon bitmeden
+ * tıklanırsa gönderilmiyor, oturum kurulmadan sayfa değişebiliyor ve sonraki
+ * bütün istekler 401 alıyor — ekran da "liste alınamadı" diyor. Testin
+ * rastgele kalmasının sebebi buydu. Ölçüt URL değil, oturumun kendisi.
+ */
+async function login(browser: Browser, email: string): Promise<Page> {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.goto("/login", { waitUntil: "networkidle" });
+    await page.waitForTimeout(1000);
+    await page.locator('input[type="email"]').fill(email);
+    await page.locator('input[type="password"]').fill(PASSWORD);
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL(/\/dashboard/, { timeout: 20_000 }).catch(() => undefined);
+
+    const session = await (await page.request.get("/api/auth/session")).json();
+    if (session?.user?.email === email) return page;
+  }
+
+  throw new Error(`Giriş yapılamadı: ${email}`);
+}
+
+/** Sayfayı açar ve beklenen metnin görünmesini bekler. */
+async function open(page: Page, url: string, text: string) {
+  await page.goto(url);
+  await expect(page.getByText(text).first()).toBeVisible({ timeout: 20_000 });
+}
+
+test("dağıt, doldur, gönder: çok kullanıcılı değerlendirmenin tam turu", async ({ browser }) => {
+  test.skip(!seeded, "Fikstür kurulamadı (veritabanı yok)");
+  // İki oturum, sekiz sayfa yüklemesi ve bir dev sunucusu; cömert olmak lazım.
+  test.setTimeout(240_000);
+
+  // --- koordinatör dağıtır ---
+  const coordinator = await login(browser, COORDINATOR);
+  await open(coordinator, "/unit-manager/assignments", SECTION_MINE);
+  await expect(coordinator.getByText(SECTION_OTHER)).toBeVisible();
+
+  // 0: anket seçici, 1: Atık Yönetimi, 2: Enerji Verimliliği
+  await coordinator.locator("select").nth(1).selectOption({ label: "Ayşe Katkıcı" });
+  await expect(coordinator.getByText("Bölüm atandı")).toBeVisible({ timeout: 10_000 });
+
+  // --- katkıcı yalnızca kendi bölümünü görür ---
+  const contributor = await login(browser, CONTRIBUTOR);
+  await open(contributor, "/survey", "Size atanan 1 bölüm gösteriliyor.");
+  await expect(contributor.getByText(SECTION_MINE).first()).toBeVisible();
+  await expect(contributor.getByText(SECTION_OTHER)).toHaveCount(0);
+
+  // Ölçek düğmeleri role="radio" taşıyor.
+  await contributor.getByRole("radio", { name: /Seviye 4/ }).first().click();
+  await expect(contributor.getByText("Cevap kaydedildi")).toBeVisible({ timeout: 10_000 });
+
+  // --- kendine atanmayan bölüme cevap yazamaz (asıl yaptırım sunucuda) ---
+  const assigned = await (await coordinator.request.get("/api/survey/assigned")).json();
+  const surveyId = assigned[0].id;
+  const structure = await (
+    await coordinator.request.get(`/api/survey/structure?surveyId=${surveyId}`)
+  ).json();
+
+  const structureSections = structure.flatMap((category: any) => category.subCategories ?? []);
+  const mineSection = structureSections.find((section: any) => section.name === SECTION_MINE);
+  const otherSection = structureSections.find((section: any) => section.name === SECTION_OTHER);
+  const mineQuestionId = mineSection?.questions?.[0]?.id;
+  const otherSectionId = otherSection?.id;
+  const otherQuestionId = otherSection?.questions?.[0]?.id;
+
+  expect(mineQuestionId).toBeTruthy();
+  expect(otherQuestionId).toBeTruthy();
+  const forbidden = await contributor.request.post("/api/survey/responses", {
+    data: { questionId: otherQuestionId, value: "5" },
+  });
+  expect(forbidden.status()).toBe(403);
+
+  // --- pano ilerlemeyi gösterir ---
+  await coordinator.reload();
+  await expect(coordinator.getByText("1/3 soru").first()).toBeVisible({ timeout: 20_000 });
+  await expect(coordinator.getByText("Devam ediyor")).toBeVisible();
+  await expect(coordinator.getByText("Başlanmadı")).toBeVisible();
+
+  /**
+   * Hatırlatma. Sağlayıcı tanımlı değilse sessizce başarı dönmemeli —
+   * koordinatör gönderdiğini sanıp kimse haberdar olmazdı. İki sonuçtan
+   * birini bekliyoruz: gerçek gönderim ya da açık bir "tanımlı değil".
+   */
+  await coordinator.getByRole("button", { name: "Eksiği kalanlara hatırlat" }).click();
+  await expect(
+    coordinator.getByText(/E-posta sağlayıcısı tanımlı değil|hatırlatma gönderildi/)
+  ).toBeVisible({ timeout: 15_000 });
+
+  // --- birim panosunun satırı kişi değil değerlendirme ---
+  await open(coordinator, "/unit-manager", SURVEY);
+  await expect(coordinator.getByRole("columnheader", { name: "Değerlendirme" })).toBeVisible();
+  await expect(coordinator.getByText("1 kişi")).toBeVisible();
+
+  // --- gönderim: eksik varken uyarır, onaydan sonra kilitler ---
+  await open(coordinator, "/unit-manager/assignments", "Değerlendirmeyi gönder");
+  await expect(coordinator.getByText("2 bölümde 5 soru boş.")).toBeVisible();
+
+  await coordinator.getByRole("button", { name: "Değerlendirmeyi gönder" }).click();
+  await expect(coordinator.getByText("Boş sorularla gönderiyorsunuz:")).toBeVisible();
+  await coordinator.getByRole("button", { name: "Yine de gönder" }).click();
+  await expect(coordinator.getByText("Değerlendirme gönderildi").first()).toBeVisible({
+    timeout: 15_000,
+  });
+
+  // Kilitliyken cevap da dağıtım da yazılamaz.
+  const lockedAnswer = await contributor.request.post("/api/survey/responses", {
+    data: { questionId: mineQuestionId, value: "3" },
+  });
+  expect(lockedAnswer.status()).toBe(403);
+
+  const lockedAssignment = await coordinator.request.post("/api/assessment/sections", {
+    data: { surveyId, subCategoryId: otherSectionId, assigneeId: null },
+  });
+  expect(lockedAssignment.status()).toBe(403);
+
+  // Katkıcı ankette kilidi görür.
+  await open(contributor, "/survey", "Bu değerlendirme gönderildi");
+
+  // Panoda puan taslak olmaktan çıkar.
+  await open(coordinator, "/dashboard", "Kesin puan");
+
+  // --- geri alma kilidi açar ---
+  await open(coordinator, "/unit-manager/assignments", "Gönderimi geri al");
+  await coordinator.getByRole("button", { name: "Gönderimi geri al" }).click();
+  await expect(coordinator.getByRole("button", { name: "Değerlendirmeyi gönder" })).toBeVisible({
+    timeout: 15_000,
+  });
+
+  const reopenedAnswer = await contributor.request.post("/api/survey/responses", {
+    data: { questionId: mineQuestionId, value: "3" },
+  });
+  expect(reopenedAnswer.status()).toBe(200);
+});
+
+test("yönetici anketi her şeyiyle kopyalar", async ({ browser }) => {
+  test.skip(!seeded, "Fikstür kurulamadı (veritabanı yok)");
+  test.setTimeout(120_000);
+
+  const admin = await login(browser, ADMIN);
+  // Kopyalama onay soruyor; testte otomatik kabul.
+  admin.on("dialog", (dialog) => dialog.accept());
+
+  await open(admin, "/admin/surveys", SURVEY);
+
+  // Başlık her ankette kendi adını taşıyor; kart içinde arama gerekmiyor.
+  await admin.getByTitle(`"${SURVEY}" anketini her şeyiyle kopyala`, { exact: false }).click();
+
+  await expect(admin.getByText(/oluşturuldu —/)).toBeVisible({ timeout: 30_000 });
+
+  const copy = await prisma.survey.findFirst({
+    where: { name: { startsWith: `${SURVEY} (kopya` } },
+    include: {
+      categories: {
+        include: { subCategories: { include: { questions: true } }, questions: true },
+      },
+    },
+  });
+
+  expect(copy).not.toBeNull();
+  // Kopya gözden geçirilmeden kullanıcıya görünmemeli.
+  expect(copy!.isActive).toBe(false);
+  expect(copy!.categories).toHaveLength(1);
+
+  const copiedSections = copy!.categories[0].subCategories;
+  expect(copiedSections.map((s) => s.name).sort()).toEqual([SECTION_MINE, SECTION_OTHER].sort());
+  expect(copiedSections.flatMap((s) => s.questions)).toHaveLength(6);
+
+  // Sorular kopyaya bağlanmış olmalı, aslına değil.
+  const originalIds = new Set(
+    (
+      await prisma.question.findMany({
+        where: { subCategory: { category: { survey: { name: SURVEY } } } },
+        select: { id: true },
+      })
+    ).map((q) => q.id)
+  );
+  for (const question of copiedSections.flatMap((s) => s.questions)) {
+    expect(originalIds.has(question.id)).toBe(false);
+  }
+});
+
+test("panodaki öneri sayısı, kullanıcının gerçekten göreceği sayıdır", async ({ browser }) => {
+  test.skip(!seeded, "Fikstür kurulamadı (veritabanı yok)");
+  test.setTimeout(120_000);
+
+  const section = await prisma.subCategory.findFirst({
+    where: { name: SECTION_MINE, category: { survey: { name: SURVEY } } },
+    select: { id: true },
+  });
+  expect(section).not.toBeNull();
+
+  /**
+   * İki öneri: biri her puanda geçerli, diğeri yalnızca %90 üstünde.
+   * Katkıcı üç sorudan birine "4" verdiği için bölüm puanı %30 civarında —
+   * yani ikincisi tetiklenmemeli.
+   *
+   * Pano bir zamanlar ankette TANIMLI öneri sayısını gösteriyordu; kullanıcı
+   * panoda 76, Öneriler ekranında 40 görüp "24'ü nerede" diye soruyordu.
+   */
+  await prisma.recommendation.createMany({
+    data: [
+      {
+        title: "E2E her puanda geçerli",
+        description: "Test",
+        subCategoryId: section!.id,
+        minScoreThreshold: 0,
+        maxScoreThreshold: 100,
+      },
+      {
+        title: "E2E yalnızca yüksek puanda",
+        description: "Test",
+        subCategoryId: section!.id,
+        minScoreThreshold: 90,
+        maxScoreThreshold: 100,
+      },
+    ],
+  });
+
+  const contributor = await login(browser, CONTRIBUTOR);
+  const assigned = await (await contributor.request.get("/api/survey/assigned")).json();
+  const surveyId = assigned.find((survey: any) => survey.name === SURVEY)?.id;
+  expect(surveyId).toBeTruthy();
+
+  const shown = await (
+    await contributor.request.get(`/api/recommendations?surveyId=${surveyId}`)
+  ).json();
+  const kpi = await (
+    await contributor.request.get(`/api/dashboard/kpi?surveyId=${surveyId}`)
+  ).json();
+
+  // Tanımlı iki öneriden yalnızca biri tetikleniyor.
+  expect(shown).toHaveLength(1);
+  expect(shown[0].title).toBe("E2E her puanda geçerli");
+  // Panodaki sayı Öneriler ekranıyla aynı olmalı — asıl kontrol bu.
+  expect(kpi.recommendations.total).toBe(shown.length);
+});
+
+test("ara verip dönen kullanıcı kaldığı yerden devam eder", async ({ browser }) => {
+  test.skip(!seeded, "Fikstür kurulamadı (veritabanı yok)");
+  test.setTimeout(120_000);
+
+  /**
+   * Cevaplar her tıklamada kaydediliyor ama kullanıcı bunu bilmiyordu ve
+   * "kaydet" düğmesi arıyordu. Üç şeyin de ekranda olması gerekiyor:
+   * kayıt göstergesi, çıkış yolu ve dönüşte nerede kaldığının söylenmesi.
+   */
+  const coordinator = await login(browser, COORDINATOR);
+
+  const assigned = await (await coordinator.request.get("/api/survey/assigned")).json();
+  const surveyId = assigned.find((survey: any) => survey.name === SURVEY).id;
+
+  // İlk bölümü tamamla: kaldığı yer bandı ancak bir adım bitince anlamlı.
+  const firstSection = await prisma.subCategory.findFirst({
+    where: { name: SECTION_MINE, category: { survey: { name: SURVEY } } },
+    include: { questions: { where: { archivedAt: null } } },
+  });
+
+  for (const question of firstSection!.questions) {
+    const res = await coordinator.request.post("/api/survey/responses", {
+      data: { questionId: question.id, value: "4" },
+    });
+    expect(res.status()).toBe(200);
+  }
+
+  await coordinator.goto("/survey");
+
+  await expect(coordinator.getByText("Otomatik kaydedildi")).toBeVisible({ timeout: 20_000 });
+  await expect(coordinator.getByRole("button", { name: "Kaydet ve çık" })).toBeVisible();
+  // İlk bölüm dolu olduğu için ikinci bölümden devam etmeli.
+  await expect(
+    coordinator.getByText(new RegExp(`Kaldığınız yerden devam ediyorsunuz:.*${SECTION_OTHER}`))
+  ).toBeVisible({ timeout: 10_000 });
+
+  await coordinator.getByRole("button", { name: "Kaydet ve çık" }).click();
+  await coordinator.waitForURL(/\/dashboard/, { timeout: 15_000 });
+});

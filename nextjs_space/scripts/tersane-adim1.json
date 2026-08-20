@@ -1,0 +1,428 @@
+{
+ "1": {
+  "A": "Sabit ve hareketli yakıt kaynakları ile satın alınan elektriği kapsayan başlangıç envanterini kurun; yasal baca ölçümlerini, yakıt tüketimini ve sorumluları tek takvimde izleyin.",
+  "B": "GHG Protocol/ISO 14064-1 ile uyumlu Kapsam 1-2 baz yılı belirleyin; önemli kaynaklar için yıllık mutlak ve yoğunluk hedefleri, proje sahipleri ve onaylı azaltım portföyü oluşturun.",
+  "C": "Önemlilik taramasıyla Kapsam 3 kategorilerini ekleyin; 2030/uzun vadeli hedefleri, yatırım bütçesini, karbon fiyatı varsayımını ve üç aylık yönetim gözden geçirmesini içeren geçiş planını uygulayın.",
+  "D": "Hedefleri bilim temelli yaklaşım ile doğrulatın; azaltım sonuçlarını bağımsız güvenceye açın, sermaye planı ve yönetici performans göstergeleriyle ilişkilendirip tedarikçi/müşteri ortak azaltım programları yürütün."
+ },
+ "2": {
+  "A": "Aylık elektrik tüketim profilini çıkarın ve düşük riskli başlangıç olarak küçük bir YEK-G/I-REC tedariki veya uygun bir çatı GES ön fizibilitesiyle en az bir yenilenebilir kaynak uygulamasını başlatın.",
+  "B": "Yük profili, çatı/arsa kapasitesi ve bağlantı koşullarına göre üç yıllık tedarik planı hazırlayın; yerinde üretim, ikili anlaşma ve sertifikalı elektrik seçeneklerini maliyet-karbon etkisiyle karşılaştırın.",
+  "C": "Yenilenebilir payını çoğunluk seviyesine çıkarın; sertifika seri numarası, üretim dönemi ve iptal kayıtlarıyla çift sayımı önleyin, üretim-tüketim uyumunu ve kalan piyasa bazlı emisyonları yıllık raporlayın.",
+  "D": "Saatlik tüketim ile karbon içeriği düşük üretimi eşleştirmeye, depolama/talep tarafı esnekliğine ve ek yenilenebilir kapasite yaratan uzun vadeli sözleşmelere geçin; %100 hedefini yönetimce onaylayın."
+ },
+ "3": {
+  "A": "Forklift, saha aracı ve jeneratörleri adet, yaş, çalışma saati, yakıt ve emisyon açısından envanterleyin; bakım, rölanti azaltma ve bir elektrikli araç pilotu için sorumlu ve kayıt düzeni kurun.",
+  "B": "Araç sınıfı bazında yenileme önceliği, yıllık dönüşüm oranı, şarj gücü ve elektrik altyapısı ihtiyacını belirleyin; toplam sahip olma maliyeti ile İSG risk değerlendirmesini onaylatın.",
+  "C": "Satın alma şartnamelerine sıfır/düşük emisyon kriteri koyun; planlı filoyu ve uygun sabit ekipmanı dönüştürün, kWh/çalışma saati, yakıt, arıza ve emisyon KPI'larını düzenli izleyin.",
+  "D": "Şarjı yenilenebilir üretim ve enerji yönetim sistemiyle optimize edin; batarya ikinci yaşam/geri dönüşüm planı kurun, telematik verilerle rota-rölanti optimizasyonu yapın ve tedarik zinciri emisyonlarını doğrulayın."
+ },
+ "4": {
+  "A": "AB ETS, CBAM ve müşteri sözleşmelerinin tersaneye doğrudan/dolaylı etkisini ürün, müşteri ve malzeme bazında tarayın; gerekli veri alanları ile mevzuat sahiplerini belirleyin.",
+  "B": "Kaynak belgeden rapora veri akışını yazılı prosedüre bağlayın; çelik ve enerji verileri için tedarikçi şablonu, rol matrisi, versiyon kontrolü ve aylık kapanış takvimi kurun.",
+  "C": "Hesaplama metodolojisi, emisyon faktörü kaynağı, değişiklik kaydı ve örneklem kontrollerini içeren denetim izini tamamlayın; karbon fiyatı senaryolarını teklif ve yatırım kararlarına yansıtın.",
+  "D": "Veri zincirini ERP/satın alma sistemine entegre edin, tedarikçi verisini risk bazlı doğrulayın ve bağımsız ön güvence uygulayın; düzenleme değişikliklerini otomatik uyum matrisiyle yönetin."
+ },
+ "5": {
+  "A": "Son 24-36 aylık enerji faturalarını ve ana tüketicileri toplayın; enerji ekibi, sayaç okuma planı ve kWh/üretim-saati gibi ilk yoğunluk göstergelerini tanımlayın.",
+  "B": "Enerji politikası, önemli enerji kullanımları, baz çizgisi ve EnPI'ları oluşturun; fırsat listesini tasarruf, yatırım, sorumlu, termin ve doğrulama yöntemiyle aksiyon planına bağlayın.",
+  "C": "İç tetkik, yönetim gözden geçirmesi ve enerji performansı iyileşme kanıtlarını tamamlayın; sistemi ISO 50001'e göre bağımsız belgelendirmeye hazırlayın ve sapmaları düzeltici faaliyetle kapatın.",
+  "D": "Alt sayaçları ve üretim verisini otomatikleştirip regresyon/normalizasyon kullanın; ISO 50006/IPMVP ilkeleriyle tasarrufları doğrulayın, enerji performansını yatırım ve bakım kararlarının zorunlu girdisi yapın."
+ },
+ "6": {
+  "A": "Mevcut yakıtları tüketim, ekipman uyumu, tedarik sürekliliği, yaşam döngüsü emisyonu ve güvenlik açısından tarayın; teknik olarak uygulanabilir alternatiflerden kısa liste oluşturun.",
+  "B": "Seçilen yakıt için küçük ölçekli pilot yapın; malzeme uyumu, depolama, yangın/patlama, eğitim, tedarikçi uygunluğu ve yakıt kalite kayıtlarını risk değerlendirmesiyle yönetin.",
+  "C": "Ekipman bazlı geçiş takvimi, CapEx/OpEx, yakıt bulunabilirliği ve well-to-wake emisyon kriteri oluşturun; tüketim, maliyet, emisyon ve güvenlik KPI'larıyla aşamalı uygulamayı yönetin.",
+  "D": "Sertifikalı düşük karbonlu yakıt tedariki ve uzun vadeli sözleşmeler kurun; gerçek yaşam döngüsü verisiyle yakıt yollarını karşılaştırın, enerji dayanıklılığı ve acil durum planlarını birlikte stres testine tabi tutun."
+ },
+ "7": {
+  "A": "Hibrit, batarya, hidrojen ve amonyak projeleri için yetkinlik boşluğu analizi yapın; dış uzman kullanılan her projede asgari tasarım inceleme, tehlike analizi ve kabul kriterlerini sözleşmeye ekleyin.",
+  "B": "Çekirdek mühendislik ekibi ve onaylı tedarikçi havuzu kurun; ATEX/HAZID-HAZOP, gaz algılama, havalandırma, yangın güvenliği ve acil müdahale prosedürlerini yakıt türüne göre yazılı hale getirin.",
+  "C": "Personel yeterliliklerini belgeleyin; FAT/SAT, sızdırmazlık, fonksiyon, alarm ve devreye alma test paketlerini standardize ederek tekrar eden projelerde ders çıkarma kayıtlarını kullanın.",
+  "D": "Klas kuruluşları, üniversiteler ve ekipman üreticileriyle demonstrasyon programı yürütün; dijital ikiz ve risk verilerini tasarım kütüphanesine aktarın, güvenlik ve emisyon performansını müşteriye doğrulanabilir biçimde sunun."
+ },
+ "8": {
+  "A": "Sulu raspa, vakumlu/kapalı raspa, robotik uygulama ve düşük VOC seçeneklerinden tersane için uygulanabilir bir katalog hazırlayın; müşteri talep ettiğinde maliyet ve süre etkisini tutarlı biçimde sunun.",
+  "B": "Teklif kontrol listesine çevresel alternatifleri zorunlu madde olarak ekleyin; her seçenek için işçilik, süre, enerji, su, atık ve emisyon varsayımlarını standart hesap şablonuyla karşılaştırın.",
+  "C": "Seçilen alternatiflerin gerçek performansını iş emri ve proje kapanışında ölçün; baz senaryoyla farkı, veri kalitesi ve sapma nedenleriyle birlikte müşteriye raporlayın.",
+  "D": "Sonuçları anonim bir performans veri tabanında biriktirin; en iyi uygulamayı varsayılan teklif seçeneği yapın, performans garantili hizmet modeli ve ortak tasarruf/karbon kazanımı sözleşmeleri geliştirin."
+ },
+ "9": {
+  "A": "Teklif ekibine enerji verimliliği, malzeme seçimi, bakım kolaylığı, sökülebilirlik ve ömür sonu seçeneklerini görüşmek için kısa bir eko-tasarım kontrol listesi verin.",
+  "B": "Alternatifleri ilk yatırım, işletme maliyeti, enerji ve emisyon etkisiyle sistematik değerlendirin; fonksiyonel birim, sistem sınırı ve veri kaynağını teklif dosyasında kaydedin.",
+  "C": "Önemli projelerde ISO 14040/14044 uyumlu LCA ve yaşam döngüsü maliyeti uygulayın; standart veri seti, tasarım gözden geçirme kapıları ve proje sonrası performans takibi kurun.",
+  "D": "Tasarım kararlarını doğrulanmış EPD/ürün ayak izi verileri ve dijital ürün pasaportu mantığıyla besleyin; çevresel performansı teknik şartname ve müşteri kabul kriterine dönüştürün."
+ },
+ "10": {
+  "A": "Çevresel boyut-etki ve mevzuat uygunluk değerlendirmesi yapın; önemli etkiler için operasyonel kontroller, sorumlular ve temel enerji-su-atık-emisyon göstergelerini oluşturun.",
+  "B": "ISO 14001 yönetim sistemini iç tetkik, yönetim gözden geçirmesi, uygunsuzluk takibi ve performans hedefleriyle tam işletin; sertifikayı sahadaki kanıtlarla destekleyin.",
+  "C": "Tesis performansını uygun harici denizcilik/liman çevre programıyla kıyaslayın; yıllık rapor, tedarikçi kriterleri ve doğrulanmış iyileşme sonuçlarını yönetişime entegre edin.",
+  "D": "Net-sıfır, su pozitifliği, sıfır atık ve doğa pozitifliği hedeflerini tek dönüşüm portföyünde birleştirin; bağımsız güvence ve sektör ortaklıklarıyla lider uygulamaları ölçekleyin."
+ },
+ "11": {
+  "A": "Havuz, kızak, rıhtım, elektrik odası, yakıt/kimyasal depoları ve erişim yolları için taşkın, deniz seviyesi, fırtına ve aşırı sıcak tehlike envanteri oluşturun.",
+  "B": "Birden çok iklim senaryosu ve zaman ufkuyla maruziyet-kırılganlık analizi yapın; eşik değerleri, iş kesintisi etkisini ve kısa/orta/uzun vadeli adaptasyon önlemlerini önceliklendirin.",
+  "C": "Önlemleri mühendislik projeleri, acil durum ve sermaye bütçesine entegre edin; tasarım kriterlerini güncelleyin ve olay/iklim verileriyle risk değerlendirmesini düzenli yenileyin.",
+  "D": "Kritik altyapıyı dayanıklılık stres testine tabi tutun; sigortacı, belediye, liman ve tedarikçilerle ortak adaptasyon planı kurup önlemlerin kaçınılan kayıp ve hizmet sürekliliği etkisini ölçün."
+ },
+ "12": {
+  "A": "Boya uygulama alanlarını haritalayın; branda/negatif basınç gibi geçici kontrolleri standart iş talimatı, günlük kontrol listesi ve uygunsuzluk kaydıyla disipline edin.",
+  "B": "Uygun kapasitede boya kabini/kapalı alan kullanımını zorunlu hale getirin; filtre basıncı, bakım, solvent tüketimi, ürün güvenlik bilgi formları ve VOC kayıtlarını takip edin.",
+  "C": "İklim kontrollü hol, yüksek verimli filtrasyon ve emisyon izleme sistemini risk bazlı bakım planıyla işletin; limit aşımı için alarm, iş durdurma ve kök neden süreci kurun.",
+  "D": "Düşük/ultra düşük VOC kaplama şartnameleri, otomatik karışım/uygulama ve geri kazanım teknolojileri uygulayın; VOC'yi iş emri ve kaplanan alan başına izleyip tedarikçi inovasyon programına bağlayın."
+ },
+ "13": {
+  "A": "Atıkları proses ve tehlike sınıfına göre kaynağında ayırın; renk/etiket standardı, tartım noktaları, lisanslı taşıyıcı-işleyici listesi ve aylık kayıt sorumluluğu oluşturun.",
+  "B": "Atık envanterini miktar, maliyet, proses ve işlem yöntemiyle analiz edin; toplam/tehlikeli atık yoğunluğu, geri kazanım oranı ve azaltım hedeflerini onaylı aksiyon planına bağlayın.",
+  "C": "9R hiyerarşisine göre önce önleme, yeniden kullanım ve onarımı uygulayın; kütle dengesi ve sevk belgeleriyle yüksek geri kazanım performansını tedarikçi denetimleriyle doğrulayın.",
+  "D": "Yan ürün ve atıklar için endüstriyel simbiyoz/kapalı döngü anlaşmaları geliştirin; ISO 59020 göstergeleriyle döngüselliği ölçün ve bertarafa giden atık için zaman bağlı sıfıra yaklaşım hedefi belirleyin."
+ },
+ "14": {
+  "A": "Metal hurda ve tehlikeli atık için lisans, sözleşme, tartım fişi, taşıma/sevk belgesi ve nihai işlem kanıtını dosya bazında eşleştirin; eksik belgeyle çıkışı engelleyin.",
+  "B": "Atık kodu ve ağırlık bazlı dijital kayıt kurun; işleyicileri izin kapsamı, kapasite, alt yüklenici ve geçmiş uygunsuzluk açısından ön yeterlilik ve periyodik değerlendirmeye tabi tutun.",
+  "C": "Malzeme akış analizi, geri kazanım verimi ve kayıp oranlarını KPI olarak izleyin; yüksek riskli akışlarda saha denetimi veya bağımsız doğrulama ile zinciri teyit edin.",
+  "D": "Parti/iş emri seviyesinde dijital izlenebilirlik ve geri dönüştürülmüş içerik doğrulaması kurun; stratejik geri dönüşümcülerle kapalı döngü metal tedariki ve kalite geri besleme anlaşmaları yapın."
+ },
+ "15": {
+  "A": "Raspa alanlarında rüzgâr, komşuluk, drenaj ve çalışan maruziyetini değerlendirin; tam kapatma mümkün değilse sağlam bariyer, sulu yöntem/vakum ekipmanı ve günlük temizlik standardı uygulayın.",
+  "B": "Raspa-boya kabini kullanımını planlama sistemine bağlayın; havalandırma, toz toplama, filtre, negatif basınç ve atık grit kontrollerini kayıtlı bakım ve saha denetimleriyle işletin.",
+  "C": "Tam kapalı hol ve sürekli/periodik partikül izlemeyi devreye alın; alarm eşikleri, uygunsuzluk kapatma, çevresel şikâyet ve çalışan maruziyet verilerini tek performans sisteminde yönetin.",
+  "D": "Robotik/geri kazanımlı raspa ve düşük atıklı yüzey hazırlama teknolojilerini ölçekleyin; grit tüketimi, PM emisyonu, atık ve işçilik maruziyetini proje bazında kıyaslayarak en iyi yöntemi varsayılan hale getirin."
+ },
+ "16": {
+  "A": "Söküm faaliyeti varsa Hong Kong Sözleşmesi ve AB SRR kapsam boşluk analizi yapın; IHM, tesis planı, gemiye özgü geri dönüşüm planı ve yetkili kişi sorumluluklarını belirleyin.",
+  "B": "IHM'yi yetkin uzmanla hazırlatıp güncel tutun; SRFP, gemiye özgü plan, güvenli söküm, sıcak iş/kapalı alan ve tehlikeli malzeme prosedürlerini kayıtlarla işletin.",
+  "C": "Tesis yetkilendirme/sertifikasyonunu tamamlayın; işçi güvenliği, çevresel izleme, bertaraf zinciri ve gemi bazlı planları bağımsız denetime ve düzenli uygunluk kontrolüne açın.",
+  "D": "Tüm malzeme akışlarını dijital IHM ve zincir teslim kayıtlarıyla izleyin; yeniden kullanım/geri kazanım çıktısını yayımlayın ve tedarikçi/alt yüklenicileri aynı doğrulama standardına dahil edin."
+ },
+ "17": {
+  "A": "Antifouling söküm ve boya atığını ayrı toplayın; alan izolasyonu, etiketleme, geçici depolama ve lisanslı bertaraf belgelerini standartlaştırın, yasaklı içerik kontrolünü iş emrine ekleyin.",
+  "B": "Ürün teknik/SDS belgeleriyle AFS uygunluğunu doğrulayın; atık miktarı ve sevkini izleyin, düşük toksisiteli/biyositsiz alternatifleri performans ve maliyet bilgisiyle müşteriye sunun.",
+  "C": "Alternatif kaplama kullanım hedefi belirleyin; uygulama, yakıt verimliliği, bakım ve çevresel performansı izleyin, bertaraf zincirini tedarikçi denetimiyle doğrulayın.",
+  "D": "Kaplama seçimini yaşam döngüsü ve sucul toksisite kriterleriyle yönetin; kapalı devre yüzey temizleme/atık geri kazanımı kurup uygunluk ve performans sonuçlarını müşteri/klasla paylaşın."
+ },
+ "18": {
+  "A": "Bakım-onarım ve söküm işlerinde bina/gemi yaşı, ekipman ve geçmiş kayıtlara göre şüpheli malzeme tarama listesi oluşturun; şüphede işi durdurma ve uzman örnekleme kuralı koyun.",
+  "B": "İş öncesi yetkin kişi incelemesi ve akredite analiz uygulayın; pozitif bulguda kontrollü alan, sertifikalı söküm, kişisel koruma, hava ölçümü ve bertaraf belgelerini yönetin.",
+  "C": "Asbest, PCB, kurşun/ağır metal envanterini konum-miktar-durum bazında güncel tutun; çalışan/alt yüklenici yetkinliğini ve nihai bertaraf zincirini bağımsız denetimle doğrulayın.",
+  "D": "Dijital tehlikeli malzeme kayıtlarını satın alma, bakım ve proje planlamasına bağlayın; maruziyeti tasarımla yok etme hedefi, sağlık gözetimi trendleri ve tedarikçi içerik beyanlarıyla proaktif yönetin."
+ },
+ "19": {
+  "A": "Denize doğrudan deşarjı önleyin; havuz/kızak atıksularını ayrı toplayın, kabul/arıtma noktasına sevk kayıtlarını tutun ve günlük görsel sızıntı kontrolü uygulayın.",
+  "B": "Sahaya özgü alıcı ortam ve faaliyet-etki değerlendirmesi yapın; bulanıklık, gürültü, su kalitesi, sediment ve olaylar için baz değer, izleme noktası, sıklık ve aksiyon eşiği belirleyin.",
+  "C": "Üniversite/uzman kuruluşla bilimsel izleme ve hedefli iyileştirme projeleri yürütün; yöntem, sonuç, uygunsuzluk ve ilerlemeyi paydaşlara düzenli ve şeffaf biçimde raporlayın.",
+  "D": "Kümülatif havza/liman etkilerini paydaşlarla yönetin; açık veri, erken uyarı sensörleri ve ekosistem hizmeti göstergeleriyle ölçülebilir net pozitif denizel katkı hedefleri geliştirin."
+ },
+ "20": {
+  "A": "Ana sayaç verisini aylık toplayın, yüksek tüketimli alanları belirleyin; kaçak onarımı, düşük debili ekipman ve temizlik prosedürü gibi hızlı kazanımları sorumlu ve terminle uygulayın.",
+  "B": "Kaynak-proses-deşarj bazlı su dengesi ve alt sayaç planı kurun; m3/işçilik saati veya proje gibi yoğunluk KPI'larıyla kaçak, proses optimizasyonu ve hedefleri izleyin.",
+  "C": "Yağmur suyu, gri su ve uygun proses geri kullanım projelerini kalite/sağlık riskleriyle uygulayın; kuraklık senaryosu, kritik kullanım öncelikleri ve su kesintisi planını düzenli test edin.",
+  "D": "Havza stresini ve tedarik zincirini içeren ISO 14046 su ayak izi değerlendirmesi yapın; yüksek riskli kullanımlarda mutlak azaltım ve havza ortaklığıyla ölçülebilir su yenileme hedefi oluşturun."
+ },
+ "21": {
+  "A": "Kimyasal/yakıt alanlarını ve yağmur suyu mazgallarını haritalayın; taşınabilir döküntü setleri, temel havuzlama ve günlük sızıntı kontrolüyle açık riskleri kapatın.",
+  "B": "Temiz ve kirli su hatlarını ayırın; tank/IBC alanlarında yeterli ikincil koruma, yağ tutucu ve kapatma vanası kurun, periyodik bakım ve yağış öncesi kontrol listesi uygulayın.",
+  "C": "Drenaj planını risk, akış yönü ve acil izolasyon noktalarıyla dijital haritalayın; tasarım kapasitesini aşırı yağışa göre gözden geçirip olay ve denetim sonuçlarını yatırım planına aktarın.",
+  "D": "Su kalitesi sensörleri ve otomatik izolasyon/uyarı sistemleri kullanın; geçirgen yüzey, tampon alan ve doğa temelli çözümlerle hem taşkın hem kirletici yükünü ölçülebilir biçimde azaltın."
+ },
+ "22": {
+  "A": "Risk noktalarına uygun bariyer, emici, skimmer ve kişisel koruyucu ekipman yerleştirin; ekipman envanteri, son kullanım/bakım kontrolü ve en az yıllık temel tatbikat kaydı oluşturun.",
+  "B": "Yakıt, yağ ve kimyasal için ayrı senaryolar, bildirim zinciri ve komuta yapısı tanımlayın; tatbikat sürelerini, ekipman kullanımını ve kök neden/düzeltici faaliyetleri ölçün.",
+  "C": "Liman başkanlığı, kıyı tesisi, itfaiye ve yüklenicilerle entegre plan ve ortak tatbikat yapın; müdahale süresi, yayılım kontrolü ve kapanan aksiyonları performans göstergesi olarak izleyin.",
+  "D": "Akıntı-hava verili yayılım modellemesi, drone/sensör erken tespiti ve karşılıklı yardım anlaşmaları kurun; en kötü durum senaryosunu habersiz tatbikatla test edip bağımsız gözlemci değerlendirmesi alın."
+ },
+ "23": {
+  "A": "Balast suyu ve ilgili çevre sistemleri için IMO, klas ve üretici bültenlerini proje bazında takip edecek teknik sorumlu belirleyin; gereklilik listesini proje dosyasında tutun.",
+  "B": "Tip onayı, örnekleme, devreye alma, kalibrasyon, kayıt defteri ve bakım gereklerini prosedürleştirin; servis personelini ekipman bazında eğitip doküman kontrolü uygulayın.",
+  "C": "Yetkin servis ekibi ve standardize iş paketleri kurun; ilk seferde kabul, arıza tekrarı, kapanış süresi ve müşteri geri bildirimi KPI'larıyla sürekli iyileştirin.",
+  "D": "Uzaktan izleme/tanı, üretici veri entegrasyonu ve filo bazlı performans analitiği geliştirin; regülasyon değişikliklerini tasarım/servis kütüphanesine otomatik aktararak öngörülü bakım sunun."
+ },
+ "24": {
+  "A": "Hassas kıyı/deniz dibi alanlarını haritalayın; yasak bölgeler, demirleme/tarama kısıtları, aydınlatma-gürültü kuralları ve saha işaretlemeleriyle temel korumayı uygulayın.",
+  "B": "Tür/habitat baz değeri ve faaliyet-etki yollarını belirleyin; uzman periyodik gözlem, fotoğraf/konum kaydı ve aksiyon eşikleriyle sahaya özgü biyoçeşitlilik planı kurun.",
+  "C": "Ölçülebilir koruma/restorasyon hedefleri, paydaş sorumlulukları ve uzun dönem izleme göstergeleri belirleyin; projelerin sonuçlarını bilimsel yöntem ve şeffaf raporlamayla değerlendirin.",
+  "D": "TNFD LEAP yaklaşımıyla bağımlılık, etki, risk ve fırsatları yönetişime bağlayın; kaçınma-azaltma-restorasyon hiyerarşisini uygulayıp ilave ve kalıcı doğa pozitif sonuçları bağımsız olarak doğrulayın."
+ },
+ "25": {
+  "A": "Her eğitim için katılım yanında kısa bilgi testi ve kritik işlerde uygulamalı gösterim ekleyin; başarısız sonuçta tekrar eğitim ve yetkilendirme kısıtı uygulayın.",
+  "B": "Görev-risk bazlı yetkinlik matrisi kurun; saha gözlemi, ramak kala ve denetim bulgularını eğitim ihtiyaç analizine bağlayıp yıllık planı kanıta göre güncelleyin.",
+  "C": "Davranış temelli gözlem programı ve dijital eğitim kayıtları kullanın; bilgi kalıcılığı, güvenli davranış, olay ve tekrar eğitim KPI'larıyla etkinliği düzenli gözden geçirin.",
+  "D": "Simülasyon/VR ve senaryo tabanlı değerlendirme uygulayın; eğitim ile olay azalması arasındaki etkiyi analiz edin, yükleniciler dahil kritik yeterlilikleri bağımsız gözlem ve kör saha doğrulamasıyla test edin."
+ },
+ "26": {
+  "A": "Tüm kaza, meslek hastalığı şüphesi ve ramak kala olayları için tek kayıt sistemi kurun; yasal bildirim, ilk inceleme, sorumlu ve termin alanlarını zorunlu yapın.",
+  "B": "Çalışma saati temelli TRIFR/LTIFR ve şiddet göstergelerini tutarlı tanımlarla hesaplayın; kök neden, düzeltici faaliyet etkinlik kontrolü ve tekrar eden olay analizini uygulayın.",
+  "C": "Ramak kala ve güvenli davranış bildirimini teşvik edin; öncü göstergeleri bölüm/yüklenici bazında trendleyip üst yönetime raporlayın ve yüksek potansiyelli olayları ayrı yönetin.",
+  "D": "Olay verisini iş emri, vardiya, yorgunluk, eğitim ve maruziyet verileriyle analiz edin; öngörücü risk modelleri ve bağımsız kültür değerlendirmesiyle ölümcül riskleri proaktif olarak azaltın."
+ },
+ "27": {
+  "A": "Acil durum ekipleri, iletişim zinciri, toplanma alanı ve ekipman listelerini güncelleyin; vardiya ve yüklenici kapsamasını doğrulayan planlı tatbikat takvimi oluşturun.",
+  "B": "Yangın, deprem, kimyasal döküntü, deniz kirliliği ve kurtarma için senaryolu tatbikatlar yapın; müdahale süresi, sayım doğruluğu, ekipman işlevi ve dersleri kayıt altına alın.",
+  "C": "İtfaiye, AFAD/belediye, liman ve komşu tesislerle ortak/habersiz tatbikatlar düzenleyin; performans kriterlerini önceden belirleyip düzeltici faaliyetlerin kapanışını üst yönetimde izleyin.",
+  "D": "Birleşik ve eşzamanlı kriz senaryolarıyla iş sürekliliğini birlikte test edin; dijital komuta/iletişim yedekliliği ve bağımsız gözlemci değerlendirmesiyle tesis dayanıklılığını stres testine tabi tutun."
+ },
+ "28": {
+  "A": "Gürültü, solvent, metal dumanı ve diğer kimyasallar için yasal ölçüm ve sağlık tarama takvimi oluşturun; maruziyet gruplarını ve kayıt sorumlularını belirleyin.",
+  "B": "Benzer maruziyet grupları ve görev bazlı risk planı kurun; kişisel/ortam ölçümlerini sağlık gözetimiyle birlikte değerlendirip mühendislik kontrolü ve aksiyon takibi uygulayın.",
+  "C": "İkame, kapalı sistem, lokal emiş ve otomasyon projeleriyle maruziyeti kaynağında azaltın; trendleri, sınır aşımını ve kontrol etkinliğini yetkin dış değerlendirmeyle doğrulayın.",
+  "D": "Gerçek zamanlı sensör ve giyilebilir cihazlardan yararlanın; gecikmeli sağlık etkileri için uzun dönem kohort/trend analizi yapıp tasarım ve satın alma kriterlerini maruziyet önleme hedeflerine bağlayın."
+ },
+ "29": {
+  "A": "Her çalışan ve yüklenicinin ciddi/ani tehlikede işi durdurma hakkını yazılı duyurun; amir onayı aranmadan güvenli alana çekilme ve bildirim kanalını eğitimle açıklayın.",
+  "B": "Durdurma olaylarını suçlayıcı olmayan biçimde kaydedin; hızlı saha değerlendirmesi, tehlike giderme, işi yeniden başlatma yetkisi ve bildirim sahibine geri bildirim süreci kurun.",
+  "C": "Misilleme yasağını denetleyin; yüksek kaliteli bildirimleri tanıyın, kök neden ve tekrar analizlerini yönetime taşıyın, kullanım ve kapanış sürelerini bölüm/yüklenici bazında izleyin.",
+  "D": "Psikolojik güvenliği bağımsız kültür anketi ve saha görüşmeleriyle ölçün; durdurma verisini ölümcül risk kontrollerinin etkinlik doğrulamasında kullanıp lider performansına bağlayın."
+ },
+ "30": {
+  "A": "Vardiya ve risk profiline göre ilk yardımcı sayısı, sağlık personeli erişimi, ambulans/sağlık kuruluşu anlaşması ve kritik ekipman ihtiyacını belirleyin; iletişim listesini görünür tutun.",
+  "B": "7/24 erişilebilir sağlık müdahale düzeni kurun; triyaj, sevk, kimyasal maruziyet, yanık ve travma prosedürlerini görevli ekip ve dış hizmet sağlayıcıyla test edin.",
+  "C": "Sağlık birimini olay komuta sistemiyle entegre edin; müdahale süresi, ekipman kullanılabilirliği, sevk sonucu ve tatbikat bulgularını KPI olarak izleyip gizlilik içinde yönetin.",
+  "D": "Tele-tıp, dijital olay aktarımı ve bölgesel travma ağıyla koordinasyon kurun; sağlık verisi gizliliğini koruyarak eğilimleri iş tasarımı ve önleyici sağlık programlarına dönüştürün."
+ },
+ "31": {
+  "A": "Kapalı alan ve sıcak iş için ayrı izin formları oluşturun; yetkili kişi, iş öncesi gaz ölçümü, izolasyon, yangın gözcüsü ve kurtarma hazırlığını zorunlu kontrol noktaları yapın.",
+  "B": "Kalibre gaz cihazı, sürekli/tekrarlı ölçüm, havalandırma, iletişim, giriş-çıkış sayımı ve hazır kurtarma ekibini prosedürle işletin; çalışan ve gözcü yeterliliğini uygulamalı doğrulayın.",
+  "C": "Dijital izin, LOTO, gerçek zamanlı gaz kaydı ve yetki matrisini entegre edin; izin sapmalarını saha denetimi, alarm ve tam denetim iziyle kapatın.",
+  "D": "Uzaktan gaz sensörü, video/konum takibi ve izin verisi analitiğiyle kritik kontrolleri işe başlamadan doğrulayın; yüksek potansiyelli sapmaları bağımsız ölümcül risk kontrol incelemesine alın."
+ },
+ "32": {
+  "A": "İskele, yüksekte çalışma ve kaldırma ekipmanını envanterleyin; temel kontrol listesi, etiketleme, operatör yetkisi ve kullanım öncesi görsel kontrolü zorunlu kılın.",
+  "B": "Yetkin kişi iskele muayenesi, düşmeye karşı koruma planı ve standart kaldırma planı uygulayın; operatör/sapancı/işaretçi yeterliliği ile ekipman muayene kayıtlarını doğrulayın.",
+  "C": "Kritik kaldırma kriterlerini tanımlayın; mühendislik hesabı/onayı, zemin-hava koşulu, eşzamanlı işler ve kurtarma planını yönetin, kontrol başarısı ve sapmaları KPI olarak izleyin.",
+  "D": "Yük sensörleri, dijital muayene etiketi ve saha konum verisi kullanın; tekrar eden planları mühendislik kütüphanesine aktarın ve ölümcül risk kontrollerini bağımsız saha doğrulamasıyla test edin."
+ },
+ "33": {
+  "A": "Kadınların saha rollerine katılımındaki işe alım, vardiya, tesis, ekipman/KKD ve kültür engellerini çalışan görüşmeleriyle belirleyin; idari rollerin ötesinde fırsat eşitliği politikası yayımlayın.",
+  "B": "Üretim ve teknik roller için gerçekçi sayısal hedef, erişilebilir ilan, staj/çıraklık ve tesis/KKD uyum planı kurun; işe alım ve elde tutma sonuçlarını izleyin.",
+  "C": "Mentorluk, liderlik gelişimi, eşit ücret ve ayrımcılık önleme mekanizmalarını işletin; kademe/rol bazlı işe giriş, terfi, ücret ve ayrılma verisini yıllık raporlayın.",
+  "D": "Tedarikçiler ve meslek okullarıyla kadın teknik yetenek havuzu oluşturun; ücret eşitliği analizini bağımsız doğrulayın ve kapsayıcı tasarımı tüm saha ekipmanı ile çalışma düzeninin varsayılanı yapın."
+ },
+ "34": {
+  "A": "Çalışanların temsilci seçebilmesini ve yönetime erişebilmesini sağlayın; başvuruları kayıt, sorumlu, termin ve geri bildirim alanlarıyla sistematik hale getirin.",
+  "B": "Çalışan/işveren temsilcilerinin düzenli gündemli toplantılarını kurun; İSG, ücret, vardiya ve çalışma koşulları aksiyonlarını tutanak ve kapanış takibiyle yönetin.",
+  "C": "Sendika ve toplu pazarlık haklarına saygıyı politika ve uygulamada güvenceye alın; ortak komitelerin karar ve iyileşme sonuçlarını göstergelerle ölçün.",
+  "D": "Strateji, teknoloji değişimi ve adil geçiş kararlarında çalışan temsilcilerini erken aşamada sürece dahil edin; sosyal diyalog kalitesini bağımsız değerlendirme ve düzenli kamu raporlamasıyla güçlendirin."
+ },
+ "35": {
+  "A": "Mobbing, cinsel taciz ve ayrımcılığı tanımlayan politika yayımlayın; yasak davranışlar, başvuru kanalı, gizlilik, misilleme yasağı ve olası yaptırımları açıkça duyurun.",
+  "B": "Gizli/erişilebilir bildirim kanalı, tarafsız soruşturma, kanıt koruma ve süre hedefleri kurun; yöneticiler ve çalışanlara vaka temelli eğitim verin.",
+  "C": "Kuruluş dışı bağımsız ihbar seçeneği sağlayın; misilleme belirtilerini izleyin, anonim eğilimleri yönetime ve çalışanlara yıllık raporlayıp önleyici aksiyon geliştirin.",
+  "D": "Kültür ve psikososyal riskleri bağımsız anket/odak gruplarıyla ölçün; eşitsizlik ve tekrar örüntülerini analiz ederek lider hesap verebilirliği, iyileştirme ve mağdur destek mekanizmalarını doğrulayın."
+ },
+ "36": {
+  "A": "İşe alım, ücret, gelişim ve çalışma ortamında eşit fırsat risklerini değerlendirin; ayrımcılık yasağı, makul uyum ve erişilebilir başvuru taahhüdünü yazılı hale getirin.",
+  "B": "Temsil, işe alım, terfi ve elde tutma hedefleri belirleyin; engelli çalışanlar ve diğer dezavantajlı gruplar için erişilebilirlik, uyum bütçesi ve işe başlangıç desteği sağlayın.",
+  "C": "Göstergeleri rol/kademe bazında izleyin; erişilebilirlik denetimi, ücret eşitliği analizi ve yıllık ilerleme raporuyla program etkinliğini değerlendirin.",
+  "D": "Evrensel tasarım ve kapsayıcı tedarik kriterlerini yerleşke/teknoloji yatırımlarına entegre edin; çalışan gruplarını karar süreçlerine dahil edip sonuçları bağımsız paydaş değerlendirmesiyle doğrulayın."
+ },
+ "37": {
+  "A": "Vardiya, günlük/haftalık çalışma ve fazla mesaiyi kişi bazında kaydedin; yasal sınır aşımını ve dinlenme süresi eksikliğini otomatik/manuel uyarıyla engelleyin.",
+  "B": "Gece işi, ardışık vardiya, uzun işe gidiş ve kritik görevler için yorgunluk risk değerlendirmesi yapın; vardiya tasarımı, mola ve işe uygunluk kontrollerini uygulayın.",
+  "C": "Yorgunluk bildirimleri, fazla mesai, hata/olay ve devamsızlık verisini birlikte izleyin; eşik aşımlarında personel planı ve düzeltici aksiyonu yönetin.",
+  "D": "Giyilebilir/reaksiyon testi gibi yöntemleri etik ve KVKK uyumlu pilotlarla değerlendirin; üretim planlamasını biyolojik ritim ve risk verisine göre optimize edip program etkinliğini bağımsız inceletin."
+ },
+ "38": {
+  "A": "Kendi çalışanları ve alt yükleniciler için yasal ücret, fazla mesai, kesinti ve ödeme tarihi şartlarını sözleşme/taahhütte açıkça yazın; banka dekontu/bordro örneklemiyle temel doğrulama başlatın.",
+  "B": "Yüksek riskli yüklenicilerde periyodik bordro, puantaj ve ödeme tarihi kontrolü yapın; gecikme veya eksik ödeme için düzeltme, çalışan geri bildirimi ve yaptırım süreci kurun.",
+  "C": "Güvenilir yerel yöntemle geçim ücreti fark analizi yapın; zamanında ödeme ve ücret yeterliliğini raporlayın, satın alma fiyat ve vadelerinin ücret ödeme kapasitesini zayıflatmamasını sağlayın.",
+  "D": "Kademeli geçim ücreti hedefini stratejik tedarikçilerle ortak plana bağlayın; ücret sonuçlarını çalışan temsilcileri ve bağımsız denetimle doğrulayıp satın alma teşvikleriyle destekleyin."
+ },
+ "39": {
+  "A": "Stajyer kabulünü görev tanımı, mentor, İSG eğitimi ve öğrenme çıktılarıyla yapılandırın; kurumlarla düzenli ihtiyaç ve geri bildirim toplantısı başlatın.",
+  "B": "Meslek lisesi, MYO ve üniversitelerle protokol yapın; kaynak, elektrik, mekatronik, dijital ve yeşil beceriler için ortak eğitim, eğitici ve istihdam takip sistemi kurun.",
+  "C": "Ortak müfredat/laboratuvar veya tersane okulu modeli geliştirin; kontenjan, mezuniyet, yeterlilik ve işe yerleşme hedeflerini yıllık iş gücü planına bağlayın.",
+  "D": "Sektör çapında yetkinlik merkezi ve eğitici havuzu kurun; mikro-yeterlilikleri uluslararası/ulusal çerçevelerle eşleyip programın istihdam, güvenlik ve verimlilik etkisini bağımsız ölçün."
+ },
+ "40": {
+  "A": "Yemek, içme suyu, soyunma-duş, tuvalet, dinlenme ve varsa barınma için asgari standart ve günlük/haftalık kontrol listeleri oluşturun; temel kayıtları tutun.",
+  "B": "Hijyen, gıda güvenliği, kapasite ve bakım kontrollerini planlı iç denetimle yürütün; alt yüklenici alanlarını ve vardiya erişimini aynı kapsamda değerlendirin.",
+  "C": "Bağımsız/uzman denetim, anonim şikâyet kanalı ve hizmet KPI'ları kullanın; numune/analiz, uygunsuzluk ve düzeltici faaliyet sonuçlarını yönetimce gözden geçirin.",
+  "D": "Kullanıcı deneyimi ve sağlık sonuçlarını birlikte izleyin; erişilebilirlik, beslenme kalitesi ve iklim dayanıklılığını tesis tasarımına entegre edip hizmet sağlayıcı performansını açık skor kartla yönetin."
+ },
+ "41": {
+  "A": "Görevler için asgari teknik/davranışsal yetkinlikleri tanımlayın; dağınık eğitimleri yıllık ihtiyaç ve kayıt planında birleştirin.",
+  "B": "Rol bazlı yetkinlik matrisi, boşluk analizi, yıllık eğitim ve değerlendirme döngüsü kurun; kritik eksiklikleri sorumlu ve terminle kapatın.",
+  "C": "Kişisel gelişim planları, usta-çırak modeli, yedekleme ve iç terfi yolları oluşturun; yetkinlik kazanımı, terfi, elde tutma ve performans etkisini ölçün.",
+  "D": "Beceri ontolojisi ve dijital öğrenme pasaportu kullanın; geleceğin yeşil/dijital iş gücü senaryolarına göre yeniden beceri kazandırma programlarını yatırım ve iş gücü planına bağlayın."
+ },
+ "42": {
+  "A": "Çalışanların ihtiyaçlarını kısa anket/odak gruplarıyla belirleyin; düşük maliyetli düzenli sosyal, spor veya aile destek etkinlikleri için sorumlu ve takvim oluşturun.",
+  "B": "Yıllık refah planı ve bütçesi kurun; katılım, kapsayıcılık, memnuniyet ve vardiya erişimini ölçerek etkinlikleri geri bildirimle geliştirin.",
+  "C": "Psikolojik destek, koruyucu sağlık, finansal iyi oluş ve iş-yaşam dengesi bileşenlerini gizlilikle yönetin; kullanım ve sonuç KPI'larını etik sınırlar içinde değerlendirin.",
+  "D": "Psikososyal risk değerlendirmesini iş tasarımı, liderlik ve vardiya kararlarına bağlayın; programın sağlık, devamsızlık ve elde tutma etkisini anonimleştirilmiş veriler ve bağımsız değerlendirmeyle doğrulayın."
+ },
+ "43": {
+  "A": "Tüm çalışan ve yüklenicilerin görev, belge türü, geçerlilik tarihi ve eksiklerini tek listede toplayın; süresi geçen/eksik belgede kritik görevlendirmeyi engelleyin.",
+  "B": "Kritik meslekler için görev-belge/yetkinlik matrisi ve kapanış planı kurun; yenileme uyarıları, uygulamalı yeterlilik doğrulaması ve sorumlu onayını izleyin.",
+  "C": "%100 geçerli belgelilik hedefini yükleniciler dahil uygulayın; işe giriş/iş emri sistemiyle yetki kontrolü ve tam denetim izi sağlayın.",
+  "D": "Dijital kimlik/QR ile sahada anlık yetkinlik doğrulaması yapın; belge dışında gerçek performans ve beceri gözlemlerini de kullanarak risk bazlı yeniden değerlendirme ve gelişim rotası kurun."
+ },
+ "44": {
+  "A": "Anonimlik, temsil ve veri gizliliği kuralları olan temel çalışan anketi uygulayın; sonuçları bölüm bazında özetleyip en az üç somut aksiyon belirleyin.",
+  "B": "Anketi düzenli döngüye alın; odak gruplarıyla kök nedenleri doğrulayın, aksiyon sahibi-termin belirleyin ve ilerlemeyi çalışanlarla paylaşın.",
+  "C": "Bağımsız uygulama veya metodoloji kontrolü kullanın; güven, katılım, liderlik ve elde tutma KPI'larını yöneticilerin iyileştirme hedeflerine bağlayın.",
+  "D": "Kısa nabız anketleri ve açık uçlu eğilim analizini etik biçimde kullanın; sonuçları temsilci görüşleri ve operasyon verileriyle üçgenleyip kapanan aksiyonların gerçek etkisini doğrulayın."
+ },
+ "45": {
+  "A": "Girişte kimlik, mesleki yeterlilik, sağlık, eğitim ve sigorta kontrolleri için standart kontrol listesi kurun; eksik belgeli personelin sahaya girişini engelleyin.",
+  "B": "Alt yüklenicileri risk sınıfına göre periyodik saha denetimi, toolbox, olay bildirimi ve uygunsuzluk kapanışına tabi tutun; ana işveren sorumluluklarını netleştirin.",
+  "C": "ESG/İSG ön yeterlilik, sözleşme şartı, performans skor kartı ve habersiz denetim sistemi uygulayın; sonuçları iş tahsisi ve yenileme kararlarına bağlayın.",
+  "D": "Ortak dijital izin-yetkinlik ve olay platformu kurun; önde gelen yüklenicilerle kapasite geliştirme, ortak hedef ve teşvik programı yürütüp ölümcül risk kontrollerini bağımsız doğrulayın."
+ },
+ "46": {
+  "A": "Komşular, balıkçılar, belediye, liman, çalışan aileleri ve diğer etkilenen grupları listeleyin; erişilebilir iletişim/şikâyet kanalı ve kayıt sorumlusu belirleyin.",
+  "B": "Paydaşları etki ve ilgi düzeyine göre önceliklendirin; düzenli bilgilendirme, şikâyet çözüm süresi, kanıt ve geri bildirim kapanışını yazılı süreçle yönetin.",
+  "C": "Paydaş katılım planı, periyodik toplantı ve ortak izleme göstergeleri kurun; alınan görüşlerin kararlara nasıl yansıdığını raporlayın.",
+  "D": "Yüksek etkili yatırımlarda birlikte tasarım ve sosyal etki ölçümü uygulayın; bağımsız kolaylaştırma, kamuya açık taahhüt takip tablosu ve uyuşmazlık çözüm mekanizmasıyla güveni güçlendirin."
+ },
+ "47": {
+  "A": "Çalışanların anladığı dilleri belirleyin; kritik İSG talimatı, işaret ve acil durum bilgisini sade dil, görsel ve doğrulanmış temel çevirilerle sunun.",
+  "B": "Çok dilli işe giriş ve görev eğitimi uygulayın; tercüman/akran desteği, anlama testi ve sahada geri anlatım yöntemiyle iletişimin etkisini doğrulayın.",
+  "C": "Dil bazlı risk analizini vardiya ve alt yüklenicileri kapsayacak şekilde yönetin; kritik talimatların güncel çeviri kontrolü ve saha gözlemiyle uygulanmasını izleyin.",
+  "D": "Dijital çok dilli içerik ve evrensel piktogram standardı kullanın; olay/ramak kala verisini dil değişkeniyle analiz edip tasarım ve gözetim kontrollerini sistematik olarak iyileştirin."
+ },
+ "48": {
+  "A": "Tedarikçi davranış kurallarına çocuk işçilik, zorla çalıştırma, belge alıkoyma ve işe alım ücreti yasağını ekleyin; tedarikçilerden imzalı taahhüt alın.",
+  "B": "Ülke, sektör, iş gücü modeli ve göçmen işçi kullanımına göre ön yeterlilik yapın; sözleşme hükümleri, örneklem belge/çalışan görüşmesi ve düzeltme planı uygulayın.",
+  "C": "Yüksek riskli tedarikçileri sahada/bağımsız denetleyin; alt kademe izlenebilirlik, mağdur odaklı iyileştirme ve kamuya açıklanan performans göstergeleri kurun.",
+  "D": "İşe alım ajansları ve alt tedarikçiler dahil zincirde işçi sesi ve erken uyarı sistemi kurun; ortak sektör programlarıyla kök nedenleri giderin ve iyileştirme sonuçlarını bağımsız doğrulayın."
+ },
+ "49": {
+  "A": "Faaliyet raporundaki genel anlatımı destekleyecek temel çevresel, sosyal ve yönetişim göstergelerini; kapsam, dönem, yöntem ve sorumlularıyla belirleyin.",
+  "B": "Müşteri taleplerini ortak bir veri sözlüğü ve raporlama takviminde birleştirin; GRI/TSRS/SASB ile boşluk analizi yapıp tekrarlanabilir metrik raporlaması kurun.",
+  "C": "Önemlilik sonucuna dayalı yıllık sürdürülebilirlik raporu yayımlayın; yönetim onayı, karşılaştırmalı veri, hedef ilerlemesi ve bağımsız güvence kapsamını açıkça belirtin.",
+  "D": "Raporlamayı yönetim bilgi sistemi ve finansal kapanışla entegre edin; dijital etiketleme, makul güvenceye hazırlık ve karar-faydalı ileriye dönük açıklamalarla paydaş kullanımını ölçün."
+ },
+ "50": {
+  "A": "Kritik finansal ve operasyonel kararlar için onay seviyeleri, belge saklama ve çıkar çatışması beyanı belirleyin; temel iç kontrol sorumlularını atayın.",
+  "B": "Yetki matrisi, politika envanteri, komite gündem/tutanak standardı ve karar gerekçesi kayıtlarını işletin; periyodik uygunluk gözden geçirmesi yapın.",
+  "C": "Bağımsız yönetim gözetimi, etik/denetim komitesi ve uçtan uca denetim izi kurun; önemli istisna ve ihlalleri doğrudan kurul seviyesine raporlayın.",
+  "D": "Karar kalitesi ve kontrol etkinliğini dış değerlendirme ile test edin; önemli ESG etkileri ve paydaş görüşlerini sermaye tahsisi kararlarında izlenebilir kriter haline getirin."
+ },
+ "51": {
+  "A": "Çevre, İSG, insan kaynakları, satın alma ve finans birimlerindeki mevcut ESG görevlerini çıkarın; bir koordinatör ve raporlama hattı belirleyin.",
+  "B": "Görev tanımı ve karar yetkisi olan ESG komitesi kurun; hedef, sahip, termin ve bütçeyi aylık/üç aylık aksiyon takibiyle yönetin.",
+  "C": "Yönetim kuruluna düzenli ESG performansı ve risk raporu sunun; iç denetim kapsamı ile yönetici teşviklerini ölçülebilir ve kontrol edilebilir hedeflere bağlayın.",
+  "D": "Kurul yetkinlik matrisine iklim, insan hakları ve doğa uzmanlığını ekleyin; bağımsız kurul değerlendirmesi ve senaryo çalışmalarıyla stratejik gözetimin etkinliğini doğrulayın."
+ },
+ "52": {
+  "A": "ESG konu evrenini faaliyetler, değer zinciri ve paydaşlardan çıkarın; gayriresmî seçimi ölçüt, kanıt ve sorumlu içeren basit bir önceliklendirme kaydına dönüştürün.",
+  "B": "Etkilenen paydaş ve uzman görüşlerini kullanarak etki önemliliği değerlendirmesi yapın; sonuçları risk, hedef, KPI ve raporlama kapsamına bağlayın.",
+  "C": "Etki ve finansal önemliliği birlikte değerlendiren çift önemlilik süreci kurun; eşik/metodoloji, kurul onayı, değer zinciri kanıtı ve yıllık/olay bazlı güncelleme mekanizması oluşturun.",
+  "D": "Önemlilik sonuçlarını bütçe, senaryo ve sermaye tahsisine nicel olarak bağlayın; paydaş katılımını bağımsız kolaylaştırma ve süreç güvencesiyle güçlendirip karar değişikliklerini izleyin."
+ },
+ "53": {
+  "A": "Her ESG göstergesi için veri sahibi, hazırlayan-gözden geçiren, kaynak belge ve basit tutarlılık kontrolü belirleyin; önemli düzeltmeleri kayıt altına alın.",
+  "B": "Veri sözlüğü, erişim/versiyon kontrolü, kanıt saklama ve iç denetim testleri kurun; hesaplama ve konsolidasyon kontrollerini risk bazlı uygulayın.",
+  "C": "Ön güvence boşluk analizinden sonra öncelikli göstergeleri bağımsız sınırlı güvenceye açın; kapsam, kriter, yanlışlık ve denetim izini raporlama sürecinde yönetin.",
+  "D": "Kontrol otomasyonu ve sürekli izleme kullanın; veri olgunlaştıkça makul güvence kapsamına geçiş planı oluşturun ve bulguları kurul denetim komitesinde kapatın."
+ },
+ "54": {
+  "A": "Resmî Gazete, bakanlıklar, IMO, AB ve müşteri/klas kaynakları için konu bazlı izleme listesi ve sorumlu belirleyin; yeni yayını kayda alın.",
+  "B": "Yükümlülük, kapsam, tesis etkisi, sorumlu, kanıt ve son tarih alanları olan uyum matrisi kurun; değişiklikleri periyodik toplantı ve aksiyon kapanışıyla yönetin.",
+  "C": "Sektör çalışma gruplarına katılın, taslaklara teknik görüş verin; yayımlanan değişikliği etki analizi, eğitim ve hızlı prosedür güncellemesiyle uygulayın.",
+  "D": "Dijital regülasyon takibi ve erken uyarı sistemi kurun; senaryo analiziyle olası düzenlemelerin yatırım/teklif etkisini önceden yönetin ve sektör ortak uyum araçları geliştirin."
+ },
+ "55": {
+  "A": "Rüşvet, kolaylaştırma ödemesi, hediye-ağırlama, bağış ve çıkar çatışmasını kapsayan etik politika yayımlayın; çalışan ve iş ortaklarından uyum beyanı alın.",
+  "B": "Sözleşme hükümleri, görev bazlı eğitim, onay limitleri, kayıt ve ihlal soruşturma/yaptırım süreci kurun; yüksek riskli işlemleri ikinci onaya bağlayın.",
+  "C": "Ülke, kamu teması, aracı ve işlem türüne göre rüşvet risk değerlendirmesi yapın; üçüncü taraf durum tespiti, faydalanıcı kontrolü ve risk bazlı denetim uygulayın.",
+  "D": "ISO 37001 uyumlu sistemi bağımsız değerlendirin; işlem analitiği, sürekli üçüncü taraf izleme ve kurul gözetimiyle kontrol etkinliğini ölçüp sonuçları şeffaf biçimde raporlayın."
+ },
+ "56": {
+  "A": "Çalışanların yöneticiden bağımsız olarak etik bildirim yapabileceği en az bir gizli kanal ve kayıt sorumlusu belirleyin; erişim ve kullanım bilgisini duyurun.",
+  "B": "Bildirim alma, ön değerlendirme, tarafsız soruşturma, gizlilik, kanıt saklama, süre ve sonuç geri bildirimi adımlarını yazılı hale getirin.",
+  "C": "Bağımsız üçüncü taraf/kurul gözetimli kanal ve açık misilleme koruması sağlayın; konu, süre, kanıtlanan vaka ve düzeltici faaliyet eğilimlerini anonim raporlayın.",
+  "D": "Kanal erişilebilirliği ve güvenini bağımsız test edin; tekrar eden nedenleri kültür ve kontrol iyileştirmesine dönüştürün, mağdur telafisi ve sistemik risk sonuçlarını kurul düzeyinde izleyin."
+ },
+ "57": {
+  "A": "Müşteri talebiyle eklenen ESG maddelerini merkezi sözleşme kütüphanesinde toplayın; hukuk, satın alma ve proje ekipleri için asgari kontrol listesi oluşturun.",
+  "B": "Standart sözleşme şablonlarına çevre, insan hakları, İSG, etik, veri ve raporlama yükümlülükleri ile kanıt/denetim haklarını risk bazlı ekleyin.",
+  "C": "Şartları alt yüklenici ve alt tedarikçilere akışlandırın; uyum denetimi, düzeltme süresi, yaptırım/fesih ve mağduriyet giderme hükümlerini fiilen uygulayın.",
+  "D": "Sözleşme performansını dijital izleyin; ticari teşvikleri doğrulanmış ESG sonuçlarına bağlayın ve sektör ortak maddeleriyle tedarikçi yükünü azaltırken güvence kalitesini artırın."
+ },
+ "58": {
+  "A": "Bilgi varlıkları ve kritik sistemleri envanterleyin; çok faktörlü kimlik doğrulama, yama, ayrı/çevrimdışı yedek ve temel erişim politikalarını risk önceliğiyle uygulayın.",
+  "B": "Rol bazlı erişim, kayıt/izleme, olay müdahale planı, tedarikçi güvenliği ve KVKK veri işleme envanterini kurun; masa başı ve teknik test yapın.",
+  "C": "ISO 27001 uyumlu ISMS, düzenli sızma/zafiyet testi ve felaket kurtarma tatbikatı uygulayın; OT/SCADA ile kurumsal ağ ayrımını ve kurtarma hedeflerini doğrulayın.",
+  "D": "NIST CSF profiliyle hedef olgunluğu yönetin; sıfır güven, sürekli tehdit izleme ve tedarik zinciri siber risk programını kurul gözetimi ve bağımsız dayanıklılık testleriyle güçlendirin."
+ },
+ "59": {
+  "A": "Finans dışı riskleri de kapsayacak ortak risk taksonomisi oluşturun; iklim, tedarik, jeopolitik, İSG, çevre ve siber riskleri sahip ve kontrol bilgisiyle kaydedin.",
+  "B": "Olasılık-etki, hız ve kontrol etkinliği ölçütleriyle kurumsal risk envanteri ve aksiyon planı kurun; risk iştahı ve eskalasyon eşiklerini belirleyin.",
+  "C": "Birden çok iklim, tedarik ve jeopolitik senaryoyu finansal/operasyonel etkilerle analiz edin; önemli riskleri yönetim kuruluna ve sermaye planına düzenli bağlayın.",
+  "D": "Birleşik riskler ve zincirleme etkiler için stres testi/ters stres testi yapın; erken uyarı göstergeleri, dijital risk analitiği ve bağımsız model doğrulamasıyla karar kalitesini artırın."
+ },
+ "60": {
+  "A": "Enerji, emisyon, CBAM/ETS maruziyeti ve uyum yatırımları için temel maliyet kalemlerini belirleyin; düşük-orta-yüksek karbon fiyatı varsayımları oluşturun.",
+  "B": "Senaryo bazlı gelir, maliyet, marj ve CapEx etkisini projeler/ürünler bazında hesaplayın; sonuçları yatırım önceliği ve yıllık bütçe sürecine entegre edin.",
+  "C": "Karbon maliyetini teklif fiyatlaması, sözleşme risk payı ve müşteri alternatiflerinde kullanın; portföy stres testlerini üst yönetime düzenli raporlayın.",
+  "D": "Gölge karbon fiyatını yatırım kapılarında zorunlu kılın; olasılıksal senaryolar ve gerçek fiyat/performans geri beslemesiyle modeli kalibre edip teşvikleri düşük karbonlu sonuçlara bağlayın."
+ },
+ "61": {
+  "A": "Kritik süreç, veri ve ekipmanları belirleyin; yedeklerin kapsamı, sıklığı, sorumlusu ve geri yükleme kontrolü için asgari plan oluşturun.",
+  "B": "İş etki analizi, RTO/RPO, kriz rolleri, alternatif çalışma ve iletişim adımlarını içeren iş sürekliliği planı kurun; periyodik masa başı/teknik test yapın.",
+  "C": "Kritik süreç dayanıklılığını tesis, insan, BT/OT ve tedarikçi bağımlılıklarıyla birlikte tasarlayın; alternatif tedarik ve karşılıklı yardım planlarını test edin.",
+  "D": "Bileşik afet-siber-tedarik senaryoları ve habersiz tatbikatlarla planı stres testine tabi tutun; kurtarma performansını bağımsız doğrulayıp yatırım kararlarına nicel dayanıklılık değeri ekleyin."
+ },
+ "62": {
+  "A": "Mevcut otomasyon ve manuel veri kaynaklarını haritalayın; enerji, malzeme firesi, su ve atık için ortak tanım, zaman damgası ve veri sahibi belirleyin.",
+  "B": "Üretim emri/tonaj/işçilik verisini enerji ve atık KPI'larıyla aynı veri modelinde ilişkilendirin; veri kalite kontrolleri ve operasyon panosu kurun.",
+  "C": "Kestirimci analiz pilotlarını ölçülebilir baz değer ve kontrol grubuyla yürütün; kanıtlanan enerji/fire iyileşmelerini standart iş akışına ölçekleyin.",
+  "D": "Kapalı çevrim optimizasyonu ve dijital MRV uygulayın; model önyargısı/bozulmasını izleyin, tasarrufları bağımsız doğrulayın ve analitiği üretim planlama ile yatırım kararlarına entegre edin."
+ },
+ "63": {
+  "A": "3D CAD için ortak dosya, revizyon, nesne adı ve sorumluluk standardı kurun; kritik ekipman ve alanlarda doğru 'as-built' model üretin.",
+  "B": "Tasarım, yerleşim, çakışma, üretim sırası ve kapasite simülasyonlarını seçili projelerde karar kapısına bağlayın; varsayım ve model doğrulama kaydı tutun.",
+  "C": "Bakım ve sensör verisini varlık modeliyle ilişkilendirerek yaşam döngüsü dijital ikizi kurun; karar destek çıktısını arıza, enerji ve süre KPI'larıyla doğrulayın.",
+  "D": "Tedarikçi ve müşteri verisini güvenli ortak veri ortamında birleştirin; gerçek zamanlı ikiz, senaryo optimizasyonu ve doğrulanmış model yönetişimiyle tasarım-operasyon geri beslemesini otomatikleştirin."
+ },
+ "64": {
+  "A": "Proje bazlı mühendislik çözümlerini problem, çözüm, maliyet, sonuç ve öğrenim alanlarıyla kaydedin; tekrar kullanılabilir fikir/çözüm havuzu oluşturun.",
+  "B": "Yetkili Ar-Ge/yenilik yapısı, yıllık bütçe ve aşama-kapı portföy yönetimi kurun; fikirleri stratejik uyum, etki, risk ve kaynak kriterleriyle seçin.",
+  "C": "Üniversite/teknoloji ortağı ve müşteri ortak projelerini yönetin; fikri mülkiyet, pilot, ticarileşme ve eko-inovasyon göstergelerini izleyin.",
+  "D": "ISO 56001 uyumlu inovasyon sistemi kurun; açık inovasyon/kurumsal girişim programıyla portföy dengesini yönetin ve çevresel-sosyal etkiyi ticarileşme kararının zorunlu kriteri yapın."
+ },
+ "65": {
+  "A": "Excel ve parçalı uygulamalardaki ana veri, süreç, tekrar ve hata noktalarını haritalayın; ortak kod, sahiplik ve yedekleme standardı belirleyin.",
+  "B": "Entegre ERP'de müşteri, tedarikçi, malzeme ve iş emri ana verisini yönetin; rol bazlı erişim, onay, veri kalite kuralı ve değişiklik kaydı kurun.",
+  "C": "ERP-MES/SCADA-bakım-satın alma entegrasyonunu güvenli arayüzlerle kurun; gerçek zamanlı performans analitiği ve veri soy ağacı ile denetim izi sağlayın.",
+  "D": "Kurumsal veri yönetişimi, API mimarisi ve ana veri kalite skorlarını uygulayın; süreç madenciliği ve güvenilir yapay zekâyla sapmaları öngörüp kararların açıklanabilirliğini yönetin."
+ },
+ "66": {
+  "A": "Verimlilik fikirlerini enerji, malzeme, su, atık ve iş güvenliği etkisiyle etiketleyin; basit fikir toplama ve değerlendirme ölçütleri oluşturun.",
+  "B": "Sürdürülebilirlik hedeflerine bağlı inovasyon temaları ve portföy bütçesi kurun; her proje için baz değer, hedef, sahip ve beklenen çevresel fayda belirleyin.",
+  "C": "Faydayı ölçüm ve doğrulama planıyla kanıtlayın; başarılı çözümleri standardize edip yeni hizmet/ürün olarak ticarileştirin ve geri tepme etkilerini kontrol edin.",
+  "D": "Portföyü sistem düzeyi ve yaşam döngüsü etkisiyle optimize edin; müşteriler/tedarikçilerle ortak IP ve ölçekleme modelleri geliştirip doğrulanmış etkiyi yatırım ve ödüllendirme kararına bağlayın."
+ },
+ "67": {
+  "A": "Bankaların yeşil ve sürdürülebilirlik bağlantılı finansman ürünlerini, uygun proje türlerini ve veri/güvence beklentilerini tarayın; finans-sürdürülebilirlik çalışma grubu kurun.",
+  "B": "Uygun yatırım portföyü, baz değer, KPI/SPT, teknik uygunluk ve veri odası hazırlayın; taxonomy/finansör kriterleri için boşluk ve aksiyon planı yürütün.",
+  "C": "Finansmanı aktif kullanın; fon tahsisi ve sürdürülebilirlik KPI performansını sözleşmeye uygun izleyip bağımsız doğrulama/güvence ile raporlayın.",
+  "D": "Geçiş finansmanı çerçevesi ve dış görüş alın; finansman maliyetini doğrulanmış dönüşüm sonuçlarına bağlayın, yeşil aklama riskini kurul gözetimi ve şeffaf etki raporuyla yönetin."
+ },
+ "68": {
+  "A": "Kalite ve yasal uygunluk kontrollerine temel çevre, İSG, insan hakları ve etik sorularını ekleyin; tedarikçi davranış kurallarını yayımlayın.",
+  "B": "Harcama, ülke, malzeme ve risk bazlı ESG ön yeterlilik kurun; sözleşme şartı, belge kanıtı ve periyodik performans skor kartı uygulayın.",
+  "C": "Yüksek riskli tedarikçileri saha/bağımsız denetimle doğrulayın; kök nedenli iyileştirme planı, kapanış kontrolü ve yönetim raporlamasını iş tahsisine bağlayın.",
+  "D": "Alt kademe izlenebilirlik ve tedarikçi kapasite geliştirme programı kurun; satın alma teşviklerini doğrulanmış ESG sonucu ve toplam yaşam döngüsü değerine bağlayıp ortak inovasyon projeleri yürütün."
+ },
+ "69": {
+  "A": "Müşteri şikâyeti, garanti ve bakım taleplerini tek numaralı kayıtla izleyin; ürün/gemi, tarih, sorumlu, termin ve kapanış kanıtını standartlaştırın.",
+  "B": "CRM/ERP bağlantılı dijital kayıt ve eskalasyon kurun; yanıt/kapanış süresi, tekrar arıza ve müşteri onayı gibi temel göstergeleri takip edin.",
+  "C": "Kök neden ve düzeltici faaliyet etkinlik kontrolü uygulayın; KPI eğilimlerini tasarım, üretim, tedarikçi ve bakım süreçlerine geri besleyin.",
+  "D": "Uzaktan durum izleme ve öngörülü bakım verisini müşteri deneyimiyle birleştirin; yaşam döngüsü hizmet sözleşmeleri ve doğrulanmış kullanılabilirlik/enerji performansı taahhütleri geliştirin."
+ },
+ "70": {
+  "A": "AB ve diğer uluslararası fon çağrılarını stratejik temalara göre izleyin; uygunluk, ortak, bütçe ve son tarih bilgilerini fırsat havuzunda yönetin.",
+  "B": "Deneyimli bir konsorsiyumda ortak olarak iş paketi, bütçe, zaman çizelgesi, risk ve raporlama sorumluluğu üstlenin; kanıt/harcama arşivi kurun.",
+  "C": "Yürütücü veya çekirdek ortak kapasitesi kurun; proje yönetim ofisi, ortak yönetişimi, etik/veri planı, mali kontrol ve tam denetim izi uygulayın.",
+  "D": "Çok yıllı uluslararası Ar-Ge portföyü ve stratejik ortak ağı geliştirin; proje sonrası ticarileşme/ölçekleme ve çevresel-sosyal etkiyi fon kapanışından sonra da ölçün."
+ },
+ "71": {
+  "A": "Çelik ve kritik hammaddeler için menşe, üretici, kalite sertifikası ve miktar alanlarını satın alma kayıtlarına ekleyin; tedarikçiden temel sorumlu kaynak ve emisyon beyanı isteyin.",
+  "B": "Tedarikçi/tesis izlenebilirliği, EPD/ürün karbon ayak izi ve insan hakları beyanlarını şartnameye koyun; riskli kaynaklar için kanıt doğrulaması ve alternatif tedarik planı oluşturun.",
+  "C": "Düşük karbonlu ve sorumlu çelik hedefi belirleyin; tedarikçi doğrulaması, parti bazlı ayak izi, geri dönüştürülmüş içerik ve performans skorunu satın alma kararına bağlayın.",
+  "D": "ResponsibleSteel gibi güvenilir sertifikasyon ve zincir teslim yaklaşımını kullanın; uzun vadeli alım taahhüdüyle ek düşük karbon kapasitesini destekleyip malzeme pasaportu ve bağımsız güvence uygulayın."
+ }
+}
