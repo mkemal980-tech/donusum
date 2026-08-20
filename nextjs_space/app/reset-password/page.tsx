@@ -34,8 +34,9 @@ function ResetPasswordForm() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Şifre en az 6 karakter olmalı.");
+    // Sunucudaki kuralın aynısı (bkz. lib/api-utils validators.password).
+    if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setError("Şifre en az 8 karakter olmalı; bir büyük harf ve bir rakam içermeli.");
       return;
     }
 
@@ -128,7 +129,7 @@ function ResetPasswordForm() {
               style={{ paddingRight: 44 }}
               aria-describedby="password-rule"
               required
-              minLength={6}
+              minLength={8}
             />
             <button
               type="button"
@@ -142,7 +143,7 @@ function ResetPasswordForm() {
             </button>
           </div>
           <p id="password-rule" className="mt-1.5 t-sm" style={{ color: "var(--ink-3)" }}>
-            En az 6 karakter.
+            En az 8 karakter, bir büyük harf ve bir rakam.
           </p>
         </div>
 
