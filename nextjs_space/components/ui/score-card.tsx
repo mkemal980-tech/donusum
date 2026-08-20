@@ -62,7 +62,7 @@ export default function ScoreCard({ score, label, color, size = "large" }: Score
             cx={radius + strokeWidth}
             cy={radius + strokeWidth}
             r={radius}
-            className="stroke-gray-200 "
+            style={{ stroke: "var(--border-light)" }}
             strokeWidth={strokeWidth}
             fill="none"
           />
@@ -71,7 +71,9 @@ export default function ScoreCard({ score, label, color, size = "large" }: Score
             cx={radius + strokeWidth}
             cy={radius + strokeWidth}
             r={radius}
-            stroke={strokeColor}
+            /* stroke SVG sunum özniteliği olarak verilirse var(--…) çözülmez ve
+               halka kaybolur; renk token'la geldiği için stil olarak yazılır. */
+            style={{ stroke: strokeColor }}
             strokeWidth={strokeWidth}
             fill="none"
             strokeLinecap="round"
@@ -83,8 +85,11 @@ export default function ScoreCard({ score, label, color, size = "large" }: Score
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span 
-            className={`font-bold ${size === "large" ? "text-4xl" : "text-xl"} text-[var(--primary)]`}
+          {/* Sayı halkayla aynı renkte: --primary marka vurgusudur ve açık
+              temada turuncuya döndüğü için mavi halkanın içinde ters düşüyordu. */}
+          <span
+            className={`font-bold ${size === "large" ? "text-4xl" : "text-xl"}`}
+            style={{ color: strokeColor }}
           >
             {displayScore}%
           </span>

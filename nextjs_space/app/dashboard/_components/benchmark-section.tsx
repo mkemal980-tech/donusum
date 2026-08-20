@@ -70,7 +70,9 @@ export function BenchmarkSection() {
           <h3 className="text-lg font-semibold" style={{ color: 'var(--text-main)' }}>Benchmark Karşılaştırması</h3>
         </div>
         <div className="flex flex-col items-center justify-center py-8 text-center">
-          <AlertCircle size={48} style={{ color: 'var(--warning)' }} className="mb-4" />
+          {/* "Veri yok" bir hata değil boş durum: 48px turuncu daire panonun
+              en dikkat çeken öğesi oluyordu. Sönük mürekkep yeterli. */}
+          <AlertCircle size={48} style={{ color: 'var(--text-dim)' }} className="mb-4" />
           <p style={{ color: 'var(--text-muted)' }} className="mb-2">Sektör bilgisi bulunamadı</p>
           <p className="text-sm" style={{ color: 'var(--text-dim)' }}>
             Benchmark karşılaştırması için profilinizde sektör bilgisi gereklidir

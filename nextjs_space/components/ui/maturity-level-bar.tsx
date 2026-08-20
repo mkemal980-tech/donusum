@@ -42,8 +42,16 @@ export function MaturityLevelBar({ score, isPercentage = true }: MaturityLevelBa
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-4 px-6 py-2 rounded-full text-white font-semibold text-lg"
-        style={{ backgroundColor: currentLevel.color }}
+        /* Rozet dolu zemin + beyaz yazı değil: skala açıktan koyuya gittiği
+           için beyaz yazı üst basamaklarda okunmuyordu. Seviye rengi yazıda ve
+           ince çerçevede durur, zemin onun soluk hâli — sayfadaki "Görüntülenen
+           Anket" şeridiyle aynı kalıp. */
+        className="mb-4 px-6 py-2 rounded-full font-semibold text-lg border"
+        style={{
+          color: currentLevel.color,
+          backgroundColor: `color-mix(in srgb, ${currentLevel.color} 15%, transparent)`,
+          borderColor: `color-mix(in srgb, ${currentLevel.color} 40%, transparent)`,
+        }}
       >
         {currentLevel.label}
       </motion.div>

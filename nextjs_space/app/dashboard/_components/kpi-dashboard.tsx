@@ -208,8 +208,11 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
       value: data.overview.totalQuestions,
       description:
         'Bu ankette tanımlı soru sayısı. Sorular kategorilere, kategoriler bölümlere ayrılır; puanınız bu soruların tamamı üzerinden hesaplanır.',
+      // İkon rengi bir şey kodlamıyor — kartı ikonun kendisi ve başlığı ayırır.
+      // Her karta ayrı renk vermek (indigo/yeşil/turuncu/mor) panoyu alacalıyordu;
+      // sayı kartları tek veri renginde, yalnız olgunluk kartları skalayı taşır.
       icon: Layers,
-      color: '#6366f1',
+      color: 'var(--chart-1)',
       bgColor: 'var(--info-bg)',
       subtitle: `${data.categories.total} kategori`,
     },
@@ -219,8 +222,8 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
       description:
         'Cevaplanan soru sayısı. Sayı kuruluşun tamamına aittir: bölümler farklı kişilere dağıtıldıysa herkesin girdiği cevaplar burada toplanır. Boş sorular puanı düşürür, çünkü cevaplanmamış soru "yok" sayılır.',
       icon: CheckCircle2,
-      color: '#22c55e',
-      bgColor: 'var(--success-bg)',
+      color: 'var(--chart-1)',
+      bgColor: 'color-mix(in srgb, var(--chart-1) 12%, transparent)',
       subtitle: `%${data.overview.completionPercentage} tamamlandı`,
       progress: data.overview.completionPercentage,
     },
@@ -232,7 +235,8 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
       suffix: '/5',
       icon: Gauge,
       color: data.overview.maturityLevel.color,
-      bgColor: `${data.overview.maturityLevel.color}20`,
+      // Renk artık token; hex'e "20" ekleyerek saydamlık üretilemez.
+      bgColor: `color-mix(in srgb, ${data.overview.maturityLevel.color} 15%, transparent)`,
       subtitle: data.overview.maturityLevel.label,
     },
     {
@@ -242,8 +246,10 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
         'Aynı sonucun yüzde hâli: aldığınız puanın alabileceğiniz en yüksek puana oranı. Seviye bu yüzdenin düştüğü basamaktır — %20 Farkındalık, %40 Gelişen, %60 Olgun, %80 ve üzeri Lider.',
       suffix: '%',
       icon: Target,
-      color: '#f59e0b',
-      bgColor: 'var(--warning-bg)',
+      // Aynı olgunluğun yüzde hâli: puan kartıyla aynı basamak rengini taşır,
+      // yoksa tek ölçü iki ayrı renkte görünüyordu.
+      color: data.overview.maturityLevel.color,
+      bgColor: `color-mix(in srgb, ${data.overview.maturityLevel.color} 15%, transparent)`,
       subtitle: `Seviye ${data.overview.maturityLevel.level}`,
     },
     {
@@ -253,8 +259,8 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
         'Aksiyon alma hızınız. Uygulamaya, projeye ve harekete geçmeye bakan sorulardan gelir. Yüksek puan çabuk hareket ettiğinizi gösterir; tek başına yüksek olması ise attığınız adımların kalıcı olduğu anlamına gelmez.',
       suffix: '/5',
       icon: Zap,
-      color: '#3b82f6',
-      bgColor: 'rgba(59, 130, 246, 0.1)',
+      color: 'var(--chart-1)',
+      bgColor: 'color-mix(in srgb, var(--chart-1) 12%, transparent)',
       subtitle: data.ironman.velocityVsSector !== null 
         ? `Sektöre göre ${data.ironman.velocityVsSector > 0 ? '+' : ''}${data.ironman.velocityVsSector}`
         : 'Benchmark yok',
@@ -267,8 +273,8 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
         'Yaptığınız işin kalıcılığı. Politika, dokümantasyon, süreç ve süreklilik sorularından gelir. Yüksek puan, kişilere değil sisteme bağlı çalıştığınızı gösterir.',
       suffix: '/5',
       icon: Activity,
-      color: '#14b8a6',
-      bgColor: 'rgba(20, 184, 166, 0.1)',
+      color: 'var(--chart-1)',
+      bgColor: 'color-mix(in srgb, var(--chart-1) 12%, transparent)',
       subtitle: data.ironman.enduranceVsSector !== null 
         ? `Sektöre göre ${data.ironman.enduranceVsSector > 0 ? '+' : ''}${data.ironman.enduranceVsSector}`
         : 'Benchmark yok',
@@ -281,7 +287,7 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
         'İki eksenin kesişimi; eşik her iki eksende de 3.0. İkisi de 3.0 üstündeyse Demir Adam (hem hızlı hem kalıcı), yalnızca hız yüksekse Sprinter (hızlı ama kalıcılığı zayıf), yalnızca dayanıklılık yüksekse Maraton Koşucusu (sağlam ama yavaş), ikisi de düşükse Yaya (Walker).',
       icon: Award,
       color: data.ironman.quadrantInfo.color,
-      bgColor: `${data.ironman.quadrantInfo.color}20`,
+      bgColor: `color-mix(in srgb, ${data.ironman.quadrantInfo.color} 15%, transparent)`,
       subtitle: 'Mevcut kadran',
     },
     {
@@ -290,8 +296,8 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
       description:
         'Cevaplarınıza göre şu an size gösterilen öneri sayısı — ankette tanımlı tüm öneriler değil. Bir öneri ancak ilgili puanınız eşiğin altındaysa ya da bağlı olduğu soruya belirli bir cevap verdiyseniz açılır. Quick Win, kısa sürede ve düşük maliyetle yapılabilecek olanlar.',
       icon: Lightbulb,
-      color: '#f97316',
-      bgColor: 'rgba(249, 115, 22, 0.1)',
+      color: 'var(--chart-1)',
+      bgColor: 'color-mix(in srgb, var(--chart-1) 12%, transparent)',
       subtitle: `${data.recommendations.quickWins} Quick Win`,
     },
   ];
@@ -391,10 +397,12 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
                 <div className="h-1.5 bg-[var(--bg-card-2)] rounded-full overflow-hidden">
                   <div 
                     className="h-full rounded-full transition-all duration-500"
-                    style={{ 
+                    style={{
                       width: `${cat.percentage}%`,
-                      backgroundColor: cat.percentage === 100 ? '#22c55e' : 
-                        cat.percentage > 50 ? '#3b82f6' : '#f59e0b'
+                      // Doluluk zaten uzunlukla okunuyor; eşiğe göre renk
+                      // değiştirmek (yeşil/mavi/turuncu) bilgi katmadan panoyu
+                      // alacalıyordu.
+                      backgroundColor: 'var(--chart-1)',
                     }}
                   />
                 </div>
@@ -411,7 +419,8 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
           className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-soft)]"
         >
           <div className="flex items-center gap-2 mb-4">
-            <Lightbulb size={16} className="text-[var(--warning)]" />
+            {/* Öneri bir uyarı değil; --warning turuncusu panoyu alacalıyordu. */}
+            <Lightbulb size={16} className="text-[var(--accent)]" />
             <h3 className="text-sm font-semibold text-[var(--text-main)]">Öneri Dağılımı</h3>
           </div>
           

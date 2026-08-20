@@ -149,12 +149,15 @@
   /* Gölge/parıltı: vurgu renginin yarı saydam hâli */
   --accent-glow: rgba(12, 193, 195, 0.3);
 
-  /* Olgunluk basamakları (Başlangıç → Lider) */
-  --level-1: #67e8f9;
-  --level-2: #5eead4;
-  --level-3: #38bdf8;
-  --level-4: #2dd4bf;
-  --level-5: #22d3ee;
+  /* Olgunluk basamakları (Başlangıç → Lider). Sıralı veri olduğu için tek
+     marka ailesinde, sönükten parlağa ilerler: koyu zeminde yüksek basamak
+     daha parlak okunur. Önceki dizilim camgöbeği/turkuaz/gök mavisi karışımıydı
+     ve açıklık sırası bozuktu — Başlangıç en parlak, Lider ondan sönüktü. */
+  --level-1: #0a8f9c;
+  --level-2: #0bafb3;
+  --level-3: #0cc1c3;
+  --level-4: #22d3ee;
+  --level-5: #67e8f9;
 
   /* İkincil vurgu (bölüm rozeti, kaydediliyor göstergesi) */
   --accent-alt: #a78bfa;

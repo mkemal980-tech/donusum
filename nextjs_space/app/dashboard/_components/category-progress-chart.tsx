@@ -106,9 +106,9 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
             {item.name || 'Kategori'}
           </span>
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-[#f59e0b] font-medium">{safeBaseScore.toFixed(2)}</span>
+            <span className="text-[var(--chart-1)] font-medium">{safeBaseScore.toFixed(2)}</span>
             {safeBonusPoints > 0 && (
-              <span className="text-[#3b82f6] font-medium">+{safeBonusPoints.toFixed(2)}</span>
+              <span className="text-[var(--chart-5)] font-medium">+{safeBonusPoints.toFixed(2)}</span>
             )}
           </div>
         </div>
@@ -118,7 +118,7 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
             initial={{ width: 0 }}
             animate={{ width: `${basePercent}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="absolute h-full bg-[#f59e0b] rounded-l-md"
+            className="absolute h-full bg-[var(--chart-1)] rounded-l-md"
           />
           {/* Bonus Points (Mavi) */}
           {safeBonusPoints > 0 && (
@@ -126,7 +126,7 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
               initial={{ width: 0 }}
               animate={{ width: `${bonusPercent}%` }}
               transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-              className="absolute h-full bg-[#3b82f6]"
+              className="absolute h-full bg-[var(--chart-5)]"
               style={{ left: `${basePercent}%` }}
             />
           )}
@@ -134,7 +134,7 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
           <div className="absolute inset-0 flex items-center">
             {basePercent > 15 && (
               <span 
-                className="absolute text-xs font-bold text-white"
+                className="absolute text-xs font-bold text-[var(--on-accent)]"
                 style={{ left: `${Math.min(basePercent - 2, basePercent / 2)}%`, transform: 'translateX(-50%)' }}
               >
                 {safeBaseScore.toFixed(2)}
@@ -142,7 +142,7 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
             )}
             {safeBonusPoints > 0 && bonusPercent > 10 && (
               <span 
-                className="absolute text-xs font-bold text-white"
+                className="absolute text-xs font-bold text-[var(--on-accent)]"
                 style={{ left: `${basePercent + bonusPercent / 2}%`, transform: 'translateX(-50%)' }}
               >
                 {safeBonusPoints.toFixed(1)}
@@ -163,16 +163,16 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
       {/* Başlık */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <TrendingUp size={20} className="text-[var(--accent)]" />
+          <TrendingUp size={20} className="text-[var(--chart-1)]" />
           <h3 className="text-lg font-semibold text-[var(--text-main)]">İlerleme ve Gelişim</h3>
         </div>
         <div className="flex items-center gap-4 text-xs">
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-[#f59e0b] rounded"></div>
+            <div className="w-3 h-3 bg-[var(--chart-1)] rounded"></div>
             <span className="text-[var(--text-muted)]">Mevcut Puan</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-[#3b82f6] rounded"></div>
+            <div className="w-3 h-3 bg-[var(--chart-5)] rounded"></div>
             <span className="text-[var(--text-muted)]">Kazanılan Bonus</span>
           </div>
         </div>
@@ -183,28 +183,28 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 p-4 bg-[var(--bg-card-2)] rounded-lg">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Target size={16} className="text-[#818cf8]" />
+              <Target size={16} className="text-[var(--chart-5)]" />
               <span className="text-sm font-medium text-[var(--text-main)]">Velocity</span>
             </div>
             <div className="relative h-5 bg-[var(--bg-deep)] rounded overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${((overall.velocity.baseScore ?? 0) / 5) * 100}%` }}
-                className="absolute h-full bg-[#f59e0b]"
+                className="absolute h-full bg-[var(--chart-1)]"
               />
               {(overall.velocity.bonusPoints ?? 0) > 0 && (
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${((overall.velocity.bonusPoints ?? 0) / 5) * 100}%` }}
-                  className="absolute h-full bg-[#3b82f6]"
+                  className="absolute h-full bg-[var(--chart-5)]"
                   style={{ left: `${((overall.velocity.baseScore ?? 0) / 5) * 100}%` }}
                 />
               )}
             </div>
             <div className="flex justify-between mt-1 text-xs">
-              <span className="text-[#f59e0b]">{(overall.velocity.baseScore ?? 0).toFixed(2)}</span>
+              <span className="text-[var(--chart-1)]">{(overall.velocity.baseScore ?? 0).toFixed(2)}</span>
               {(overall.velocity.bonusPoints ?? 0) > 0 && (
-                <span className="text-[#3b82f6]">+{(overall.velocity.bonusPoints ?? 0).toFixed(2)}</span>
+                <span className="text-[var(--chart-5)]">+{(overall.velocity.bonusPoints ?? 0).toFixed(2)}</span>
               )}
               <span className="text-[var(--text-muted)]">
                 Toplam: {(overall.velocity.totalScore ?? 0).toFixed(2)}
@@ -214,28 +214,28 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
           
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Award size={16} className="text-[#34d399]" />
+              <Award size={16} className="text-[var(--chart-1)]" />
               <span className="text-sm font-medium text-[var(--text-main)]">Endurance</span>
             </div>
             <div className="relative h-5 bg-[var(--bg-deep)] rounded overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${((overall.endurance.baseScore ?? 0) / 5) * 100}%` }}
-                className="absolute h-full bg-[#f59e0b]"
+                className="absolute h-full bg-[var(--chart-1)]"
               />
               {(overall.endurance.bonusPoints ?? 0) > 0 && (
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${((overall.endurance.bonusPoints ?? 0) / 5) * 100}%` }}
-                  className="absolute h-full bg-[#3b82f6]"
+                  className="absolute h-full bg-[var(--chart-5)]"
                   style={{ left: `${((overall.endurance.baseScore ?? 0) / 5) * 100}%` }}
                 />
               )}
             </div>
             <div className="flex justify-between mt-1 text-xs">
-              <span className="text-[#f59e0b]">{(overall.endurance.baseScore ?? 0).toFixed(2)}</span>
+              <span className="text-[var(--chart-1)]">{(overall.endurance.baseScore ?? 0).toFixed(2)}</span>
               {(overall.endurance.bonusPoints ?? 0) > 0 && (
-                <span className="text-[#3b82f6]">+{(overall.endurance.bonusPoints ?? 0).toFixed(2)}</span>
+                <span className="text-[var(--chart-5)]">+{(overall.endurance.bonusPoints ?? 0).toFixed(2)}</span>
               )}
               <span className="text-[var(--text-muted)]">
                 Toplam: {(overall.endurance.totalScore ?? 0).toFixed(2)}
@@ -296,7 +296,7 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
       {overall && overall.totalCompletedRecommendations > 0 && (
         <div className="mt-4 pt-4 border-t border-[var(--border-soft)] text-center">
           <p className="text-sm text-[var(--text-muted)]">
-            <span className="text-[var(--accent)] font-semibold">{overall.totalCompletedRecommendations}</span>
+            <span className="text-[var(--chart-1)] font-semibold">{overall.totalCompletedRecommendations}</span>
             {' '}öneri tamamlandı • Bonus puanlar skorunuza eklendi
           </p>
         </div>

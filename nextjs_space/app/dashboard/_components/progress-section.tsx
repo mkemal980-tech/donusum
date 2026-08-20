@@ -122,15 +122,16 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
 
   return (
     <div className="space-y-4">
-      {/* Info Box */}
+      {/* Info Box — zemin zaten --success-bg (turkuaz); yazı sabit yeşildi,
+          ikisi birbirini tutmuyordu. İkisi de aynı token'dan okunur. */}
       {hasDelta && (
-        <div className="bg-[var(--success-bg)] border border-[rgba(34,197,94,0.3)] rounded-xl p-4 flex items-start gap-3">
-          <TrendingUp className="text-[#22c55e] mt-0.5 flex-shrink-0" size={20} />
+        <div className="bg-[var(--success-bg)] border border-[var(--accent-soft)] rounded-xl p-4 flex items-start gap-3">
+          <TrendingUp className="text-[var(--success)] mt-0.5 flex-shrink-0" size={20} />
           <div>
-            <p className="font-medium text-[#22c55e]">Gelişim Kaydedildi!</p>
-            <p className="text-sm text-[#22c55e]">
+            <p className="font-medium text-[var(--success)]">Gelişim Kaydedildi!</p>
+            <p className="text-sm text-[var(--success)]">
               Önerileri tamamlayarak skorunuzu <span className="font-bold">+{overallBonusPoints.toFixed(2)}</span> puan artırdınız.
-              <Link href="/roadmap" className="underline ml-1 hover:text-[#16a34a]">Yol haritasına git →</Link>
+              <Link href="/roadmap" className="underline ml-1 hover:text-[var(--accent-bright)]">Yol haritasına git →</Link>
             </p>
           </div>
         </div>
@@ -142,7 +143,7 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
           onClick={() => setViewMode('subcategory')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             viewMode === 'subcategory'
-              ? 'bg-[var(--warning-bg)] text-[#f59e0b]'
+              ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
               : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--bg-card)]'
           }`}
         >
@@ -152,7 +153,7 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
           onClick={() => setViewMode('category')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             viewMode === 'category'
-              ? 'bg-[rgba(6,182,212,0.2)] text-[#06b6d4]'
+              ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
               : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--bg-card)]'
           }`}
         >

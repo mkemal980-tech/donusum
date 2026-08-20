@@ -95,16 +95,13 @@ interface Survey {
   isActive: boolean;
 }
 
-// Theme colors - Cyan/Teal tones (matching template)
-// Kategori çubukları olgunluk skalasının renklerini paylaşır; temaya göre
-// değişmesi için sabit değer değil token kullanılır.
-const categoryColors = [
-  "var(--level-5)",
-  "var(--level-3)",
-  "var(--level-4)",
-  "var(--level-2)",
-  "var(--level-1)"
-];
+// Kategori çubukları tek vurgu renginde. Eskiden olgunluk skalasının
+// basamaklarını (--level-N) karışık sırada ödünç alıyordu; aynı renk hem
+// "şu kategori" hem "şu olgunluk basamağı" anlamına geldiği için pano
+// alacalı görünüyordu. Kategoriyi adı ayırt eder, değeri çubuğun boyu.
+// --chart-1 marka vurgusundan ayrı "veri" rengidir: açık temada vurgu turuncuya
+// dönüyor ve çubuklar seviye göstergelerinin mavisiyle çakışıyordu.
+const categoryBarColor = "var(--chart-1)";
 
 /**
  * Yüzdeye göre olgunluk seviyesi hesaplama
@@ -115,11 +112,13 @@ const categoryColors = [
  * %80-100: Lider
  */
 const getMaturityLevelFromPercentage = (percentage: number) => {
-  if (percentage >= 80) return { label: 'Lider', color: 'var(--accent-cyan)' };
-  if (percentage >= 60) return { label: 'Olgun', color: '#2dd4bf' };
-  if (percentage >= 40) return { label: 'Gelişen', color: '#38bdf8' };
-  if (percentage >= 20) return { label: 'Farkındalık', color: '#5eead4' };
-  return { label: 'Başlangıç', color: '#67e8f9' };
+  // Renkler sabit değil token: olgunluk skalası tek kaynaktan (--level-N)
+  // okunur, böylece açık/koyu temada aynı sırayı korur.
+  if (percentage >= 80) return { label: 'Lider', color: 'var(--level-5)' };
+  if (percentage >= 60) return { label: 'Olgun', color: 'var(--level-4)' };
+  if (percentage >= 40) return { label: 'Gelişen', color: 'var(--level-3)' };
+  if (percentage >= 20) return { label: 'Farkındalık', color: 'var(--level-2)' };
+  return { label: 'Başlangıç', color: 'var(--level-1)' };
 };
 
 /**
@@ -700,11 +699,15 @@ export default function DashboardClient() {
               letter-spacing: 0.5px;
             }
             
-            .level-badge.baslangic { background: #fee2e2; color: #991b1b; }
-            .level-badge.farkindalik { background: #fed7aa; color: #9a3412; }
-            .level-badge.gelisen { background: #fef08a; color: #854d0e; }
-            .level-badge.olgun { background: #bbf7d0; color: #166534; }
-            .level-badge.lider { background: #bfdbfe; color: #1e40af; }
+            /* Basamaklar sıralı: rozet zemini Başlangıç'tan Lider'e doğru
+               koyulaşır. Eskiden kırmızı→turuncu→sarı→yeşil→mavi trafik ışığıydı
+               ve raporun geri kalanıyla aynı ölçeği başka renklerle anlatıyordu.
+               PDF beyaz kâğıda basıldığı için token değil sabit değer. */
+            .level-badge.baslangic { background: #eff6ff; color: #1e40af; }
+            .level-badge.farkindalik { background: #dbeafe; color: #1e40af; }
+            .level-badge.gelisen { background: #bfdbfe; color: #1e3a8a; }
+            .level-badge.olgun { background: #93c5fd; color: #172554; }
+            .level-badge.lider { background: #60a5fa; color: #ffffff; }
             
             /* Progress Bar - Minimal */
             .progress-bar {
@@ -1454,7 +1457,7 @@ export default function DashboardClient() {
                   key={id}
                   value={data?.percentage ?? 0}
                   label={data?.name ?? 'Bilinmeyen Kategori'}
-                  color={categoryColors[index % categoryColors.length]}
+                  color={categoryBarColor}
                 />
               ))}
               
@@ -1549,7 +1552,7 @@ export default function DashboardClient() {
                   <div className="flex items-center gap-2">
                     <div 
                       className="w-2 h-2 rounded-full" 
-                      style={{ backgroundColor: categoryColors[index % categoryColors.length] }}
+                      style={{ backgroundColor: categoryBarColor }}
                     />
                     <span className="text-[var(--text-primary)] font-medium truncate max-w-[100px]" title={cat.name}>
                       {cat.name}
@@ -1561,8 +1564,9 @@ export default function DashboardClient() {
                     </span>
                     <span className="text-[var(--text-muted)]">|</span>
                     <span className="flex items-center gap-1">
-                      <Lightbulb size={12} className="text-[var(--warning)]" />
-                      <span className="font-semibold text-[var(--warning)] ">{cat.recommendationCount}</span>
+                      {/* Öneri sayısı uyarı değil, bilgi: vurgu ailesinde kalır. */}
+                      <Lightbulb size={12} className="text-[var(--accent)]" />
+                      <span className="font-semibold text-[var(--accent)] ">{cat.recommendationCount}</span>
                     </span>
                   </div>
                 </div>
