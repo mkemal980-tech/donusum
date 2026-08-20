@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { useAdminNavGroups } from "./admin-nav";
 import {
+  ArrowLeft,
   Building2,
   ChevronLeft,
   ClipboardList,
@@ -38,7 +40,11 @@ type NavItem = {
   roles: string[];
   /** Alt yolları da aktif sayılsın mı (örn. /admin/users) */
   prefix?: boolean;
+  /** Yönetim menüsündeki gruplama; uygulama menüsünde kullanılmaz. */
+  section?: string;
 };
+
+type NavGroup = { title: string; items: NavItem[] };
 
 const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   {
@@ -89,7 +95,12 @@ export default function AppShell() {
   const role = user?.role ?? "USER";
   const userName = user?.firstName || user?.name || "Kullanıcı";
 
-  const groups = useMemo(
+  /* Yönetim paneli kendi menüsüne sahip; iki sidebar yerine aynı sidebar
+     bağlama göre içerik değiştirir. Üstteki geri bağlantısı çıkışı gösterir. */
+  const inAdmin = pathname?.startsWith("/admin") ?? false;
+  const adminGroups = useAdminNavGroups();
+
+  const appGroups = useMemo(
     () =>
       NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => i.roles.includes(role)) })).filter(
         (g) => g.items.length > 0,
@@ -97,8 +108,11 @@ export default function AppShell() {
     [role],
   );
 
+  const groups: NavGroup[] = inAdmin ? adminGroups : appGroups;
+
   const isActive = useCallback(
-    (item: NavItem) => (item.prefix ? pathname?.startsWith(item.href) : pathname === item.href) ?? false,
+    (item: { href: string; prefix?: boolean }) =>
+      (item.prefix ? pathname?.startsWith(item.href) : pathname === item.href) ?? false,
     [pathname],
   );
 
@@ -156,10 +170,10 @@ export default function AppShell() {
   const matches = useMemo(() => {
     const q = query.trim().toLocaleLowerCase("tr-TR");
     if (!q) return [];
-    return groups
-      .flatMap((g) => g.items)
+    return [...appGroups, ...adminGroups]
+      .flatMap((g) => g.items as NavItem[])
       .filter((i) => i.label.toLocaleLowerCase("tr-TR").includes(q));
-  }, [query, groups]);
+  }, [query, appGroups, adminGroups]);
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,6 +186,14 @@ export default function AppShell() {
 
   const navList = (
     <nav className="flex flex-col gap-6" aria-label="Ana gezinme">
+      {inAdmin && (
+        <div className="px-3">
+          <Link href="/dashboard" className={`sidebar-item ${collapsed ? "justify-center" : ""}`}>
+            <ArrowLeft size={18} strokeWidth={1.9} className="shrink-0" aria-hidden="true" />
+            {!collapsed && <span>Panoya dön</span>}
+          </Link>
+        </div>
+      )}
       {groups.map((group) => (
         <div key={group.title}>
           {!collapsed && <p className="sidebar-group">{group.title}</p>}
@@ -213,7 +235,7 @@ export default function AppShell() {
       </span>
       {!collapsed && (
         <span className="truncate text-[15px] font-semibold" style={{ color: "var(--ink)" }}>
-          Dönüşüm Platformu
+          {inAdmin ? "Yönetim" : "Dönüşüm Platformu"}
         </span>
       )}
     </Link>
