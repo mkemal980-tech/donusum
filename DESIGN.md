@@ -166,6 +166,14 @@ active, disabled, loading, error.
 - Sayfa yüklenirken sıralı/kademeli giriş koreografisi yok.
 - `prefers-reduced-motion: reduce` tüm süreleri 0.01ms yapar.
 
+## PDF raporu
+
+Panonun PDF çıktısı **açık zeminlidir** ve bilinçli bir sapmadır: rapor
+yazdırılıp yönetim kuruluna dağıtılıyor, koyu zemin hem mürekkep yiyor hem
+kâğıtta okunmuyor. Kimlik renkle taşınır — başlık bandı `#15171E`, vurgu
+`#1E6FE8`, olgunluk rozetleri ekrandakiyle aynı tek renkli mavi rampadır.
+Kırmızı-sarı-yeşil ilerleme çubukları kaldırıldı; seviyeyi rozet söylüyor.
+
 ## Refero sapmaları
 
 Alınan kurallar: sınırlı radius token seti; kart ve panellerde gölge yasağı,

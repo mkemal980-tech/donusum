@@ -257,7 +257,7 @@ export default function SurveysPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="t-display" style={{ color: "var(--ink)" }}>Anket Yönetimi</h1>
+        <h1 className="t-display" style={{ color: "var(--ink)" }}>Anketler</h1>
         <Button
           onClick={() => openModal()}
         >

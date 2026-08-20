@@ -200,8 +200,8 @@ export default function BenchmarksPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="t-display" style={{ color: "var(--ink)" }}>Benchmark Verileri</h1>
-        <p className="text-[var(--text-muted)] mt-1">Anket, kategori ve sektör bazlı en iyi ve ortalama puanları girin</p>
+        <h1 className="t-display" style={{ color: "var(--ink)" }}>Benchmark verileri</h1>
+        <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>Anket, kategori ve sektör bazlı en iyi ve ortalama puanları girin</p>
       </div>
 
       {/* Form */}

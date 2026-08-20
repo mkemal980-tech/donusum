@@ -343,7 +343,7 @@ export default function SectionAssignmentsPage() {
         </button>
 
         <div className="mb-6">
-          <h1 className="t-display" style={{ color: "var(--ink)" }}>Görev Dağılımı</h1>
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>Görev dağılımı</h1>
           <p className="text-[var(--text-muted)]">
             Anketin hangi bölümünü kimin dolduracağını belirleyin, nerede kalındığını takip edin.
           </p>

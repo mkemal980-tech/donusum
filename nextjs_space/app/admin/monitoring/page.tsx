@@ -194,8 +194,8 @@ export default function MonitoringPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="t-display" style={{ color: "var(--ink)" }}>Sistem İzleme</h1>
-          <p className="text-[var(--text-muted)] mt-1">Gerçek zamanlı sistem sağlığı ve performans metrikleri</p>
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>Sistem izleme</h1>
+          <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>Gerçek zamanlı sistem sağlığı ve performans metrikleri</p>
         </div>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 text-sm text-[var(--text-muted)]">

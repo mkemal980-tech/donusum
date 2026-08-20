@@ -385,9 +385,11 @@ export default function UnitsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Building2 className="text-[var(--accent)]" size={28} />
-          <h1 className="t-display" style={{ color: "var(--ink)" }}>Birim Yönetimi</h1>
+        <div>
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>Birimler</h1>
+          <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+            Kuruluş birimleri, alt birimler ve birim yöneticileri.
+          </p>
         </div>
         <Button
           onClick={() => openCreateModal()}
@@ -397,14 +399,16 @@ export default function UnitsPage() {
         </Button>
       </div>
 
-      {/* Info */}
-      <div className="bg-[var(--bg-card-2)] border border-[var(--blue-main)] rounded-xl p-4 mb-6">
-        <h4 className="font-semibold text-[var(--accent)] mb-2">Birim ve Alt Birim Yönetimi</h4>
-        <ul className="text-sm text-[var(--accent)] space-y-1">
-          <li>• <strong>Birim</strong> oluşturup içine <strong>Alt Birimler</strong> ekleyebilirsiniz.</li>
-          <li>• Her birime <strong>birden fazla Admin</strong> atayabilirsiniz.</li>
-          <li>• <strong>Üst birim adminleri</strong>, otomatik olarak tüm alt birimlerin de admini olur (miras).</li>
-          <li>• Alt birimlerde ayrıca admin ataması gerektirmez.</li>
+      {/* Kuralları anlatan blok; uyarı değil bilgi, o yüzden renksiz. */}
+      <div className="mb-6 rounded-[var(--radius-md)] p-4" style={{ background: "var(--surface-2)" }}>
+        <ul className="flex list-disc flex-col gap-1 pl-5 t-sm" style={{ color: "var(--ink-2)" }}>
+          <li>
+            Bir <strong className="font-medium" style={{ color: "var(--ink)" }}>birim</strong> oluşturup
+            içine alt birimler ekleyebilirsiniz.
+          </li>
+          <li>Her birime birden fazla yönetici atanabilir.</li>
+          <li>Üst birim yöneticisi, alt birimlerin de yöneticisi sayılır.</li>
+          <li>Alt birimlerde ayrıca yönetici ataması gerekmez.</li>
         </ul>
       </div>
 

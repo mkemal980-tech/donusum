@@ -560,7 +560,7 @@ export default function RecommendationsPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="t-display" style={{ color: "var(--ink)" }}>Öneri Yönetimi</h1>
+        <h1 className="t-display" style={{ color: "var(--ink)" }}>Öneriler</h1>
         <div className="flex items-center gap-2">
           <Button
             onClick={() => setShowBulkPanel(true)}

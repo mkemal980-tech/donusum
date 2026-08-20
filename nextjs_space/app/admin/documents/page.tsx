@@ -181,7 +181,7 @@ export default function DocumentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="t-display" style={{ color: "var(--ink)" }}>Yüklenen Dosyalar</h1>
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>Yüklenen dosyalar</h1>
           <p className="text-[var(--text-dim)]  mt-1">Kullanıcıların yüklediği kanıt dosyaları</p>
         </div>
         <div className="flex items-center gap-2 bg-[var(--accent-soft)]  px-4 py-2 rounded-lg">

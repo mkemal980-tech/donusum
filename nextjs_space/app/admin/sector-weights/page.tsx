@@ -155,7 +155,7 @@ export default function SectorScopePage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="t-display" style={{ color: "var(--ink)" }}>Sektör Kapsamı</h1>
+        <h1 className="t-display" style={{ color: "var(--ink)" }}>Sektör kapsamı</h1>
         <p className="text-[var(--text-muted)]">
           Hangi bölümün hangi sektöre sorulacağını ve ne kadar sayılacağını belirleyin.
         </p>

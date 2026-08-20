@@ -171,8 +171,8 @@ export default function SectorsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="t-display" style={{ color: "var(--ink)" }}>Sektör Yönetimi</h1>
-          <p className="text-[var(--text-muted)] mt-1">Sektör ve alt sektörleri tanımlayın</p>
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>Sektörler</h1>
+          <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>Sektör ve alt sektörleri tanımlayın</p>
         </div>
         <Button
           onClick={() => setShowNewSector(true)}

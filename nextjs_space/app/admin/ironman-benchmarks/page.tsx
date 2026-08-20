@@ -171,11 +171,12 @@ export default function IronmanBenchmarksPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="t-display flex items-center gap-3" style={{ color: "var(--ink)" }}>
-            <Activity className="text-[var(--accent)]" />
-            Ironman Benchmark Verileri
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>
+            Ironman benchmark
           </h1>
-          <p className="text-[var(--text-dim)] mt-1">Sektör bazlı Velocity (Hız) ve Endurance (Olgunluk) değerlerini yönetin</p>
+          <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+            Sektör bazlı hız (velocity) ve dayanıklılık (endurance) değerleri.
+          </p>
         </div>
         <Button
           onClick={() => openModal()}

@@ -249,11 +249,12 @@ export default function SurveyAssignmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="t-display flex items-center gap-2" style={{ color: "var(--ink)" }}>
-            <UserCheck className="w-7 h-7 text-[var(--accent)]" />
-            Anket Atamaları
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>
+            Anket atamaları
           </h1>
-          <p className="text-[var(--text-muted)] mt-1">Kullanıcılara anket atayın ve yönetin</p>
+          <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+            Kullanıcılara anket atayın, süre tanımlayın.
+          </p>
         </div>
       </div>
 

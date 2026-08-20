@@ -715,7 +715,7 @@ export default function CategoriesPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="t-display" style={{ color: "var(--ink)" }}>Kategoriler & Sorular</h1>
+        <h1 className="t-display" style={{ color: "var(--ink)" }}>Kategori ve sorular</h1>
         <Button
           onClick={() => openModal('category')}
         >

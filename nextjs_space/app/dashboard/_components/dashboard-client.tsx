@@ -111,7 +111,7 @@ const getMaturityLevelFromPercentage = (percentage: number) => {
   if (percentage >= 60) return { label: 'Olgun', color: '#2dd4bf' };
   if (percentage >= 40) return { label: 'Gelişen', color: '#38bdf8' };
   if (percentage >= 20) return { label: 'Farkındalık', color: '#5eead4' };
-  return { label: 'Başlangıç', color: '#67e8f9' };
+  return { label: 'Başlangıç', color: '#7FB2FF' };
 };
 
 /**
@@ -412,7 +412,7 @@ export default function DashboardClient() {
             
             h1, h2, h3 {
               font-family: 'Inter', sans-serif;
-              color: #0f172a;
+              color: #15171E;
               font-weight: 700;
               letter-spacing: -0.02em;
             }
@@ -432,7 +432,7 @@ export default function DashboardClient() {
               left: 0;
               right: 0;
               height: 60mm;
-              background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+              background: linear-gradient(180deg, #15171E 0%, #1E212A 100%);
             }
             
             .cover-content {
@@ -450,7 +450,7 @@ export default function DashboardClient() {
             .cover-logo {
               width: 60px;
               height: 60px;
-              background: #0ea5e9;
+              background: #1E6FE8;
               border-radius: 12px;
               display: flex;
               align-items: center;
@@ -466,7 +466,7 @@ export default function DashboardClient() {
               font-weight: 800;
               margin-bottom: 12px;
               line-height: 1.1;
-              color: #0f172a;
+              color: #15171E;
             }
             
             .cover-subtitle {
@@ -479,7 +479,7 @@ export default function DashboardClient() {
             .cover-company {
               font-size: 28pt;
               font-weight: 700;
-              color: #0ea5e9;
+              color: #1E6FE8;
               margin-bottom: 48px;
             }
             
@@ -494,7 +494,7 @@ export default function DashboardClient() {
               background: #f8fafc;
               padding: 16px 20px;
               border-radius: 8px;
-              border-left: 3px solid #0ea5e9;
+              border-left: 3px solid #1E6FE8;
             }
             
             .cover-meta-label {
@@ -508,7 +508,7 @@ export default function DashboardClient() {
             
             .cover-meta-value {
               font-size: 11pt;
-              color: #0f172a;
+              color: #15171E;
               font-weight: 600;
             }
             
@@ -516,7 +516,7 @@ export default function DashboardClient() {
               display: inline-flex;
               align-items: center;
               gap: 8px;
-              background: #0f172a;
+              background: #15171E;
               color: white;
               padding: 14px 28px;
               border-radius: 8px;
@@ -529,7 +529,7 @@ export default function DashboardClient() {
               width: 10px;
               height: 10px;
               border-radius: 50%;
-              background: #22d3ee;
+              background: #2E86FF;
             }
             
             /* ========== İÇERİK SAYFALARI - CLEAN LAYOUT ========== */
@@ -557,13 +557,13 @@ export default function DashboardClient() {
             
             .page-header-company {
               font-size: 9pt;
-              color: #0f172a;
+              color: #15171E;
               font-weight: 600;
             }
             
             .section-title {
               font-size: 22pt;
-              color: #0f172a;
+              color: #15171E;
               margin-bottom: 8px;
               font-weight: 800;
             }
@@ -586,7 +586,7 @@ export default function DashboardClient() {
             .summary-box {
               background: #f8fafc;
               border: 1px solid #e2e8f0;
-              border-left: 4px solid #0ea5e9;
+              border-left: 4px solid #1E6FE8;
               padding: 24px 28px;
               margin-bottom: 32px;
               border-radius: 8px;
@@ -594,7 +594,7 @@ export default function DashboardClient() {
             
             .summary-box h3 {
               font-size: 11pt;
-              color: #0f172a;
+              color: #15171E;
               margin-bottom: 12px;
               font-weight: 700;
               text-transform: uppercase;
@@ -627,12 +627,12 @@ export default function DashboardClient() {
             .kpi-value {
               font-size: 32pt;
               font-weight: 800;
-              color: #0f172a;
+              color: #15171E;
               line-height: 1;
             }
             
             .kpi-value.highlight {
-              color: #0ea5e9;
+              color: #1E6FE8;
             }
             
             .kpi-label {
@@ -692,11 +692,11 @@ export default function DashboardClient() {
               letter-spacing: 0.5px;
             }
             
-            .level-badge.baslangic { background: #fee2e2; color: #991b1b; }
-            .level-badge.farkindalik { background: #fed7aa; color: #9a3412; }
-            .level-badge.gelisen { background: #fef08a; color: #854d0e; }
-            .level-badge.olgun { background: #bbf7d0; color: #166534; }
-            .level-badge.lider { background: #bfdbfe; color: #1e40af; }
+            .level-badge.baslangic { background: #e7edf9; color: #2b3a55; }
+            .level-badge.farkindalik { background: #d8e4fa; color: #24406e; }
+            .level-badge.gelisen { background: #c3d8fb; color: #1c3f7d; }
+            .level-badge.olgun { background: #a9caf9; color: #143a80; }
+            .level-badge.lider { background: #8bb6f6; color: #10306e; }
             
             /* Progress Bar - Minimal */
             .progress-bar {
@@ -712,9 +712,9 @@ export default function DashboardClient() {
               transition: width 0.3s;
             }
             
-            .progress-fill.low { background: #ef4444; }
-            .progress-fill.medium { background: #f59e0b; }
-            .progress-fill.high { background: #10b981; }
+            .progress-fill.low { background: #9dbdf3; }
+            .progress-fill.medium { background: #4E8FEE; }
+            .progress-fill.high { background: #1E6FE8; }
             
             /* Öneri Kartları - Card Design */
             .recommendation-grid {
@@ -760,7 +760,7 @@ export default function DashboardClient() {
             .rec-title {
               font-size: 11pt;
               font-weight: 700;
-              color: #0f172a;
+              color: #15171E;
             }
             
             .rec-desc {
@@ -794,7 +794,7 @@ export default function DashboardClient() {
             
             .column-box h4 {
               font-size: 10pt;
-              color: #0f172a;
+              color: #15171E;
               margin-bottom: 18px;
               font-weight: 700;
               text-transform: uppercase;
@@ -821,7 +821,7 @@ export default function DashboardClient() {
             
             /* Ironman Bölümü - Minimal Dark */
             .ironman-section {
-              background: #0f172a;
+              background: #15171E;
               border-radius: 8px;
               padding: 28px 32px;
               color: white;
@@ -830,7 +830,7 @@ export default function DashboardClient() {
             
             .ironman-section h4 {
               font-size: 11pt;
-              color: #22d3ee;
+              color: #2E86FF;
               margin-bottom: 20px;
               font-weight: 700;
               text-transform: uppercase;
@@ -858,7 +858,7 @@ export default function DashboardClient() {
             
             .ironman-value.velocity { color: #fbbf24; }
             .ironman-value.endurance { color: #60a5fa; }
-            .ironman-value.quadrant { color: #22d3ee; font-size: 13pt; }
+            .ironman-value.quadrant { color: #2E86FF; font-size: 13pt; }
             
             .ironman-label {
               font-size: 8pt;
@@ -1227,7 +1227,7 @@ export default function DashboardClient() {
               <p style="font-size: 9pt; color: #64748b; margin-bottom: 12px;">
                 Bu rapor ${reportDate} tarihinde
               </p>
-              <p style="font-size: 14pt; color: #0ea5e9; font-weight: 700; letter-spacing: -0.02em;">
+              <p style="font-size: 14pt; color: #1E6FE8; font-weight: 700; letter-spacing: -0.02em;">
                 Dönüşüm Platformu
               </p>
               <p style="font-size: 9pt; color: #64748b; margin-top: 12px;">
