@@ -45,10 +45,7 @@ export function BenchmarkSection() {
   /* Boş durum: tek cümle ne eksik, tek yol nereden tamamlanır. */
   if (!data?.hasSector) {
     return (
-      <BenchmarkEmpty
-        message="Sektör kıyaslaması için profilinizde sektör bilgisi gerekiyor."
-        action={{ href: "/settings", label: "Ayarlardan sektör seç" }}
-      />
+      <BenchmarkEmpty message="Kıyaslama için profilinizde sektör tanımlı olmalı. Sektör atamasını platform yöneticiniz yapar." />
     );
   }
 

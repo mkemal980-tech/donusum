@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import Link from "next/link";
-import { Mail, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import AuthLayout from "@/components/ui/auth-layout";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -29,97 +29,83 @@ export default function ForgotPasswordPage() {
       if (res.ok) {
         setSuccess(true);
       } else {
-        setError(data.error || "Bir hata oluştu");
+        setError(data.error || "İstek tamamlanamadı. Birkaç saniye sonra tekrar deneyin.");
       }
     } catch {
-      setError("Bir hata oluştu");
+      setError("Bağlantı kurulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.");
     } finally {
       setLoading(false);
     }
   };
 
+  const backToLogin = (
+    <p className="t-sm" style={{ color: "var(--ink-2)" }}>
+      <Link href="/login" className="font-medium hover:underline" style={{ color: "var(--accent)" }}>
+        Giriş sayfasına dön
+      </Link>
+    </p>
+  );
+
   if (success) {
     return (
-      <div className="min-h-screen bg-[var(--bg-main)] flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-[var(--bg-card)] rounded-2xl shadow-2xl p-8 w-full max-w-md text-center"
+      <AuthLayout
+        title="Bağlantı gönderildi"
+        subtitle="Sıradaki adım e-posta kutunuzda."
+        footer={backToLogin}
+      >
+        <p
+          role="status"
+          aria-live="polite"
+          className="rounded-[var(--radius-xs)] p-3 t-body"
+          style={{ background: "var(--success-bg)", color: "var(--success)" }}
         >
-          <div className="w-16 h-16 bg-[var(--accent-soft)] rounded-full flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="text-[var(--accent)]" size={32} />
-          </div>
-          <h2 className="text-2xl font-bold text-[var(--text-main)] mb-2">Email Gönderildi</h2>
-          <p className="text-[var(--text-muted)] mb-6">
-            Eğer bu email adresi sistemimizde kayıtlıysa, şifre sıfırlama linki gönderildi.
-            Lütfen email kutunuzu kontrol edin.
-          </p>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 text-[var(--accent)] hover:underline"
-          >
-            <ArrowLeft size={16} />
-            Giriş sayfasına dön
-          </Link>
-        </motion.div>
-      </div>
+          Bu adres kayıtlıysa şifre sıfırlama bağlantısı gönderildi. Gelen kutunuzu ve
+          spam klasörünü kontrol edin.
+        </p>
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--bg-main)] flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-[var(--bg-card)] rounded-2xl shadow-2xl p-8 w-full max-w-md"
-      >
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-[var(--info-bg)] rounded-full flex items-center justify-center mx-auto mb-4">
-            <Mail className="text-[var(--accent)]" size={32} />
-          </div>
-          <h1 className="text-2xl font-bold text-[var(--text-main)]">Şifremi Unuttum</h1>
-          <p className="text-[var(--text-muted)] mt-2">
-            Email adresinizi girin, size şifre sıfırlama linki gönderelim.
-          </p>
-        </div>
-
+    <AuthLayout
+      title="Şifremi unuttum"
+      subtitle="E-posta adresinizi girin, sıfırlama bağlantısını gönderelim."
+      footer={backToLogin}
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
         {error && (
-          <div className="mb-4 p-3 bg-[var(--error-bg)] border border-[var(--error)]/50 rounded-lg flex items-center gap-2 text-[var(--error)]">
-            <AlertCircle size={18} />
+          <p
+            role="alert"
+            aria-live="assertive"
+            className="flex gap-2.5 rounded-[var(--radius-xs)] p-3 t-sm"
+            style={{ background: "var(--error-bg)", color: "var(--error)" }}
+          >
+            <AlertCircle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
             {error}
-          </div>
+          </p>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">
-              Email Adresi
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
-              placeholder="ornek@email.com"
-              required
-            />
-          </div>
-
-          <Button type="submit" size="lg" loading={loading} className="w-full">
-            {loading ? "Gönderiliyor..." : "Sıfırlama Linki Gönder"}
-          </Button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 text-[var(--accent)] hover:underline"
-          >
-            <ArrowLeft size={16} />
-            Giriş sayfasına dön
-          </Link>
+        <div>
+          <label htmlFor="email" className="t-label mb-1.5 block" style={{ color: "var(--ink-2)" }}>
+            E-posta
+          </label>
+          <input
+            id="email"
+            type="email"
+            name="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="theme-input"
+            placeholder="ad.soyad@kurum.com"
+            required
+          />
         </div>
-      </motion.div>
-    </div>
+
+        <Button type="submit" loading={loading} className="mt-1 w-full">
+          {loading ? "Gönderiliyor" : "Sıfırlama bağlantısı gönder"}
+        </Button>
+      </form>
+    </AuthLayout>
   );
 }
