@@ -1,57 +1,28 @@
 import type { Metadata } from "next";
-import { Barlow, Barlow_Condensed, IBM_Plex_Mono, IBM_Plex_Sans, Poppins, Roboto, Space_Grotesk } from "next/font/google";
+import { Barlow, Barlow_Condensed, Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/providers";
 
 /**
- * Tipografi tek yerden — iki tema, iki yazı ailesi.
+ * Tipografi tek yerden — tek aile.
  *
- * Koyu tema (varsayılan) Poppins + Roboto kullanır; açık "ESG LAB" teması
- * marka kılavuzundaki Space Grotesk + IBM Plex Sans/Mono ile gelir. Hangisinin
- * kullanılacağını globals.css'teki --font-head/--font-body/--font-mono
- * seçer, bileşenler bu üç değişkenden başkasını bilmez.
+ * Uygulama (giriş sonrası tüm ekranlar) Inter kullanır: başlık, gövde, etiket
+ * ve sayı aynı aileden gelir; hiyerarşi ağırlık ve ölçekle kurulur, ikinci bir
+ * yazı ailesiyle değil (bkz. DESIGN.md > Typography).
  *
- * Fontlar Google'dan `@import` ile değil `next/font` ile alınır; dosyalar
- * derlemede uygulamayla birlikte sunulur, dış istek yok. `latin-ext` şart:
- * ğ, ş ve ı yalnızca o alt kümede var, latin ile Türkçe metin yedek fonta
- * düşüyordu.
+ * Tanıtım sayfası kendi kapsamlı sistemine (app/landing.css, .esg-landing)
+ * sahip olduğu için Barlow ikilisi orada kalır.
  *
- * Değişken olarak veriliyorlar — sınıf olarak verilince body'ye yazılan
- * font-family, globals.css'teki kuralı seçici gücüyle eziyordu: sayfa
- * Poppins diyor, tarayıcı başka bir font çiziyordu.
+ * `latin-ext` şart: ğ, ş ve ı yalnızca o alt kümede var; latin ile Türkçe
+ * metin yedek fonta düşüyordu.
+ *
+ * Fontlar değişken olarak veriliyor — sınıf olarak verilince body'ye yazılan
+ * font-family, globals.css'teki kuralı seçici gücüyle eziyordu.
  */
-const poppins = Poppins({
-  subsets: ["latin", "latin-ext"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-poppins",
-  display: "swap",
-});
-
-const roboto = Roboto({
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "700"],
-  variable: "--font-roboto",
-  display: "swap",
-});
-
-const spaceGrotesk = Space_Grotesk({
+const inter = Inter({
   subsets: ["latin", "latin-ext"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-space-grotesk",
-  display: "swap",
-});
-
-const plexSans = IBM_Plex_Sans({
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600"],
-  variable: "--font-plex-sans",
-  display: "swap",
-});
-
-const plexMono = IBM_Plex_Mono({
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500"],
-  variable: "--font-plex-mono",
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -70,7 +41,7 @@ const barlowCondensed = Barlow_Condensed({
   display: "swap",
 });
 
-const fontVariables = [poppins, roboto, spaceGrotesk, plexSans, plexMono, barlow, barlowCondensed]
+const fontVariables = [inter, barlow, barlowCondensed]
   .map((font) => font.variable)
   .join(" ");
 
@@ -78,16 +49,17 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Transformation Platform - Strategic Maturity Assessment",
-    description: "Comprehensive ESG and Digital Transformation maturity assessment platform for corporate executives and sustainability leaders.",
+    title: "Dönüşüm Platformu — Stratejik Olgunluk Değerlendirmesi",
+    description:
+      "Kurumsal ESG ve dijital dönüşüm olgunluğunu ölçen, kıyaslayan ve yol haritasına çeviren değerlendirme platformu.",
     icons: {
       icon: "/favicon.svg",
       shortcut: "/favicon.svg"
     },
     metadataBase: new URL(process.env.NEXTAUTH_URL ?? "http://localhost:3000"),
     openGraph: {
-      title: "Transformation Platform",
-      description: "Strategic transformation and maturity management platform",
+      title: "Dönüşüm Platformu",
+      description: "Stratejik dönüşüm ve olgunluk yönetimi platformu",
       images: ["/og-image.png"]
     }
   };
@@ -99,11 +71,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // data-accent marka vurgusunu seçer; data-theme'i next-themes yazar.
+    // Tek tema: koyu. data-theme'i next-themes yazar, forcedTheme ile sabit.
     // Font değişkenleri <html> üzerinde: tema token'ları :root'ta tanımlı ve
-    // orada --font-poppins gibi bir değişkeni okuyabilmeleri gerekiyor. body'ye
-    // konulduğunda :root'taki --font-head geçersize düşüp yazı Times'a iniyordu.
-    <html lang="tr" data-accent="orange" className={fontVariables} suppressHydrationWarning>
+    // orada --font-inter'ı okuyabilmeleri gerekiyor. body'ye konulduğunda
+    // :root'taki --font-body geçersize düşüp yazı Times'a iniyordu.
+    <html lang="tr" className={fontVariables} suppressHydrationWarning>
       <body suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>

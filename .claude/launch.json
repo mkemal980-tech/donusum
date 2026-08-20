@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "esg-dev",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "dev", "-p", "3007"],
+      "cwd": "nextjs_space",
+      "port": 3007,
+      "autoPort": false
+    }
+  ]
+}

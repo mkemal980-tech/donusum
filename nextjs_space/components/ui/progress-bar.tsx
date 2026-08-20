@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
 
 interface ProgressBarProps {
@@ -9,22 +8,42 @@ interface ProgressBarProps {
   color?: string;
 }
 
-export default function ProgressBar({ value, label, color = "var(--primary)" }: ProgressBarProps) {
+/**
+ * Etiketli ilerleme çubuğu.
+ *
+ * Dolgu genişliği CSS geçişiyle animasyonlanır; görünür alana girince
+ * 0'dan değerine gider. `prefers-reduced-motion` globals.css'te tüm
+ * geçişleri kapattığı için burada ayrıca kontrol gerekmiyor.
+ */
+export default function ProgressBar({ value, label, color = "var(--accent)" }: ProgressBarProps) {
   const { ref, inView } = useInView({ triggerOnce: true });
+  const safeValue = Math.max(0, Math.min(100, value ?? 0));
 
   return (
     <div ref={ref} className="w-full">
-      <div className="flex justify-between mb-2">
-        <span className="text-sm font-medium text-[var(--text-primary)]">{label ?? ''}</span>
-        <span className="text-sm font-semibold" style={{ color }}>{value ?? 0}%</span>
+      <div className="flex items-baseline justify-between gap-3">
+        {label ? (
+          <span className="truncate t-sm" style={{ color: "var(--ink-2)" }} title={label}>
+            {label}
+          </span>
+        ) : (
+          <span />
+        )}
+        <span className="t-sm tabular font-medium" style={{ color: "var(--ink)" }}>
+          {safeValue}%
+        </span>
       </div>
-      <div className="h-3 rounded-full overflow-hidden bg-[var(--border-light)]">
-        <motion.div
-          className="h-full rounded-full"
-          style={{ backgroundColor: color }}
-          initial={{ width: 0 }}
-          animate={{ width: inView ? `${value ?? 0}%` : 0 }}
-          transition={{ duration: 1, ease: "easeOut" }}
+      <div
+        className="progress-bar mt-1.5"
+        role="progressbar"
+        aria-valuenow={safeValue}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={label || undefined}
+      >
+        <div
+          className="progress-bar-fill"
+          style={{ width: inView ? `${safeValue}%` : 0, background: color }}
         />
       </div>
     </div>
