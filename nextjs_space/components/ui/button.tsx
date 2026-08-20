@@ -33,7 +33,7 @@ const buttonVariants = cva(
           "bg-[var(--surface-2)] text-[var(--ink)] hover:bg-[var(--surface-3)]",
         ghost: "text-[var(--ink-2)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]",
         link: "text-[var(--accent)] underline-offset-4 hover:underline",
-        soft: "bg-[var(--accent-quiet)] text-[var(--accent)] hover:bg-[var(--accent-faint)]",
+        soft: "bg-[var(--accent-quiet)] text-[var(--accent-ink)] hover:bg-[var(--accent-faint)]",
       },
       size: {
         sm: "h-8 px-3 text-sm",

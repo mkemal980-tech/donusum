@@ -634,11 +634,11 @@ export default function CategoriesPage() {
           <span className="text-xs px-2 py-1 bg-[var(--bg-card-2)] text-[var(--accent)] rounded">
             {questionTypes.find(t => t.value === question.type)?.label}
           </span>
-          <span className="text-xs px-2 py-1 bg-[var(--accent-soft)] text-[var(--accent)] rounded">
+          <span className="text-xs px-2 py-1 bg-[var(--accent-soft)] text-[var(--accent-ink)] rounded">
             Ağırlık: {question.weight || 1}x
           </span>
           {question.requiresEvidence && (
-            <span className="text-xs px-2 py-1 bg-[var(--warning-bg)] text-[var(--warning)] rounded">Kanıt Gerekli</span>
+            <span className="text-xs px-2 py-1 bg-[var(--warning-bg)] text-[var(--warning-ink)] rounded">Kanıt Gerekli</span>
           )}
         </div>
         {(() => {
@@ -695,7 +695,7 @@ export default function CategoriesPage() {
         </button>
         <button 
           onClick={() => handleDelete('question', question.id)} 
-          className="p-1.5 hover:bg-[var(--error-bg)] rounded text-[var(--error)]" 
+          className="p-1.5 hover:bg-[var(--error-bg)] rounded text-[var(--error-ink)]" 
           title="Sil"
         >
           <Trash2 size={16} />
@@ -878,7 +878,7 @@ export default function CategoriesPage() {
                           <span className="text-[var(--text-muted)] text-sm">({subCat.questions?.length || 0} soru)</span>
                         )}
                         {!subCat.hasSubLevels && (
-                          <span className="text-xs px-2 py-0.5 bg-[var(--accent-quiet)] text-[var(--accent)] rounded">Doğrudan Sorular</span>
+                          <span className="text-xs px-2 py-0.5 bg-[var(--accent-quiet)] text-[var(--accent-ink)] rounded">Doğrudan Sorular</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
@@ -901,7 +901,7 @@ export default function CategoriesPage() {
                             </button>
                             <button 
                               onClick={() => openBulkUploadModal(subCat.id, true)} 
-                              className="p-1.5 hover:bg-[var(--success-bg)] rounded text-[var(--accent)]" 
+                              className="p-1.5 hover:bg-[var(--success-bg)] rounded text-[var(--accent-ink)]" 
                               title="Excel'den Toplu Yükle"
                             >
                               <Upload size={16} />
@@ -917,7 +917,7 @@ export default function CategoriesPage() {
                         </button>
                         <button 
                           onClick={() => handleDelete('subcategory', subCat.id)} 
-                          className="p-1.5 hover:bg-[var(--error-bg)] rounded text-[var(--error)]" 
+                          className="p-1.5 hover:bg-[var(--error-bg)] rounded text-[var(--error-ink)]" 
                           title="Sil"
                         >
                           <Trash2 size={16} />
@@ -941,7 +941,7 @@ export default function CategoriesPage() {
                                     <span className={`text-xs px-2 py-0.5 rounded ${
                                       subLevel.axisType === 'VELOCITY' 
                                         ? 'bg-[var(--bg-card-2)] text-[var(--accent)]' 
-                                        : 'bg-[var(--accent-soft)] text-[var(--accent)]'
+                                        : 'bg-[var(--accent-soft)] text-[var(--accent-ink)]'
                                     }`}>
                                       {subLevel.axisType === 'VELOCITY' ? 'X: Velocity' : 'Y: Endurance'}
                                     </span>
@@ -956,7 +956,7 @@ export default function CategoriesPage() {
                                     </button>
                                     <button 
                                       onClick={() => openBulkUploadModal(subLevel.id, false)} 
-                                      className="p-1.5 hover:bg-[var(--accent-soft)] rounded text-[var(--accent)]" 
+                                      className="p-1.5 hover:bg-[var(--accent-soft)] rounded text-[var(--accent-ink)]" 
                                       title="Excel'den Toplu Yükle"
                                     >
                                       <Upload size={16} />
@@ -970,7 +970,7 @@ export default function CategoriesPage() {
                                     </button>
                                     <button 
                                       onClick={() => handleDelete('sublevel', subLevel.id)} 
-                                      className="p-1.5 hover:bg-[var(--error-bg)] rounded text-[var(--error)]" 
+                                      className="p-1.5 hover:bg-[var(--error-bg)] rounded text-[var(--error-ink)]" 
                                       title="Sil"
                                     >
                                       <Trash2 size={16} />

@@ -127,9 +127,9 @@ const timeframes = [
 ];
 
 const strategicTypes = [
-  { value: 'QUICK_WIN', label: 'Hızlı Kazanım', color: 'bg-[var(--accent-soft)] text-[var(--accent)]' },
-  { value: 'PROJECT', label: 'Proje', color: 'bg-[var(--warning-bg)] text-[var(--warning)]' },
-  { value: 'BIG_BET', label: 'Büyük Yatırım', color: 'bg-[var(--error-bg)] text-[var(--error)]' },
+  { value: 'QUICK_WIN', label: 'Hızlı Kazanım', color: 'bg-[var(--accent-soft)] text-[var(--accent-ink)]' },
+  { value: 'PROJECT', label: 'Proje', color: 'bg-[var(--warning-bg)] text-[var(--warning-ink)]' },
+  { value: 'BIG_BET', label: 'Büyük Yatırım', color: 'bg-[var(--error-bg)] text-[var(--error-ink)]' },
 ];
 
 const DollarIndicator = ({ level, max = 5 }: { level: number; max?: number }) => (
@@ -718,7 +718,7 @@ export default function RecommendationsPage() {
                   </td>
                   <td className="p-4">
                     {surveyName ? (
-                      <span className="px-2 py-1 bg-[var(--accent-quiet)] text-[var(--accent)] rounded text-xs flex items-center gap-1 w-fit">
+                      <span className="px-2 py-1 bg-[var(--accent-quiet)] text-[var(--accent-ink)] rounded text-xs flex items-center gap-1 w-fit">
                         <FileText size={12} />
                         {surveyName}
                       </span>
@@ -729,14 +729,14 @@ export default function RecommendationsPage() {
                   <td className="p-4">
                     {triggerInfo ? (
                       <div className="flex flex-col gap-1">
-                        <span className="px-2 py-1 bg-[var(--accent-soft)] text-[var(--accent)] rounded text-xs flex items-center gap-1 w-fit">
+                        <span className="px-2 py-1 bg-[var(--accent-soft)] text-[var(--accent-ink)] rounded text-xs flex items-center gap-1 w-fit">
                           <HelpCircle size={12} />
                           Soru Bağlı
                         </span>
                         <span className="text-xs text-[var(--text-dim)]">{triggerInfo.optionsCount} şık</span>
                       </div>
                     ) : (
-                      <span className="px-2 py-1 bg-[var(--warning-bg)] text-[var(--warning)] rounded text-xs">
+                      <span className="px-2 py-1 bg-[var(--warning-bg)] text-[var(--warning-ink)] rounded text-xs">
                         Puan Aralığı: %{rec.minScoreThreshold}-{rec.maxScoreThreshold}
                       </span>
                     )}
@@ -756,7 +756,7 @@ export default function RecommendationsPage() {
                     <button onClick={() => openModal(rec)} className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]">
                       <Edit size={18} />
                     </button>
-                    <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-[var(--error-bg)] rounded text-[var(--error)]">
+                    <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-[var(--error-bg)] rounded text-[var(--error-ink)]">
                       <Trash2 size={18} />
                     </button>
                   </td>
@@ -989,7 +989,7 @@ export default function RecommendationsPage() {
                           ))}
                         </div>
                         {selectedTriggerOptions.length > 0 && (
-                          <p className="mt-2 text-xs text-[var(--accent)] bg-[var(--accent-soft)] p-2 rounded">
+                          <p className="mt-2 text-xs text-[var(--accent-ink)] bg-[var(--accent-soft)] p-2 rounded">
                             ✅ Seçili {selectedTriggerOptions.length} şıktan birine cevap verildiğinde bu öneri gösterilecek.
                           </p>
                         )}

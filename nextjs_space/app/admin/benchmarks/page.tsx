@@ -406,15 +406,15 @@ export default function BenchmarksPage() {
                     <td>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         b.level === "OVERALL" ? "bg-[var(--bg-card-2)] text-[var(--accent)]" :
-                        b.level === "CATEGORY" ? "bg-[var(--accent-quiet)] text-[var(--accent)]" :
-                        "bg-[var(--accent-soft)] text-[var(--accent)]"
+                        b.level === "CATEGORY" ? "bg-[var(--accent-quiet)] text-[var(--accent-ink)]" :
+                        "bg-[var(--accent-soft)] text-[var(--accent-ink)]"
                       }`}>
                         {b.level === "OVERALL" ? "Genel" : b.level === "CATEGORY" ? "Kategori" : "Alt Kategori"}
                       </span>
                     </td>
                     <td>{getTargetName(b)}</td>
                     <td className="text-center">
-                      <span className="px-2 py-1 bg-[var(--accent-quiet)] text-[var(--accent)] rounded font-medium">{b.bestScore.toFixed(1)}</span>
+                      <span className="px-2 py-1 bg-[var(--accent-quiet)] text-[var(--accent-ink)] rounded font-medium">{b.bestScore.toFixed(1)}</span>
                     </td>
                     <td className="text-center">
                       <span className="px-2 py-1 bg-[var(--bg-card-2)] text-[var(--text-muted)] rounded font-medium">{b.averageScore.toFixed(1)}</span>
@@ -422,7 +422,7 @@ export default function BenchmarksPage() {
                     <td className="text-center">
                       <button
                         onClick={() => handleDelete(b.id)}
-                        className="p-1 text-[var(--error)] hover:bg-[var(--error-bg)] rounded transition-colors"
+                        className="p-1 text-[var(--error-ink)] hover:bg-[var(--error-bg)] rounded transition-colors"
                       >
                         <Trash2 size={18} />
                       </button>

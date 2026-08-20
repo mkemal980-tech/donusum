@@ -34,9 +34,9 @@ const timeframeLabels: Record<string, string> = {
 };
 
 const strategicColors: Record<string, string> = {
-  QUICK_WIN: "bg-[var(--accent-soft)] text-[var(--accent)]",
-  BIG_BET: "bg-[var(--accent-quiet)] text-[var(--accent)]",
-  PROJECT: "bg-[var(--info-bg)] text-[var(--blue-main)]"
+  QUICK_WIN: "bg-[var(--accent-soft)] text-[var(--accent-ink)]",
+  BIG_BET: "bg-[var(--accent-quiet)] text-[var(--accent-ink)]",
+  PROJECT: "bg-[var(--info-bg)] text-[var(--accent-ink)]"
 };
 
 const strategicLabels: Record<string, string> = {
@@ -123,7 +123,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
           </span>
         </div>
       ) : stepDistance === 0 && rec?.stepDistance !== undefined ? (
-        <div className="inline-flex items-center gap-1.5 mb-3 px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--accent-soft)] text-[var(--accent)]">
+        <div className="inline-flex items-center gap-1.5 mb-3 px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--accent-soft)] text-[var(--accent-ink)]">
           <Target size={13} />
           Sıradaki adım
         </div>
@@ -215,7 +215,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
         title={locked ? "Önce bir önceki basamağı tamamlayın" : undefined}
         className={`w-full py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors ${
           rec?.isInRoadmap
-            ? "bg-[var(--accent-soft)] text-[var(--accent)] cursor-default"
+            ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] cursor-default"
             : locked
               ? "bg-[var(--bg-card-2)] text-[var(--text-dim)] cursor-not-allowed"
               : "bg-[var(--accent)] text-[var(--bg-deep)] hover:bg-[var(--accent-bright)]"

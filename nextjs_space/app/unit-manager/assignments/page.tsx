@@ -71,8 +71,8 @@ const STATUS_LABEL: Record<SectionStatus, string> = {
 
 const STATUS_STYLE: Record<SectionStatus, string> = {
   EMPTY: "bg-[var(--bg-card-2)] text-[var(--text-dim)] border-[var(--border-soft)]",
-  IN_PROGRESS: "bg-[var(--warning-bg)] text-[var(--warning)] border-[var(--warning)]/30",
-  DONE: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/50",
+  IN_PROGRESS: "bg-[var(--warning-bg)] text-[var(--warning-ink)] border-[var(--warning)]/30",
+  DONE: "bg-[var(--accent-soft)] text-[var(--accent-ink)] border-[var(--accent)]/50",
 };
 
 /** İnce ilerleme çubuğu — satır yüksekliğini büyütmeden doluluk göstersin. */
@@ -430,7 +430,7 @@ export default function SectionAssignmentsPage() {
         )}
 
         {!loading && !isCoordinator && (
-          <div className="mb-4 p-3 rounded-lg bg-[var(--warning-bg)] border border-[var(--warning)]/30 text-sm text-[var(--warning)]">
+          <div className="mb-4 p-3 rounded-lg bg-[var(--warning-bg)] border border-[var(--warning)]/30 text-sm text-[var(--warning-ink)]">
             Görev dağıtma yetkiniz yok; bu tablo yalnızca bilgi amaçlıdır. Değişiklik için birim
             yöneticinizle görüşün.
           </div>

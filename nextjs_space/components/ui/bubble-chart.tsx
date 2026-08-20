@@ -27,10 +27,22 @@ interface BubbleChartProps {
 
 const strategicColors = {
   /* Seri paleti (bkz. DESIGN.md > Color). Tuval `var(--…)` okuyamadığı için
-     değerler burada sabit; DESIGN.md'deki token'ların hex karşılıkları. */
-  QUICK_WIN: { bg: '#27C08A', border: '#1F9E71', text: '#0C1F18', label: 'Hızlı kazanım' },
-  PROJECT: { bg: '#2E86FF', border: '#1E6FE8', text: '#08152B', label: 'Proje' },
-  BIG_BET: { bg: '#9A79D6', border: '#7F5CBE', text: '#150F22', label: 'Büyük yatırım' }
+     bg/border/text burada sabit hex; DESIGN.md token'larının karşılıkları.
+     DOM tarafındaki rozet ve numara dairesi ise token kullanır:
+     `tint` + `ink` rozet dilidir (kontrast 4.5:1 üstü), `solid` üzerine
+     beyaz metin alan dolgudur. */
+  QUICK_WIN: {
+    bg: '#27C08A', border: '#1F9E71', text: '#0C1F18', label: 'Hızlı kazanım',
+    tint: 'var(--success-bg)', ink: 'var(--success-ink)', solid: 'var(--success-solid)'
+  },
+  PROJECT: {
+    bg: '#2E86FF', border: '#1E6FE8', text: '#08152B', label: 'Proje',
+    tint: 'var(--info-bg)', ink: 'var(--accent-ink)', solid: 'var(--accent-solid)'
+  },
+  BIG_BET: {
+    bg: '#9A79D6', border: '#7F5CBE', text: '#150F22', label: 'Büyük yatırım',
+    tint: 'var(--series-4-bg)', ink: 'var(--series-4-ink)', solid: 'var(--series-4-solid)'
+  }
 };
 
 const timeframeLabels = {
@@ -355,8 +367,8 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
                     className="flex w-full items-center gap-2 p-3 text-left transition-colors duration-fast ease-out-quart hover:bg-[var(--surface-2)]"
                   >
                     <span 
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold"
-                      style={{ backgroundColor: colors.border }}
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-[var(--on-accent)] text-xs font-semibold"
+                      style={{ backgroundColor: colors.solid }}
                     >
                       {index + 1}
                     </span>
@@ -391,15 +403,15 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
                           <div className="flex flex-wrap gap-2">
                             <span 
                               className="px-2 py-1 rounded text-xs font-medium"
-                              style={{ backgroundColor: colors.bg, color: colors.border }}
+                              style={{ backgroundColor: colors.tint, color: colors.ink }}
                             >
                               {colors.label}
                             </span>
-                            <span className="px-2 py-1 bg-[var(--info-bg)] text-[var(--blue-main)] rounded text-xs font-medium flex items-center gap-1">
+                            <span className="px-2 py-1 bg-[var(--info-bg)] text-[var(--accent-ink)] rounded text-xs font-medium flex items-center gap-1">
                               <Clock size={12} />
                               {timeframeLabels[rec.timeframe]}
                             </span>
-                            <span className="px-2 py-1 bg-[var(--warning-bg)] text-[var(--warning)] rounded text-xs font-medium flex items-center gap-1">
+                            <span className="px-2 py-1 bg-[var(--warning-bg)] text-[var(--warning-ink)] rounded text-xs font-medium flex items-center gap-1">
                               <TrendingUp size={12} />
                               Etki: {rec.estimatedImpact}
                             </span>

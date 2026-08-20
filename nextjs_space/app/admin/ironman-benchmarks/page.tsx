@@ -261,7 +261,7 @@ export default function IronmanBenchmarksPage() {
                     )}
                   </td>
                   <td className="text-center">
-                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--info-bg)] text-[var(--blue-main)] font-semibold text-sm">
+                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--info-bg)] text-[var(--accent-ink)] font-semibold text-sm">
                       {benchmark.velocityAverage.toFixed(1)}
                     </span>
                   </td>
@@ -276,12 +276,12 @@ export default function IronmanBenchmarksPage() {
                     </span>
                   </td>
                   <td className="text-center">
-                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent-quiet)] text-[var(--accent)] font-semibold text-sm">
+                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent-quiet)] text-[var(--accent-ink)] font-semibold text-sm">
                       {benchmark.enduranceAverage.toFixed(1)}
                     </span>
                   </td>
                   <td className="text-center">
-                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent-quiet)] text-[var(--accent)] font-semibold text-sm">
+                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent-quiet)] text-[var(--accent-ink)] font-semibold text-sm">
                       {benchmark.enduranceBest.toFixed(1)}
                     </span>
                   </td>
@@ -306,7 +306,7 @@ export default function IronmanBenchmarksPage() {
                         title="Sil"
                         variant="ghost"
                         size="icon"
-                        className="hover:bg-[var(--error-bg)] text-[var(--error)]"
+                        className="hover:bg-[var(--error-bg)] text-[var(--error-ink)]"
                       >
                         <Trash2 size={18} />
                       </Button>

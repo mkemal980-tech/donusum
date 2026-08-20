@@ -39,12 +39,14 @@
   /* ---- Vurgu: tek eylem rengi ---- */
   /* İki mavi, iki iş:
      --accent koyu zemin üzerinde METİN/veri rengi (kontrast 4.5:1 üstü),
-     --accent-solid ise DOLGU rengi; üstünde beyaz metin 4.7:1 veriyor.
+     --accent-solid ise DOLGU rengi; üstünde beyaz metin 4.59:1 veriyor.
      Tek maviyle ikisi birden sağlanamıyordu: parlak mavi üstünde beyaz 3.5:1,
-     koyu mavi ise metin olarak zeminde sönük kalıyor. */
+     koyu mavi ise metin olarak zeminde sönük kalıyor.
+     L 0.575 idi; tarayıcının gamut eşlemesiyle ölçülen gerçek değer 4.36:1
+     çıkıyordu, yani yorumun vaat ettiği eşiğin altında. 0.565'e indirildi. */
   --accent:        oklch(0.635 0.191 258);
   --accent-hover:  oklch(0.685 0.181 258);
-  --accent-solid:  oklch(0.575 0.200 258);
+  --accent-solid:  oklch(0.565 0.200 258);
   --accent-press:  oklch(0.520 0.185 258);
   --accent-quiet:  oklch(0.635 0.191 258 / 0.14);
   --accent-faint:  oklch(0.635 0.191 258 / 0.07);
@@ -66,6 +68,30 @@
   --error-bg:   oklch(0.665 0.168 22 / 0.14);
   --info:       var(--accent);
   --info-bg:    var(--accent-quiet);
+  --series-4-bg: oklch(0.640 0.130 300 / 0.14);
+
+  /* ---- Rozet mürekkebi ----
+     Durum rengi kendi %14 tint'i üzerinde 2.90–4.10:1 veriyordu; AA gövde
+     eşiği 4.5:1. Sorun tint değil metnin açıklığıydı: alfa 0.04'e indirilse
+     bile error/accent/mor 3.7'de tıkanıyor. Çözüm --accent/--accent-solid
+     ayrımının aynısı: aynı hue, bir kademe açık, kroma hafif kısık
+     (L arttıkça kroma azalır).
+     Kural: durum rengi METİN ise bu token, dolgu/kenarlık/grafik serisi ise
+     base token. */
+  --success-ink:  oklch(0.795 0.144 165);
+  --warning-ink:  oklch(0.830 0.132 70);
+  --error-ink:    oklch(0.790 0.156 22);
+  --accent-ink:   oklch(0.765 0.177 258);
+  --info-ink:     var(--accent-ink);
+  --series-4-ink: oklch(0.755 0.122 300);
+
+  /* ---- Dolgu varyantları: üzerinde beyaz metin ≥4.5:1 ----
+     Base renkler dolgu olarak kullanılınca beyaz metin 2.34–3.52:1'de
+     kalıyordu (numara dairesi, dolu rozet). */
+  --success-solid:  oklch(0.525 0.156 165);
+  --warning-solid:  oklch(0.565 0.142 70);
+  --error-solid:    oklch(0.580 0.172 22);
+  --series-4-solid: oklch(0.570 0.132 300);
 
   /* ---- Köşe: dört token, başkası yok ---- */
   --radius-xs:   6px;   /* input, chip, ikon kutusu */

@@ -260,7 +260,7 @@ export default function SurveyAssignmentsPage() {
 
       {message && (
         <div className={`p-4 rounded-lg ${
-          message.type === "success" ? "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]" : "bg-[var(--error-bg)] text-[var(--error)] border border-[var(--error)]/50"
+          message.type === "success" ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] border border-[var(--accent)]" : "bg-[var(--error-bg)] text-[var(--error-ink)] border border-[var(--error)]/50"
         }`}>
           {message.text}
           <button onClick={() => setMessage(null)} className="float-right font-semibold">×</button>
@@ -460,7 +460,7 @@ export default function SurveyAssignmentsPage() {
                     </td>
                     <td>
                       {expired ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--error-bg)] text-[var(--error)]">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--error-bg)] text-[var(--error-ink)]">
                           Süresi Doldu
                         </span>
                       ) : (
@@ -516,7 +516,7 @@ export default function SurveyAssignmentsPage() {
                           title="Atamayı Kaldır"
                           variant="ghost"
                           size="icon"
-                          className="text-[var(--error)] hover:bg-[var(--error-bg)]"
+                          className="text-[var(--error-ink)] hover:bg-[var(--error-bg)]"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -553,7 +553,7 @@ export default function SurveyAssignmentsPage() {
                   ) : (
                     <div className="flex flex-wrap gap-1">
                       {userAssignments.map(a => (
-                        <span key={a.id} className="inline-flex items-center px-2 py-1 rounded text-xs bg-[var(--accent-quiet)] text-[var(--accent)]">
+                        <span key={a.id} className="inline-flex items-center px-2 py-1 rounded text-xs bg-[var(--accent-quiet)] text-[var(--accent-ink)]">
                           {a.survey.name}
                         </span>
                       ))}

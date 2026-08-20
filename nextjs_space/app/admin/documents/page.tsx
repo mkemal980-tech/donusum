@@ -323,7 +323,7 @@ export default function DocumentsPage() {
                         title="Sil"
                         variant="ghost"
                         size="icon"
-                        className="text-[var(--error)] hover:bg-[var(--error-bg)]"
+                        className="text-[var(--error-ink)] hover:bg-[var(--error-bg)]"
                       >
                         <Trash2 size={18} />
                       </Button>

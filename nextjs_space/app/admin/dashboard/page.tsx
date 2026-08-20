@@ -259,7 +259,7 @@ export default function AdminDashboardPage() {
                     }}
                     className={`w-full px-4 py-3 text-left hover:bg-[var(--bg-card-2)] transition-colors ${
                       selectedSurvey === survey.id
-                        ? "bg-[var(--accent-quiet)] text-[var(--accent)]"
+                        ? "bg-[var(--accent-quiet)] text-[var(--accent-ink)]"
                         : "text-[var(--text-main)]"
                     }`}
                   >
@@ -466,7 +466,7 @@ export default function AdminDashboardPage() {
                 <h2 className="text-lg font-semibold text-[var(--text-main)]">
                   Değerlendirme Puanları
                 </h2>
-                <span className="px-2 py-1 rounded-full bg-[var(--accent-quiet)] text-[var(--accent)] text-sm">
+                <span className="px-2 py-1 rounded-full bg-[var(--accent-quiet)] text-[var(--accent-ink)] text-sm">
                   {userScores.length} değerlendirme
                 </span>
               </div>

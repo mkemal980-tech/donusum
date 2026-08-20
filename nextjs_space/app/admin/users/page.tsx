@@ -61,7 +61,7 @@ const roleLabels: Record<string, string> = {
 
 const roleColors: Record<string, string> = {
   USER: "bg-[var(--bg-card-2)] text-[var(--text-muted)]",
-  UNIT_MANAGER: "bg-[var(--accent-quiet)] text-[var(--accent)]",
+  UNIT_MANAGER: "bg-[var(--accent-quiet)] text-[var(--accent-ink)]",
   ADMIN: "bg-[var(--bg-card-2)] text-[var(--accent)]",
 };
 
@@ -397,7 +397,7 @@ export default function UsersPage() {
                       title="Anket Ata"
                       variant="ghost"
                       size="icon"
-                      className="text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                      className="text-[var(--text-dim)] hover:text-[var(--accent-ink)] hover:bg-[var(--accent-soft)]"
                     >
                       <FileText size={16} />
                     </Button>
@@ -415,7 +415,7 @@ export default function UsersPage() {
                       title="Sil"
                       variant="ghost"
                       size="icon"
-                      className="text-[var(--text-dim)] hover:text-[var(--error)] hover:bg-[var(--error-bg)]"
+                      className="text-[var(--text-dim)] hover:text-[var(--error-ink)] hover:bg-[var(--error-bg)]"
                     >
                       <Trash2 size={16} />
                     </Button>
@@ -657,7 +657,7 @@ export default function UsersPage() {
                           title="Atamayı Kaldır"
                           variant="ghost"
                           size="icon"
-                          className="text-[var(--error)] hover:bg-[var(--error-bg)]"
+                          className="text-[var(--error-ink)] hover:bg-[var(--error-bg)]"
                         >
                           <Trash2 size={16} />
                         </Button>

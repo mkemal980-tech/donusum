@@ -284,7 +284,7 @@ export default function SurveyQuestion({
               </span>
               <button 
                 onClick={() => onRemoveFile?.(q?.id)}
-                className="text-[var(--text-dim)] hover:text-[var(--error)] transition-colors p-1 rounded hover:bg-[var(--error-bg)]"
+                className="text-[var(--text-dim)] hover:text-[var(--error-ink)] transition-colors p-1 rounded hover:bg-[var(--error-bg)]"
                 title="Dosyayı kaldır"
               >
                 <X size={16} />
