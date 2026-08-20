@@ -681,7 +681,7 @@ export default function CategoriesPage() {
         >
           <Lightbulb size={16} />
           {(recommendationCounts[question.id] ?? 0) > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[var(--warning)] text-black text-[10px] font-bold flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-[var(--warning)] text-black text-[10px] font-semibold flex items-center justify-center">
               {recommendationCounts[question.id]}
             </span>
           )}
@@ -715,7 +715,7 @@ export default function CategoriesPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Kategoriler & Sorular</h1>
+        <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-main)' }}>Kategoriler & Sorular</h1>
         <Button
           onClick={() => openModal('category')}
         >
@@ -1011,7 +1011,7 @@ export default function CategoriesPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-[var(--text-main)]">{getModalTitle()}</h2>
+              <h2 className="text-xl font-semibold text-[var(--text-main)]">{getModalTitle()}</h2>
               <button onClick={() => setShowModal(null)} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
                 <X size={24} />
               </button>
@@ -1361,7 +1361,7 @@ export default function CategoriesPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className={`bg-[var(--bg-card)] rounded-xl p-6 w-full max-h-[90vh] overflow-y-auto ${bulkPreview ? 'max-w-7xl' : 'max-w-lg'}`}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-[var(--text-main)]">
+              <h2 className="text-xl font-semibold text-[var(--text-main)]">
                 {bulkPreview ? 'Aktarmadan Önce Kontrol Edin' : "Excel'den Toplu Soru Yükle"}
               </h2>
               <button onClick={() => { setShowBulkUpload(null); setBulkUploadResult(null); setBulkPreview(null); }} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
@@ -1435,19 +1435,19 @@ export default function CategoriesPage() {
                   {bulkUploadResult.summary && (
                     <div className="grid grid-cols-4 gap-3 mb-3">
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-                        <div className="text-lg font-bold text-[var(--text-muted)]">{bulkUploadResult.summary.totalRows}</div>
+                        <div className="text-lg font-semibold text-[var(--text-muted)]">{bulkUploadResult.summary.totalRows}</div>
                         <div className="text-xs text-[var(--text-dim)]">Toplam Satır</div>
                       </div>
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-                        <div className="text-lg font-bold text-[var(--success)]">{bulkUploadResult.summary.successCount}</div>
+                        <div className="text-lg font-semibold text-[var(--success)]">{bulkUploadResult.summary.successCount}</div>
                         <div className="text-xs text-[var(--text-dim)]">Başarılı</div>
                       </div>
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-                        <div className="text-lg font-bold text-[var(--error)]">{bulkUploadResult.summary.errorCount}</div>
+                        <div className="text-lg font-semibold text-[var(--error)]">{bulkUploadResult.summary.errorCount}</div>
                         <div className="text-xs text-[var(--text-dim)]">Hatalı</div>
                       </div>
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-                        <div className="text-lg font-bold text-[var(--text-dim)]">{bulkUploadResult.summary.skippedRows || 0}</div>
+                        <div className="text-lg font-semibold text-[var(--text-dim)]">{bulkUploadResult.summary.skippedRows || 0}</div>
                         <div className="text-xs text-[var(--text-dim)]">Atlanan</div>
                       </div>
                     </div>
@@ -1509,7 +1509,7 @@ export default function CategoriesPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className={`bg-[var(--bg-card)] rounded-xl p-6 w-full max-h-[90vh] overflow-y-auto ${surveyBulkPreview ? 'max-w-[95vw]' : 'max-w-2xl'}`}>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-[var(--text-main)]">
+              <h2 className="text-xl font-semibold text-[var(--text-main)]">
                 {surveyBulkPreview ? '📋 Aktarmadan Önce Kontrol Edin' : '📊 Ankete Toplu Soru Yükle'}
               </h2>
               <button onClick={() => { setShowSurveyBulkUpload(false); setSurveyBulkUploadResult(null); setSurveyBulkPreview(null); }} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
@@ -1594,19 +1594,19 @@ export default function CategoriesPage() {
                   {surveyBulkUploadResult.summary && (
                     <div className="grid grid-cols-4 gap-3 mb-3">
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-                        <div className="text-lg font-bold text-[var(--text-muted)]">{surveyBulkUploadResult.summary.totalRows}</div>
+                        <div className="text-lg font-semibold text-[var(--text-muted)]">{surveyBulkUploadResult.summary.totalRows}</div>
                         <div className="text-xs text-[var(--text-dim)]">Toplam Satır</div>
                       </div>
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-                        <div className="text-lg font-bold text-[var(--success)]">{surveyBulkUploadResult.summary.successCount}</div>
+                        <div className="text-lg font-semibold text-[var(--success)]">{surveyBulkUploadResult.summary.successCount}</div>
                         <div className="text-xs text-[var(--text-dim)]">Başarılı</div>
                       </div>
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-                        <div className="text-lg font-bold text-[var(--error)]">{surveyBulkUploadResult.summary.errorCount}</div>
+                        <div className="text-lg font-semibold text-[var(--error)]">{surveyBulkUploadResult.summary.errorCount}</div>
                         <div className="text-xs text-[var(--text-dim)]">Hatalı</div>
                       </div>
                       <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-                        <div className="text-lg font-bold text-[var(--text-dim)]">{surveyBulkUploadResult.summary.skippedRows || 0}</div>
+                        <div className="text-lg font-semibold text-[var(--text-dim)]">{surveyBulkUploadResult.summary.skippedRows || 0}</div>
                         <div className="text-xs text-[var(--text-dim)]">Atlanan</div>
                       </div>
                     </div>

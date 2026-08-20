@@ -171,7 +171,7 @@ export default function IronmanBenchmarksPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-3" style={{ color: 'var(--text-main)' }}>
+          <h1 className="text-2xl font-semibold flex items-center gap-3" style={{ color: 'var(--text-main)' }}>
             <Activity className="text-[var(--accent)]" />
             Ironman Benchmark Verileri
           </h1>
@@ -320,7 +320,7 @@ export default function IronmanBenchmarksPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-[var(--text-main)]">
+              <h2 className="text-xl font-semibold text-[var(--text-main)]">
                 {editItem ? 'Benchmark Düzenle' : 'Yeni Ironman Benchmark'}
               </h2>
               <button onClick={() => setShowModal(false)} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">

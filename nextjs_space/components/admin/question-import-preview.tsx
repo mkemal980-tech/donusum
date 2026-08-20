@@ -218,19 +218,19 @@ export default function QuestionImportPreview({
       {/* Özet */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-          <div className="text-lg font-bold text-[var(--text-muted)]">{rows.length}</div>
+          <div className="text-lg font-semibold text-[var(--text-muted)]">{rows.length}</div>
           <div className="text-xs text-[var(--text-dim)]">Okunan Satır</div>
         </div>
         <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-          <div className="text-lg font-bold text-[var(--success)]">{validCount}</div>
+          <div className="text-lg font-semibold text-[var(--success)]">{validCount}</div>
           <div className="text-xs text-[var(--text-dim)]">Aktarılacak</div>
         </div>
         <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-          <div className="text-lg font-bold text-[var(--error)]">{errorCount}</div>
+          <div className="text-lg font-semibold text-[var(--error)]">{errorCount}</div>
           <div className="text-xs text-[var(--text-dim)]">Düzeltilecek</div>
         </div>
         <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-          <div className="text-lg font-bold text-[var(--text-dim)]">{payload.skippedRows}</div>
+          <div className="text-lg font-semibold text-[var(--text-dim)]">{payload.skippedRows}</div>
           <div className="text-xs text-[var(--text-dim)]">Atlanan (boş)</div>
         </div>
       </div>

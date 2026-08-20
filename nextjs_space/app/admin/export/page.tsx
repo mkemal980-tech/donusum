@@ -132,7 +132,7 @@ export default function ExportPage(): JSX.Element {
             <Database className="h-6 w-6 text-[var(--accent)]" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-[var(--text-main)]">Veri Dışa Aktarma</h1>
+            <h1 className="text-2xl font-semibold text-[var(--text-main)]">Veri Dışa Aktarma</h1>
             <p className="text-[var(--text-muted)]">Veritabanı verilerini JSON veya CSV formatında indirin</p>
           </div>
         </div>

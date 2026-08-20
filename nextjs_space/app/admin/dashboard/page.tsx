@@ -172,7 +172,7 @@ export default function AdminDashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-main)]">
+          <h1 className="text-2xl font-semibold text-[var(--text-main)]">
             Sistem Dashboard
           </h1>
           <p className="text-[var(--text-muted)] mt-1">
@@ -205,7 +205,7 @@ export default function AdminDashboardPage() {
             </div>
             <div>
               <p className="text-sm text-[var(--text-muted)]">Toplam Kullanıcı</p>
-              <p className="text-2xl font-bold text-[var(--text-main)]">
+              <p className="text-2xl font-semibold text-[var(--text-main)]">
                 {overview?.totalUsers || 0}
               </p>
             </div>
@@ -238,7 +238,7 @@ export default function AdminDashboardPage() {
             </div>
             <div>
               <p className="text-sm text-[var(--text-muted)]">Yayınlanan Anket</p>
-              <p className="text-2xl font-bold text-[var(--text-main)]">
+              <p className="text-2xl font-semibold text-[var(--text-main)]">
                 {overview?.totalSurveys || 0}
               </p>
             </div>
@@ -265,7 +265,7 @@ export default function AdminDashboardPage() {
             </div>
             <div>
               <p className="text-sm text-[var(--text-muted)]">Toplam Soru</p>
-              <p className="text-2xl font-bold text-[var(--text-main)]">
+              <p className="text-2xl font-semibold text-[var(--text-main)]">
                 {overview?.totalQuestions || 0}
               </p>
             </div>
@@ -284,7 +284,7 @@ export default function AdminDashboardPage() {
             </div>
             <div>
               <p className="text-sm text-[var(--text-muted)]">Öneri Sayısı</p>
-              <p className="text-2xl font-bold text-[var(--text-main)]">
+              <p className="text-2xl font-semibold text-[var(--text-main)]">
                 {overview?.totalRecommendations || 0}
               </p>
             </div>
@@ -359,7 +359,7 @@ export default function AdminDashboardPage() {
                 <Layers className="w-4 h-4" />
                 <span className="text-sm">Kategori Sayısı</span>
               </div>
-              <p className="text-xl font-bold text-[var(--text-main)]">
+              <p className="text-xl font-semibold text-[var(--text-main)]">
                 {surveyStats.categoryCount}
               </p>
             </div>
@@ -368,7 +368,7 @@ export default function AdminDashboardPage() {
                 <HelpCircle className="w-4 h-4" />
                 <span className="text-sm">Soru Sayısı</span>
               </div>
-              <p className="text-xl font-bold text-[var(--text-main)]">
+              <p className="text-xl font-semibold text-[var(--text-main)]">
                 {surveyStats.questionCount}
               </p>
             </div>
@@ -377,7 +377,7 @@ export default function AdminDashboardPage() {
                 <Users className="w-4 h-4" />
                 <span className="text-sm">Tamamlayan Değerlendirme</span>
               </div>
-              <p className="text-xl font-bold text-[var(--text-main)]">
+              <p className="text-xl font-semibold text-[var(--text-main)]">
                 {surveyStats.completedUsers}
               </p>
             </div>
@@ -604,7 +604,7 @@ export default function AdminDashboardPage() {
                         <td className="py-3 px-4">
                           {index < 3 ? (
                             <span
-                              className={`w-6 h-6 inline-flex items-center justify-center rounded-full text-sm font-bold ${
+                              className={`w-6 h-6 inline-flex items-center justify-center rounded-full text-sm font-semibold ${
                                 index === 0
                                   ? "bg-yellow-500/20 text-yellow-400"
                                   : index === 1
@@ -647,7 +647,7 @@ export default function AdminDashboardPage() {
                         </td>
                         <td className="py-3 px-4 text-center">
                           <span
-                            className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-bold ${getScoreBg(
+                            className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-semibold ${getScoreBg(
                               user.maturityScore
                             )} ${getScoreColor(user.maturityScore)}`}
                           >

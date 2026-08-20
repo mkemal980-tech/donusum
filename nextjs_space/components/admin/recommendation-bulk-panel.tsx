@@ -186,7 +186,7 @@ export default function RecommendationBulkPanel({
         <div className="p-6 space-y-4">
           <div className="flex justify-between items-start gap-4">
             <div>
-              <h2 className="text-xl font-bold text-[var(--text-main)] flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-[var(--text-main)] flex items-center gap-2">
                 <FileSpreadsheet size={20} className="text-[var(--accent)]" />
                 Toplu Öneri Kurulumu
               </h2>

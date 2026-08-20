@@ -387,7 +387,7 @@ export default function UnitsPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Building2 className="text-[var(--accent)]" size={28} />
-          <h1 className="text-2xl font-bold text-[var(--text-main)]">Birim Yönetimi</h1>
+          <h1 className="text-2xl font-semibold text-[var(--text-main)]">Birim Yönetimi</h1>
         </div>
         <Button
           onClick={() => openCreateModal()}

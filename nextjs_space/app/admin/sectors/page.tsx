@@ -171,7 +171,7 @@ export default function SectorsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Sektör Yönetimi</h1>
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-main)' }}>Sektör Yönetimi</h1>
           <p className="text-[var(--text-muted)] mt-1">Sektör ve alt sektörleri tanımlayın</p>
         </div>
         <Button

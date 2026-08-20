@@ -238,7 +238,7 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
       {/* Önizleme şeridi — her zaman görünür kalır */}
       <div className="sticky top-0 z-40 bg-[var(--warning)]/15 border-b border-[var(--warning)]/40 backdrop-blur">
         <div className="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
-          <span className="px-2 py-0.5 rounded text-xs font-bold bg-[var(--warning)] text-black">ÖNİZLEME</span>
+          <span className="px-2 py-0.5 rounded text-xs font-semibold bg-[var(--warning)] text-black">ÖNİZLEME</span>
           <div className="min-w-0">
             <p className="text-sm font-medium text-[var(--text-main)] truncate">{surveyName}</p>
             <p className="text-xs text-[var(--text-dim)]">
@@ -392,7 +392,7 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
                       {isNewCategory && (
                         <h2
                           id={`kategori-${section.categoryId}`}
-                          className="scroll-mt-24 text-2xl font-bold text-[var(--text-main)] mb-4 pb-2 border-b-2 border-[var(--accent)]"
+                          className="scroll-mt-24 text-2xl font-semibold text-[var(--text-main)] mb-4 pb-2 border-b-2 border-[var(--accent)]"
                         >
                           {section.categoryName}
                         </h2>

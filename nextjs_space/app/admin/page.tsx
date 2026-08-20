@@ -128,7 +128,7 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6" style={{ color: "var(--text-main)" }}>
+      <h1 className="text-2xl font-semibold mb-6" style={{ color: "var(--text-main)" }}>
         Yönetim Paneli - Genel Bakış
       </h1>
 
@@ -167,7 +167,7 @@ export default function AdminDashboard() {
                   {card.title}
                 </p>
                 <p
-                  className="text-3xl font-bold font-numeric"
+                  className="text-3xl font-semibold font-numeric"
                   style={{ color: "var(--text-main)" }}
                 >
                   {card.count}

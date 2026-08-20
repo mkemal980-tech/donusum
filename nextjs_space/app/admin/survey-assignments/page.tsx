@@ -249,7 +249,7 @@ export default function SurveyAssignmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-main)] flex items-center gap-2">
+          <h1 className="text-2xl font-semibold text-[var(--text-main)] flex items-center gap-2">
             <UserCheck className="w-7 h-7 text-[var(--accent)]" />
             Anket Atamaları
           </h1>
@@ -262,7 +262,7 @@ export default function SurveyAssignmentsPage() {
           message.type === "success" ? "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]" : "bg-[var(--error-bg)] text-[var(--error)] border border-[var(--error)]/50"
         }`}>
           {message.text}
-          <button onClick={() => setMessage(null)} className="float-right font-bold">×</button>
+          <button onClick={() => setMessage(null)} className="float-right font-semibold">×</button>
         </div>
       )}
 

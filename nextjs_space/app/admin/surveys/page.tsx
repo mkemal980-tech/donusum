@@ -257,7 +257,7 @@ export default function SurveysPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Anket Yönetimi</h1>
+        <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-main)' }}>Anket Yönetimi</h1>
         <Button
           onClick={() => openModal()}
         >
@@ -309,7 +309,7 @@ export default function SurveysPage() {
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-[var(--accent)]">{survey._count.categories}</p>
+                  <p className="text-2xl font-semibold text-[var(--accent)]">{survey._count.categories}</p>
                   <p className="text-xs text-[var(--text-dim)]">Kategori</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -406,7 +406,7 @@ export default function SurveysPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-lg">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-[var(--text-main)]">{editItem ? 'Anket Düzenle' : 'Yeni Anket'}</h2>
+              <h2 className="text-xl font-semibold text-[var(--text-main)]">{editItem ? 'Anket Düzenle' : 'Yeni Anket'}</h2>
               <button onClick={() => setShowModal(false)} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
                 <X size={24} />
               </button>
@@ -513,7 +513,7 @@ export default function SurveysPage() {
                     <AlertTriangle className="text-[var(--error)]" size={24} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-[var(--error)]">Tehlikeli İşlem!</h2>
+                    <h2 className="text-xl font-semibold text-[var(--error)]">Tehlikeli İşlem!</h2>
                     <p className="text-sm text-[var(--text-dim)]">Bu işlem geri alınamaz</p>
                   </div>
                 </div>
@@ -578,7 +578,7 @@ export default function SurveysPage() {
                     </div>
                     <div className="mt-3 pt-3 border-t border-[var(--border-soft)] flex justify-between">
                       <span className="text-[var(--text-main)] font-semibold">Toplam:</span>
-                      <span className="text-[var(--error)] font-bold">{deleteConfirm.impact.total} kayıt silinecek</span>
+                      <span className="text-[var(--error)] font-semibold">{deleteConfirm.impact.total} kayıt silinecek</span>
                     </div>
                   </div>
                 )}
@@ -586,7 +586,7 @@ export default function SurveysPage() {
                 {/* Onay Kutusu */}
                 <div className="mb-4">
                   <label className="block text-sm text-[var(--text-muted)] mb-2">
-                    Silmek için anket adını yazın: <span className="font-bold text-[var(--error)]">{deleteConfirm.surveyName}</span>
+                    Silmek için anket adını yazın: <span className="font-semibold text-[var(--error)]">{deleteConfirm.surveyName}</span>
                   </label>
                   <input
                     type="text"

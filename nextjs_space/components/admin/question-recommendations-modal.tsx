@@ -467,7 +467,7 @@ export default function QuestionRecommendationsModal({ question, target, onClose
         <div className="p-6">
           <div className="flex justify-between items-start gap-4 mb-4">
             <div className="min-w-0">
-              <h2 className="text-xl font-bold text-[var(--text-main)] flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-[var(--text-main)] flex items-center gap-2">
                 <Lightbulb size={20} className="text-[var(--warning)]" />
                 Bu Sorunun Önerileri
               </h2>

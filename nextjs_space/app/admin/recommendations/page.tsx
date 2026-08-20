@@ -560,7 +560,7 @@ export default function RecommendationsPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Öneri Yönetimi</h1>
+        <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-main)' }}>Öneri Yönetimi</h1>
         <div className="flex items-center gap-2">
           <Button
             onClick={() => setShowBulkPanel(true)}
@@ -777,7 +777,7 @@ export default function RecommendationsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">{editItem ? 'Öneri Düzenle' : 'Yeni Öneri'}</h2>
+              <h2 className="text-xl font-semibold">{editItem ? 'Öneri Düzenle' : 'Yeni Öneri'}</h2>
               <button onClick={() => setShowModal(false)} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
                 <X size={24} />
               </button>
@@ -1063,7 +1063,7 @@ export default function RecommendationsPage() {
                     className="flex-1"
                   />
                   <div className="w-20 text-center">
-                    <span className="text-2xl font-bold text-[var(--accent)]">{(formData.points || 0.5).toFixed(1)}</span>
+                    <span className="text-2xl font-semibold text-[var(--accent)]">{(formData.points || 0.5).toFixed(1)}</span>
                     <p className="text-xs text-[var(--text-dim)]">puan</p>
                   </div>
                 </div>

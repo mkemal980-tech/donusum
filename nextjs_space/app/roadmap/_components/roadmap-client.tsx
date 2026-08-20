@@ -3,7 +3,12 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import Header from "@/components/ui/header";
+import AppShell from "@/components/ui/app-shell";
+import PageHeader from "@/components/ui/page-header";
+import EmptyState from "@/components/ui/empty-state";
+import Panel from "@/components/ui/panel";
+import StatCard from "@/components/ui/stat-card";
+import { Button } from "@/components/ui/button";
 import RoadmapTimeline from "@/components/ui/roadmap-timeline";
 import { Map, TrendingUp, Calendar, Info, CheckCircle, Clock, PlayCircle, XCircle } from "lucide-react";
 
@@ -136,192 +141,109 @@ export default function RoadmapClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-main)' }}>
-        <Header />
-        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-          <div 
-            className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin" 
-            style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }}
-          />
-        </div>
-      </div>
+      <>
+        <AppShell />
+        <main>
+          <div className="skeleton mb-6 h-8 w-64" />
+          <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="skeleton h-24" />
+            ))}
+          </div>
+          <div className="skeleton h-[360px]" />
+        </main>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-main)' }}>
-      <Header />
-      
-      <main className="max-w-[1200px] mx-auto px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 
-            className="text-3xl font-bold mb-2 flex items-center gap-3"
-            style={{ color: 'var(--text-main)' }}
-          >
-            <Map style={{ color: 'var(--accent)' }} />
-            Dönüşüm Yol Haritası
-          </h1>
-          <p style={{ color: 'var(--text-muted)' }}>Dönüşüm yolculuğunuzu planlayın ve ilerleyişinizi takip edin</p>
-        </motion.div>
+    <>
+      <AppShell />
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="rounded-xl shadow-lg p-5 border"
-            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
-          >
-            <div className="flex items-center gap-3">
-              <div 
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: 'var(--accent-soft)' }}
-              >
-                <Calendar style={{ color: 'var(--accent)' }} size={20} />
-              </div>
-              <div>
-                <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Toplam</p>
-                <p className="text-xl font-bold" style={{ color: 'var(--text-main)' }}>{roadmapItems?.length ?? 0}</p>
-              </div>
-            </div>
-          </motion.div>
+      <main>
+        <PageHeader
+          title="Yol haritası"
+          subtitle="Önerileri takvime bağlayın, ilerlemeyi buradan izleyin."
+        />
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="rounded-xl shadow-lg p-5 border"
-            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
-          >
-            <div className="flex items-center gap-3">
-              <div 
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: 'var(--success-bg)' }}
-              >
-                <CheckCircle style={{ color: 'var(--success)' }} size={20} />
-              </div>
-              <div>
-                <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Tamamlanan</p>
-                <p className="text-xl font-bold" style={{ color: 'var(--success)' }}>{completedCount}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="rounded-xl shadow-lg p-5 border"
-            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
-          >
-            <div className="flex items-center gap-3">
-              <div 
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: 'var(--info-bg)' }}
-              >
-                <PlayCircle style={{ color: 'var(--blue-main)' }} size={20} />
-              </div>
-              <div>
-                <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Devam Eden</p>
-                <p className="text-xl font-bold" style={{ color: 'var(--blue-main)' }}>{inProgressCount}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-            className="rounded-xl shadow-lg p-5 border"
-            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
-          >
-            <div className="flex items-center gap-3">
-              <div 
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: 'var(--accent-soft)' }}
-              >
-                <TrendingUp style={{ color: 'var(--accent)' }} size={20} />
-              </div>
-              <div>
-                <p className="text-xs" style={{ color: 'var(--text-dim)' }}>Gelişim Katkısı</p>
-                <p className="text-xl font-bold" style={{ color: 'var(--accent)' }}>+{calculateProgressContribution()}</p>
-              </div>
-            </div>
-          </motion.div>
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Yol haritasındaki öneri" value={roadmapItems?.length ?? 0} />
+          {/* Sıfırken renk yok: pasif değer doygun renk almaz (DESIGN.md). */}
+          <StatCard
+            label="Tamamlanan"
+            value={completedCount}
+            note="puana tam katkı"
+            tone={completedCount > 0 ? "success" : "neutral"}
+          />
+          <StatCard
+            label="Devam eden"
+            value={inProgressCount}
+            note="puana yarım katkı"
+            tone={inProgressCount > 0 ? "accent" : "neutral"}
+          />
+          <StatCard
+            label="Gelişim katkısı"
+            value={`+${calculateProgressContribution()}`}
+            note="anket puanına eklenen"
+          />
         </div>
 
         {/* Status Update Info */}
         {(roadmapItems?.length ?? 0) > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="rounded-xl p-4 mb-8 flex items-start gap-3 border"
-            style={{ 
-              backgroundColor: 'var(--accent-soft)', 
-              borderColor: 'var(--accent-glow)' 
-            }}
-          >
-            <Info style={{ color: 'var(--accent)' }} className="mt-0.5 flex-shrink-0" size={20} />
-            <div>
-              <p className="font-medium" style={{ color: 'var(--accent)' }}>İlerleme Takibi</p>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                Önerilerin durumunu değiştirdikçe gelişim skorunuz otomatik güncellenir. 
-                <span className="font-semibold" style={{ color: 'var(--warning)' }}> "Devam Ediyor" %50</span>, 
-                <span className="font-semibold" style={{ color: 'var(--success)' }}> "Tamamlandı" %100</span> katkı sağlar.
-              </p>
-            </div>
-          </motion.div>
+          <p className="mb-6 t-sm" style={{ color: "var(--ink-2)" }}>
+            Durum değiştikçe gelişim puanı kendiliğinden güncellenir:{" "}
+            <span style={{ color: "var(--ink)" }}>devam ediyor</span> %50,{" "}
+            <span style={{ color: "var(--ink)" }}>tamamlandı</span> %100 katkı sağlar.
+          </p>
         )}
 
         {/* Items List with Status */}
         {(roadmapItems?.length ?? 0) > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="rounded-xl shadow-lg p-6 mb-8 border"
-            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
-          >
-            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-main)' }}>Öneri Durumları</h3>
-            <div className="space-y-3">
+          <Panel title="Öneri durumları" className="mb-6">
+            <div className="flex flex-col">
               {(roadmapItems ?? []).map((item) => {
                 const currentStatus = statusConfig[item?.status as keyof typeof statusConfig] || statusConfig.NOT_STARTED;
                 const StatusIcon = currentStatus.icon;
                 
                 return (
-                  <div 
-                    key={item?.id} 
-                    className="flex items-center justify-between p-4 rounded-lg transition-colors"
-                    style={{ backgroundColor: 'var(--bg-card-2)' }}
+                  <div
+                    key={item?.id}
+                    className="flex flex-wrap items-center justify-between gap-3 py-3"
+                    style={{ borderTop: "1px solid var(--line)" }}
                   >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <StatusIcon size={20} style={{ color: currentStatus.color }} />
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate" style={{ color: 'var(--text-main)' }}>{item?.recommendation?.title}</p>
-                        <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
-                          Puan: <span className="font-semibold" style={{ color: 'var(--accent)' }}>+{item?.recommendation?.points?.toFixed(1) || '0.5'}</span>
-                          {item?.status === 'IN_PROGRESS' && <span className="ml-2" style={{ color: 'var(--blue-main)' }}>(şu an +{((item?.recommendation?.points || 0.5) * 0.5).toFixed(2)})</span>}
-                          {item?.status === 'COMPLETED' && <span className="ml-2" style={{ color: 'var(--success)' }}>(şu an +{(item?.recommendation?.points || 0.5).toFixed(2)})</span>}
+                    <div className="flex min-w-0 flex-1 items-start gap-2.5">
+                      <StatusIcon size={16} className="mt-0.5 shrink-0" style={{ color: currentStatus.color }} aria-hidden="true" />
+                      <div className="min-w-0">
+                        <p className="truncate t-body" style={{ color: 'var(--ink)' }}>
+                          {item?.recommendation?.title}
+                        </p>
+                        <p className="t-sm tabular" style={{ color: 'var(--ink-3)' }}>
+                          Tam katkı +{item?.recommendation?.points?.toFixed(1) || '0.5'}
+                          {item?.status === 'IN_PROGRESS' && (
+                            <span style={{ color: 'var(--accent)' }}>
+                              {" "}· şu an +{((item?.recommendation?.points || 0.5) * 0.5).toFixed(2)}
+                            </span>
+                          )}
+                          {item?.status === 'COMPLETED' && (
+                            <span style={{ color: 'var(--success)' }}>
+                              {" "}· şu an +{(item?.recommendation?.points || 0.5).toFixed(2)}
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>
-                    
+
+                    <label className="sr-only" htmlFor={`status-${item?.id}`}>
+                      {item?.recommendation?.title} durumu
+                    </label>
                     <select
+                      id={`status-${item?.id}`}
                       value={item?.status || 'NOT_STARTED'}
                       onChange={(e) => handleUpdateStatus(item?.recommendationId, e.target.value)}
-                      className="px-3 py-2 rounded-lg text-sm font-medium border-0 cursor-pointer"
-                      style={{ 
-                        backgroundColor: currentStatus.bgColor, 
-                        color: currentStatus.color 
-                      }}
+                      className="theme-select w-auto"
                     >
                       <option value="NOT_STARTED">Başlanmadı</option>
-                      <option value="IN_PROGRESS">Devam Ediyor</option>
+                      <option value="IN_PROGRESS">Devam ediyor</option>
                       <option value="COMPLETED">Tamamlandı</option>
                       <option value="CANCELLED">İptal</option>
                     </select>
@@ -329,49 +251,30 @@ export default function RoadmapClient() {
                 );
               })}
             </div>
-          </motion.div>
+          </Panel>
         )}
 
         {/* Timeline */}
         {(roadmapItems?.length ?? 0) > 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="rounded-xl shadow-lg p-8 border"
-            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
-          >
-            <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-main)' }}>Zaman Çizelgesi</h3>
+          <Panel title="Zaman çizelgesi">
             <RoadmapTimeline
               items={roadmapItems}
               onRemove={handleRemove}
               onUpdateTiming={handleUpdateTiming}
             />
-          </motion.div>
+          </Panel>
         ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="rounded-xl shadow-lg p-16 text-center border"
-            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
-          >
-            <Map size={64} className="mx-auto mb-4" style={{ color: 'var(--ui-passive)' }} />
-            <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-main)' }}>Henüz Yol Haritası Öğesi Yok</h2>
-            <p className="mb-6" style={{ color: 'var(--text-muted)' }}>Öneriler sayfasından yol haritanıza öneri ekleyin</p>
-            <a
-              href="/recommendations"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors"
-              style={{ 
-                backgroundColor: 'var(--accent)', 
-                color: 'var(--bg-deep)',
-                boxShadow: '0 0 20px var(--accent-glow)'
-              }}
-            >
-              Önerilere Göz At
-            </a>
-          </motion.div>
+          <EmptyState
+            title="Yol haritası boş"
+            description="Öneriler sayfasında bir öneriyi yol haritasına ekleyin; çeyrek ve sorumlu ataması burada yapılır."
+            action={
+              <Button asChild>
+                <a href="/recommendations">Önerilere git</a>
+              </Button>
+            }
+          />
         )}
       </main>
-    </div>
+    </>
   );
 }

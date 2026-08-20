@@ -289,7 +289,7 @@ export default function UsersPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Users className="text-[var(--accent)]" size={28} />
-          <h1 className="text-2xl font-bold text-[var(--text-main)]">Kullanıcı Yönetimi</h1>
+          <h1 className="text-2xl font-semibold text-[var(--text-main)]">Kullanıcı Yönetimi</h1>
         </div>
         <Button
           onClick={() => {
@@ -339,7 +339,7 @@ export default function UsersPage() {
             </div>
             <div>
               <p className="text-sm text-[var(--text-dim)]">Toplam</p>
-              <p className="text-xl font-bold text-[var(--text-main)]">{users.length}</p>
+              <p className="text-xl font-semibold text-[var(--text-main)]">{users.length}</p>
             </div>
           </div>
         </div>
@@ -350,7 +350,7 @@ export default function UsersPage() {
             </div>
             <div>
               <p className="text-sm text-[var(--text-dim)]">Kullanıcı</p>
-              <p className="text-xl font-bold text-[var(--text-main)]">
+              <p className="text-xl font-semibold text-[var(--text-main)]">
                 {users.filter((u) => u.role === "USER").length}
               </p>
             </div>
@@ -363,7 +363,7 @@ export default function UsersPage() {
             </div>
             <div>
               <p className="text-sm text-[var(--text-dim)]">Birim Yöneticisi</p>
-              <p className="text-xl font-bold text-[var(--text-main)]">
+              <p className="text-xl font-semibold text-[var(--text-main)]">
                 {users.filter((u) => u.role === "UNIT_MANAGER").length}
               </p>
             </div>
@@ -376,7 +376,7 @@ export default function UsersPage() {
             </div>
             <div>
               <p className="text-sm text-[var(--text-dim)]">Yönetici</p>
-              <p className="text-xl font-bold text-[var(--text-main)]">
+              <p className="text-xl font-semibold text-[var(--text-main)]">
                 {users.filter((u) => u.role === "ADMIN").length}
               </p>
             </div>

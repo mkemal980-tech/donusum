@@ -194,7 +194,7 @@ export default function MonitoringPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-main)]">Sistem İzleme</h1>
+          <h1 className="text-2xl font-semibold text-[var(--text-main)]">Sistem İzleme</h1>
           <p className="text-[var(--text-muted)] mt-1">Gerçek zamanlı sistem sağlığı ve performans metrikleri</p>
         </div>
         <div className="flex items-center gap-3">
@@ -305,7 +305,7 @@ export default function MonitoringPage() {
                 <span className="font-medium text-[var(--text-main)]">Veritabanı</span>
                 {getStatusIcon(currentHealth.checks.database.status)}
               </div>
-              <p className="text-2xl font-bold text-[var(--text-main)]">
+              <p className="text-2xl font-semibold text-[var(--text-main)]">
                 {currentHealth.checks.database.latency || '-'}ms
               </p>
               <p className="text-xs text-[var(--text-muted)]">Yanıt süresi</p>
@@ -318,7 +318,7 @@ export default function MonitoringPage() {
                 <span className="font-medium text-[var(--text-main)]">Bellek</span>
                 {getStatusIcon(currentHealth.checks.memory.status)}
               </div>
-              <p className="text-2xl font-bold text-[var(--text-main)]">
+              <p className="text-2xl font-semibold text-[var(--text-main)]">
                 {currentHealth.checks.memory.message?.match(/\d+%/)?.[0] || '-'}
               </p>
               <p className="text-xs text-[var(--text-muted)]">
@@ -333,7 +333,7 @@ export default function MonitoringPage() {
                 <span className="font-medium text-[var(--text-main)]">Yanıt Süresi</span>
                 {getStatusIcon(currentHealth.checks.responseTime.status)}
               </div>
-              <p className="text-2xl font-bold text-[var(--text-main)]">
+              <p className="text-2xl font-semibold text-[var(--text-main)]">
                 {currentHealth.checks.responseTime.latency || '-'}ms
               </p>
               <p className="text-xs text-[var(--text-muted)]">Health check süresi</p>
@@ -350,7 +350,7 @@ export default function MonitoringPage() {
               <TrendingUp size={18} className="text-[var(--success)]" />
               <span className="text-sm text-[var(--text-muted)]">Sağlıklı</span>
             </div>
-            <p className="text-2xl font-bold text-[var(--success)]">
+            <p className="text-2xl font-semibold text-[var(--success)]">
               {stats.total > 0 ? Math.round((stats.healthy / stats.total) * 100) : 0}%
             </p>
             <p className="text-xs text-[var(--text-dim)]">{stats.healthy} / {stats.total} kontrol</p>
@@ -361,7 +361,7 @@ export default function MonitoringPage() {
               <Database size={18} className="text-[var(--accent)]" />
               <span className="text-sm text-[var(--text-muted)]">Ort. DB Latency</span>
             </div>
-            <p className="text-2xl font-bold text-[var(--text-main)]">{stats.avgDbLatency}ms</p>
+            <p className="text-2xl font-semibold text-[var(--text-main)]">{stats.avgDbLatency}ms</p>
             <p className="text-xs text-[var(--text-dim)]">Son {timeRange} saat</p>
           </div>
 
@@ -370,7 +370,7 @@ export default function MonitoringPage() {
               <Cpu size={18} className="text-[var(--accent)]" />
               <span className="text-sm text-[var(--text-muted)]">Ort. Bellek</span>
             </div>
-            <p className="text-2xl font-bold text-[var(--text-main)]">{stats.avgMemory}%</p>
+            <p className="text-2xl font-semibold text-[var(--text-main)]">{stats.avgMemory}%</p>
             <p className="text-xs text-[var(--text-dim)]">Son {timeRange} saat</p>
           </div>
 
@@ -379,7 +379,7 @@ export default function MonitoringPage() {
               <Clock size={18} className="text-[var(--accent)]" />
               <span className="text-sm text-[var(--text-muted)]">Ort. Yanıt</span>
             </div>
-            <p className="text-2xl font-bold text-[var(--text-main)]">{stats.avgResponseTime}ms</p>
+            <p className="text-2xl font-semibold text-[var(--text-main)]">{stats.avgResponseTime}ms</p>
             <p className="text-xs text-[var(--text-dim)]">Son {timeRange} saat</p>
           </div>
         </div>

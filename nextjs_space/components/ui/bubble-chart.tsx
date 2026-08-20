@@ -26,9 +26,11 @@ interface BubbleChartProps {
 }
 
 const strategicColors = {
-  QUICK_WIN: { bg: '#0CC1C3', border: '#0aa8aa', text: '#0a2a2a', label: 'Hızlı Kazanım' },
-  PROJECT: { bg: '#3b82f6', border: '#2563eb', text: '#0a1628', label: 'Proje' },
-  BIG_BET: { bg: '#a855f7', border: '#9333ea', text: '#1a0a28', label: 'Büyük Yatırım' }
+  /* Seri paleti (bkz. DESIGN.md > Color). Tuval `var(--…)` okuyamadığı için
+     değerler burada sabit; DESIGN.md'deki token'ların hex karşılıkları. */
+  QUICK_WIN: { bg: '#27C08A', border: '#1F9E71', text: '#0C1F18', label: 'Hızlı kazanım' },
+  PROJECT: { bg: '#2E86FF', border: '#1E6FE8', text: '#08152B', label: 'Proje' },
+  BIG_BET: { bg: '#9A79D6', border: '#7F5CBE', text: '#150F22', label: 'Büyük yatırım' }
 };
 
 const timeframeLabels = {
@@ -96,11 +98,11 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
     const chartHeight = height - padding.top - padding.bottom;
 
     // Theme-aware colors
-    const bgColor = isDark ? '#0f172a' : '#f8fafc';
-    const gridColor = isDark ? '#1e293b' : '#e2e8f0';
-    const axisColor = isDark ? '#94a3b8' : '#64748b';
-    const labelColor = isDark ? '#94a3b8' : '#64748b';
-    const titleColor = isDark ? '#cbd5e1' : '#475569';
+    const bgColor = '#1E212A';   /* --surface */
+    const gridColor = '#2E313D'; /* --line */
+    const axisColor = '#8B90A2'; /* --ink-3 */
+    const labelColor = '#8B90A2';
+    const titleColor = '#B3B7C4'; /* --ink-2 */
 
     // Clear canvas
     ctx.fillStyle = bgColor;
@@ -275,7 +277,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
 
   return (
     <div className="bg-[var(--bg-card)] rounded-xl shadow-lg border border-[var(--border-light)] p-6">
-      <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4">{title}</h3>
+      <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">{title}</h3>
       
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Chart */}
@@ -338,8 +340,8 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
                   key={rec.id}
                   initial={false}
                   animate={{ 
-                    backgroundColor: isSelected ? (isDark ? '#1e293b' : '#f0f9ff') : (isDark ? '#0f172a' : '#ffffff'),
-                    borderColor: isSelected ? colors.border : (isDark ? '#334155' : '#e5e7eb')
+                    backgroundColor: isSelected ? 'var(--surface-2)' : 'var(--surface)',
+                    borderColor: isSelected ? 'var(--accent)' : 'var(--line)' 
                   }}
                   className="border rounded-lg overflow-hidden"
                 >
@@ -350,10 +352,10 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
                     }}
                     onMouseEnter={() => setHoveredId(rec.id)}
                     onMouseLeave={() => setHoveredId(null)}
-                    className="w-full p-3 flex items-center gap-2 text-left hover:bg-[var(--bg-hover)] transition-colors"
+                    className="flex w-full items-center gap-2 p-3 text-left transition-colors duration-fast ease-out-quart hover:bg-[var(--surface-2)]"
                   >
                     <span 
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold"
                       style={{ backgroundColor: colors.border }}
                     >
                       {index + 1}
@@ -381,7 +383,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="border-t border-[var(--border-light)] bg-[var(--bg-hover)]"
+                        className="border-t border-[var(--line)] bg-[var(--surface-2)]"
                       >
                         <div className="p-3 space-y-3">
                           <p className="text-sm text-[var(--text-secondary)]">{rec.description}</p>

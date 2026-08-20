@@ -234,7 +234,7 @@ export default function UnitManagerPage() {
         >
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-[var(--text-main)] mb-2 flex items-center gap-3">
+              <h1 className="text-3xl font-semibold text-[var(--text-main)] mb-2 flex items-center gap-3">
                 <Building2 className="text-[var(--accent)]" />
                 Birim Yöneticisi Paneli
               </h1>
@@ -266,7 +266,7 @@ export default function UnitManagerPage() {
               </div>
               <div>
                 <p className="text-sm text-[var(--text-dim)] ">Birim Sayısı</p>
-                <p className="text-2xl font-bold text-[var(--text-main)] ">{units.length}</p>
+                <p className="text-2xl font-semibold text-[var(--text-main)] ">{units.length}</p>
               </div>
             </div>
           </motion.div>
@@ -283,7 +283,7 @@ export default function UnitManagerPage() {
               </div>
               <div>
                 <p className="text-sm text-[var(--text-dim)] ">Değerlendirme</p>
-                <p className="text-2xl font-bold text-[var(--text-main)] ">{totalAssessments}</p>
+                <p className="text-2xl font-semibold text-[var(--text-main)] ">{totalAssessments}</p>
               </div>
             </div>
           </motion.div>
@@ -300,7 +300,7 @@ export default function UnitManagerPage() {
               </div>
               <div>
                 <p className="text-sm text-[var(--text-dim)] ">Başlanan</p>
-                <p className="text-2xl font-bold text-[var(--text-main)] ">
+                <p className="text-2xl font-semibold text-[var(--text-main)] ">
                   {startedAssessments.length} / {totalAssessments}
                 </p>
               </div>
@@ -319,7 +319,7 @@ export default function UnitManagerPage() {
               </div>
               <div>
                 <p className="text-sm text-[var(--text-dim)] ">Ortalama Skor</p>
-                <p className="text-2xl font-bold text-[var(--text-main)] ">%{Math.round(avgScore)}</p>
+                <p className="text-2xl font-semibold text-[var(--text-main)] ">%{Math.round(avgScore)}</p>
               </div>
             </div>
           </motion.div>

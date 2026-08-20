@@ -37,7 +37,7 @@ export function BenchmarkChart({
         key={item.name} 
         className={`flex items-center gap-4 py-3 ${isOverall ? 'border-b-2 border-[var(--border-soft)] pb-4 mb-2' : 'border-b border-[var(--border-soft)]'}`}
       >
-        <div className={`w-28 text-sm ${isOverall ? 'font-bold text-[var(--accent)]' : 'text-[var(--text-muted)]'}`}>
+        <div className={`w-28 text-sm ${isOverall ? 'font-semibold text-[var(--accent)]' : 'text-[var(--text-muted)]'}`}>
           {item.name}
         </div>
         <div className="flex-1 relative h-8">

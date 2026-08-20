@@ -200,7 +200,7 @@ export default function BenchmarksPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[var(--text-main)]">Benchmark Verileri</h1>
+        <h1 className="text-2xl font-semibold text-[var(--text-main)]">Benchmark Verileri</h1>
         <p className="text-[var(--text-muted)] mt-1">Anket, kategori ve sektör bazlı en iyi ve ortalama puanları girin</p>
       </div>
 

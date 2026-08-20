@@ -163,7 +163,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                       borderColor: 'var(--blue-main)' 
                     }}
                   >
-                    <span className="text-xs font-bold" style={{ color: 'var(--blue-main)' }}>Ç{quarter?.q}</span>
+                    <span className="text-xs font-semibold" style={{ color: 'var(--blue-main)' }}>Ç{quarter?.q}</span>
                   </div>
                 </div>
               </div>

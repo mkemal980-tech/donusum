@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import Header from "@/components/ui/header";
+import AppShell from "@/components/ui/app-shell";
+import PageHeader from "@/components/ui/page-header";
+import EmptyState from "@/components/ui/empty-state";
 import SurveyQuestion from "@/components/survey/survey-question";
 import ProgressBar from "@/components/ui/progress-bar";
 import { 
@@ -480,8 +482,8 @@ export default function SurveyClient() {
   const goPrev = () => jumpTo(currentStepIndex - 1);
 
   const handleComplete = () => {
-    toast.success("🎉 Anket tamamlandı!", {
-      description: "Sonuçlarınız hesaplanıyor...",
+    toast.success("Anket tamamlandı.", {
+      description: "Puanınız hesaplanıyor, panoya dönülüyor.",
       duration: 2000,
     });
     setTimeout(() => {
@@ -493,266 +495,227 @@ export default function SurveyClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--bg-main)]">
-        <Header />
-        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-          <div className="w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
+      <>
+        <AppShell />
+        <main>
+          <div className="skeleton mb-6 h-8 w-56" />
+          <div className="skeleton mb-6 h-24" />
+          <div className="flex flex-col gap-4">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="skeleton h-32" />
+            ))}
+          </div>
+        </main>
+      </>
     );
   }
 
   // Hiç anket atanmamışsa
   if (surveys.length === 0) {
     return (
-      <div className="min-h-screen bg-[var(--bg-main)]">
-        <Header />
-        <div className="max-w-[800px] mx-auto px-6 py-16">
-          <div className="bg-[var(--bg-card)] rounded-2xl shadow-lg p-8 text-center">
-            <div className="w-20 h-20 bg-[var(--warning-bg)] rounded-full flex items-center justify-center mx-auto mb-6">
-              <AlertCircle size={40} className="text-[var(--warning)]" />
-            </div>
-            <h2 className="text-2xl font-bold text-[var(--text-main)] mb-3">
-              {assignmentError ? "Anketler Yüklenemedi" : "Henüz Anket Atanmadı"}
-            </h2>
-            <p className="text-[var(--text-muted)] mb-6">
-              {assignmentError
-                ? "Anket listesi alınamadı. Bağlantınızı kontrol edip tekrar deneyin; sorun sürerse sistem yöneticinizle iletişime geçin."
-                : "Hesabınıza henüz bir anket atanmamış. Lütfen sistem yöneticinizle iletişime geçin."}
-            </p>
-            <div className="flex items-center justify-center gap-2">
-              {assignmentError && (
+      <>
+        <AppShell />
+        <main>
+          <PageHeader title="Anket" />
+          <EmptyState
+            title={assignmentError ? "Anket listesi alınamadı" : "Size henüz anket atanmadı"}
+            description={
+              assignmentError
+                ? "Bağlantınızı kontrol edip tekrar deneyin. Sorun sürerse platform yöneticinizle görüşün."
+                : "Değerlendirme ataması yapıldığında anket burada açılır. Atama için platform yöneticinizle görüşün."
+            }
+            action={
+              <div className="flex flex-wrap gap-2">
+                {assignmentError && (
+                  <Button onClick={() => window.location.reload()}>Tekrar dene</Button>
+                )}
                 <Button
-                  onClick={() => window.location.reload()}
-                  className="font-medium"
+                  variant={assignmentError ? "outline" : "default"}
+                  onClick={() => router.push("/dashboard")}
                 >
-                  Tekrar Dene
+                  Panoya dön
                 </Button>
-              )}
-              <button
-                onClick={() => router.push("/dashboard")}
-                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                  assignmentError
-                    ? "bg-[var(--bg-card-2)] text-[var(--text-muted)]"
-                    : "bg-[var(--accent)] text-white hover:bg-[var(--accent-dark)]"
-                }`}
-              >
-                Ana Sayfaya Dön
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+              </div>
+            }
+          />
+        </main>
+      </>
     );
   }
   
   // Seçili anket süresi dolmuşsa
   if (selectedSurvey?.isExpired) {
+    const openSurveys = surveys.filter((s) => !s.isExpired);
+
     return (
-      <div className="min-h-screen bg-[var(--bg-main)]">
-        <Header />
-        <div className="max-w-[800px] mx-auto px-6 py-16">
-          <div className="bg-[var(--bg-card)] rounded-2xl shadow-lg p-8 text-center border border-[var(--error)]/30">
-            <div className="w-20 h-20 bg-[var(--error-bg)] rounded-full flex items-center justify-center mx-auto mb-6">
-              <Lock size={40} className="text-[var(--error)]" />
-            </div>
-            <h2 className="text-2xl font-bold text-[var(--text-main)] mb-3">Anket Süresi Doldu</h2>
-            <p className="text-[var(--text-muted)] mb-4">
-              <strong>{selectedSurvey.name}</strong> anketi için belirlenen süre dolmuştur.
-            </p>
-            {selectedSurvey.deadline && (
-              <p className="text-sm text-[var(--error)] mb-6 flex items-center justify-center gap-2">
-                <Clock size={16} />
-                Bitiş Tarihi: {new Date(selectedSurvey.deadline).toLocaleDateString("tr-TR")}
-              </p>
-            )}
-            <p className="text-[var(--text-dim)] mb-6 text-sm">
-              Süre uzatma talebi için lütfen sistem yöneticinizle iletişime geçin.
-            </p>
-            
-            {/* Diğer anketler varsa seçim imkanı */}
-            {surveys.filter(s => !s.isExpired).length > 0 && (
-              <div className="mb-6 p-4 bg-[var(--bg-card-2)] rounded-lg">
-                <p className="text-sm text-[var(--text-muted)] mb-2">Diğer anketlere devam edebilirsiniz:</p>
-                <select
-                  value=""
-                  onChange={(e) => setSelectedSurveyId(e.target.value)}
-                  className="w-full px-4 py-2 border border-[var(--border-soft)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)]"
-                >
-                  <option value="">Anket seçin...</option>
-                  {surveys.filter(s => !s.isExpired).map((survey) => (
-                    <option key={survey.id} value={survey.id}>
-                      {survey.name}
-                    </option>
-                  ))}
-                </select>
+      <>
+        <AppShell />
+        <main>
+          <PageHeader title="Anket" subtitle={selectedSurvey.name} />
+          <EmptyState
+            title="Bu anketin süresi doldu"
+            description={
+              <>
+                Cevaplar kapatıldı
+                {selectedSurvey.deadline
+                  ? `; son tarih ${new Date(selectedSurvey.deadline).toLocaleDateString("tr-TR")}.`
+                  : "."}{" "}
+                Süre uzatımı için platform yöneticinizle görüşün.
+              </>
+            }
+            action={
+              <div className="flex flex-wrap items-center gap-2">
+                {openSurveys.length > 0 && (
+                  <>
+                    <label htmlFor="open-survey" className="sr-only">
+                      Açık anketler
+                    </label>
+                    <select
+                      id="open-survey"
+                      value=""
+                      onChange={(e) => setSelectedSurveyId(e.target.value)}
+                      className="theme-select w-auto"
+                    >
+                      <option value="">Açık bir ankete geç</option>
+                      {openSurveys.map((survey) => (
+                        <option key={survey.id} value={survey.id}>
+                          {survey.name}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
+                <Button variant="outline" onClick={() => router.push("/dashboard")}>
+                  Panoya dön
+                </Button>
               </div>
-            )}
-            
-            <Button
-              onClick={() => router.push("/dashboard")}
-              className="font-medium"
-            >
-              Ana Sayfaya Dön
-            </Button>
-          </div>
-        </div>
-      </div>
+            }
+          />
+        </main>
+      </>
     );
   }
 
+  const deadlineSoon =
+    !!selectedSurvey?.deadline &&
+    new Date(selectedSurvey.deadline).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000;
+
   return (
-    <div className="min-h-screen bg-[var(--bg-main)]">
-      <Header />
-      
-      <main className="max-w-[1200px] mx-auto px-6 py-8">
-        {/* Anket Seçici (Birden fazla anket varsa) */}
-        {surveys.length > 1 && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-[var(--bg-card)] rounded-xl shadow-md p-4 mb-6"
-          >
-            <div className="flex items-center gap-4">
-              <FileText size={24} className="text-[var(--accent)]" />
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">Anket Seçin</label>
+    <>
+      <AppShell />
+
+      <main>
+        <PageHeader
+          title={selectedSurvey?.name || "Olgunluk değerlendirme anketi"}
+          subtitle={selectedSurvey?.description || undefined}
+          actions={
+            surveys.length > 1 ? (
+              <>
+                <label htmlFor="survey-picker" className="sr-only">
+                  Anket seçin
+                </label>
                 <select
+                  id="survey-picker"
                   value={selectedSurveyId}
                   onChange={(e) => setSelectedSurveyId(e.target.value)}
-                  className="w-full md:w-auto px-4 py-2 border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent bg-[var(--bg-card)] text-[var(--text-main)]"
+                  className="theme-select w-auto"
                 >
                   {surveys.map((survey) => (
                     <option key={survey.id} value={survey.id} disabled={survey.isExpired}>
-                      {survey.name} {survey.isExpired ? '(Süresi doldu)' : ''}
+                      {survey.name} {survey.isExpired ? "(süresi doldu)" : ""}
                     </option>
                   ))}
                 </select>
-              </div>
-            </div>
-          </motion.div>
-        )}
-        
-        {/* Süre Uyarısı */}
+              </>
+            ) : undefined
+          }
+        />
+
+        {/* Son tarih: yaklaşınca hata, uzaksa uyarı rengiyle. */}
         {selectedSurvey?.hasDeadline && selectedSurvey?.deadline && !selectedSurvey?.isExpired && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`rounded-xl shadow-md p-4 mb-6 flex items-center gap-3 ${
-              new Date(selectedSurvey.deadline).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000
-                ? 'bg-[var(--error-bg)] border border-[var(--error)]/30'
-                : 'bg-[var(--warning-bg)] border border-[var(--warning)]/30'
-            }`}
+          <p
+            className="mb-5 flex items-center gap-2.5 rounded-[var(--radius-xs)] p-3 t-sm"
+            style={{
+              background: deadlineSoon ? "var(--error-bg)" : "var(--warning-bg)",
+              color: deadlineSoon ? "var(--error)" : "var(--warning)",
+            }}
           >
-            <Clock size={20} className={
-              new Date(selectedSurvey.deadline).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000
-                ? 'text-[var(--error)]'
-                : 'text-[var(--warning)]'
-            } />
-            <div>
-              <p className={`font-medium ${
-                new Date(selectedSurvey.deadline).getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000
-                  ? 'text-[var(--error)]'
-                  : 'text-[var(--warning)]'
-              }`}>
-                Anket Bitiş Tarihi: {new Date(selectedSurvey.deadline).toLocaleDateString("tr-TR")}
-              </p>
-              <p className="text-sm text-[var(--text-dim)]">
-                {Math.ceil((new Date(selectedSurvey.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24))} gün kaldı
-              </p>
-            </div>
-          </motion.div>
+            <Clock size={16} className="shrink-0" aria-hidden="true" />
+            Son tarih {new Date(selectedSurvey.deadline).toLocaleDateString("tr-TR")} —{" "}
+            {Math.ceil(
+              (new Date(selectedSurvey.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+            )}{" "}
+            gün kaldı.
+          </p>
         )}
 
-        {/* Progress Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[var(--bg-card)] rounded-xl shadow-md p-6 mb-6"
-        >
-          {/* Dar ekranda yan yana sığmıyor: mobilde dikey, masaüstünde yatay. */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
-            <div className="min-w-0">
-              <h1 className="text-2xl font-bold text-[var(--text-main)]">
-                {selectedSurvey?.name || "Olgunluk Değerlendirme Anketi"}
-              </h1>
-              {selectedSurvey?.description && (
-                <p className="text-sm text-[var(--text-dim)] mt-1">{selectedSurvey.description}</p>
-              )}
-            </div>
-            <div className="flex items-center gap-2 text-sm md:justify-end md:text-right shrink-0">
-              {saving ? (
-                <span className="text-[var(--accent-alt)] flex items-center gap-1">
-                  <div className="w-3 h-3 border-2 border-[var(--accent-alt)] border-t-transparent rounded-full animate-spin" />
-                  Kaydediliyor...
-                </span>
-              ) : savedOnce ? (
-                <span className="text-[var(--accent)] flex items-center gap-1" title="Her cevap anında kaydedilir; ayrıca kaydetmeniz gerekmez.">
-                  <CheckCircle2 size={14} />
-                  Otomatik kaydedildi
-                </span>
-              ) : null}
-              <span className="text-[var(--text-dim)]">
-                {totalQuestions} sorudan {answeredQuestions} tanesi cevaplandı
-                {estimatedMinutes > 0 && answeredQuestions === 0 && (
-                  <> · yaklaşık {estimatedMinutes} dk · istediğiniz zaman ara verebilirsiniz</>
-                )}
-              </span>
-            </div>
+        {/* Genel ilerleme bilinçli olarak ince ve ikincil: uzun ankette
+            baskın gösterge bölüm çubuğudur (bkz. aşağıdaki bölüm başlığı). */}
+        <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="progress-bar min-w-[180px] flex-1">
+            <div className="progress-bar-fill" style={{ width: `${progressPercentage}%` }} />
           </div>
-
-          {/* Genel ilerleme bilinçli olarak ince ve ikincil: uzun ankette
-              baskın gösterge bölüm çubuğudur (bkz. aşağıdaki bölüm başlığı). */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-1.5 rounded-full bg-[var(--border-soft)] overflow-hidden">
-              <div
-                className="h-full bg-[var(--accent)] transition-all duration-500"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
-            <span className="text-xs text-[var(--text-dim)] tabular-nums">Genel %{progressPercentage}</span>
-          </div>
-        </motion.div>
+          <span className="t-sm tabular" style={{ color: "var(--ink-2)" }}>
+            {answeredQuestions}/{totalQuestions} soru · %{progressPercentage}
+            {estimatedMinutes > 0 && answeredQuestions === 0 && (
+              <> · yaklaşık {estimatedMinutes} dk</>
+            )}
+          </span>
+          {saving ? (
+            <span className="flex items-center gap-1.5 t-sm" style={{ color: "var(--ink-3)" }}>
+              <span className="spinner" style={{ width: 12, height: 12, borderWidth: 1.5 }} />
+              Kaydediliyor
+            </span>
+          ) : savedOnce ? (
+            <span
+              className="flex items-center gap-1.5 t-sm"
+              style={{ color: "var(--success)" }}
+              title="Her cevap anında kaydedilir; ayrıca kaydetmeniz gerekmez."
+            >
+              <CheckCircle2 size={14} aria-hidden="true" />
+              Otomatik kaydedildi
+            </span>
+          ) : null}
+        </div>
 
         {loadingStructure ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+          <div className="flex flex-col gap-4">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="skeleton h-32" />
+            ))}
           </div>
         ) : categories.length === 0 ? (
-          <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-8 text-center">
-            <FileQuestion size={64} className="mx-auto text-[var(--ui-passive)] mb-4" />
-            {/* Ekipte görev dağıtılmış ama bu kişiye bölüm düşmemişse anketin
-                boş görünmesi hazırlıksızlıktan değil; doğrusunu söyle. */}
-            {sectionInfo?.distributed && !sectionInfo.isCoordinator ? (
-              <>
-                <h2 className="text-xl font-semibold text-[var(--text-muted)] mb-2">Size Bölüm Atanmadı</h2>
-                <p className="text-[var(--text-dim)]">
-                  Bu ankette bölümler ekip üyelerine dağıtıldı ve size henüz bir bölüm
-                  atanmadı. Koordinatörünüzle görüşün.
-                </p>
-              </>
-            ) : (
-              <>
-                <h2 className="text-xl font-semibold text-[var(--text-muted)] mb-2">Anket Henüz Hazırlanmamış</h2>
-                <p className="text-[var(--text-dim)]">Bu ankete henüz soru eklenmemiş. Lütfen daha sonra tekrar kontrol edin.</p>
-              </>
-            )}
-          </div>
+          /* Ekipte görev dağıtılmış ama bu kişiye bölüm düşmemişse anketin
+             boş görünmesi hazırlıksızlıktan değil; doğrusunu söyle. */
+          sectionInfo?.distributed && !sectionInfo.isCoordinator ? (
+            <EmptyState
+              title="Size bölüm atanmadı"
+              description="Bu ankette bölümler ekip üyelerine dağıtıldı ve size henüz bir bölüm düşmedi. Koordinatörünüzle görüşün."
+            />
+          ) : (
+            <EmptyState
+              title="Anket henüz hazırlanmadı"
+              description="Bu ankete soru eklenmemiş. Sorular tanımlandığında burada açılır."
+            />
+          )
         ) : (
           <>
             {/* Kilit önce söylenir: kullanıcı cevabı değiştirmeyi denemeden
                 önce neden değiştiremeyeceğini bilsin. */}
             {sectionInfo?.locked && (
-              <div className="mb-4 p-4 rounded-lg bg-[var(--accent-soft)] border border-[var(--accent)]/40 flex items-start gap-2">
-                <Lock size={18} className="text-[var(--accent)] shrink-0 mt-0.5" />
-                <div className="text-sm">
-                  <p className="text-[var(--text-main)] font-medium">
+              <div
+                className="mb-4 flex items-start gap-2.5 rounded-[var(--radius-xs)] p-3"
+                style={{ background: "var(--accent-quiet)" }}
+              >
+                <Lock size={16} className="mt-0.5 shrink-0" style={{ color: "var(--accent)" }} aria-hidden="true" />
+                <div className="t-sm">
+                  <p className="font-medium" style={{ color: "var(--ink)" }}>
                     Bu değerlendirme gönderildi
                     {sectionInfo.submittedAt
                       ? ` · ${new Date(sectionInfo.submittedAt).toLocaleDateString("tr-TR")}`
                       : ""}
                   </p>
-                  <p className="text-[var(--text-muted)]">
+                  <p style={{ color: "var(--ink-2)" }}>
                     Cevaplar salt okunur. Düzeltme gerekiyorsa koordinatörünüzden gönderimi geri
                     almasını isteyin.
                   </p>
@@ -762,18 +725,23 @@ export default function SurveyClient() {
 
             {/* Ortadan başlamak "neredeyim" hissi veriyor; nedenini söyle. */}
             {resumedSection && !sectionInfo?.locked && (
-              <div className="mb-4 p-3 rounded-lg bg-[var(--bg-card-2)] border border-[var(--border-soft)] flex items-start justify-between gap-3">
-                <p className="text-sm text-[var(--text-muted)] flex items-start gap-2">
-                  <Clock size={16} className="text-[var(--accent)] shrink-0 mt-0.5" />
+              <div
+                className="mb-4 flex items-start justify-between gap-3 rounded-[var(--radius-xs)] p-3"
+                style={{ background: "var(--surface-2)" }}
+              >
+                <p className="flex items-start gap-2 t-sm" style={{ color: "var(--ink-2)" }}>
+                  <Clock size={15} className="mt-0.5 shrink-0" style={{ color: "var(--ink-3)" }} aria-hidden="true" />
                   <span>
                     Kaldığınız yerden devam ediyorsunuz:{" "}
-                    <strong className="text-[var(--text-main)]">{resumedSection}</strong>. Önceki
-                    cevaplarınız kayıtlı.
+                    <strong className="font-medium" style={{ color: "var(--ink)" }}>{resumedSection}</strong>.
+                    Önceki cevaplarınız kayıtlı.
                   </span>
                 </p>
                 <button
+                  type="button"
                   onClick={() => setResumedSection(null)}
-                  className="text-xs text-[var(--text-dim)] hover:text-[var(--text-main)] shrink-0"
+                  className="shrink-0 t-sm hover:underline"
+                  style={{ color: "var(--ink-3)" }}
                 >
                   Tamam
                 </button>
@@ -783,7 +751,7 @@ export default function SurveyClient() {
             {/* Katkıcı yalnızca kendi bölümlerini görüyor; ilerleme çubuğunun
                 neden anketin tamamını göstermediği açık olsun. */}
             {sectionInfo?.distributed && !sectionInfo.isCoordinator && (
-              <p className="mb-4 text-sm text-[var(--text-dim)]">
+              <p className="mb-4 t-sm" style={{ color: "var(--ink-3)" }}>
                 Size atanan {sectionInfo.mySectionCount} bölüm gösteriliyor.
               </p>
             )}
@@ -802,24 +770,30 @@ export default function SurveyClient() {
                       key={summary.categoryId}
                       onClick={() => requestStep(summary.firstStepIndex)}
                       title={`${summary.categoryName} — ${progress.answered}/${progress.total} soru`}
-                      className={`flex-1 min-w-[92px] text-left px-2.5 py-1.5 rounded-lg border transition-colors ${
-                        isActive
-                          ? "border-[var(--accent)] bg-[var(--accent-soft)]"
-                          : "border-[var(--border-soft)] bg-[var(--bg-card)] hover:border-[var(--accent)]/50"
-                      }`}
+                      type="button"
+                      aria-current={isActive ? "step" : undefined}
+                      className="min-w-[104px] flex-1 rounded-[var(--radius-md)] px-3 py-2 text-left transition-colors duration-fast ease-out-quart"
+                      style={{
+                        background: isActive ? "var(--accent-quiet)" : "var(--surface)",
+                        border: `1px solid ${isActive ? "var(--accent)" : "var(--line)"}`,
+                      }}
                     >
                       <span
-                        className={`block text-[11px] truncate ${
-                          isActive ? "text-[var(--accent)] font-medium" : "text-[var(--text-dim)]"
-                        }`}
+                        className="block truncate t-sm"
+                        style={{
+                          color: isActive ? "var(--ink)" : "var(--ink-2)",
+                          fontWeight: isActive ? 500 : 400,
+                        }}
                       >
-                        {isDone && !isActive ? "✓ " : ""}
                         {summary.categoryName}
                       </span>
-                      <span className="mt-1 block h-1 rounded-full bg-[var(--border-soft)] overflow-hidden">
+                      <span className="progress-bar mt-1.5" style={{ height: 3 }}>
                         <span
-                          className="block h-full bg-[var(--accent)] transition-all duration-500"
-                          style={{ width: `${progress.percentage}%` }}
+                          className="progress-bar-fill block"
+                          style={{
+                            width: `${progress.percentage}%`,
+                            background: isDone ? "var(--series-2)" : "var(--accent)",
+                          }}
                         />
                       </span>
                     </button>
@@ -829,72 +803,64 @@ export default function SurveyClient() {
             )}
 
             {/* Bölüm başlığı ve baskın ilerleme çubuğu */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="bg-[var(--bg-card)] rounded-xl shadow-md p-4 mb-6"
+            {/* Bölüm başlığı: kırıntı yolu + baskın ilerleme çubuğu. */}
+            <div
+              className="mb-6 rounded-[var(--radius-lg)] p-5"
+              style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
             >
-              <div className="flex items-center gap-2 text-sm flex-wrap mb-3">
-                <span className="flex items-center gap-1 px-2.5 py-1 bg-[var(--accent)] text-white rounded-lg">
-                  <FolderOpen size={14} />
-                  {currentStep?.categoryName ?? "Kategori"}
-                </span>
-                <ChevronRight size={16} className="text-[var(--text-dim)]" />
-                <span className="flex items-center gap-1 px-2.5 py-1 bg-[var(--accent-alt)] text-white rounded-lg">
-                  <Layers size={14} />
-                  {currentStep?.subCategoryName ?? "Bölüm"}
-                </span>
+              <nav className="breadcrumb flex-wrap" aria-label="Bölüm konumu">
+                <span className="breadcrumb-item active">{currentStep?.categoryName ?? "Kategori"}</span>
+                <ChevronRight size={14} className="breadcrumb-separator" aria-hidden="true" />
+                <span className="breadcrumb-item active">{currentStep?.subCategoryName ?? "Bölüm"}</span>
                 {currentStep?.subLevelName && (
                   <>
-                    <ChevronRight size={16} className="text-[var(--text-dim)]" />
-                    <span className="px-2.5 py-1 bg-[var(--border-soft)] text-[var(--text-muted)] rounded-lg">
-                      {currentStep.subLevelName}
-                    </span>
+                    <ChevronRight size={14} className="breadcrumb-separator" aria-hidden="true" />
+                    <span className="breadcrumb-item">{currentStep.subLevelName}</span>
                   </>
                 )}
-                <span className="ml-auto text-xs text-[var(--text-dim)] tabular-nums">
+                <span className="ml-auto tabular" style={{ color: "var(--ink-3)" }}>
                   Bölüm {currentStepIndex + 1} / {steps.length}
                 </span>
-              </div>
+              </nav>
 
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-2.5 rounded-full bg-[var(--border-soft)] overflow-hidden">
+              <div className="mt-4 flex items-center gap-3">
+                <div className="progress-bar flex-1" style={{ height: 8 }}>
                   <div
-                    className="h-full bg-[var(--accent)] transition-all duration-500"
+                    className="progress-bar-fill"
                     style={{ width: `${sectionProgress.percentage}%` }}
                   />
                 </div>
-                <span className="text-sm font-medium text-[var(--text-main)] tabular-nums whitespace-nowrap">
+                <span className="whitespace-nowrap t-sm tabular font-medium" style={{ color: "var(--ink)" }}>
                   {sectionProgress.answered} / {sectionProgress.total} soru
                 </span>
               </div>
 
-              <p className="mt-2 text-xs text-[var(--text-dim)]">
+              <p className="mt-2 t-sm" style={{ color: "var(--ink-3)" }}>
                 {currentStep?.categoryName}: {currentCategoryProgress.answered} /{" "}
                 {currentCategoryProgress.total} soru tamamlandı
               </p>
-            </motion.div>
+            </div>
 
             {/* Questions */}
             <AnimatePresence mode="wait">
+              {/* Bölüm değişimi bir durum değişikliği; yatay kaydırma yerine
+                  kısa bir çapraz geçiş yeterli. */}
               <motion.div
                 key={`${selectedSurveyId}-${currentStepIndex}`}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6 mb-8"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.17, ease: [0.25, 1, 0.5, 1] }}
+                className="mb-8 flex flex-col gap-5"
               >
                 {currentQuestions?.length === 0 ? (
-                  <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-8 text-center">
-                    <FileQuestion size={48} className="mx-auto text-[var(--ui-passive)] mb-4" />
-                    <p className="text-[var(--text-dim)]">Bu bölümde henüz soru bulunmuyor.</p>
-                  </div>
+                  <EmptyState title="Bu bölümde soru yok" description="Sonraki bölüme geçebilirsiniz." />
                 ) : (
                   /* Kilitliyken fieldset bütün girdileri tarayıcı düzeyinde
                      kapatır — klavyeyle dolaşan kullanıcı da dışarıda kalır. */
                   <fieldset
                     disabled={sectionInfo?.locked ?? false}
-                    className={`space-y-6 border-0 p-0 m-0 ${
+                    className={`m-0 flex flex-col gap-5 border-0 p-0 ${
                       sectionInfo?.locked ? "opacity-75" : ""
                     }`}
                   >
@@ -919,55 +885,42 @@ export default function SurveyClient() {
             {/* Eksik soru uyarısı — kaydırmalı düzenin bilinen tek zaafı soru
                 atlanması; bölümden çıkarken hatırlatılır ama engellenmez. */}
             {pendingStepIndex !== null && (
-              <div className="mb-4 p-4 rounded-xl bg-[var(--warning-bg)] border border-[var(--warning)]/40">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle size={20} className="text-[var(--warning)] shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-[var(--text-main)]">
-                      Bu bölümde {remainingUnanswered} soru cevaplanmadı
-                    </p>
-                    <p className="text-xs text-[var(--text-dim)] mt-0.5">
-                      Cevaplamadan geçebilirsiniz; istediğiniz zaman geri dönüp
-                      tamamlayabilirsiniz. Ancak eksik sorular puanınıza dahil edilmez.
-                    </p>
-                    <div className="flex gap-2 mt-3">
-                      <Button
-                        onClick={() => setPendingStepIndex(null)}
-                        className="text-sm text-[var(--bg-deep)] font-medium"
-                      >
-                        Bu bölümde kal
-                      </Button>
-                      <Button
-                        onClick={() => jumpTo(pendingStepIndex)}
-                        variant="secondary"
-                        className="text-sm text-[var(--text-muted)]"
-                      >
-                        Yine de devam et
-                      </Button>
-                    </div>
+              <div
+                className="mb-4 flex items-start gap-2.5 rounded-[var(--radius-xs)] p-3"
+                style={{ background: "var(--warning-bg)" }}
+                role="alert"
+              >
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" style={{ color: "var(--warning)" }} aria-hidden="true" />
+                <div>
+                  <p className="t-sm font-medium" style={{ color: "var(--warning)" }}>
+                    Bu bölümde {remainingUnanswered} soru cevaplanmadı
+                  </p>
+                  <p className="mt-0.5 t-sm" style={{ color: "var(--ink-2)" }}>
+                    Cevaplamadan geçebilir, sonra dönüp tamamlayabilirsiniz. Eksik sorular
+                    puana dahil edilmez.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button size="sm" onClick={() => setPendingStepIndex(null)}>
+                      Bu bölümde kal
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => jumpTo(pendingStepIndex)}>
+                      Yine de devam et
+                    </Button>
                   </div>
                 </div>
               </div>
             )}
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-center justify-between"
-            >
-              <button
-                onClick={goPrev}
-                disabled={!canGoPrev}
-                className="flex items-center gap-2 px-6 py-3 bg-[var(--bg-card)] text-[var(--text-muted)] rounded-lg font-medium hover:bg-[var(--bg-main)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-              >
-                <ChevronLeft size={20} />
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <Button variant="outline" onClick={goPrev} disabled={!canGoPrev}>
+                <ChevronLeft size={16} aria-hidden="true" />
                 Önceki
-              </button>
+              </Button>
 
               {/* Kategori noktaları üstteki haritayla mükerrer olduğu için
                   burada yalnızca kalan bölüm sayısı ve çıkış yolu gösterilir. */}
               <div className="flex flex-col items-center gap-1">
-                <span className="text-sm text-[var(--text-dim)] tabular-nums">
+                <span className="t-sm tabular" style={{ color: "var(--ink-3)" }}>
                   {canGoNext
                     ? `${steps.length - currentStepIndex - 1} bölüm kaldı`
                     : "Son bölüm"}
@@ -982,34 +935,29 @@ export default function SurveyClient() {
                       router.push("/dashboard");
                     }}
                     disabled={saving}
-                    className="text-xs text-[var(--text-dim)] hover:text-[var(--accent)] underline underline-offset-2 disabled:opacity-50"
+                    className="t-sm underline underline-offset-4 disabled:opacity-50"
+                    style={{ color: "var(--ink-3)" }}
                   >
-                    {saving ? "Kaydediliyor..." : "Kaydet ve çık"}
+                    {saving ? "Kaydediliyor" : "Kaydet ve çık"}
                   </button>
                 )}
               </div>
 
               {canGoNext ? (
-                <Button
-                  onClick={goNext}
-                  className="font-medium"
-                >
+                <Button onClick={goNext}>
                   Sonraki
-                  <ChevronRight size={20} />
+                  <ChevronRight size={16} aria-hidden="true" />
                 </Button>
               ) : (
-                <button
-                  onClick={handleComplete}
-                  className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-dark)] text-white rounded-lg font-medium hover:bg-[var(--accent-dark)] transition-colors shadow-md"
-                >
-                  Anketi Tamamla
-                  <Check size={20} />
-                </button>
+                <Button onClick={handleComplete}>
+                  Anketi tamamla
+                  <Check size={16} aria-hidden="true" />
+                </Button>
               )}
-            </motion.div>
+            </div>
           </>
         )}
       </main>
-    </div>
+    </>
   );
 }

@@ -257,7 +257,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
           {/* Mevcut Skor */}
           <div className="bg-[var(--bg-card-2)] rounded-lg p-4 text-center">
             <p className="text-xs text-[var(--text-muted)] mb-1">Mevcut Skor</p>
-            <p className="text-3xl font-bold text-[var(--accent)]">{current.overallScore.toFixed(1)}</p>
+            <p className="text-3xl font-semibold text-[var(--accent)]">{current.overallScore.toFixed(1)}</p>
             <p className="text-xs text-[var(--text-dim)] mt-1">/ 5.0</p>
           </div>
           
@@ -363,7 +363,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
                 {renderTrendIcon(progress.overallScore.change)}
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-[var(--accent)]">
+                <span className="text-2xl font-semibold text-[var(--accent)]">
                   {progress.overallScore.end.toFixed(1)}
                 </span>
                 <span className="text-sm text-[var(--text-dim)]">/5</span>
@@ -387,7 +387,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
                 <span className="text-sm text-[var(--text-muted)]">Tamamlanan Öneriler</span>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-[var(--success)]">
+                <span className="text-2xl font-semibold text-[var(--success)]">
                   +{progress.recommendations.completed}
                 </span>
                 <span className="text-sm text-[var(--text-dim)]">

@@ -134,7 +134,7 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
           <div className="absolute inset-0 flex items-center">
             {basePercent > 15 && (
               <span 
-                className="absolute text-xs font-bold text-white"
+                className="absolute text-xs font-semibold text-white"
                 style={{ left: `${Math.min(basePercent - 2, basePercent / 2)}%`, transform: 'translateX(-50%)' }}
               >
                 {safeBaseScore.toFixed(2)}
@@ -142,7 +142,7 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
             )}
             {safeBonusPoints > 0 && bonusPercent > 10 && (
               <span 
-                className="absolute text-xs font-bold text-white"
+                className="absolute text-xs font-semibold text-white"
                 style={{ left: `${basePercent + bonusPercent / 2}%`, transform: 'translateX(-50%)' }}
               >
                 {safeBonusPoints.toFixed(1)}

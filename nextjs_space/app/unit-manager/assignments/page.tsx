@@ -343,7 +343,7 @@ export default function SectionAssignmentsPage() {
         </button>
 
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[var(--text-main)] mb-1">Görev Dağılımı</h1>
+          <h1 className="text-2xl font-semibold text-[var(--text-main)] mb-1">Görev Dağılımı</h1>
           <p className="text-[var(--text-muted)]">
             Anketin hangi bölümünü kimin dolduracağını belirleyin, nerede kalındığını takip edin.
           </p>
