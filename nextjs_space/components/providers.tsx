@@ -52,7 +52,7 @@ class ChunkErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryStat
       return (
         <div className="min-h-screen bg-[var(--bg-main)] flex items-center justify-center p-4">
           <div className="bg-[var(--bg-card)] p-8 rounded-xl border border-[var(--border-soft)] max-w-md text-center">
-            <div className="w-16 h-16 bg-[var(--accent)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-[var(--accent-quiet)] rounded-full flex items-center justify-center mx-auto mb-4">
               <RefreshCw className="w-8 h-8 text-[var(--accent)]" />
             </div>
             <h2 className="text-xl font-semibold text-[var(--text-main)] mb-2">

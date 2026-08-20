@@ -155,7 +155,7 @@ export default function SectorScopePage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-[var(--text-main)] mb-1">Sektör Kapsamı</h1>
+        <h1 className="t-display" style={{ color: "var(--ink)" }}>Sektör Kapsamı</h1>
         <p className="text-[var(--text-muted)]">
           Hangi bölümün hangi sektöre sorulacağını ve ne kadar sayılacağını belirleyin.
         </p>
@@ -273,10 +273,10 @@ export default function SectorScopePage() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-[var(--border-soft)]">
-          <table className="w-full text-sm">
+          <table className="theme-table">
             <thead>
               <tr className="bg-[var(--bg-card-2)]">
-                <th className="text-left p-3 font-medium text-[var(--text-muted)] sticky left-0 bg-[var(--bg-card-2)] min-w-[220px]">
+                <th>
                   Bölüm
                 </th>
                 {sectors.map((sector) => (

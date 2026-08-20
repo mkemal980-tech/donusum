@@ -35,7 +35,7 @@ const timeframeLabels: Record<string, string> = {
 
 const strategicColors: Record<string, string> = {
   QUICK_WIN: "bg-[var(--accent-soft)] text-[var(--accent)]",
-  BIG_BET: "bg-[var(--accent)]/15 text-[var(--accent)]",
+  BIG_BET: "bg-[var(--accent-quiet)] text-[var(--accent)]",
   PROJECT: "bg-[var(--info-bg)] text-[var(--blue-main)]"
 };
 
@@ -104,7 +104,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
-      className={`bg-[var(--bg-card)] rounded-xl shadow-md p-6 border-2 transition-colors ${
+      className={`theme-card p-6 border-2 transition-colors ${
         locked ? 'opacity-60 ' : ''
       }${
         currentStatus === 'COMPLETED' 

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, Plus, Edit, Trash2, X, Save, Search, Filter, Shield, User, Building2, FileText, Check } from "lucide-react";
+import { Plus, Edit, Trash2, X, Save, Search, FileText, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import PageHeader from "@/components/ui/page-header";
+import StatCard from "@/components/ui/stat-card";
 
 interface Unit {
   id: string;
@@ -59,7 +61,7 @@ const roleLabels: Record<string, string> = {
 
 const roleColors: Record<string, string> = {
   USER: "bg-[var(--bg-card-2)] text-[var(--text-muted)]",
-  UNIT_MANAGER: "bg-[var(--accent)]/15 text-[var(--accent)]",
+  UNIT_MANAGER: "bg-[var(--accent-quiet)] text-[var(--accent)]",
   ADMIN: "bg-[var(--bg-card-2)] text-[var(--accent)]",
 };
 
@@ -279,128 +281,94 @@ export default function UsersPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+        <div className="spinner" role="status" aria-label="Yükleniyor" />
       </div>
     );
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Users className="text-[var(--accent)]" size={28} />
-          <h1 className="text-2xl font-semibold text-[var(--text-main)]">Kullanıcı Yönetimi</h1>
-        </div>
-        <Button
-          onClick={() => {
-            setEditingUser(null);
-            resetForm();
-            setShowModal(true);
-          }}
-        >
-          <Plus size={20} />
-          Yeni Kullanıcı
-        </Button>
-      </div>
+      <PageHeader
+        title="Kullanıcılar"
+        subtitle="Rol ve birim atamalarını buradan yönetin."
+        actions={
+          <Button
+            onClick={() => {
+              setEditingUser(null);
+              resetForm();
+              setShowModal(true);
+            }}
+          >
+            <Plus size={16} aria-hidden="true" />
+            Yeni kullanıcı
+          </Button>
+        }
+      />
 
-      {/* Filters */}
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-4 mb-6 flex flex-wrap gap-4">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)]" size={20} />
+      <div className="mb-6 flex flex-wrap items-start gap-3">
+        <div className="relative min-w-[220px] flex-1">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
+            size={16}
+            style={{ color: "var(--ink-3)" }}
+            aria-hidden="true"
+          />
+          <label htmlFor="user-search" className="sr-only">
+            Kullanıcı ara
+          </label>
           <input
-            type="text"
-            placeholder="Kullanıcı ara..."
+            id="user-search"
+            type="search"
+            placeholder="Ada veya e-postaya göre ara"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
+            className="theme-input"
+            style={{ paddingLeft: 34 }}
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Filter size={20} className="text-[var(--text-dim)]" />
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
-          >
-            <option value="">Tüm Roller</option>
-            <option value="USER">Kullanıcı</option>
-            <option value="UNIT_MANAGER">Birim Yöneticisi</option>
-            <option value="ADMIN">Yönetici</option>
-          </select>
-        </div>
+        <label htmlFor="role-filter" className="sr-only">
+          Rol
+        </label>
+        <select
+          id="role-filter"
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+          className="theme-select w-auto"
+        >
+          <option value="">Tüm roller</option>
+          <option value="USER">Kullanıcı</option>
+          <option value="UNIT_MANAGER">Birim yöneticisi</option>
+          <option value="ADMIN">Yönetici</option>
+        </select>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[var(--bg-card-2)] rounded-lg flex items-center justify-center">
-              <Users className="text-[var(--accent)]" size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-[var(--text-dim)]">Toplam</p>
-              <p className="text-xl font-semibold text-[var(--text-main)]">{users.length}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[var(--bg-card-2)] rounded-lg flex items-center justify-center">
-              <User className="text-[var(--text-muted)]" size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-[var(--text-dim)]">Kullanıcı</p>
-              <p className="text-xl font-semibold text-[var(--text-main)]">
-                {users.filter((u) => u.role === "USER").length}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[var(--accent)]/15 rounded-lg flex items-center justify-center">
-              <Building2 className="text-[var(--accent)]" size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-[var(--text-dim)]">Birim Yöneticisi</p>
-              <p className="text-xl font-semibold text-[var(--text-main)]">
-                {users.filter((u) => u.role === "UNIT_MANAGER").length}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[var(--bg-card-2)] rounded-lg flex items-center justify-center">
-              <Shield className="text-[var(--accent)]" size={20} />
-            </div>
-            <div>
-              <p className="text-sm text-[var(--text-dim)]">Yönetici</p>
-              <p className="text-xl font-semibold text-[var(--text-main)]">
-                {users.filter((u) => u.role === "ADMIN").length}
-              </p>
-            </div>
-          </div>
-        </div>
+      <div className="mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <StatCard label="Toplam" value={users.length} />
+        <StatCard label="Kullanıcı" value={users.filter((u) => u.role === "USER").length} />
+        <StatCard label="Birim yöneticisi" value={users.filter((u) => u.role === "UNIT_MANAGER").length} />
+        <StatCard label="Yönetici" value={users.filter((u) => u.role === "ADMIN").length} />
       </div>
 
       {/* Users Table */}
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-sm overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[var(--bg-card-2)]">
+      <div
+        className="overflow-x-auto rounded-[var(--radius-lg)]"
+        style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+      >
+        <table className="theme-table">
+          <thead>
             <tr>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">Kullanıcı</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">Rol</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">Birim</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">Sektör</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">Yanıt</th>
-              <th className="px-4 py-3 text-right text-sm font-semibold text-[var(--text-muted)]">İşlemler</th>
+              <th>Kullanıcı</th>
+              <th>Rol</th>
+              <th>Birim</th>
+              <th>Sektör</th>
+              <th>Yanıt</th>
+              <th className="text-right">İşlemler</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody>
             {filteredUsers.map((user) => (
-              <tr key={user.id} className="hover:bg-[var(--bg-card-2)]">
-                <td className="px-4 py-3">
+              <tr key={user.id}>
+                <td>
                   <div>
                     <p className="font-medium text-[var(--text-main)]">
                       {user.firstName} {user.lastName}
@@ -408,21 +376,21 @@ export default function UsersPage() {
                     <p className="text-sm text-[var(--text-dim)]">{user.email}</p>
                   </div>
                 </td>
-                <td className="px-4 py-3">
+                <td>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${roleColors[user.role]}`}>
                     {roleLabels[user.role]}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-sm text-[var(--text-muted)]">
+                <td>
                   {user.unit?.name || "-"}
                 </td>
-                <td className="px-4 py-3 text-sm text-[var(--text-muted)]">
+                <td>
                   {user.sector?.name || "-"}
                 </td>
-                <td className="px-4 py-3 text-sm text-[var(--text-muted)]">
+                <td>
                   {user._count.surveyResponses}
                 </td>
-                <td className="px-4 py-3">
+                <td>
                   <div className="flex items-center justify-end gap-2">
                     <Button
                       onClick={() => openAssignModal(user)}
@@ -468,7 +436,7 @@ export default function UsersPage() {
       {/* User Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[var(--bg-card)] rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="theme-card shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-lg font-semibold text-[var(--text-main)]">
                 {editingUser ? "Kullanıcı Düzenle" : "Yeni Kullanıcı"}
@@ -640,7 +608,7 @@ export default function UsersPage() {
       {/* Survey Assignment Modal */}
       {showAssignModal && selectedUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[var(--bg-card)] rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="theme-card shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b">
               <div>
                 <h2 className="text-lg font-semibold text-[var(--text-main)]">Anket Atama</h2>

@@ -293,7 +293,7 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
             <p className="text-[var(--text-muted)]">Bu ankette henüz soru yok.</p>
             <Link
               href={`/admin/categories?surveyId=${surveyId}`}
-              className="inline-block mt-4 px-4 py-2 rounded-lg bg-[var(--accent-dark)] text-white text-sm"
+              className="inline-block mt-4 px-4 py-2 rounded-lg bg-[var(--accent-solid)] text-[var(--on-accent)] text-sm"
             >
               Soru ekle
             </Link>
@@ -304,7 +304,7 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
             {viewMode === "user" && currentSection && (
               <div className="mb-6 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]">
                 <div className="flex items-center gap-2 text-sm flex-wrap mb-3">
-                  <span className="px-2.5 py-1 bg-[var(--accent)] text-white rounded-lg">
+                  <span className="px-2.5 py-1 bg-[var(--accent-solid)] text-[var(--on-accent)] rounded-lg">
                     {currentSection.categoryName}
                   </span>
                   <span className="text-[var(--text-dim)]">›</span>

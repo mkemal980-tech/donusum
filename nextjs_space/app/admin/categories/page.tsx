@@ -707,7 +707,7 @@ export default function CategoriesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+        <div className="spinner" role="status" aria-label="Yükleniyor" />
       </div>
     );
   }
@@ -715,7 +715,7 @@ export default function CategoriesPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-main)' }}>Kategoriler & Sorular</h1>
+        <h1 className="t-display" style={{ color: "var(--ink)" }}>Kategoriler & Sorular</h1>
         <Button
           onClick={() => openModal('category')}
         >
@@ -724,7 +724,7 @@ export default function CategoriesPage() {
       </div>
 
       {/* Anket Seçimi */}
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-4 mb-6">
+      <div className="theme-card p-4 mb-6">
         <div className="flex flex-wrap items-center gap-4">
           <FileText className="text-[var(--accent)]" size={20} />
           <label className="font-medium text-[var(--text-muted)]">Anket Seçin:</label>
@@ -754,7 +754,7 @@ export default function CategoriesPage() {
                 </Link>
                 <button
                   onClick={() => { setShowSurveyBulkUpload(true); setSurveyBulkPreview(null); setSurveyBulkUploadResult(null); }}
-                  className="flex items-center gap-2 px-3 py-2 bg-[var(--accent-dark)] text-white rounded-lg hover:bg-[var(--accent-dark)] text-sm"
+                  className="flex items-center gap-2 px-3 py-2 bg-[var(--accent-solid)] text-[var(--on-accent)] rounded-lg hover:bg-[var(--accent-dark)] text-sm"
                   title="Tüm kategorilere toplu soru yükle"
                 >
                   <Upload size={16} />
@@ -768,14 +768,32 @@ export default function CategoriesPage() {
 
       <div className="space-y-4">
         {categories.map((category) => (
-          <div key={category.id} className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden">
+          <div key={category.id} className="theme-card overflow-hidden">
             {/* Category Header */}
-            <div className="flex items-center justify-between p-4 bg-[var(--accent)] text-white">
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => toggleExpand(`cat-${category.id}`)}>
-                {expanded[`cat-${category.id}`] ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                <span className="font-semibold">{category.name}</span>
-                <span className="text-white/70 text-sm">({category.subCategories?.length || 0} alt kategori)</span>
-              </div>
+            {/* Kategori satırı dolu vurgu rengiyle boyanıyordu; vurgu eylem
+                rengi, satır zemini değil. Ayrım yüzey ve kenarlıkla yapılır. */}
+            <div
+              className="flex items-center justify-between gap-3 p-4"
+              style={{ background: "var(--surface-2)" }}
+            >
+              <button
+                type="button"
+                className="flex min-w-0 items-center gap-3 text-left"
+                onClick={() => toggleExpand(`cat-${category.id}`)}
+                aria-expanded={Boolean(expanded[`cat-${category.id}`])}
+              >
+                {expanded[`cat-${category.id}`] ? (
+                  <ChevronDown size={16} style={{ color: "var(--ink-3)" }} aria-hidden="true" />
+                ) : (
+                  <ChevronRight size={16} style={{ color: "var(--ink-3)" }} aria-hidden="true" />
+                )}
+                <span className="truncate font-semibold" style={{ color: "var(--ink)" }}>
+                  {category.name}
+                </span>
+                <span className="t-sm" style={{ color: "var(--ink-3)" }}>
+                  {category.subCategories?.length || 0} alt kategori
+                </span>
+              </button>
               <div className="flex items-center gap-2">
                 <Button
                   onClick={() => openModal('subcategory', category.id)} 
@@ -842,8 +860,15 @@ export default function CategoriesPage() {
                   </div>
                 )}
                 {category.subCategories?.map((subCat) => (
-                  <div key={subCat.id} className="border rounded-lg overflow-hidden">
-                    <div className="flex items-center justify-between p-3 bg-[var(--accent)]/15">
+                  <div
+                    key={subCat.id}
+                    className="overflow-hidden rounded-[var(--radius-md)]"
+                    style={{ border: "1px solid var(--line)" }}
+                  >
+                    <div
+                      className="flex items-center justify-between gap-3 p-3"
+                      style={{ background: "var(--surface-2)" }}
+                    >
                       <div className="flex items-center gap-3 cursor-pointer" onClick={() => toggleExpand(`sub-${subCat.id}`)}>
                         {expanded[`sub-${subCat.id}`] ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                         <span className="font-medium text-[var(--text-main)]">{subCat.name}</span>
@@ -853,7 +878,7 @@ export default function CategoriesPage() {
                           <span className="text-[var(--text-muted)] text-sm">({subCat.questions?.length || 0} soru)</span>
                         )}
                         {!subCat.hasSubLevels && (
-                          <span className="text-xs px-2 py-0.5 bg-[var(--accent)]/15 text-[var(--accent)] rounded">Doğrudan Sorular</span>
+                          <span className="text-xs px-2 py-0.5 bg-[var(--accent-quiet)] text-[var(--accent)] rounded">Doğrudan Sorular</span>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
@@ -994,7 +1019,7 @@ export default function CategoriesPage() {
         ))}
 
         {categories.length === 0 && (
-          <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-8 text-center">
+          <div className="theme-card p-8 text-center">
             <p className="text-[var(--text-dim)]">Henüz kategori eklenmemiş</p>
             <Button
               onClick={() => openModal('category')}
@@ -1009,7 +1034,7 @@ export default function CategoriesPage() {
       {/* Modal - Inline JSX to prevent focus loss */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="theme-card p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-[var(--text-main)]">{getModalTitle()}</h2>
               <button onClick={() => setShowModal(null)} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
@@ -1062,7 +1087,7 @@ export default function CategoriesPage() {
                         onClick={() => setFormData({ ...formData, axisType: 'VELOCITY' })}
                         className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
                           (!formData.axisType || formData.axisType === 'VELOCITY')
-                            ? 'bg-[var(--accent)] text-white shadow-md'
+                            ? 'bg-[var(--accent-solid)] text-[var(--on-accent)]'
                             : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--bg-card-2)]'
                         }`}
                       >
@@ -1073,7 +1098,7 @@ export default function CategoriesPage() {
                         onClick={() => setFormData({ ...formData, axisType: 'ENDURANCE' })}
                         className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
                           formData.axisType === 'ENDURANCE'
-                            ? 'bg-[var(--bg-card-2)]0 text-white shadow-md'
+                            ? 'bg-[var(--surface-3)] text-[var(--ink)] shadow-md'
                             : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--bg-card-2)]'
                         }`}
                       >
@@ -1227,7 +1252,7 @@ export default function CategoriesPage() {
                       className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                     />
                   </div>
-                  <div className="p-4 bg-[var(--accent)]/10 border border-[var(--warning)]/50 rounded-lg">
+                  <div className="rounded-[var(--radius-md)] p-4" style={{ background: "var(--warning-bg)" }}>
                     <div className="flex items-center gap-2 mb-2">
                       <Layers size={20} className="text-[var(--warning)]" />
                       <span className="font-medium text-[var(--warning)]">Alt Seviye Yapısı</span>
@@ -1359,7 +1384,7 @@ export default function CategoriesPage() {
       {/* Bulk Upload Modal */}
       {showBulkUpload && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className={`bg-[var(--bg-card)] rounded-xl p-6 w-full max-h-[90vh] overflow-y-auto ${bulkPreview ? 'max-w-7xl' : 'max-w-lg'}`}>
+          <div className={`theme-card p-6 w-full max-h-[90vh] overflow-y-auto ${bulkPreview ? 'max-w-7xl' : 'max-w-lg'}`}>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-[var(--text-main)]">
                 {bulkPreview ? 'Aktarmadan Önce Kontrol Edin' : "Excel'den Toplu Soru Yükle"}
@@ -1507,7 +1532,7 @@ export default function CategoriesPage() {
       {/* Survey-Level Bulk Upload Modal */}
       {showSurveyBulkUpload && selectedSurveyId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className={`bg-[var(--bg-card)] rounded-xl p-6 w-full max-h-[90vh] overflow-y-auto ${surveyBulkPreview ? 'max-w-[95vw]' : 'max-w-2xl'}`}>
+          <div className={`theme-card p-6 w-full max-h-[90vh] overflow-y-auto ${surveyBulkPreview ? 'max-w-[95vw]' : 'max-w-2xl'}`}>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-[var(--text-main)]">
                 {surveyBulkPreview ? '📋 Aktarmadan Önce Kontrol Edin' : '📊 Ankete Toplu Soru Yükle'}
@@ -1517,7 +1542,7 @@ export default function CategoriesPage() {
               </button>
             </div>
 
-            <div className="bg-[var(--accent)]/10 border border-[var(--warning)]/50 rounded-lg p-3 mb-4">
+            <div className="mb-4 rounded-[var(--radius-md)] p-3" style={{ background: "var(--warning-bg)" }}>
               <p className="text-sm text-[var(--warning)]">
                 <strong>Seçili Anket:</strong> {surveys.find(s => s.id === selectedSurveyId)?.name}
               </p>

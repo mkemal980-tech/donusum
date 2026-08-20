@@ -122,7 +122,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                   </div>
                   <button
                     onClick={() => onRemove?.(item?.recommendationId)}
-                    className="p-1 rounded transition-colors flex-shrink-0 hover:bg-[var(--error-bg)]0/20"
+                    className="p-1 rounded transition-colors flex-shrink-0 hover:bg-[var(--error-bg)]"
                     style={{ color: 'var(--ui-passive)' }}
                   >
                     <X size={14} />
@@ -226,7 +226,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                             </div>
                             <button
                               onClick={() => onRemove?.(item?.recommendationId)}
-                              className="p-0.5 rounded transition-colors flex-shrink-0 hover:bg-[var(--error-bg)]0/20"
+                              className="p-0.5 rounded transition-colors flex-shrink-0 hover:bg-[var(--error-bg)]"
                               style={{ color: 'var(--ui-passive)' }}
                             >
                               <X size={12} />

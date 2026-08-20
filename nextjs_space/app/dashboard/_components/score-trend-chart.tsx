@@ -214,7 +214,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
 
   if (loading) {
     return (
-      <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-soft)]">
+      <div className="theme-card p-6 border border-[var(--border-soft)]">
         <div className="animate-pulse">
           <div className="h-6 bg-[var(--bg-card-2)] rounded w-1/3 mb-4"></div>
           <div className="h-48 bg-[var(--bg-card-2)] rounded"></div>
@@ -225,7 +225,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
 
   if (history.length === 0) {
     return (
-      <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-soft)]">
+      <div className="theme-card p-6 border border-[var(--border-soft)]">
         <div className="flex items-center gap-2 mb-4">
           <Activity size={20} className="text-[var(--accent)]" />
           <h3 className="text-lg font-semibold text-[var(--text-main)]">Gelişim Trend Analizi</h3>
@@ -246,7 +246,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-soft)]"
+        className="theme-card p-6 border border-[var(--border-soft)]"
       >
         <div className="flex items-center gap-2 mb-6">
           <Activity size={20} className="text-[var(--accent)]" />
@@ -303,7 +303,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-soft)]"
+      className="theme-card p-6 border border-[var(--border-soft)]"
     >
       {/* Başlık */}
       <div className="flex items-center justify-between mb-6">
@@ -320,7 +320,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
               className={`px-3 py-1 text-xs rounded-lg transition-all ${
                 period === p 
                   ? 'bg-[var(--accent)] text-[var(--bg-deep)]' 
-                  : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--accent)]/20'
+                  : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--accent-quiet)]'
               }`}
             >
               {p === '3months' ? '3 Ay' : p === '6months' ? '6 Ay' : '1 Yıl'}
@@ -381,7 +381,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
             </div>
 
             {/* Tamamlanan Öneriler */}
-            <div className="p-4 bg-[var(--success-bg)]0/10 rounded-lg border border-[var(--success)]/20">
+            <div className="p-4 bg-[var(--success-bg)]/10 rounded-lg border border-[var(--success)]/20">
               <div className="flex items-center gap-2 mb-2">
                 <Award size={16} className="text-[var(--success)]" />
                 <span className="text-sm text-[var(--text-muted)]">Tamamlanan Öneriler</span>
@@ -400,7 +400,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
             {progress.quadrantProgress.start && progress.quadrantProgress.end && (
               <div className={`p-4 rounded-lg border ${
                 progress.quadrantProgress.improved 
-                  ? 'bg-[var(--accent)]/100/10 border-[var(--accent)]/20' 
+                  ? 'bg-[var(--accent-quiet)] border-[var(--accent)]/20' 
                   : 'bg-[var(--bg-card-2)] border-transparent'
               }`}>
                 <div className="text-sm text-[var(--text-muted)] mb-2">Kadran Durumu</div>

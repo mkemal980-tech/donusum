@@ -75,7 +75,7 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
 
   if (loading) {
     return (
-      <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-soft)]">
+      <div className="theme-card p-6 border border-[var(--border-soft)]">
         <div className="animate-pulse">
           <div className="h-6 bg-[var(--bg-card-2)] rounded w-1/3 mb-4"></div>
           <div className="space-y-4">
@@ -158,7 +158,7 @@ export function CategoryProgressChart({ surveyId }: CategoryProgressChartProps) 
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-soft)]"
+      className="theme-card p-6 border border-[var(--border-soft)]"
     >
       {/* Başlık */}
       <div className="flex items-center justify-between mb-6">

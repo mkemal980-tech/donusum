@@ -128,11 +128,11 @@ export default function ExportPage(): JSX.Element {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-[var(--accent)]/20">
+          <div className="p-3 rounded-xl bg-[var(--accent-quiet)]">
             <Database className="h-6 w-6 text-[var(--accent)]" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold text-[var(--text-main)]">Veri Dışa Aktarma</h1>
+            <h1 className="t-display" style={{ color: "var(--ink)" }}>Veri Dışa Aktarma</h1>
             <p className="text-[var(--text-muted)]">Veritabanı verilerini JSON veya CSV formatında indirin</p>
           </div>
         </div>
@@ -154,7 +154,7 @@ export default function ExportPage(): JSX.Element {
                 onClick={() => setFormat('json')}
                 className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
                   format === 'json'
-                    ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                    ? 'border-[var(--accent)] bg-[var(--accent-quiet)]'
                     : 'border-[var(--border-soft)] bg-[var(--bg-card-2)] hover:border-[var(--accent)]/50'
                 }`}
               >
@@ -171,7 +171,7 @@ export default function ExportPage(): JSX.Element {
                 onClick={() => setFormat('csv')}
                 className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
                   format === 'csv'
-                    ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                    ? 'border-[var(--accent)] bg-[var(--accent-quiet)]'
                     : 'border-[var(--border-soft)] bg-[var(--bg-card-2)] hover:border-[var(--accent)]/50'
                 }`}
               >
@@ -222,7 +222,7 @@ export default function ExportPage(): JSX.Element {
             </div>
 
             {/* Uyarı */}
-            <div className="mt-4 p-4 rounded-lg bg-[var(--warning-bg)]0/10 border border-[var(--warning)]/30">
+            <div className="mt-4 p-4 rounded-lg bg-[var(--warning-bg)] border border-[var(--warning)]/30">
               <div className="flex items-start gap-2">
                 <AlertCircle className="h-5 w-5 text-[var(--warning)] mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-[var(--warning)]">
@@ -291,7 +291,7 @@ export default function ExportPage(): JSX.Element {
                   onClick={() => toggleTable(table.id)}
                   className={`p-4 rounded-lg border-2 transition-all text-left ${
                     table.selected
-                      ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                      ? 'border-[var(--accent)] bg-[var(--accent-quiet)]'
                       : 'border-[var(--border-soft)] bg-[var(--bg-card-2)] hover:border-[var(--accent)]/50'
                   }`}
                 >
@@ -344,7 +344,7 @@ export default function ExportPage(): JSX.Element {
                 </ul>
               </div>
 
-              <div className="p-4 rounded-lg bg-[var(--info-bg)]0/10 border border-[var(--blue-main)]/30">
+              <div className="p-4 rounded-lg bg-[var(--info-bg)]/10 border border-[var(--blue-main)]/30">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="h-5 w-5 text-[var(--blue-main)] mt-0.5 flex-shrink-0" />
                   <div className="text-sm text-[var(--blue-light)]">

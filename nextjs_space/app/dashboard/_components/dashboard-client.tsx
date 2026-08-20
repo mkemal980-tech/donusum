@@ -13,7 +13,7 @@ import { ProgressSection } from "./progress-section";
 
 // Error fallback component for chunk loading failures
 const ChunkErrorFallback = ({ componentName }: { componentName: string }) => (
-  <div className="p-6 bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] text-center">
+  <div className="p-6 theme-card text-center">
     <p className="text-[var(--text-muted)]">{componentName} yüklenemedi.</p>
     <Button
       onClick={() => window.location.reload()} 

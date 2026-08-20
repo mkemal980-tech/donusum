@@ -463,7 +463,7 @@ export default function QuestionRecommendationsModal({ question, target, onClose
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--bg-card)] rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <div className="theme-card w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-start gap-4 mb-4">
             <div className="min-w-0">
@@ -933,7 +933,7 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-4 py-2 rounded-lg text-sm bg-[var(--accent-dark)] text-white disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg text-sm bg-[var(--accent-solid)] text-[var(--on-accent)] disabled:opacity-50"
                 >
                   {saving ? "Kaydediliyor..." : form.id ? "Güncelle" : "Öneriyi Ekle"}
                 </button>

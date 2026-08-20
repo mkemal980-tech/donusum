@@ -276,7 +276,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
   };
 
   return (
-    <div className="bg-[var(--bg-card)] rounded-xl shadow-lg border border-[var(--border-light)] p-6">
+    <div className="theme-card border border-[var(--border-light)] p-6">
       <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-4">{title}</h3>
       
       <div className="flex flex-col lg:flex-row gap-6">

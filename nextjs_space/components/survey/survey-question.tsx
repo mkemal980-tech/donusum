@@ -86,7 +86,7 @@ export default function SurveyQuestion({
                   onClick={() => onAnswer?.(q?.id, String(num))}
                   className={`flex-1 py-4 rounded-lg font-semibold text-lg transition-all border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)] ${
                     value === String(num)
-                      ? "bg-[var(--accent)] text-white border-[var(--accent)] shadow-[0_0_20px_rgba(12,193,195,0.6)] scale-105 ring-2 ring-[var(--accent)]/30"
+                      ? "bg-[var(--accent-solid)] text-[var(--on-accent)] border-[var(--accent)] shadow-[0_0_20px_rgba(12,193,195,0.6)] scale-105 ring-2 ring-[var(--accent)]/30"
                       : "bg-[var(--bg-card-2)] text-[var(--text-muted)] border-[var(--border-soft)] hover:bg-[var(--border-soft)] hover:border-[var(--accent)]/50"
                   }`}
                 >
@@ -109,7 +109,7 @@ export default function SurveyQuestion({
                 onClick={() => onAnswer?.(q?.id, option)}
                 className={`flex-1 py-4 rounded-lg font-medium text-lg capitalize transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)] ${
                   value === option
-                    ? "bg-[var(--accent)] text-white shadow-lg"
+                    ? "bg-[var(--accent-solid)] text-[var(--on-accent)] shadow-lg"
                     : "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--border-soft)]"
                 }`}
               >
@@ -132,7 +132,7 @@ export default function SurveyQuestion({
                 onClick={() => onAnswer?.(q?.id, option?.value)}
                 className={`p-4 rounded-lg text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)] ${
                   value === option?.value
-                    ? "bg-[var(--accent)] text-white shadow-lg"
+                    ? "bg-[var(--accent-solid)] text-[var(--on-accent)] shadow-lg"
                     : "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--border-soft)]"
                 }`}
               >
@@ -191,7 +191,7 @@ export default function SurveyQuestion({
                     onClick={() => handleThresholdChange(option.value)}
                     className={`flex-1 py-3 rounded-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)] ${
                       parsedValue.threshold === option.value
-                        ? "bg-[var(--accent)] text-white shadow-lg"
+                        ? "bg-[var(--accent-solid)] text-[var(--on-accent)] shadow-lg"
                         : "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--border-soft)]"
                     }`}
                   >
@@ -223,7 +223,7 @@ export default function SurveyQuestion({
                       onClick={() => handleOptionToggle(option.value)}
                       className={`w-full p-4 rounded-lg text-left transition-all flex items-center justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-card)] ${
                         isSelected
-                          ? "bg-[var(--accent)] text-white shadow-lg"
+                          ? "bg-[var(--accent-solid)] text-[var(--on-accent)] shadow-lg"
                           : "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--border-soft)]"
                       }`}
                     >
@@ -255,7 +255,7 @@ export default function SurveyQuestion({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-[var(--bg-card)] rounded-xl shadow-md p-6 border border-[var(--border-soft)]"
+      className="theme-card p-6 border border-[var(--border-soft)]"
     >
       <h3 className="text-lg font-medium text-[var(--text-main)] mb-6">{q?.text ?? ''}</h3>
       
@@ -275,7 +275,7 @@ export default function SurveyQuestion({
               <p className="text-xs text-[var(--text-dim)] mt-1">Önizlemede dosya yüklenemez</p>
             </div>
           ) : isUploading ? (
-            <div className="flex items-center justify-center p-6 bg-[var(--accent)]/10 rounded-lg border-2 border-[var(--accent)]/30">
+            <div className="flex items-center justify-center p-6 bg-[var(--accent-quiet)] rounded-lg border-2 border-[var(--accent)]/30">
               <Loader2 className="animate-spin text-[var(--accent)] mr-2" size={20} />
               <span className="text-[var(--accent)] text-sm">Dosya yükleniyor...</span>
             </div>
@@ -310,7 +310,7 @@ export default function SurveyQuestion({
               }}
               className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] ${
                 dragActive
-                  ? "border-[var(--accent-alt)] bg-[var(--accent)]/10"
+                  ? "border-[var(--accent-alt)] bg-[var(--accent-quiet)]"
                   : "border-[var(--border-soft)] hover:border-[var(--accent-alt)] hover:bg-[var(--bg-card-2)]"
               }`}
             >

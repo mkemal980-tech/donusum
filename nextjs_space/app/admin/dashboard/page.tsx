@@ -20,6 +20,8 @@ import {
   Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import PageHeader from "@/components/ui/page-header";
+import StatCard from "@/components/ui/stat-card";
 
 interface OverviewStats {
   totalUsers: number;
@@ -169,127 +171,50 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-[var(--text-main)]">
-            Sistem Dashboard
-          </h1>
-          <p className="text-[var(--text-muted)] mt-1">
-            Tüm sistem istatistiklerini görüntüleyin
-          </p>
-        </div>
-        <Button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          variant="secondary"
-          className="text-[var(--text-main)] hover:bg-[var(--bg-card)]"
-        >
-          <RefreshCw
-            className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
-          />
-          Yenile
-        </Button>
-      </div>
+      <PageHeader
+        title="Sistem panosu"
+        subtitle="Platform genelindeki sayılar ve son hareketler."
+        actions={
+          <Button onClick={handleRefresh} disabled={refreshing} variant="outline">
+            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} aria-hidden="true" />
+            Yenile
+          </Button>
+        }
+      />
 
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30"
-        >
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-blue-500/20">
-              <Users className="w-6 h-6 text-blue-400" />
-            </div>
-            <div>
-              <p className="text-sm text-[var(--text-muted)]">Toplam Kullanıcı</p>
-              <p className="text-2xl font-semibold text-[var(--text-main)]">
-                {overview?.totalUsers || 0}
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 pt-4 border-t border-blue-500/20">
+      {/* Sayı kartları: her biri kendi renginde bir kutuydu; renk burada
+          bilgi taşımıyordu, hepsi tek yüzey diline indi. */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Toplam kullanıcı" value={overview?.totalUsers || 0}>
+          <dl className="flex flex-col gap-1">
             {/* Cevaplar kişiye değil kuruluşun değerlendirmesine bağlı;
                 "aktif" ölçüsü üzerinde çalışılmış değerlendirme sayısıdır. */}
-            <div className="flex justify-between text-sm">
-              <span className="text-[var(--text-muted)]">Çalışılan değerlendirme</span>
-              <span className="text-blue-400">{overview?.activeUsers || 0}</span>
+            <div className="flex justify-between gap-3 t-sm">
+              <dt style={{ color: "var(--ink-3)" }}>Çalışılan değerlendirme</dt>
+              <dd className="tabular" style={{ color: "var(--ink-2)" }}>
+                {overview?.activeUsers || 0}
+              </dd>
             </div>
-            <div className="flex justify-between text-sm mt-1">
-              <span className="text-[var(--text-muted)]">Son 7 gün</span>
-              <span className="text-blue-400">
+            <div className="flex justify-between gap-3 t-sm">
+              <dt style={{ color: "var(--ink-3)" }}>Son 7 gün</dt>
+              <dd className="tabular" style={{ color: "var(--ink-2)" }}>
                 {overview?.recentActiveUsers || 0}
-              </span>
+              </dd>
             </div>
-          </div>
-        </motion.div>
+          </dl>
+        </StatCard>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/30"
-        >
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-purple-500/20">
-              <FileText className="w-6 h-6 text-purple-400" />
-            </div>
-            <div>
-              <p className="text-sm text-[var(--text-muted)]">Yayınlanan Anket</p>
-              <p className="text-2xl font-semibold text-[var(--text-main)]">
-                {overview?.totalSurveys || 0}
-              </p>
-            </div>
+        <StatCard label="Yayınlanan anket" value={overview?.totalSurveys || 0}>
+          <div className="flex justify-between gap-3 t-sm">
+            <span style={{ color: "var(--ink-3)" }}>Toplam yanıt</span>
+            <span className="tabular" style={{ color: "var(--ink-2)" }}>
+              {overview?.totalResponses || 0}
+            </span>
           </div>
-          <div className="mt-4 pt-4 border-t border-purple-500/20">
-            <div className="flex justify-between text-sm">
-              <span className="text-[var(--text-muted)]">Toplam Yanıt</span>
-              <span className="text-purple-400">
-                {overview?.totalResponses || 0}
-              </span>
-            </div>
-          </div>
-        </motion.div>
+        </StatCard>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30"
-        >
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-emerald-500/20">
-              <HelpCircle className="w-6 h-6 text-emerald-400" />
-            </div>
-            <div>
-              <p className="text-sm text-[var(--text-muted)]">Toplam Soru</p>
-              <p className="text-2xl font-semibold text-[var(--text-main)]">
-                {overview?.totalQuestions || 0}
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="p-6 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30"
-        >
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-lg bg-amber-500/20">
-              <Lightbulb className="w-6 h-6 text-amber-400" />
-            </div>
-            <div>
-              <p className="text-sm text-[var(--text-muted)]">Öneri Sayısı</p>
-              <p className="text-2xl font-semibold text-[var(--text-main)]">
-                {overview?.totalRecommendations || 0}
-              </p>
-            </div>
-          </div>
-        </motion.div>
+        <StatCard label="Toplam soru" value={overview?.totalQuestions || 0} />
+        <StatCard label="Öneri sayısı" value={overview?.totalRecommendations || 0} />
       </div>
 
       {/* Survey Selector */}
@@ -336,7 +261,7 @@ export default function AdminDashboardPage() {
                     }}
                     className={`w-full px-4 py-3 text-left hover:bg-[var(--bg-card-2)] transition-colors ${
                       selectedSurvey === survey.id
-                        ? "bg-[var(--accent)]/10 text-[var(--accent)]"
+                        ? "bg-[var(--accent-quiet)] text-[var(--accent)]"
                         : "text-[var(--text-main)]"
                     }`}
                   >
@@ -394,31 +319,31 @@ export default function AdminDashboardPage() {
 
             {categoryStats.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="theme-table">
                   <thead>
                     <tr className="border-b border-[var(--border-soft)]">
-                      <th className="text-left py-3 px-4 text-[var(--text-muted)] font-medium">
+                      <th>
                         Kategori
                       </th>
-                      <th className="text-center py-3 px-4 text-[var(--text-muted)] font-medium">
+                      <th className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Activity className="w-4 h-4" />
                           Ortalama
                         </div>
                       </th>
-                      <th className="text-center py-3 px-4 text-[var(--text-muted)] font-medium">
+                      <th className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Trophy className="w-4 h-4 text-yellow-400" />
                           En İyi
                         </div>
                       </th>
-                      <th className="text-center py-3 px-4 text-[var(--text-muted)] font-medium">
+                      <th className="text-center">
                         <div className="flex items-center justify-center gap-1">
                           <ArrowDown className="w-4 h-4 text-red-400" />
                           En Düşük
                         </div>
                       </th>
-                      <th className="text-center py-3 px-4 text-[var(--text-muted)] font-medium">
+                      <th className="text-center">
                         Değerlendirme
                       </th>
                     </tr>
@@ -545,7 +470,7 @@ export default function AdminDashboardPage() {
                 <h2 className="text-lg font-semibold text-[var(--text-main)]">
                   Değerlendirme Puanları
                 </h2>
-                <span className="px-2 py-1 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] text-sm">
+                <span className="px-2 py-1 rounded-full bg-[var(--accent-quiet)] text-[var(--accent)] text-sm">
                   {userScores.length} değerlendirme
                 </span>
               </div>
@@ -564,30 +489,30 @@ export default function AdminDashboardPage() {
 
             {filteredUsers.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="theme-table">
                   <thead>
                     <tr className="border-b border-[var(--border-soft)]">
-                      <th className="text-left py-3 px-4 text-[var(--text-muted)] font-medium">
+                      <th>
                         #
                       </th>
                       {/* Satır bir kuruluşun değerlendirmesi; ad olarak kuruluş,
                           tek kişilik değerlendirmede sahibi gösterilir. */}
-                      <th className="text-left py-3 px-4 text-[var(--text-muted)] font-medium">
+                      <th>
                         Değerlendirme
                       </th>
-                      <th className="text-left py-3 px-4 text-[var(--text-muted)] font-medium">
+                      <th>
                         Kuruluş
                       </th>
-                      <th className="text-left py-3 px-4 text-[var(--text-muted)] font-medium">
+                      <th>
                         Sektör
                       </th>
-                      <th className="text-center py-3 px-4 text-[var(--text-muted)] font-medium">
+                      <th className="text-center">
                         Olgunluk
                       </th>
-                      <th className="text-center py-3 px-4 text-[var(--text-muted)] font-medium">
+                      <th className="text-center">
                         Yüzde
                       </th>
-                      <th className="text-center py-3 px-4 text-[var(--text-muted)] font-medium">
+                      <th className="text-center">
                         Yanıt
                       </th>
                     </tr>
