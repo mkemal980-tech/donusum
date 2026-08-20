@@ -215,8 +215,6 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
         {currentCategory && (
           <motion.div
             key={currentCategory.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
             className="grid grid-cols-1 lg:grid-cols-2 gap-6"

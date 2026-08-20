@@ -419,8 +419,6 @@ export function IronmanChart() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
       className="bg-[var(--bg-card)] rounded-2xl shadow-sm overflow-hidden border border-[var(--border-soft)]"
     >
       <div className="p-6">

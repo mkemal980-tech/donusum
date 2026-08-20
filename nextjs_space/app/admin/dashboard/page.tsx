@@ -247,8 +247,6 @@ export default function AdminDashboardPage() {
           <AnimatePresence>
             {showDropdown && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 className="absolute z-10 mt-2 w-full md:w-80 rounded-lg bg-[var(--bg-card)] border border-[var(--border-soft)] shadow-xl overflow-hidden"
               >
@@ -354,7 +352,6 @@ export default function AdminDashboardPage() {
                         key={cat.categoryId}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
                         className="border-b border-[var(--border-soft)]/50 hover:bg-[var(--bg-card-2)] transition-colors"
                       >
                         <td className="py-4 px-4 text-[var(--text-main)] font-medium">
@@ -410,7 +407,6 @@ export default function AdminDashboardPage() {
                     key={sector.sector}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
                     className="p-4 rounded-lg bg-[var(--bg-card-2)] border border-[var(--border-soft)]"
                   >
                     <h3 className="font-medium text-[var(--text-main)] mb-3">
@@ -523,7 +519,6 @@ export default function AdminDashboardPage() {
                         key={user.userId}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: index * 0.02 }}
                         className="border-b border-[var(--border-soft)]/50 hover:bg-[var(--bg-card-2)] transition-colors"
                       >
                         <td className="py-3 px-4">
@@ -627,7 +622,6 @@ export default function AdminDashboardPage() {
                 key={activity.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
                 className="flex items-center justify-between p-4 rounded-lg bg-[var(--bg-card-2)] border border-[var(--border-soft)]"
               >
                 <div className="flex-1">

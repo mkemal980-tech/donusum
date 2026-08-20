@@ -101,8 +101,6 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
   
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
       className={`theme-card p-6 border-2 transition-colors ${
         locked ? 'opacity-60 ' : ''

@@ -220,8 +220,6 @@ export default function MonitoringPage() {
       {/* E-posta sağlayıcısı */}
       {emailStatus && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
           className="theme-card p-6 border border-[var(--border-soft)]"
         >
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -270,8 +268,6 @@ export default function MonitoringPage() {
       {/* Current Status */}
       {currentHealth && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
           className="theme-card p-6 border border-[var(--border-soft)]"
         >
           <div className="flex items-center justify-between mb-6">

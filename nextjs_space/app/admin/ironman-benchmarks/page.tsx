@@ -198,19 +198,29 @@ export default function IronmanBenchmarksPage() {
             <br /><span className="text-xs text-[var(--text-dim)]">(Politikalar, izleme, raporlama)</span>
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-4 gap-2 text-xs">
-          <div className="bg-[var(--error-bg)] text-[var(--error)] p-2 rounded text-center">
-            <strong>Walker</strong><br />Düşük Hız + Düşük Olgunluk
-          </div>
-          <div className="bg-[var(--warning-bg)] text-[var(--warning)] p-2 rounded text-center">
-            <strong>Sprinter</strong><br />Yüksek Hız + Düşük Olgunluk
-          </div>
-          <div className="bg-[var(--accent-quiet)] text-[var(--accent)] p-2 rounded text-center">
-            <strong>Marathon Runner</strong><br />Düşük Hız + Yüksek Olgunluk
-          </div>
-          <div className="bg-[var(--accent-soft)] text-[var(--accent)] p-2 rounded text-center">
-            <strong>Iron Man</strong><br />Yüksek Hız + Yüksek Olgunluk
-          </div>
+        {/* Dört kadran bir ölçek değil, bir sınıflama; iyi/kötü demeyen
+            nötr bir yüzey üzerinde nokta rengiyle ayrılır. */}
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { name: "Walker", hint: "düşük hız + düşük olgunluk", dot: "var(--ink-3)" },
+            { name: "Sprinter", hint: "yüksek hız + düşük olgunluk", dot: "var(--accent)" },
+            { name: "Maraton koşucusu", hint: "düşük hız + yüksek olgunluk", dot: "var(--series-4)" },
+            { name: "Demir adam", hint: "yüksek hız + yüksek olgunluk", dot: "var(--series-2)" },
+          ].map((q) => (
+            <div
+              key={q.name}
+              className="rounded-[var(--radius-xs)] p-3"
+              style={{ background: "var(--surface-2)" }}
+            >
+              <p className="flex items-center gap-2 t-sm font-medium" style={{ color: "var(--ink)" }}>
+                <span className="h-2 w-2 rounded-full" style={{ background: q.dot }} aria-hidden="true" />
+                {q.name}
+              </p>
+              <p className="mt-0.5 t-sm" style={{ color: "var(--ink-3)" }}>
+                {q.hint}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
 

@@ -188,8 +188,6 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
               return (
                 <motion.div
                   key={`col-${quarter?.q}-${quarter?.year}`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, quarter?.q, quarter?.year)}
                   className="flex-1 min-h-[200px] rounded-xl p-3 border-2 border-dashed transition-all"

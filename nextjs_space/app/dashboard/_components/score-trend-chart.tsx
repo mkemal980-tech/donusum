@@ -244,8 +244,6 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
     const current = history[0];
     return (
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
         className="theme-card p-6 border border-[var(--border-soft)]"
       >
         <div className="flex items-center gap-2 mb-6">
@@ -301,8 +299,6 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
       className="theme-card p-6 border border-[var(--border-soft)]"
     >
       {/* Başlık */}

@@ -135,8 +135,6 @@ export default function ExportPage(): JSX.Element {
         {/* Sol Panel - Format Seçimi */}
         <div className="lg:col-span-1 space-y-4">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
             className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]"
           >
             <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4">Format Seçimi</h2>
@@ -249,9 +247,6 @@ export default function ExportPage(): JSX.Element {
         {/* Sağ Panel - Tablo Seçimi (Sadece JSON için) */}
         {format === 'json' && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
             className="lg:col-span-2 p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]"
           >
             <div className="flex items-center justify-between mb-4">
@@ -314,9 +309,6 @@ export default function ExportPage(): JSX.Element {
         {/* CSV için bilgi paneli */}
         {format === 'csv' && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
             className="lg:col-span-2 p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]"
           >
             <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4">CSV Formatı Hakkında</h2>

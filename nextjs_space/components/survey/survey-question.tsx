@@ -253,8 +253,6 @@ export default function SurveyQuestion({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
       className="theme-card p-6 border border-[var(--border-soft)]"
     >
       <h3 className="text-lg font-medium text-[var(--text-main)] mb-6">{q?.text ?? ''}</h3>
