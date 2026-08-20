@@ -115,14 +115,62 @@ const prismaBin = path.join(
 );
 const command = fs.existsSync(prismaBin) ? prismaBin : process.platform === 'win32' ? 'npx.cmd' : 'npx';
 const args = fs.existsSync(prismaBin) ? ['migrate', 'deploy'] : ['prisma', 'migrate', 'deploy'];
-const result = spawnSync(command, args, {
-  env: { ...process.env, DATABASE_URL: database.url },
-  stdio: 'inherit',
-});
+// Railway'de app konteyneri Postgres'ten once hazir olabiliyor; o anda migrate
+// "the database system is starting up" ile duser ve deploy komple basarisiz olur.
+// Gecici baglanti hatalarinda kisa araliklarla yeniden dene, gercek migration
+// hatasinda ilk denemede cik.
+const TRANSIENT_PATTERNS = [
+  /the database system is starting up/i,
+  /the database system is shutting down/i,
+  /Can't reach database server/i,
+  /Connection refused/i,
+  /ECONNREFUSED/,
+  /ETIMEDOUT/,
+  /EAI_AGAIN/,
+  /ENOTFOUND/,
+];
 
-if (result.error) {
-  console.error(`[migrate] Failed to start Prisma CLI: ${result.error.message}`);
-  process.exit(1);
+const MAX_ATTEMPTS = 6;
+const RETRY_DELAY_MS = 5000;
+
+function isTransient(output) {
+  return TRANSIENT_PATTERNS.some((pattern) => pattern.test(output));
 }
 
-process.exit(result.status ?? 1);
+function sleep(ms) {
+  // spawnSync zaten senkron; beklemeyi de senkron tut ki akis basit kalsin.
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+  const result = spawnSync(command, args, {
+    env: { ...process.env, DATABASE_URL: database.url },
+    encoding: 'utf8',
+  });
+
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
+
+  if (result.error) {
+    console.error(`[migrate] Failed to start Prisma CLI: ${result.error.message}`);
+    process.exit(1);
+  }
+
+  if (result.status === 0) {
+    process.exit(0);
+  }
+
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
+
+  if (!isTransient(output) || attempt === MAX_ATTEMPTS) {
+    if (isTransient(output)) {
+      console.error(`[migrate] Database still unavailable after ${MAX_ATTEMPTS} attempts.`);
+    }
+    process.exit(result.status ?? 1);
+  }
+
+  console.warn(
+    `[migrate] Database not ready (attempt ${attempt}/${MAX_ATTEMPTS}); retrying in ${RETRY_DELAY_MS / 1000}s.`
+  );
+  sleep(RETRY_DELAY_MS);
+}
