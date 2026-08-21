@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { BenchmarkChart } from "@/components/ui/benchmark-chart";
 
-
 interface BenchmarkData {
   hasSector: boolean;
   sector?: { id: string; name: string };

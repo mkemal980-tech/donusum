@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-
 interface DataPoint {
   name: string;
   score: number; // 0-5 scale (current score)
