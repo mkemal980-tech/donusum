@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { BenchmarkChart } from "@/components/ui/benchmark-chart";
-import { BarChart3, Factory, Layers, AlertCircle } from "lucide-react";
-import Link from "next/link";
 
 interface BenchmarkData {
   hasSector: boolean;
@@ -40,45 +38,13 @@ export function BenchmarkSection() {
   }, []);
 
   if (loading) {
-    return (
-      <div 
-        className="rounded-xl shadow-lg p-6 border"
-        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
-      >
-        <div className="flex items-center gap-3 mb-4">
-          <BarChart3 style={{ color: 'var(--accent)' }} size={24} />
-          <h3 className="text-lg font-semibold" style={{ color: 'var(--text-main)' }}>Benchmark Karşılaştırması</h3>
-        </div>
-        <div className="flex items-center justify-center h-48">
-          <div 
-            className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" 
-            style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }}
-          />
-        </div>
-      </div>
-    );
+    return <div className="skeleton h-[360px]" />;
   }
 
+  /* Boş durum: tek cümle ne eksik, tek yol nereden tamamlanır. */
   if (!data?.hasSector) {
     return (
-      <div 
-        className="rounded-xl shadow-lg p-6 border"
-        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
-      >
-        <div className="flex items-center gap-3 mb-4">
-          <BarChart3 style={{ color: 'var(--accent)' }} size={24} />
-          <h3 className="text-lg font-semibold" style={{ color: 'var(--text-main)' }}>Benchmark Karşılaştırması</h3>
-        </div>
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          {/* "Veri yok" bir hata değil boş durum: 48px turuncu daire panonun
-              en dikkat çeken öğesi oluyordu. Sönük mürekkep yeterli. */}
-          <AlertCircle size={48} style={{ color: 'var(--text-dim)' }} className="mb-4" />
-          <p style={{ color: 'var(--text-muted)' }} className="mb-2">Sektör bilgisi bulunamadı</p>
-          <p className="text-sm" style={{ color: 'var(--text-dim)' }}>
-            Benchmark karşılaştırması için profilinizde sektör bilgisi gereklidir
-          </p>
-        </div>
-      </div>
+      <BenchmarkEmpty message="Kıyaslama için profilinizde sektör tanımlı olmalı. Sektör atamasını platform yöneticiniz yapar." />
     );
   }
 
@@ -90,83 +56,42 @@ export function BenchmarkSection() {
 
   if (!currentBenchmark) {
     return (
-      <div 
-        className="rounded-xl shadow-lg p-6 border"
-        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
-      >
-        <div className="flex items-center gap-3 mb-4">
-          <BarChart3 style={{ color: 'var(--accent)' }} size={24} />
-          <h3 className="text-lg font-semibold" style={{ color: 'var(--text-main)' }}>Benchmark Karşılaştırması</h3>
-        </div>
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <Factory size={48} style={{ color: 'var(--ui-passive)' }} className="mb-4" />
-          <p style={{ color: 'var(--text-muted)' }}>Sektörünüz için benchmark verisi henüz girilmemiş</p>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-dim)' }}>Sektör: {data.sector?.name}</p>
-        </div>
-      </div>
+      <BenchmarkEmpty
+        message={`${data.sector?.name} sektörü için henüz kıyaslama verisi girilmemiş.`}
+      />
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Sector Info */}
-      <div 
-        className="rounded-xl p-4 text-white"
-        style={{ background: 'linear-gradient(135deg, var(--blue-main), var(--accent))' }}
-      >
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
-            <Factory size={20} />
-            <div>
-              <p className="text-xs text-white/70">Sektör</p>
-              <p className="font-medium">{data.sector?.name}</p>
-            </div>
-          </div>
-          {data.subSector && (
-            <div className="flex items-center gap-2">
-              <Layers size={20} />
-              <div>
-                <p className="text-xs text-white/70">Alt Sektör</p>
-                <p className="font-medium">{data.subSector.name}</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+    <div className="flex flex-col gap-4">
+      <p className="t-sm" style={{ color: "var(--ink-2)" }}>
+        Kıyaslama tabanı: <span style={{ color: "var(--ink)" }}>{data.sector?.name}</span>
+        {data.subSector && <> · {data.subSector.name}</>}
+      </p>
 
-      {/* Tabs */}
       {hasSubSectorData && (
-        <div className="flex gap-2">
+        <div className="theme-tabs" role="tablist" aria-label="Kıyaslama tabanı">
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "sector"}
             onClick={() => setActiveTab("sector")}
-            className="px-4 py-2 rounded-lg font-medium transition-colors"
-            style={activeTab === "sector" ? {
-              backgroundColor: 'var(--accent)',
-              color: 'var(--bg-deep)'
-            } : {
-              backgroundColor: 'var(--bg-card-2)',
-              color: 'var(--text-muted)'
-            }}
+            className={`theme-tab ${activeTab === "sector" ? "active" : ""}`}
           >
-            Sektör Benchmark
+            Sektör
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "subsector"}
             onClick={() => setActiveTab("subsector")}
-            className="px-4 py-2 rounded-lg font-medium transition-colors"
-            style={activeTab === "subsector" ? {
-              backgroundColor: 'var(--accent)',
-              color: 'var(--bg-deep)'
-            } : {
-              backgroundColor: 'var(--bg-card-2)',
-              color: 'var(--text-muted)'
-            }}
+            className={`theme-tab ${activeTab === "subsector" ? "active" : ""}`}
           >
-            Alt Sektör Benchmark
+            Alt sektör
           </button>
         </div>
       )}
 
-      {/* Chart */}
       <BenchmarkChart
         title={activeTab === "subsector" && hasSubSectorData 
           ? `${data.subSector?.name} Benchmark` 
@@ -177,5 +102,37 @@ export function BenchmarkSection() {
         companyName="Sizin Puanınız"
       />
     </div>
+  );
+}
+
+/** Kıyaslamanın çizilemediği durumlar için ortak boş kart. */
+function BenchmarkEmpty({
+  message,
+  action,
+}: {
+  message: string;
+  action?: { href: string; label: string };
+}) {
+  return (
+    <section
+      className="rounded-[var(--radius-lg)] p-6"
+      style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+    >
+      <h3 className="t-subhead" style={{ color: "var(--ink)" }}>
+        Sektör kıyaslaması
+      </h3>
+      <p className="mt-2 max-w-[60ch] t-body" style={{ color: "var(--ink-2)" }}>
+        {message}
+      </p>
+      {action && (
+        <a
+          href={action.href}
+          className="mt-3 inline-block t-sm font-medium underline underline-offset-4"
+          style={{ color: "var(--accent)" }}
+        >
+          {action.label}
+        </a>
+      )}
+    </section>
   );
 }

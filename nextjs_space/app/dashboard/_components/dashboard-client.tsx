@@ -1,21 +1,19 @@
 "use client";
 
 import { useEffect, useState, useRef, Suspense } from "react";
-import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
-import Header from "@/components/ui/header";
+import AppShell from "@/components/ui/app-shell";
 import ScoreCard from "@/components/ui/score-card";
 import ProgressBar from "@/components/ui/progress-bar";
 import { MaturityLevelBar } from "@/components/ui/maturity-level-bar";
 import SectionErrorBoundary from "@/components/section-error-boundary";
 import { ProgressSection } from "./progress-section";
 
-import { CategoryProgressChart } from "./category-progress-chart";
 
 // Error fallback component for chunk loading failures
 const ChunkErrorFallback = ({ componentName }: { componentName: string }) => (
-  <div className="p-6 bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] text-center">
+  <div className="p-6 theme-card text-center">
     <p className="text-[var(--text-muted)]">{componentName} yüklenemedi.</p>
     <Button
       onClick={() => window.location.reload()} 
@@ -58,18 +56,13 @@ const KPIDashboard = dynamic(
     ssr: false
   }
 );
-import { 
-  ClipboardList, 
-  TrendingUp, 
-  CheckCircle, 
+import {
+  AlertTriangle,
   ArrowRight,
-  BarChart3,
+  ClipboardList,
+  Download,
   Lightbulb,
   Map,
-  PieChart,
-  FileText,
-  Download,
-  ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -95,13 +88,15 @@ interface Survey {
   isActive: boolean;
 }
 
-// Kategori çubukları tek vurgu renginde. Eskiden olgunluk skalasının
-// basamaklarını (--level-N) karışık sırada ödünç alıyordu; aynı renk hem
-// "şu kategori" hem "şu olgunluk basamağı" anlamına geldiği için pano
-// alacalı görünüyordu. Kategoriyi adı ayırt eder, değeri çubuğun boyu.
-// --chart-1 marka vurgusundan ayrı "veri" rengidir: açık temada vurgu turuncuya
-// dönüyor ve çubuklar seviye göstergelerinin mavisiyle çakışıyordu.
-const categoryBarColor = "var(--chart-1)";
+// Kategori çubukları ve noktaları veri serisi paletinden okunur; beşten
+// fazla kategori olduğunda palet başa döner (bkz. DESIGN.md > Color).
+const categoryColors = [
+  "var(--series-1)",
+  "var(--series-2)",
+  "var(--series-3)",
+  "var(--series-4)",
+  "var(--series-5)"
+];
 
 /**
  * Yüzdeye göre olgunluk seviyesi hesaplama
@@ -112,13 +107,11 @@ const categoryBarColor = "var(--chart-1)";
  * %80-100: Lider
  */
 const getMaturityLevelFromPercentage = (percentage: number) => {
-  // Renkler sabit değil token: olgunluk skalası tek kaynaktan (--level-N)
-  // okunur, böylece açık/koyu temada aynı sırayı korur.
-  if (percentage >= 80) return { label: 'Lider', color: 'var(--level-5)' };
-  if (percentage >= 60) return { label: 'Olgun', color: 'var(--level-4)' };
-  if (percentage >= 40) return { label: 'Gelişen', color: 'var(--level-3)' };
-  if (percentage >= 20) return { label: 'Farkındalık', color: 'var(--level-2)' };
-  return { label: 'Başlangıç', color: 'var(--level-1)' };
+  if (percentage >= 80) return { label: 'Lider', color: 'var(--accent-cyan)' };
+  if (percentage >= 60) return { label: 'Olgun', color: '#2dd4bf' };
+  if (percentage >= 40) return { label: 'Gelişen', color: '#38bdf8' };
+  if (percentage >= 20) return { label: 'Farkındalık', color: '#5eead4' };
+  return { label: 'Başlangıç', color: '#7FB2FF' };
 };
 
 /**
@@ -419,7 +412,7 @@ export default function DashboardClient() {
             
             h1, h2, h3 {
               font-family: 'Inter', sans-serif;
-              color: #0f172a;
+              color: #15171E;
               font-weight: 700;
               letter-spacing: -0.02em;
             }
@@ -439,7 +432,7 @@ export default function DashboardClient() {
               left: 0;
               right: 0;
               height: 60mm;
-              background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+              background: linear-gradient(180deg, #15171E 0%, #1E212A 100%);
             }
             
             .cover-content {
@@ -457,7 +450,7 @@ export default function DashboardClient() {
             .cover-logo {
               width: 60px;
               height: 60px;
-              background: #0ea5e9;
+              background: #1E6FE8;
               border-radius: 12px;
               display: flex;
               align-items: center;
@@ -473,7 +466,7 @@ export default function DashboardClient() {
               font-weight: 800;
               margin-bottom: 12px;
               line-height: 1.1;
-              color: #0f172a;
+              color: #15171E;
             }
             
             .cover-subtitle {
@@ -486,7 +479,7 @@ export default function DashboardClient() {
             .cover-company {
               font-size: 28pt;
               font-weight: 700;
-              color: #0ea5e9;
+              color: #1E6FE8;
               margin-bottom: 48px;
             }
             
@@ -501,7 +494,7 @@ export default function DashboardClient() {
               background: #f8fafc;
               padding: 16px 20px;
               border-radius: 8px;
-              border-left: 3px solid #0ea5e9;
+              border-left: 3px solid #1E6FE8;
             }
             
             .cover-meta-label {
@@ -515,7 +508,7 @@ export default function DashboardClient() {
             
             .cover-meta-value {
               font-size: 11pt;
-              color: #0f172a;
+              color: #15171E;
               font-weight: 600;
             }
             
@@ -523,7 +516,7 @@ export default function DashboardClient() {
               display: inline-flex;
               align-items: center;
               gap: 8px;
-              background: #0f172a;
+              background: #15171E;
               color: white;
               padding: 14px 28px;
               border-radius: 8px;
@@ -536,7 +529,7 @@ export default function DashboardClient() {
               width: 10px;
               height: 10px;
               border-radius: 50%;
-              background: #22d3ee;
+              background: #2E86FF;
             }
             
             /* ========== İÇERİK SAYFALARI - CLEAN LAYOUT ========== */
@@ -564,13 +557,13 @@ export default function DashboardClient() {
             
             .page-header-company {
               font-size: 9pt;
-              color: #0f172a;
+              color: #15171E;
               font-weight: 600;
             }
             
             .section-title {
               font-size: 22pt;
-              color: #0f172a;
+              color: #15171E;
               margin-bottom: 8px;
               font-weight: 800;
             }
@@ -593,7 +586,7 @@ export default function DashboardClient() {
             .summary-box {
               background: #f8fafc;
               border: 1px solid #e2e8f0;
-              border-left: 4px solid #0ea5e9;
+              border-left: 4px solid #1E6FE8;
               padding: 24px 28px;
               margin-bottom: 32px;
               border-radius: 8px;
@@ -601,7 +594,7 @@ export default function DashboardClient() {
             
             .summary-box h3 {
               font-size: 11pt;
-              color: #0f172a;
+              color: #15171E;
               margin-bottom: 12px;
               font-weight: 700;
               text-transform: uppercase;
@@ -634,12 +627,12 @@ export default function DashboardClient() {
             .kpi-value {
               font-size: 32pt;
               font-weight: 800;
-              color: #0f172a;
+              color: #15171E;
               line-height: 1;
             }
             
             .kpi-value.highlight {
-              color: #0ea5e9;
+              color: #1E6FE8;
             }
             
             .kpi-label {
@@ -699,15 +692,11 @@ export default function DashboardClient() {
               letter-spacing: 0.5px;
             }
             
-            /* Basamaklar sıralı: rozet zemini Başlangıç'tan Lider'e doğru
-               koyulaşır. Eskiden kırmızı→turuncu→sarı→yeşil→mavi trafik ışığıydı
-               ve raporun geri kalanıyla aynı ölçeği başka renklerle anlatıyordu.
-               PDF beyaz kâğıda basıldığı için token değil sabit değer. */
-            .level-badge.baslangic { background: #eff6ff; color: #1e40af; }
-            .level-badge.farkindalik { background: #dbeafe; color: #1e40af; }
-            .level-badge.gelisen { background: #bfdbfe; color: #1e3a8a; }
-            .level-badge.olgun { background: #93c5fd; color: #172554; }
-            .level-badge.lider { background: #60a5fa; color: #ffffff; }
+            .level-badge.baslangic { background: #e7edf9; color: #2b3a55; }
+            .level-badge.farkindalik { background: #d8e4fa; color: #24406e; }
+            .level-badge.gelisen { background: #c3d8fb; color: #1c3f7d; }
+            .level-badge.olgun { background: #a9caf9; color: #143a80; }
+            .level-badge.lider { background: #8bb6f6; color: #10306e; }
             
             /* Progress Bar - Minimal */
             .progress-bar {
@@ -723,9 +712,9 @@ export default function DashboardClient() {
               transition: width 0.3s;
             }
             
-            .progress-fill.low { background: #ef4444; }
-            .progress-fill.medium { background: #f59e0b; }
-            .progress-fill.high { background: #10b981; }
+            .progress-fill.low { background: #9dbdf3; }
+            .progress-fill.medium { background: #4E8FEE; }
+            .progress-fill.high { background: #1E6FE8; }
             
             /* Öneri Kartları - Card Design */
             .recommendation-grid {
@@ -771,7 +760,7 @@ export default function DashboardClient() {
             .rec-title {
               font-size: 11pt;
               font-weight: 700;
-              color: #0f172a;
+              color: #15171E;
             }
             
             .rec-desc {
@@ -805,7 +794,7 @@ export default function DashboardClient() {
             
             .column-box h4 {
               font-size: 10pt;
-              color: #0f172a;
+              color: #15171E;
               margin-bottom: 18px;
               font-weight: 700;
               text-transform: uppercase;
@@ -832,7 +821,7 @@ export default function DashboardClient() {
             
             /* Ironman Bölümü - Minimal Dark */
             .ironman-section {
-              background: #0f172a;
+              background: #15171E;
               border-radius: 8px;
               padding: 28px 32px;
               color: white;
@@ -841,7 +830,7 @@ export default function DashboardClient() {
             
             .ironman-section h4 {
               font-size: 11pt;
-              color: #22d3ee;
+              color: #2E86FF;
               margin-bottom: 20px;
               font-weight: 700;
               text-transform: uppercase;
@@ -869,7 +858,7 @@ export default function DashboardClient() {
             
             .ironman-value.velocity { color: #fbbf24; }
             .ironman-value.endurance { color: #60a5fa; }
-            .ironman-value.quadrant { color: #22d3ee; font-size: 13pt; }
+            .ironman-value.quadrant { color: #2E86FF; font-size: 13pt; }
             
             .ironman-label {
               font-size: 8pt;
@@ -1238,7 +1227,7 @@ export default function DashboardClient() {
               <p style="font-size: 9pt; color: #64748b; margin-bottom: 12px;">
                 Bu rapor ${reportDate} tarihinde
               </p>
-              <p style="font-size: 14pt; color: #0ea5e9; font-weight: 700; letter-spacing: -0.02em;">
+              <p style="font-size: 14pt; color: #1E6FE8; font-weight: 700; letter-spacing: -0.02em;">
                 Dönüşüm Platformu
               </p>
               <p style="font-size: 9pt; color: #64748b; margin-top: 12px;">
@@ -1279,433 +1268,348 @@ export default function DashboardClient() {
     }
   };
 
-  // Error durumunu göster
+  /* Durum ekranları da kabuğun içinde kalır: gezinme kaybolmasın. */
   if (errorState) {
     return (
-      <div className="min-h-screen bg-[var(--bg-main)]">
-        <Header />
-        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-          <div className="bg-[var(--bg-card)] p-8 rounded-xl border border-[var(--error)] max-w-md text-center">
-            <div className="w-16 h-16 bg-[var(--error)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-[var(--error)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold text-[var(--text-main)] mb-2">Bir Sorun Oluştu</h2>
-            <p className="text-[var(--text-muted)] mb-6">{errorState.message}</p>
-            <Button
-              onClick={() => window.location.reload()}
-              className="text-[var(--bg-deep)] font-medium"
-            >
-              Sayfayı Yenile
+      <>
+        <AppShell />
+        <main className="flex min-h-[70vh] items-center justify-center">
+          <div className="max-w-md text-center">
+            <AlertTriangle size={22} style={{ color: "var(--error)" }} className="mx-auto mb-3" aria-hidden="true" />
+            <h1 className="t-subhead" style={{ color: "var(--ink)" }}>
+              Pano yüklenemedi
+            </h1>
+            <p className="mt-2 t-body" style={{ color: "var(--ink-2)" }}>
+              {errorState.message}
+            </p>
+            <Button onClick={() => window.location.reload()} className="mt-5">
+              Sayfayı yenile
             </Button>
           </div>
-        </div>
-      </div>
+        </main>
+      </>
     );
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--bg-main)]">
-        <Header />
-        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-          <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
+      <>
+        <AppShell />
+        <main>
+          <div className="mb-6 h-8 w-48 skeleton" />
+          <div className="mb-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="skeleton h-[104px]" />
+            ))}
+          </div>
+          <div className="grid gap-5 lg:grid-cols-3">
+            <div className="skeleton h-[320px] lg:col-span-2" />
+            <div className="skeleton h-[320px]" />
+          </div>
+        </main>
+      </>
     );
   }
 
-  // Anket bulunamadı durumu
   if (surveys.length === 0) {
     return (
-      <div className="min-h-screen bg-[var(--bg-main)]">
-        <Header />
-        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-          <div className="bg-[var(--bg-card)] p-8 rounded-xl border border-[var(--border-soft)] max-w-md text-center">
-            <div className="w-16 h-16 bg-[var(--accent)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-semibold text-[var(--text-main)] mb-2">Henüz Anket Atanmadı</h2>
-            <p className="text-[var(--text-muted)] mb-6">Size henüz değerlendirme anketi atanmamış. Lütfen yöneticinizle iletişime geçin.</p>
+      <>
+        <AppShell />
+        <main className="flex min-h-[70vh] items-center justify-center">
+          <div className="max-w-md text-center">
+            <ClipboardList size={22} style={{ color: "var(--ink-3)" }} className="mx-auto mb-3" aria-hidden="true" />
+            <h1 className="t-subhead" style={{ color: "var(--ink)" }}>
+              Size henüz anket atanmadı
+            </h1>
+            <p className="mt-2 t-body" style={{ color: "var(--ink-2)" }}>
+              Değerlendirme başlayınca pano dolar. Atama için kuruluşunuzun platform
+              yöneticisiyle görüşün.
+            </p>
           </div>
-        </div>
-      </div>
+        </main>
+      </>
     );
   }
 
+  const maturity = getMaturityLevelFromPercentage(scoreData?.totalScore ?? 0);
+  const totalRecommendations = categoryStats.reduce((sum, c) => sum + (c.recommendationCount ?? 0), 0);
+  const selectedSurvey = surveys.find((s) => s.id === selectedSurveyId);
+  const categoryEntries = Object.entries(scoreData?.categoryScores ?? {});
+
   return (
-    <div className="min-h-screen bg-[var(--bg-main)]">
-      <Header />
-      
-      <main className="max-w-[1200px] mx-auto px-6 py-8" ref={dashboardRef}>
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-        >
+    <>
+      <AppShell />
+
+      <main ref={dashboardRef}>
+        {/* --- Sayfa başlığı --- */}
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Dönüşüm Panosu</h1>
-            <p className="text-[var(--text-secondary)]">Kuruluşunuzun olgunluk değerlendirmesi ilerlemesini ve içgörülerini takip edin</p>
+            <h1 className="t-display" style={{ color: "var(--ink)" }}>
+              Pano
+            </h1>
+            <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+              {selectedSurvey ? selectedSurvey.name : "Değerlendirme seçilmedi"}
+              {assessmentStatus.submitted ? " · kesin puan" : " · taslak"}
+            </p>
           </div>
-          
-          <div className="flex items-center gap-3">
-            {/* Anket Seçimi */}
+
+          <div className="flex items-center gap-2">
             {surveys.length > 1 && (
-              <div className="relative">
+              <>
+                <label htmlFor="survey-select" className="sr-only">
+                  Görüntülenecek anket
+                </label>
                 <select
+                  id="survey-select"
                   value={selectedSurveyId}
                   onChange={(e) => setSelectedSurveyId(e.target.value)}
-                  className="px-4 py-2.5 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                  className="theme-select w-auto"
                 >
-                  {surveys.map(survey => (
+                  {surveys.map((survey) => (
                     <option key={survey.id} value={survey.id}>
                       {survey.name}
                     </option>
                   ))}
                 </select>
-              </div>
+              </>
             )}
-            
-            {/* PDF İndir Butonu */}
-            <button
-              onClick={generatePdfReport}
-              disabled={generatingPdf}
-              className="flex items-center gap-2 bg-gradient-to-r from-[var(--primary)] to-[var(--primary-dark)] text-white  px-5 py-2.5 rounded-xl hover:shadow-lg  transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-            >
-              {generatingPdf ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white  border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm">Oluşturuluyor...</span>
-                </>
-              ) : (
-                <>
-                  <Download size={18} />
-                  <span className="text-sm">PDF Rapor</span>
-                </>
-              )}
-            </button>
+
+            <Button variant="outline" onClick={generatePdfReport} loading={generatingPdf}>
+              {!generatingPdf && <Download size={16} aria-hidden="true" />}
+              {generatingPdf ? "Hazırlanıyor" : "PDF rapor"}
+            </Button>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Seçili Anket Bilgisi */}
-        {surveys.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="bg-[var(--primary)]/10 border border-[var(--primary)]/30 rounded-xl px-4 py-3 mb-6 flex items-center gap-2"
-          >
-            <FileText size={18} className="text-[var(--primary)]" />
-            <span className="text-sm text-[var(--primary)] font-medium">
-              Görüntülenen Anket: {surveys.find(s => s.id === selectedSurveyId)?.name ?? 'Seçilmedi'}
-            </span>
-          </motion.div>
-        )}
+        {/* --- Metrik şeridi: panonun ilk cevabı --- */}
+        <div className="mb-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard
+            label="Olgunluk puanı"
+            value={`${Math.round(scoreData?.totalScore ?? 0)}%`}
+            note={maturity.label}
+            noteColor={maturity.color}
+          />
+          <MetricCard
+            label="Anket ilerlemesi"
+            value={`${completionPercentage}%`}
+            note={`${completedQuestions}/${totalQuestions} soru yanıtlandı`}
+          />
+          <MetricCard
+            label="Değerlendirilen kategori"
+            value={String(categoryStats.length)}
+            note={categoryStats.length > 0 ? "puanı hesaplanan başlık" : "henüz kategori yok"}
+          />
+          <MetricCard
+            label="Açık öneri"
+            value={String(totalRecommendations)}
+            note={totalRecommendations > 0 ? "geliştirme fırsatı" : "öneri üretilmedi"}
+          />
+        </div>
 
-        {/* Olgunluk puanı ve kategori kırılımı — panonun cevabı bu.
-            Sayı kartlarından ve grafiklerden önce gelir: kullanıcı sayfayı
-            açtığında ilk sorusu "kaç aldık", ikincisi "hangi başlıkta
-            zayıfız". Gerisi bu ikisinin açıklaması. */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Genel Olgunluk Puanı + Seviyelendirme */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.05 }}
-            className="lg:col-span-2 bg-[var(--bg-card)] rounded-2xl shadow-lg  p-8 border border-[var(--border-light)]"
+        {/* --- Cevap: puan + seviye, yanında kategori kırılımı --- */}
+        <div className="mb-6 grid gap-5 lg:grid-cols-3">
+          <section
+            className="rounded-[var(--radius-lg)] p-6 lg:col-span-2"
+            style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+            aria-labelledby="score-heading"
           >
-            <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 h-full">
-              {/* Score Card */}
-              <div className="flex flex-col items-center">
-                <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-6">Genel Olgunluk Puanı</h3>
-                <ScoreCard 
-                  score={scoreData?.totalScore ?? 0} 
-                  label={getMaturityLevelFromPercentage(scoreData?.totalScore ?? 0).label} 
-                  color={getMaturityLevelFromPercentage(scoreData?.totalScore ?? 0).color} 
-                  size="large" 
-                />
-              </div>
-              
-              {/* Divider */}
-              <div className="hidden md:block w-px h-64 bg-[var(--border-light)]" />
-              <div className="md:hidden w-48 h-px bg-[var(--border-light)]" />
-              
-              {/* Maturity Level Bar */}
-              <MaturityLevelBar 
-                score={scoreData?.totalScore ?? 0} 
-                isPercentage={true} 
+            <h2 id="score-heading" className="t-subhead" style={{ color: "var(--ink)" }}>
+              Kurumsal olgunluk puanı
+            </h2>
+            <div className="mt-6 flex flex-col items-center gap-8 md:flex-row md:items-center md:gap-12">
+              <ScoreCard
+                score={scoreData?.totalScore ?? 0}
+                label={maturity.label}
+                color={maturity.color}
+                size="large"
               />
+              <div className="hidden w-px self-stretch md:block" style={{ background: "var(--line)" }} />
+              <MaturityLevelBar score={scoreData?.totalScore ?? 0} isPercentage />
             </div>
-          </motion.div>
+          </section>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 }}
-            className="lg:col-span-1 bg-[var(--bg-card)] rounded-2xl shadow-lg  p-6 border border-[var(--border-light)]"
+          <section
+            className="rounded-[var(--radius-lg)] p-6"
+            style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+            aria-labelledby="category-heading"
           >
-            <div className="flex items-center gap-2 mb-6">
-              <BarChart3 className="text-[var(--secondary)]" size={20} />
-              <h3 className="text-lg font-semibold text-[var(--text-primary)]">Kategori Puanları</h3>
-            </div>
-            
-            <div className="space-y-4">
-              {Object.entries(scoreData?.categoryScores ?? {})?.map(([id, data], index) => (
-                <ProgressBar
-                  key={id}
-                  value={data?.percentage ?? 0}
-                  label={data?.name ?? 'Bilinmeyen Kategori'}
-                  color={categoryBarColor}
-                />
-              ))}
-              
-              {Object.keys(scoreData?.categoryScores ?? {})?.length === 0 && (
-                <div className="text-center py-8 text-[var(--text-muted)]">
-                  <p>Puan dağılımınızı görmek için anketi tamamlayın</p>
-                </div>
-              )}
-            </div>
-          </motion.div>
+            <h2 id="category-heading" className="t-subhead" style={{ color: "var(--ink)" }}>
+              Kategori puanları
+            </h2>
+
+            {categoryEntries.length > 0 ? (
+              <div className="mt-5 flex flex-col gap-4">
+                {categoryEntries.map(([id, data], index) => (
+                  <ProgressBar
+                    key={id}
+                    value={data?.percentage ?? 0}
+                    label={data?.name ?? "Adsız kategori"}
+                    color={categoryColors[index % categoryColors.length]}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="mt-5 t-sm" style={{ color: "var(--ink-3)" }}>
+                Kırılımı görmek için anketin bir bölümünü tamamlayın.
+              </p>
+            )}
+          </section>
         </div>
 
-        {/* KPI Dashboard */}
-        <Suspense fallback={<ComponentSkeleton height="300px" />}>
-          <KPIDashboard surveyId={selectedSurveyId} />
-        </Suspense>
+        {/* --- Açıklayıcı bölümler --- */}
+        <div className="flex flex-col gap-6">
+          <Suspense fallback={<ComponentSkeleton height="300px" />}>
+            <KPIDashboard surveyId={selectedSurveyId} />
+          </Suspense>
 
-        {/* Gelişim Trend Grafiği */}
-        <CategoryProgressChart surveyId={selectedSurveyId} />
-
-        {/* Overview Cards (Legacy) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-[var(--bg-card)] rounded-2xl shadow-lg  p-6 border border-[var(--border-light)] hover:shadow-xl transition-all duration-300"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[var(--primary)]/10 rounded-xl flex items-center justify-center">
-                <ClipboardList className="text-[var(--primary)]" size={24} />
-              </div>
-              <div>
-                <p className="text-sm text-[var(--text-secondary)]">Anket İlerlemesi</p>
-                <p className="text-2xl font-bold text-[var(--text-primary)]">{completionPercentage}%</p>
-              </div>
-            </div>
-            <div className="mt-4">
-              <ProgressBar value={completionPercentage} label="" color="var(--primary)" />
-              <p className="text-xs text-[var(--text-muted)] mt-2">{totalQuestions} sorudan {completedQuestions} tanesi tamamlandı</p>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-[var(--bg-card)] rounded-2xl shadow-lg  p-6 border border-[var(--border-light)] hover:shadow-xl transition-all duration-300"
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[var(--secondary)]/10 rounded-xl flex items-center justify-center">
-                <TrendingUp className="text-[var(--secondary)]" size={24} />
-              </div>
-              <div>
-                <p className="text-sm text-[var(--text-secondary)]">Mevcut Puan</p>
-                <p className="text-2xl font-bold text-[var(--text-primary)]">{Math.round(scoreData?.totalScore ?? 0)}%</p>
-                <p className="text-xs text-[var(--text-secondary)]">
-                  {assessmentStatus.submitted
-                    ? `Kesin puan${
-                        assessmentStatus.submittedAt
-                          ? ` · ${new Date(assessmentStatus.submittedAt).toLocaleDateString("tr-TR")}`
-                          : ""
-                      }`
-                    : "Taslak — değerlendirme gönderilmedi"}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-[var(--bg-card)] rounded-2xl shadow-lg  p-6 border border-[var(--border-light)] hover:shadow-xl transition-all duration-300"
-          >
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-[var(--accent)]/10 rounded-xl flex items-center justify-center">
-                <CheckCircle className="text-[var(--accent)]" size={24} />
-              </div>
-              <div>
-                <p className="text-sm text-[var(--text-secondary)]">Değerlendirilen Kategoriler</p>
-                <p className="text-2xl font-bold text-[var(--text-primary)]">
-                  {categoryStats.length}
-                </p>
-              </div>
-            </div>
-            
-            {/* Kategori Detayları */}
-            <div className="space-y-3 mt-4 pt-4 border-t border-[var(--border-light)]">
-              {categoryStats.map((cat, index) => (
-                <div key={cat.id} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-2 h-2 rounded-full" 
-                      style={{ backgroundColor: categoryBarColor }}
-                    />
-                    <span className="text-[var(--text-primary)] font-medium truncate max-w-[100px]" title={cat.name}>
-                      {cat.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="text-[var(--text-secondary)]">
-                      <span className="font-semibold text-[var(--primary)]">{cat.answeredQuestions}</span>/{cat.totalQuestions}
-                    </span>
-                    <span className="text-[var(--text-muted)]">|</span>
-                    <span className="flex items-center gap-1">
-                      {/* Öneri sayısı uyarı değil, bilgi: vurgu ailesinde kalır. */}
-                      <Lightbulb size={12} className="text-[var(--accent)]" />
-                      <span className="font-semibold text-[var(--accent)] ">{cat.recommendationCount}</span>
-                    </span>
-                  </div>
-                </div>
-              ))}
-              
-              {categoryStats.length === 0 && (
-                <p className="text-xs text-[var(--text-muted)] text-center py-2">
-                  Henüz kategori verisi yok
-                </p>
-              )}
-            </div>
-          </motion.div>
-        </div>
-
-
-        {/* Benchmark Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="mb-8"
-        >
           <SectionErrorBoundary label="Kıyaslama grafiği yüklenemedi.">
             <Suspense fallback={<ComponentSkeleton height="400px" />}>
               <BenchmarkSection />
             </Suspense>
           </SectionErrorBoundary>
-        </motion.div>
 
-        {/* Progress Benchmark Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.61 }}
-          className="mb-8"
-        >
           <ProgressSection surveyId={selectedSurveyId} />
-        </motion.div>
 
-        {/* Ironman Analysis Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.62 }}
-          className="mb-8"
-        >
           <SectionErrorBoundary label="Ironman analizi yüklenemedi.">
             <Suspense fallback={<ComponentSkeleton height="600px" />}>
               <IronmanChart />
             </Suspense>
           </SectionErrorBoundary>
-        </motion.div>
 
-        {/* Category Analysis Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.65 }}
-          className="mb-8"
-        >
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-[var(--secondary)]/10 rounded-xl flex items-center justify-center">
-              <PieChart className="text-[var(--secondary)]" size={20} />
+          <section aria-labelledby="category-analysis-heading">
+            <div className="mb-4">
+              <h2 id="category-analysis-heading" className="t-subhead" style={{ color: "var(--ink)" }}>
+                Kategori analizi
+              </h2>
+              <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+                Seviyelendirme ve fark (GAP) analizi
+              </p>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-[var(--text-primary)]">Kategori Analizi</h2>
-              <p className="text-sm text-[var(--text-secondary)]">Seviyelendirme ve GAP Analizi</p>
-            </div>
-          </div>
-          <Suspense fallback={<ComponentSkeleton height="500px" />}>
-            <CategoryDashboard surveyId={selectedSurveyId} />
-          </Suspense>
-        </motion.div>
+            <Suspense fallback={<ComponentSkeleton height="500px" />}>
+              <CategoryDashboard surveyId={selectedSurveyId} />
+            </Suspense>
+          </section>
+        </div>
 
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        >
-          <button
+        {/* --- Sıradaki adım --- */}
+        <nav className="mt-10 grid gap-5 md:grid-cols-3" aria-label="Sıradaki adım">
+          <NextStep
+            icon={ClipboardList}
+            title="Ankete devam et"
+            description="Eksik bölümleri tamamlayın, puan güncellensin."
+            action="Başla"
             onClick={() => router.push("/survey")}
-            className="rounded-2xl p-6 text-left border transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
-            style={{ background: "var(--quick-1-bg)", color: "var(--quick-1-fg)", borderColor: "var(--quick-1-border)" }}
-          >
-            <ClipboardList size={32} className="mb-4" />
-            <h3 className="text-lg font-semibold mb-2 text-inherit">Ankete Devam Et</h3>
-            <p className="text-sm opacity-80 mb-4">Olgunluk değerlendirmenizi tamamlayın</p>
-            <span className="inline-flex items-center gap-2 text-sm font-medium">
-              Başla <ArrowRight size={16} />
-            </span>
-          </button>
-
-          <button
+            primary
+          />
+          <NextStep
+            icon={Lightbulb}
+            title="Önerileri incele"
+            description="Zayıf kategoriler için üretilen geliştirme adımları."
+            action="İncele"
             onClick={() => router.push("/recommendations")}
-            className="rounded-2xl p-6 text-left border transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
-            style={{ background: "var(--quick-2-bg)", color: "var(--quick-2-fg)", borderColor: "var(--quick-2-border)" }}
-          >
-            <Lightbulb size={32} className="mb-4" />
-            <h3 className="text-lg font-semibold mb-2 text-inherit">Önerileri Görüntüle</h3>
-            <p className="text-sm opacity-80 mb-4">Geliştirme fırsatlarını keşfedin</p>
-            <span className="inline-flex items-center gap-2 text-sm font-medium">
-              İncele <ArrowRight size={16} />
-            </span>
-          </button>
-
-          <button
+          />
+          <NextStep
+            icon={Map}
+            title="Yol haritası kur"
+            description="Önerileri takvime ve sorumluya bağlayın."
+            action="Planla"
             onClick={() => router.push("/roadmap")}
-            className="rounded-2xl p-6 text-left border transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
-            style={{ background: "var(--quick-3-bg)", color: "var(--quick-3-fg)", borderColor: "var(--quick-3-border)" }}
-          >
-            <Map size={32} className="mb-4" />
-            <h3 className="text-lg font-semibold mb-2 text-inherit">Yol Haritası Oluştur</h3>
-            <p className="text-sm opacity-80 mb-4">Dönüşüm yolculuğunuzu planlayın</p>
-            <span className="inline-flex items-center gap-2 text-sm font-medium">
-              Planla <ArrowRight size={16} />
-            </span>
-          </button>
-        </motion.div>
+          />
+        </nav>
       </main>
+    </>
+  );
+}
+
+/**
+ * Metrik kartı: etiket, tek büyük sayı, altında bir satır bağlam.
+ * Dekoratif ikon taşımaz — kartın işi sayıyı okutmak.
+ */
+function MetricCard({
+  label,
+  value,
+  note,
+  noteColor,
+}: {
+  label: string;
+  value: string;
+  note: string;
+  noteColor?: string;
+}) {
+  return (
+    <div
+      className="rounded-[var(--radius-lg)] p-5"
+      style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+    >
+      <p className="t-label" style={{ color: "var(--ink-2)" }}>
+        {label}
+      </p>
+      <p className="mt-2 t-metric" style={{ color: "var(--ink)" }}>
+        {value}
+      </p>
+      <p className="mt-1.5 t-sm" style={{ color: noteColor ?? "var(--ink-3)" }}>
+        {note}
+      </p>
     </div>
+  );
+}
+
+/** Panonun kapanışı: üç eylem, biri vurgulu. */
+function NextStep({
+  icon: Icon,
+  title,
+  description,
+  action,
+  onClick,
+  primary = false,
+}: {
+  icon: typeof ClipboardList;
+  title: string;
+  description: string;
+  action: string;
+  onClick: () => void;
+  primary?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group rounded-[var(--radius-lg)] p-5 text-left transition-colors duration-base ease-out-quart"
+      style={{
+        background: primary ? "var(--accent-solid)" : "var(--surface)",
+        border: `1px solid ${primary ? "transparent" : "var(--line)"}`,
+        color: primary ? "var(--on-accent)" : "var(--ink)",
+      }}
+    >
+      <Icon size={18} aria-hidden="true" style={{ opacity: primary ? 0.9 : 0.7 }} />
+      <span className="mt-3 block text-[15px] font-semibold">{title}</span>
+      <span
+        className="mt-1 block t-sm"
+        style={{ color: primary ? "var(--on-accent)" : "var(--ink-2)", opacity: primary ? 0.85 : 1 }}
+      >
+        {description}
+      </span>
+      <span className="mt-4 inline-flex items-center gap-1.5 t-sm font-medium">
+        {action}
+        <ArrowRight size={14} className="transition-transform duration-base ease-out-quart group-hover:translate-x-0.5" />
+      </span>
+    </button>
   );
 }
 
 // Skeleton Loader Component
 function ComponentSkeleton({ height = "400px" }: { height?: string }) {
   return (
-    <div 
-      className="bg-[var(--bg-card)] rounded-2xl shadow-lg border border-[var(--border-soft)] animate-pulse"
-      style={{ height }}
+    <div
+      className="rounded-[var(--radius-lg)] p-6"
+      style={{ background: "var(--surface)", border: "1px solid var(--line)", height }}
+      aria-hidden="true"
     >
-      <div className="p-6 space-y-4">
-        <div className="h-6 bg-[var(--bg-card-2)] rounded w-1/3"></div>
-        <div className="space-y-3">
-          <div className="h-4 bg-[var(--bg-card-2)] rounded"></div>
-          <div className="h-4 bg-[var(--bg-card-2)] rounded w-5/6"></div>
-          <div className="h-4 bg-[var(--bg-card-2)] rounded w-4/6"></div>
-        </div>
+      <div className="skeleton h-5 w-1/3" />
+      <div className="mt-5 flex flex-col gap-3">
+        <div className="skeleton h-3.5 w-full" />
+        <div className="skeleton h-3.5 w-5/6" />
+        <div className="skeleton h-3.5 w-4/6" />
       </div>
     </div>
   );

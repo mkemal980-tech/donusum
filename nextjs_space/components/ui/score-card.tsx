@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
 
@@ -11,93 +10,93 @@ interface ScoreCardProps {
   size?: "small" | "large";
 }
 
+/**
+ * Olgunluk puanı halkası.
+ *
+ * Sayı görünür alana girince hedefe sayar; halka aynı sürede dolar. Sayının
+ * kendisi mürekkep rengindedir — halka zaten seviyeyi renkle söylüyor, sayıyı
+ * da renklendirmek iki kez aynı şeyi anlatıyordu.
+ */
 export default function ScoreCard({ score, label, color, size = "large" }: ScoreCardProps) {
   const [displayScore, setDisplayScore] = useState(0);
   const { ref, inView } = useInView({ triggerOnce: true });
 
-  // Default color uses CSS variable for theme support
-  const strokeColor = color || "var(--primary)";
+  const strokeColor = color || "var(--accent)";
+  const target = Math.round(Math.max(0, Math.min(100, score ?? 0)));
 
   useEffect(() => {
-    if (inView) {
-      const targetScore = Math.round(score ?? 0);
-      const duration = 1500;
-      const steps = 60;
-      const stepValue = targetScore / steps;
-      let current = 0;
-      const interval = setInterval(() => {
-        current += stepValue;
-        if (current >= targetScore) {
-          setDisplayScore(targetScore);
-          clearInterval(interval);
-        } else {
-          setDisplayScore(Math.round(current));
-        }
-      }, duration / steps);
-      return () => clearInterval(interval);
-    }
-  }, [inView, score]);
+    if (!inView) return;
 
-  const radius = size === "large" ? 80 : 40;
-  const strokeWidth = size === "large" ? 12 : 6;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      setDisplayScore(target);
+      return;
+    }
+
+    const duration = 900;
+    const steps = 45;
+    const stepValue = target / steps;
+    let current = 0;
+    const interval = setInterval(() => {
+      current += stepValue;
+      if (current >= target) {
+        setDisplayScore(target);
+        clearInterval(interval);
+      } else {
+        setDisplayScore(Math.round(current));
+      }
+    }, duration / steps);
+    return () => clearInterval(interval);
+  }, [inView, target]);
+
+  const radius = size === "large" ? 76 : 40;
+  const strokeWidth = size === "large" ? 10 : 6;
   const circumference = 2 * Math.PI * radius;
-  const progress = (Math.round(score ?? 0) / 100) * circumference;
+  const progress = (target / 100) * circumference;
 
   return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
-      className="flex flex-col items-center"
-    >
+    <div ref={ref} className="flex flex-col items-center">
       <div className="relative">
         <svg
           width={radius * 2 + strokeWidth * 2}
           height={radius * 2 + strokeWidth * 2}
-          className="transform -rotate-90"
+          className="-rotate-90"
+          role="img"
+          aria-label={`Olgunluk puanı yüzde ${target}, ${label}`}
         >
-          {/* Background circle */}
           <circle
             cx={radius + strokeWidth}
             cy={radius + strokeWidth}
             r={radius}
-            style={{ stroke: "var(--border-light)" }}
+            stroke="var(--surface-2)"
             strokeWidth={strokeWidth}
             fill="none"
           />
-          {/* Progress circle */}
-          <motion.circle
+          <circle
             cx={radius + strokeWidth}
             cy={radius + strokeWidth}
             r={radius}
-            /* stroke SVG sunum özniteliği olarak verilirse var(--…) çözülmez ve
-               halka kaybolur; renk token'la geldiği için stil olarak yazılır. */
-            style={{ stroke: strokeColor }}
+            stroke={strokeColor}
             strokeWidth={strokeWidth}
             fill="none"
             strokeLinecap="round"
             strokeDasharray={circumference}
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset: circumference - progress }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
-            className=""
+            strokeDashoffset={inView ? circumference - progress : circumference}
+            style={{ transition: "stroke-dashoffset 900ms var(--ease-out-quart)" }}
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          {/* Sayı halkayla aynı renkte: --primary marka vurgusudur ve açık
-              temada turuncuya döndüğü için mavi halkanın içinde ters düşüyordu. */}
           <span
-            className={`font-bold ${size === "large" ? "text-4xl" : "text-xl"}`}
-            style={{ color: strokeColor }}
+            className={size === "large" ? "t-metric-lg" : "t-metric"}
+            style={{ color: "var(--ink)" }}
           >
             {displayScore}%
           </span>
         </div>
       </div>
-      <p className={`mt-3 font-medium text-[var(--text-secondary)] ${size === "large" ? "text-lg" : "text-sm"}`}>
-        {label ?? ''}
+      <p className="mt-3 t-sm" style={{ color: "var(--ink-2)" }}>
+        {label ?? ""}
       </p>
-    </motion.div>
+    </div>
   );
 }

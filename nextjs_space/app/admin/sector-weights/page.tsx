@@ -30,7 +30,7 @@ const LEVEL_STYLE: Record<ScopeLevelKey, string> = {
   EXCLUDED: "bg-[var(--bg-card-2)] text-[var(--text-dim)] border-[var(--border-soft)]",
   LOW: "bg-[rgba(148,163,184,0.15)] text-[var(--text-muted)] border-[var(--border-soft)]",
   NORMAL: "bg-[var(--bg-card)] text-[var(--text-main)] border-[var(--border-soft)]",
-  HIGH: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/50",
+  HIGH: "bg-[var(--accent-soft)] text-[var(--accent-ink)] border-[var(--accent)]/50",
 };
 
 export default function SectorScopePage() {
@@ -155,7 +155,7 @@ export default function SectorScopePage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[var(--text-main)] mb-1">Sektör Kapsamı</h1>
+        <h1 className="t-display" style={{ color: "var(--ink)" }}>Sektör kapsamı</h1>
         <p className="text-[var(--text-muted)]">
           Hangi bölümün hangi sektöre sorulacağını ve ne kadar sayılacağını belirleyin.
         </p>
@@ -273,10 +273,10 @@ export default function SectorScopePage() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-[var(--border-soft)]">
-          <table className="w-full text-sm">
+          <table className="theme-table">
             <thead>
               <tr className="bg-[var(--bg-card-2)]">
-                <th className="text-left p-3 font-medium text-[var(--text-muted)] sticky left-0 bg-[var(--bg-card-2)] min-w-[220px]">
+                <th>
                   Bölüm
                 </th>
                 {sectors.map((sector) => (

@@ -192,7 +192,7 @@ export default function BenchmarksPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+        <div className="spinner" role="status" aria-label="Yükleniyor" />
       </div>
     );
   }
@@ -200,12 +200,12 @@ export default function BenchmarksPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[var(--text-main)]">Benchmark Verileri</h1>
-        <p className="text-[var(--text-muted)] mt-1">Anket, kategori ve sektör bazlı en iyi ve ortalama puanları girin</p>
+        <h1 className="t-display" style={{ color: "var(--ink)" }}>Benchmark verileri</h1>
+        <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>Anket, kategori ve sektör bazlı en iyi ve ortalama puanları girin</p>
       </div>
 
       {/* Form */}
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-6 mb-6 border border-[var(--border-soft)]">
+      <div className="theme-card p-6 mb-6 border border-[var(--border-soft)]">
         <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
           <Plus size={20} className="text-[var(--accent)]" />
           Benchmark Verisi Ekle / Güncelle
@@ -374,7 +374,7 @@ export default function BenchmarksPage() {
       </div>
 
       {/* Existing Benchmarks */}
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden border border-[var(--border-soft)]">
+      <div className="theme-card overflow-hidden border border-[var(--border-soft)]">
         <div className="p-4 border-b border-[var(--border-soft)] bg-[var(--bg-card-2)]">
           <h2 className="text-lg font-semibold text-[var(--text-main)] flex items-center gap-2">
             <BarChart3 size={20} className="text-[var(--accent)]" />
@@ -384,45 +384,45 @@ export default function BenchmarksPage() {
 
         {filteredBenchmarks.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[var(--bg-card-2)]">
+            <table className="theme-table">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)]">Anket</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)]">Sektör</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)]">Alt Sektör</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)]">Seviye</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--text-muted)]">Hedef</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-[var(--text-muted)]">En İyi</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-[var(--text-muted)]">Ortalama</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-[var(--text-muted)]">İşlem</th>
+                  <th>Anket</th>
+                  <th>Sektör</th>
+                  <th>Alt Sektör</th>
+                  <th>Seviye</th>
+                  <th>Hedef</th>
+                  <th className="text-center">En İyi</th>
+                  <th className="text-center">Ortalama</th>
+                  <th className="text-center">İşlem</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--border-soft)]">
+              <tbody>
                 {filteredBenchmarks.map((b) => (
-                  <tr key={b.id} className="hover:bg-[var(--bg-card-2)] transition-colors">
-                    <td className="px-4 py-3 text-sm text-[var(--accent)]">{b.survey?.name || "-"}</td>
-                    <td className="px-4 py-3 text-sm text-[var(--text-main)]">{b.sector?.name}</td>
-                    <td className="px-4 py-3 text-sm text-[var(--text-muted)]">{b.subSector?.name || "Tüm"}</td>
-                    <td className="px-4 py-3 text-sm">
+                  <tr key={b.id}>
+                    <td>{b.survey?.name || "-"}</td>
+                    <td>{b.sector?.name}</td>
+                    <td>{b.subSector?.name || "Tüm"}</td>
+                    <td>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         b.level === "OVERALL" ? "bg-[var(--bg-card-2)] text-[var(--accent)]" :
-                        b.level === "CATEGORY" ? "bg-[var(--accent)]/15 text-[var(--accent)]" :
-                        "bg-[var(--accent-soft)] text-[var(--accent)]"
+                        b.level === "CATEGORY" ? "bg-[var(--accent-quiet)] text-[var(--accent-ink)]" :
+                        "bg-[var(--accent-soft)] text-[var(--accent-ink)]"
                       }`}>
                         {b.level === "OVERALL" ? "Genel" : b.level === "CATEGORY" ? "Kategori" : "Alt Kategori"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-[var(--text-muted)]">{getTargetName(b)}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="px-2 py-1 bg-[var(--accent)]/15 text-[var(--accent)] rounded font-medium">{b.bestScore.toFixed(1)}</span>
+                    <td>{getTargetName(b)}</td>
+                    <td className="text-center">
+                      <span className="px-2 py-1 bg-[var(--accent-quiet)] text-[var(--accent-ink)] rounded font-medium">{b.bestScore.toFixed(1)}</span>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="text-center">
                       <span className="px-2 py-1 bg-[var(--bg-card-2)] text-[var(--text-muted)] rounded font-medium">{b.averageScore.toFixed(1)}</span>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="text-center">
                       <button
                         onClick={() => handleDelete(b.id)}
-                        className="p-1 text-[var(--error)] hover:bg-[var(--error-bg)] rounded transition-colors"
+                        className="p-1 text-[var(--error-ink)] hover:bg-[var(--error-bg)] rounded transition-colors"
                       >
                         <Trash2 size={18} />
                       </button>

@@ -1,122 +1,121 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTheme } from "next-themes";
-import { Check, Palette } from "lucide-react";
-import Header from "@/components/ui/header";
-import ThemeSwitch from "@/components/ui/theme-switch";
+import AppShell from "@/components/ui/app-shell";
 
 /**
- * Görünüm ayarları.
+ * Hesap ve görünüm.
  *
- * Tema ve vurgu rengi cihaz tercihidir: tarayıcıda saklanır, hesaba
- * yazılmaz. Vurgu seçenekleri yalnızca açık temada geçerli — koyu tema
- * platformun kurumsal turkuazıyla sabittir.
+ * Sayfa eskiden tema ve vurgu rengi seçtiriyordu. Arayüz artık tek koyu
+ * temayla geliyor (bkz. DESIGN.md > Theme), o yüzden seçim kalmadı; yerine
+ * kullanıcının hangi kayıtla çalıştığını gösteren profil özeti kondu.
+ * Alanlar salt okunur: değişiklik yetkisi platform yöneticisinde.
  */
 
-const ACCENTS = [
-  { value: "orange", label: "Turuncu (ESG LAB)", color: "#fa541c" },
-  { value: "blue", label: "Mavi", color: "#2563eb" },
-  { value: "indigo", label: "Indigo", color: "#4f46e5" },
-  { value: "cyan", label: "Camgöbeği", color: "#0e7490" },
-  { value: "green", label: "Yeşil", color: "#1f8a5b" },
-];
+interface Profile {
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  organization: string | null;
+  role: string;
+  sector: { name: string } | null;
+  subSector: { name: string } | null;
+  createdAt: string;
+}
 
-const ACCENT_STORAGE_KEY = "esg-accent";
+const ROLE_LABEL: Record<string, string> = {
+  ADMIN: "Platform yöneticisi",
+  UNIT_MANAGER: "Birim yöneticisi",
+  USER: "Kullanıcı",
+};
 
 export default function SettingsPage() {
-  const { theme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  const [accent, setAccent] = useState("orange");
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setMounted(true);
-    const stored = window.localStorage.getItem(ACCENT_STORAGE_KEY);
-    if (stored) {
-      setAccent(stored);
-      document.documentElement.setAttribute("data-accent", stored);
-    }
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch("/api/user/profile");
+        if (res.ok) setProfile(await res.json());
+      } catch (error) {
+        console.error("Profil okunamadı:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
   }, []);
 
-  const chooseAccent = (value: string) => {
-    setAccent(value);
-    document.documentElement.setAttribute("data-accent", value);
-    window.localStorage.setItem(ACCENT_STORAGE_KEY, value);
-  };
-
-  const lightActive = mounted && theme === "light";
+  const rows: { label: string; value: string }[] = profile
+    ? [
+        {
+          label: "Ad soyad",
+          value: [profile.firstName, profile.lastName].filter(Boolean).join(" ") || "—",
+        },
+        { label: "E-posta", value: profile.email },
+        { label: "Kuruluş", value: profile.organization || "—" },
+        { label: "Sektör", value: profile.sector?.name || "Tanımlı değil" },
+        { label: "Alt sektör", value: profile.subSector?.name || "Tanımlı değil" },
+        { label: "Rol", value: ROLE_LABEL[profile.role] ?? profile.role },
+        {
+          label: "Kayıt tarihi",
+          value: new Date(profile.createdAt).toLocaleDateString("tr-TR"),
+        },
+      ]
+    : [];
 
   return (
-    <div className="min-h-screen bg-[var(--bg-main)]">
-      <Header />
+    <>
+      <AppShell />
 
-      <main className="max-w-3xl mx-auto px-6 py-10 space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-[var(--text-main)] flex items-center gap-3">
-            <Palette className="text-[var(--accent)]" />
-            Görünüm
-          </h1>
-          <p className="text-[var(--text-muted)] mt-2">
-            Tema tercihiniz bu cihazda saklanır; başka bir cihazda oturum açtığınızda
-            yeniden seçmeniz gerekir.
-          </p>
-        </div>
+      <main>
+        <h1 className="t-display" style={{ color: "var(--ink)" }}>
+          Hesap
+        </h1>
+        <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+          Değerlendirmenin hangi kayda işlendiğini buradan görebilirsiniz.
+        </p>
 
-        <section className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)] space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold text-[var(--text-main)]">Tema</h2>
-            <p className="text-sm text-[var(--text-muted)] mt-1">
-              <strong className="text-[var(--text-main)]">Koyu</strong> — platformun bugünkü
-              görünümü, turkuaz vurgulu.{" "}
-              <strong className="text-[var(--text-main)]">Açık</strong> — ESG LAB kurumsal
-              kimliği: turuncu vurgu, Space Grotesk ve IBM Plex yazı aileleri.
-            </p>
-          </div>
-          <ThemeSwitch />
-        </section>
-
-        <section className="p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)] space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold text-[var(--text-main)]">Vurgu rengi</h2>
-            <p className="text-sm text-[var(--text-muted)] mt-1">
-              Açık temada geçerlidir. Marka rengi turuncudur; diğerleri iç kullanım içindir.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {ACCENTS.map((option) => {
-              const selected = accent === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => chooseAccent(option.value)}
-                  aria-pressed={selected}
-                  className={`inline-flex items-center gap-2 px-3 h-10 rounded-lg border text-sm transition-colors ${
-                    selected
-                      ? "border-[var(--accent)] text-[var(--text-main)]"
-                      : "border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
-                  }`}
+        <section
+          className="mt-6 max-w-2xl rounded-[var(--radius-lg)] p-6"
+          style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+        >
+          {loading ? (
+            <div className="flex flex-col gap-3">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="skeleton h-5" />
+              ))}
+            </div>
+          ) : profile ? (
+            <dl>
+              {rows.map((row, i) => (
+                <div
+                  key={row.label}
+                  className="flex flex-wrap items-baseline justify-between gap-4 py-3"
+                  style={{ borderTop: i === 0 ? undefined : "1px solid var(--line)" }}
                 >
-                  <span
-                    className="w-4 h-4 rounded-full border border-[var(--border-soft)]"
-                    style={{ background: option.color }}
-                    aria-hidden
-                  />
-                  {option.label}
-                  {selected && <Check size={14} className="text-[var(--accent)]" />}
-                </button>
-              );
-            })}
-          </div>
-
-          {mounted && !lightActive && (
-            <p className="text-xs text-[var(--text-dim)]">
-              Seçiminiz kaydedildi; etkisini görmek için açık temaya geçin.
+                  <dt className="t-sm" style={{ color: "var(--ink-2)" }}>
+                    {row.label}
+                  </dt>
+                  <dd className="t-body" style={{ color: "var(--ink)" }}>
+                    {row.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <p className="t-body" style={{ color: "var(--ink-2)" }}>
+              Profil bilgileri okunamadı. Sayfayı yenileyin.
             </p>
           )}
         </section>
+
+        <p className="mt-4 max-w-2xl t-sm" style={{ color: "var(--ink-3)" }}>
+          Bu alanları değiştirmek için kuruluşunuzun platform yöneticisiyle görüşün.
+          Arayüz tek koyu temayla gelir, ayrı bir görünüm tercihi tutulmaz.
+        </p>
       </main>
-    </div>
+    </>
   );
 }

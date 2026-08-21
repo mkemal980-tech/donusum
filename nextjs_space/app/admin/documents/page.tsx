@@ -181,7 +181,7 @@ export default function DocumentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Yüklenen Dosyalar</h1>
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>Yüklenen dosyalar</h1>
           <p className="text-[var(--text-dim)]  mt-1">Kullanıcıların yüklediği kanıt dosyaları</p>
         </div>
         <div className="flex items-center gap-2 bg-[var(--accent-soft)]  px-4 py-2 rounded-lg">
@@ -247,21 +247,21 @@ export default function DocumentsPage() {
         </div>
       ) : (
         <div className="bg-[var(--bg-card)]  rounded-xl shadow-sm border border-[var(--border-soft)]  overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-[var(--bg-card-2)] ">
+          <table className="theme-table">
+            <thead>
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Dosya</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Kullanıcı</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Birim</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Soru Bağlamı</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Tarih</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">İşlemler</th>
+                <th>Dosya</th>
+                <th>Kullanıcı</th>
+                <th>Birim</th>
+                <th>Soru Bağlamı</th>
+                <th>Tarih</th>
+                <th className="text-right">İşlemler</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 ">
+            <tbody>
               {filteredDocuments.map((doc) => (
-                <tr key={doc.id} className="hover:bg-[var(--bg-card-2)]  transition-colors">
-                  <td className="px-6 py-4">
+                <tr key={doc.id}>
+                  <td>
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{getFileIcon(doc.fileType)}</span>
                       <div>
@@ -270,7 +270,7 @@ export default function DocumentsPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td>
                     <div className="flex items-center gap-2">
                       <User size={16} className="text-[var(--text-dim)]" />
                       <div>
@@ -279,7 +279,7 @@ export default function DocumentsPage() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td>
                     {doc.user.unit ? (
                       <span className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--bg-card-2)]  text-[var(--accent)]  rounded text-sm">
                         <Building2 size={14} />
@@ -289,12 +289,12 @@ export default function DocumentsPage() {
                       <span className="text-[var(--text-dim)] ">-</span>
                     )}
                   </td>
-                  <td className="px-6 py-4">
+                  <td>
                     <p className="text-sm text-[var(--text-muted)]  max-w-xs truncate" title={getQuestionContext(doc)}>
                       {getQuestionContext(doc)}
                     </p>
                   </td>
-                  <td className="px-6 py-4">
+                  <td>
                     <p className="text-sm text-[var(--text-dim)] ">
                       {new Date(doc.createdAt).toLocaleDateString("tr-TR", {
                         day: "2-digit",
@@ -305,7 +305,7 @@ export default function DocumentsPage() {
                       })}
                     </p>
                   </td>
-                  <td className="px-6 py-4">
+                  <td>
                     <div className="flex items-center justify-end gap-2">
                       {doc.downloadUrl && (
                         <Button
@@ -323,7 +323,7 @@ export default function DocumentsPage() {
                         title="Sil"
                         variant="ghost"
                         size="icon"
-                        className="text-[var(--error)] hover:bg-[var(--error-bg)]"
+                        className="text-[var(--error-ink)] hover:bg-[var(--error-bg)]"
                       >
                         <Trash2 size={18} />
                       </Button>

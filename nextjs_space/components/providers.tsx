@@ -52,7 +52,7 @@ class ChunkErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryStat
       return (
         <div className="min-h-screen bg-[var(--bg-main)] flex items-center justify-center p-4">
           <div className="bg-[var(--bg-card)] p-8 rounded-xl border border-[var(--border-soft)] max-w-md text-center">
-            <div className="w-16 h-16 bg-[var(--accent)]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-[var(--accent-quiet)] rounded-full flex items-center justify-center mx-auto mb-4">
               <RefreshCw className="w-8 h-8 text-[var(--accent)]" />
             </div>
             <h2 className="text-xl font-semibold text-[var(--text-main)] mb-2">
@@ -99,21 +99,20 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    // Vurgu rengi tercihi cihazda saklanır; temayı next-themes yazar, bunu biz.
-    const accent = window.localStorage.getItem("esg-accent");
-    if (accent) document.documentElement.setAttribute("data-accent", accent);
   }, []);
 
   return (
     <SessionProvider>
-      {/* Tema <html data-theme="…"> ile seçilir; globals.css'teki token
-          blokları buna bakar. Varsayılan koyu tema — mevcut görünüm. */}
+      {/* Tek tema var: koyu (bkz. DESIGN.md > Theme). forcedTheme, next-themes'i
+          okuyan bileşenlerin (grafikler, sonner) tutarlı bir değer görmesi için
+          duruyor; kullanıcıya seçim sunulmuyor. */}
       <ThemeProvider
         attribute="data-theme"
         defaultTheme="dark"
-        themes={["dark", "light"]}
+        forcedTheme="dark"
+        themes={["dark"]}
         enableSystem={false}
-        disableTransitionOnChange={false}
+        disableTransitionOnChange
       >
         <ChunkErrorBoundary>
           {mounted ? children : <div style={{ visibility: 'hidden' }}>{children}</div>}
@@ -124,9 +123,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
           closeButton
           toastOptions={{
             style: {
-              background: 'var(--bg-card)',
-              color: 'var(--text-main)',
-              border: '1px solid var(--border-soft)'
+              background: 'var(--surface)',
+              color: 'var(--ink)',
+              border: '1px solid var(--line)'
             }
           }}
         />

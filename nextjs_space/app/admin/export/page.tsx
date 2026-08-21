@@ -13,6 +13,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import PageHeader from "@/components/ui/page-header";
 
 interface TableOption {
   id: string;
@@ -124,26 +125,16 @@ export default function ExportPage(): JSX.Element {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-[var(--accent)]/20">
-            <Database className="h-6 w-6 text-[var(--accent)]" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-[var(--text-main)]">Veri Dışa Aktarma</h1>
-            <p className="text-[var(--text-muted)]">Veritabanı verilerini JSON veya CSV formatında indirin</p>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="Dışa aktarma"
+        subtitle="Veritabanı tablolarını JSON ya da CSV olarak indirin."
+      />
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Sol Panel - Format Seçimi */}
         <div className="lg:col-span-1 space-y-4">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
             className="p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]"
           >
             <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4">Format Seçimi</h2>
@@ -154,13 +145,13 @@ export default function ExportPage(): JSX.Element {
                 onClick={() => setFormat('json')}
                 className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
                   format === 'json'
-                    ? 'border-[var(--accent)] bg-[var(--accent)]/10'
-                    : 'border-[var(--border-soft)] bg-[var(--bg-card-2)] hover:border-[var(--accent)]/50'
+                    ? 'border-[var(--accent)] bg-[var(--surface-2)]'
+                    : 'border-[var(--line)] bg-[var(--surface-2)] hover:border-[var(--line-strong)]'
                 }`}
               >
                 <FileJson className={`h-6 w-6 ${format === 'json' ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`} />
                 <div className="text-left">
-                  <div className={`font-medium ${format === 'json' ? 'text-[var(--accent)]' : 'text-[var(--text-main)]'}`}>JSON</div>
+                  <div className="font-medium" style={{ color: "var(--ink)" }}>JSON</div>
                   <div className="text-sm text-[var(--text-muted)]">Tüm veriler, ilişkiler dahil</div>
                 </div>
                 {format === 'json' && <Check className="h-5 w-5 text-[var(--accent)] ml-auto" />}
@@ -171,13 +162,13 @@ export default function ExportPage(): JSX.Element {
                 onClick={() => setFormat('csv')}
                 className={`w-full p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
                   format === 'csv'
-                    ? 'border-[var(--accent)] bg-[var(--accent)]/10'
-                    : 'border-[var(--border-soft)] bg-[var(--bg-card-2)] hover:border-[var(--accent)]/50'
+                    ? 'border-[var(--accent)] bg-[var(--surface-2)]'
+                    : 'border-[var(--line)] bg-[var(--surface-2)] hover:border-[var(--line-strong)]'
                 }`}
               >
                 <FileSpreadsheet className={`h-6 w-6 ${format === 'csv' ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`} />
                 <div className="text-left">
-                  <div className={`font-medium ${format === 'csv' ? 'text-[var(--accent)]' : 'text-[var(--text-main)]'}`}>CSV</div>
+                  <div className="font-medium" style={{ color: "var(--ink)" }}>CSV</div>
                   <div className="text-sm text-[var(--text-muted)]">Tek tablo, Excel uyumlu</div>
                 </div>
                 {format === 'csv' && <Check className="h-5 w-5 text-[var(--accent)] ml-auto" />}
@@ -222,7 +213,7 @@ export default function ExportPage(): JSX.Element {
             </div>
 
             {/* Uyarı */}
-            <div className="mt-4 p-4 rounded-lg bg-[var(--warning-bg)]0/10 border border-[var(--warning)]/30">
+            <div className="mt-4 p-4 rounded-lg bg-[var(--warning-bg)] border border-[var(--warning)]/30">
               <div className="flex items-start gap-2">
                 <AlertCircle className="h-5 w-5 text-[var(--warning)] mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-[var(--warning)]">
@@ -256,9 +247,6 @@ export default function ExportPage(): JSX.Element {
         {/* Sağ Panel - Tablo Seçimi (Sadece JSON için) */}
         {format === 'json' && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
             className="lg:col-span-2 p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]"
           >
             <div className="flex items-center justify-between mb-4">
@@ -291,13 +279,13 @@ export default function ExportPage(): JSX.Element {
                   onClick={() => toggleTable(table.id)}
                   className={`p-4 rounded-lg border-2 transition-all text-left ${
                     table.selected
-                      ? 'border-[var(--accent)] bg-[var(--accent)]/10'
-                      : 'border-[var(--border-soft)] bg-[var(--bg-card-2)] hover:border-[var(--accent)]/50'
+                      ? 'border-[var(--accent)] bg-[var(--surface-2)]'
+                      : 'border-[var(--line)] bg-[var(--surface-2)] hover:border-[var(--line-strong)]'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className={`font-medium ${table.selected ? 'text-[var(--accent)]' : 'text-[var(--text-main)]'}`}>
+                      <div className="font-medium" style={{ color: "var(--ink)" }}>
                         {table.name}
                       </div>
                       <div className="text-sm text-[var(--text-muted)]">{table.description}</div>
@@ -321,9 +309,6 @@ export default function ExportPage(): JSX.Element {
         {/* CSV için bilgi paneli */}
         {format === 'csv' && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
             className="lg:col-span-2 p-5 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]"
           >
             <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4">CSV Formatı Hakkında</h2>
@@ -344,7 +329,7 @@ export default function ExportPage(): JSX.Element {
                 </ul>
               </div>
 
-              <div className="p-4 rounded-lg bg-[var(--info-bg)]0/10 border border-[var(--blue-main)]/30">
+              <div className="p-4 rounded-lg bg-[var(--info-bg)]/10 border border-[var(--blue-main)]/30">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="h-5 w-5 text-[var(--blue-main)] mt-0.5 flex-shrink-0" />
                   <div className="text-sm text-[var(--blue-light)]">

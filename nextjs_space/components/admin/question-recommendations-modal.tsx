@@ -463,11 +463,11 @@ export default function QuestionRecommendationsModal({ question, target, onClose
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--bg-card)] rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+      <div className="theme-card w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-start gap-4 mb-4">
             <div className="min-w-0">
-              <h2 className="text-xl font-bold text-[var(--text-main)] flex items-center gap-2">
+              <h2 className="text-xl font-semibold text-[var(--text-main)] flex items-center gap-2">
                 <Lightbulb size={20} className="text-[var(--warning)]" />
                 Bu Sorunun Önerileri
               </h2>
@@ -510,14 +510,14 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                       )}
                       <div className="flex flex-wrap gap-1.5 mt-2">
                         {recommendation.triggerMaxAnswerScore !== null ? (
-                          <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)]">
+                          <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent-ink)]">
                             {cascadeLabel(recommendation.triggerMaxAnswerScore)} ve altındaki cevaplarda
                           </span>
                         ) : triggers.length > 0 ? (
                           triggers.map((trigger) => (
                             <span
                               key={trigger}
-                              className="text-[11px] px-2 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent)]"
+                              className="text-[11px] px-2 py-0.5 rounded bg-[var(--accent-soft)] text-[var(--accent-ink)]"
                             >
                               {triggerLabel(trigger)} cevabında
                             </span>
@@ -547,7 +547,7 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                       </button>
                       <button
                         onClick={() => handleDelete(recommendation)}
-                        className="p-1.5 rounded hover:bg-[var(--error-bg)] text-[var(--error)]"
+                        className="p-1.5 rounded hover:bg-[var(--error-bg)] text-[var(--error-ink)]"
                         title="Sil"
                       >
                         <Trash2 size={16} />
@@ -567,7 +567,7 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                   {form.id ? "Öneriyi Düzenle" : "Yeni Öneri"}
                 </h3>
                 {draftQueue.length > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs bg-[var(--accent-soft)] text-[var(--accent)]">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs bg-[var(--accent-soft)] text-[var(--accent-ink)]">
                     <Sparkles size={12} />
                     AI taslağı — sırada {draftQueue.length} tane daha
                   </span>
@@ -644,7 +644,7 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                         key={choice.value}
                         className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer border text-sm ${
                           form.triggers.includes(choice.value)
-                            ? "bg-[var(--accent-soft)] border-[var(--accent)] text-[var(--accent)]"
+                            ? "bg-[var(--accent-soft)] border-[var(--accent)] text-[var(--accent-ink)]"
                             : "bg-[var(--bg-card-2)] border-[var(--border-soft)] text-[var(--text-muted)]"
                         }`}
                       >
@@ -933,7 +933,7 @@ export default function QuestionRecommendationsModal({ question, target, onClose
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-4 py-2 rounded-lg text-sm bg-[var(--accent-dark)] text-white disabled:opacity-50"
+                  className="px-4 py-2 rounded-lg text-sm bg-[var(--accent-solid)] text-[var(--on-accent)] disabled:opacity-50"
                 >
                   {saving ? "Kaydediliyor..." : form.id ? "Güncelle" : "Öneriyi Ekle"}
                 </button>

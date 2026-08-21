@@ -4,608 +4,572 @@
 
 /* Fontlar next/font ile yüklenir (app/layout.tsx); burada yalnızca kullanılır. */
 
-/* ===== DARK DASHBOARD THEME - GLOBAL TOKENS ===== */
+/* ============================================================================
+   KOYU ANALİTİK PANO — TEK KAYNAK
+   Değerler ve gerekçeler kök dizindeki DESIGN.md dosyasındadır. Buradaki her
+   token orada bir satırla karşılanır; ikisi birlikte değiştirilir.
+
+   Tema tektir: koyu. Açık tema kaldırıldı — tanıtım sayfası kendi kapsamlı
+   sistemini (app/landing.css, .esg-landing) kullandığı için etkilenmez.
+
+   Eski token adları (--bg-card, --primary, --text-secondary…) korunuyor:
+   uygulamada 3.400'den fazla var(--…) çağrısı var, hepsi yeni palete
+   kendiliğinden bağlansın diye. Yeni kod anlamsal adları kullanır.
+   ========================================================================= */
 :root {
-  /* Backgrounds */
-  --bg-main: #1D1B30;
-  --bg-deep: #161628;
-  --bg-card: #25263A;
-  --bg-card-2: #2D2E43;
+  color-scheme: dark;
 
-  /* Borders / Grid */
-  --border-soft: #3A3B4B;
-  --divider: #2D2E43;
+  /* ---- Yüzeyler. Nötrler mavi tona (hue 264) boyalı; saf siyah yok. ---- */
+  --canvas:     oklch(0.185 0.012 264);   /* sayfa zemini      ~#15171E */
+  --rail:       oklch(0.155 0.012 264);   /* sidebar, topbar   ~#111319 */
+  --surface:    oklch(0.235 0.013 264);   /* kart              ~#1E212A */
+  --surface-2:  oklch(0.275 0.014 264);   /* kart içi blok     ~#262934 */
+  --surface-3:  oklch(0.315 0.014 264);   /* seçili/hover      ~#2E313D */
 
-  /* Text */
-  --text-main: #FFFFFF;
-  --text-muted: #D9D9E3;
-  --text-dim: #9EA1B0;
+  /* ---- Çizgiler ---- */
+  --line:        oklch(0.315 0.013 264);
+  --line-strong: oklch(0.400 0.014 264);
 
-  /* Accent - Turquoise */
-  --accent: #0CC1C3;
-  --accent-dark: #0BAFB3;
-  --accent-bright: #16D4D8;
-  --accent-cyan: #00E5FF;
+  /* ---- Mürekkep ---- */
+  --ink:   oklch(0.970 0.004 264);
+  --ink-2: oklch(0.760 0.012 264);
+  /* 0.60 idi; --surface-2 üzerinde 4.11:1 ile AA eşiğinin altında kalıyordu. */
+  --ink-3: oklch(0.625 0.014 264);
 
-  /* Blue Chart Colors */
-  --blue-main: #2E86FF;
-  --blue-dark: #1A63E8;
-  --blue-light: #3E9BFF;
-  --blue-teal: #0A7DAF;
+  /* ---- Vurgu: tek eylem rengi ---- */
+  /* İki mavi, iki iş:
+     --accent koyu zemin üzerinde METİN/veri rengi (kontrast 4.5:1 üstü),
+     --accent-solid ise DOLGU rengi; üstünde beyaz metin 4.59:1 veriyor.
+     Tek maviyle ikisi birden sağlanamıyordu: parlak mavi üstünde beyaz 3.5:1,
+     koyu mavi ise metin olarak zeminde sönük kalıyor.
+     L 0.575 idi; tarayıcının gamut eşlemesiyle ölçülen gerçek değer 4.36:1
+     çıkıyordu, yani yorumun vaat ettiği eşiğin altında. 0.565'e indirildi. */
+  --accent:        oklch(0.635 0.191 258);
+  --accent-hover:  oklch(0.685 0.181 258);
+  --accent-solid:  oklch(0.565 0.200 258);
+  --accent-press:  oklch(0.520 0.185 258);
+  --accent-quiet:  oklch(0.635 0.191 258 / 0.14);
+  --accent-faint:  oklch(0.635 0.191 258 / 0.07);
+  --on-accent:     oklch(0.990 0 0);
 
-  /* Passive Icon / UI */
-  --ui-passive: #4B4D63;
+  /* ---- Veri serileri. 5'ten fazlası gerekiyorsa gruplama yanlıştır. ---- */
+  --series-1: var(--accent);
+  --series-2: oklch(0.745 0.148 165);
+  --series-3: oklch(0.785 0.135 70);
+  --series-4: oklch(0.640 0.130 300);
+  --series-5: var(--ink-3);
 
-  /* Status Colors (derived from palette) */
-  --success: #0CC1C3;
-  --success-bg: rgba(12, 193, 195, 0.15);
-  --warning: #F5A623;
-  --warning-bg: rgba(245, 166, 35, 0.15);
-  --error: #E54D4D;
-  --error-bg: rgba(229, 77, 77, 0.15);
-  --info: #2E86FF;
-  --info-bg: rgba(46, 134, 255, 0.15);
+  /* ---- Durum ---- */
+  --success:    oklch(0.745 0.148 165);
+  --success-bg: oklch(0.745 0.148 165 / 0.14);
+  --warning:    oklch(0.785 0.135 70);
+  --warning-bg: oklch(0.785 0.135 70 / 0.14);
+  --error:      oklch(0.665 0.168 22);
+  --error-bg:   oklch(0.665 0.168 22 / 0.14);
+  --info:       var(--accent);
+  --info-bg:    var(--accent-quiet);
+  --series-4-bg: oklch(0.640 0.130 300 / 0.14);
 
-  /* Chart Colors */
-  --chart-1: var(--blue-main);
-  --chart-2: var(--blue-dark);
-  --chart-3: var(--blue-light);
-  --chart-4: var(--blue-teal);
-  --chart-5: var(--accent);
-  --chart-gradient-start: var(--blue-main);
-  --chart-gradient-end: rgba(46, 134, 255, 0.1);
+  /* ---- Rozet mürekkebi ----
+     Durum rengi kendi %14 tint'i üzerinde 2.90–4.10:1 veriyordu; AA gövde
+     eşiği 4.5:1. Sorun tint değil metnin açıklığıydı: alfa 0.04'e indirilse
+     bile error/accent/mor 3.7'de tıkanıyor. Çözüm --accent/--accent-solid
+     ayrımının aynısı: aynı hue, bir kademe açık, kroma hafif kısık
+     (L arttıkça kroma azalır).
+     Kural: durum rengi METİN ise bu token, dolgu/kenarlık/grafik serisi ise
+     base token. */
+  --success-ink:  oklch(0.795 0.144 165);
+  --warning-ink:  oklch(0.830 0.132 70);
+  --error-ink:    oklch(0.790 0.156 22);
+  --accent-ink:   oklch(0.765 0.177 258);
+  --info-ink:     var(--accent-ink);
+  --series-4-ink: oklch(0.755 0.122 300);
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.5);
-  --shadow-card: 0 4px 20px rgba(12, 193, 195, 0.08);
-  --shadow-glow: 0 0 20px rgba(12, 193, 195, 0.25);
+  /* ---- Dolgu varyantları: üzerinde beyaz metin ≥4.5:1 ----
+     Base renkler dolgu olarak kullanılınca beyaz metin 2.34–3.52:1'de
+     kalıyordu (numara dairesi, dolu rozet). */
+  --success-solid:  oklch(0.525 0.156 165);
+  --warning-solid:  oklch(0.565 0.142 70);
+  --error-solid:    oklch(0.580 0.172 22);
+  --series-4-solid: oklch(0.570 0.132 300);
 
-  /* Alias variables for component compatibility */
-  --card: var(--bg-card);
-  --foreground: var(--text-main);
-  --border: var(--border-soft);
-  --muted-foreground: var(--text-muted);
-  --primary: var(--accent);
-  --primary-light: var(--accent-bright);
-  --primary-dark: var(--accent-dark);
-  --secondary: var(--blue-main);
-  --secondary-light: var(--blue-light);
-  --secondary-dark: var(--blue-dark);
-  --bg-secondary: var(--bg-deep);
-  --bg-sidebar: var(--bg-deep);
-  --text-primary: var(--text-main);
-  --text-secondary: var(--text-muted);
-  --text-light: var(--text-main);
-  --border-light: var(--border-soft);
-  --border-primary: var(--accent);
-  --border-card: rgba(12, 193, 195, 0.15);
-
-  /* Border Radius Standards */
-  --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-
-  /* Yazı aileleri — koyu tema Poppins/Roboto ile gelir. */
-  --font-head: var(--font-poppins), system-ui, sans-serif;
-  --font-body: var(--font-poppins), system-ui, sans-serif;
-  --font-mono: var(--font-roboto), system-ui, sans-serif;
-
-  /* ESG LAB sözlüğü: yeni bileşenler marka kılavuzundaki adlarla yazılabilsin
-     diye mevcut token'lara bağlanır. Tek kaynak yine yukarıdaki değerlerdir. */
-  --bg: var(--bg-main);
-  --surface: var(--bg-card);
-  --surface-2: var(--bg-card-2);
-  --surface-3: var(--border-soft);
-  --line: var(--border-soft);
-  --line-strong: var(--ui-passive);
-  --ink: var(--text-main);
-  --ink-2: var(--text-muted);
-  --ink-3: var(--text-dim);
-  --accent-2: var(--accent-bright);
-  --accent-soft: rgba(12, 193, 195, 0.15);
-  --on-accent: var(--bg-deep);
-  --danger: var(--error);
-  --radius: var(--radius-lg);
+  /* ---- Köşe: dört token, başkası yok ---- */
+  --radius-xs:   6px;   /* input, chip, ikon kutusu */
+  --radius-sm:   6px;
+  --radius-md:   8px;   /* buton */
+  --radius-lg:  12px;   /* kart, panel */
+  --radius-xl:  12px;
   --radius-pill: 999px;
+  --radius: var(--radius-lg);
 
-  /* Ironman grafiği tuvale çizilir; JS bu değerleri okur.
-     Koyu temadaki değerler bugünkü grafiğin birebir aynısıdır. */
-  --chart-surface: #1e293b;
-  --chart-quadrant: #1e293b;
-  --chart-quadrant-hi: rgba(59, 130, 246, 0.08);
-  --chart-grid: rgba(100, 116, 139, 0.25);
-  --chart-axis-line: rgba(148, 163, 184, 0.3);
-  --chart-axis-text: #94a3b8;
-  --chart-label: #64748b;
-  --chart-label-hi: #818cf8;
-  --chart-ref: rgba(99, 102, 241, 0.5);
-  --chart-peer: rgba(96, 165, 250, 0.6);
-  --chart-point-ring: #ffffff;
+  /* ---- Gölge yok. Tek istisna dolu buton (refero kuralı). ---- */
+  --shadow-button: 0 1px 4px rgba(0, 0, 0, 0.16);
+  --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.55);
 
-  /* Pano kısayol kartları. Koyu temada bugünkü üç renkli gradyan; açık temada
-     marka üçlüsü: vurgu, mürekkep ve kenarlıklı beyaz. Turuncu-mavi-turuncu
-     dizilimi açık zeminde birbirini kesiyordu. */
-  --quick-1-bg: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  --quick-1-fg: #ffffff;
-  --quick-1-border: transparent;
-  --quick-2-bg: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
-  --quick-2-fg: #ffffff;
-  --quick-2-border: transparent;
-  --quick-3-bg: linear-gradient(135deg, var(--accent), var(--accent-dark));
-  --quick-3-fg: #ffffff;
-  --quick-3-border: transparent;
-
-  /* Veri serileri — kategorik palet, iki temada da aynı. */
-  --series-current: #ec4899;
-  --series-target: #3b82f6;
-  --series-sector-current: #8b5cf6;
-  --series-sector-target: #f97316;
-
-  /* Çok hafif vurgu zemini (tamamlanmış kart gibi) */
-  --accent-tint: rgba(12, 193, 195, 0.05);
-  /* Gölge/parıltı: vurgu renginin yarı saydam hâli */
-  --accent-glow: rgba(12, 193, 195, 0.3);
-
-  /* Olgunluk basamakları (Başlangıç → Lider). Sıralı veri olduğu için tek
-     marka ailesinde, sönükten parlağa ilerler: koyu zeminde yüksek basamak
-     daha parlak okunur. Önceki dizilim camgöbeği/turkuaz/gök mavisi karışımıydı
-     ve açıklık sırası bozuktu — Başlangıç en parlak, Lider ondan sönüktü. */
-  --level-1: #0a8f9c;
-  --level-2: #0bafb3;
-  --level-3: #0cc1c3;
-  --level-4: #22d3ee;
-  --level-5: #67e8f9;
-
-  /* İkincil vurgu (bölüm rozeti, kaydediliyor göstergesi) */
-  --accent-alt: #a78bfa;
-
-  /* Marka gradyanı — logo, aktif menü ve rozetlerde. */
-  --brand-gradient: linear-gradient(135deg, var(--accent), var(--blue-main));
-
-  /* 8 tabanlı boşluk skalası */
+  /* ---- Boşluk: 4px tabanlı ---- */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
-  --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
-}
+  --sp-5: 20px; --sp-6: 24px; --sp-7: 32px; --sp-8: 40px;
+  --sp-9: 48px; --sp-10: 64px;
 
-/* ===== AÇIK TEMA — "ESG LAB" =====
-   Koyu tema tek satır değişmez; açık tema aynı token adlarını marka
-   değerleriyle yeniden tanımlar. Uygulamadaki 3.400'den fazla `var(--…)`
-   kullanımı bu yüzden kendiliğinden uyum sağlar — bileşenlerde tema koşulu
-   yazmak gerekmez. Renkleri esg-lab-design-system.css'ten birebir gelir.
+  /* ---- Kabuk ölçüleri ---- */
+  --shell-sidebar: 248px;
+  --shell-sidebar-collapsed: 72px;
+  --shell-topbar: 64px;
+  --shell-gutter: 24px;
 
-   Seçici `html` ile sınırlı değil: tanıtım sayfası gibi tema tercihinden
-   bağımsız olarak marka kimliğiyle görünmesi gereken bölümler kendi
-   sarmalayıcısına data-theme="light" koyup paleti oracıkta açabilsin diye. */
-[data-theme="light"] {
-  --bg-main: #f6f8fb;
-  /* Koyuda "daha derin" olan yüzey, açıkta beyaz panele karşılık gelir;
-     ayrıca vurgu üzerindeki metin rengi de bu token'dan okunur. */
-  --bg-deep: #ffffff;
-  --bg-card: #ffffff;
-  --bg-card-2: #eef2f7;
+  /* ---- Hareket ---- */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-quart:  cubic-bezier(0.5, 0, 0.75, 0);
+  --dur-fast: 120ms;
+  --dur-base: 170ms;
+  --dur-slow: 260ms;
 
-  --border-soft: #e1e8f0;
-  --divider: #e1e8f0;
+  /* ---- Yığın sırası (z-index) ---- */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-backdrop: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
 
-  --text-main: #0d1a2d;
-  --text-muted: #46586e;
-  --text-dim: #7e8ea3;
+  /* ---- Yazı ---- */
+  --font-head: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-inter), system-ui, sans-serif;
 
-  --accent: #fa541c;
-  --accent-dark: #d8410f;
-  --accent-bright: #ff7a45;
-  --accent-cyan: #ff7a45;
+  --text-caption: 0.75rem;    /* 12 */
+  --text-sm:      0.8125rem;  /* 13 */
+  --text-body:    0.9375rem;  /* 15 */
+  --text-subhead: 1.125rem;   /* 18 */
+  --text-title:   1.375rem;   /* 22 */
+  --text-metric:  1.625rem;   /* 26 */
+  --text-display: 1.9375rem;  /* 31 */
+  --text-metric-lg: 2.125rem; /* 34 */
 
-  --blue-main: #2563eb;
-  --blue-dark: #1d4ed8;
-  --blue-light: #3b82f6;
-  --blue-teal: #0e7490;
+  /* ======================================================================
+     GERİYE DÖNÜK TAKMA ADLAR — eski bileşenler yeni paleti kendiliğinden alır
+     ====================================================================== */
+  --bg-main: var(--canvas);
+  --bg-deep: var(--rail);
+  --bg-card: var(--surface);
+  --bg-card-2: var(--surface-2);
+  --bg: var(--canvas);
+  --bg-secondary: var(--rail);
+  --bg-sidebar: var(--rail);
 
-  --ui-passive: #7e8ea3;
+  --border-soft: var(--line);
+  --divider: var(--line);
+  --border: var(--line);
+  --border-light: var(--line);
+  --border-card: var(--line);
+  --border-primary: var(--accent);
+  --input: var(--line-strong);
 
-  --success: #1f8a5b;
-  --success-bg: rgba(31, 138, 91, 0.12);
-  --warning: #c77700;
-  --warning-bg: rgba(199, 119, 0, 0.14);
-  --error: #d92d20;
-  --error-bg: rgba(217, 45, 32, 0.12);
-  --info: #2563eb;
-  --info-bg: rgba(37, 99, 235, 0.12);
+  --text-main: var(--ink);
+  --text-muted: var(--ink-2);
+  --text-dim: var(--ink-3);
+  --text-primary: var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-light: var(--ink);
+  --foreground: var(--ink);
+  --muted-foreground: var(--ink-2);
+  --card: var(--surface);
 
-  --chart-1: #2563eb;
-  --chart-2: #1d4ed8;
-  --chart-3: #3b82f6;
-  --chart-4: #0e7490;
-  --chart-5: #fa541c;
-  --chart-gradient-start: #2563eb;
-  --chart-gradient-end: rgba(37, 99, 235, 0.1);
+  --accent-dark: var(--accent-press);
+  --accent-bright: var(--accent-hover);
+  --accent-cyan: var(--accent-hover);
+  --accent-2: var(--accent-hover);
+  --accent-soft: var(--accent-quiet);
+  --accent-tint: var(--accent-faint);
+  --accent-glow: var(--accent-quiet);
+  --accent-alt: var(--series-4);
 
-  --shadow-sm: 0 1px 2px rgba(13, 26, 45, 0.05);
-  --shadow-md: 0 1px 2px rgba(13, 26, 45, 0.04), 0 8px 28px -12px rgba(13, 26, 45, 0.14);
-  --shadow-lg: 0 4px 12px rgba(13, 26, 45, 0.08), 0 24px 60px -20px rgba(13, 26, 45, 0.28);
-  --shadow-card: 0 1px 2px rgba(13, 26, 45, 0.05);
-  --shadow-glow: 0 1px 2px rgba(13, 26, 45, 0.04), 0 8px 28px -12px rgba(13, 26, 45, 0.14);
+  --primary: var(--accent);
+  --primary-light: var(--accent-hover);
+  --primary-dark: var(--accent-press);
+  --secondary: var(--series-2);
+  --secondary-light: oklch(0.795 0.132 165);
+  --secondary-dark: oklch(0.680 0.145 165);
 
-  --border-card: #e1e8f0;
+  --blue-main: var(--accent);
+  --blue-dark: var(--accent-press);
+  --blue-light: var(--accent-hover);
+  --blue-teal: var(--series-2);
 
-  /* Marka köşe ölçüleri: kart 14, küçük 9 */
-  --radius-sm: 9px;
-  --radius-md: 12px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  --ui-passive: var(--ink-3);
+  --danger: var(--error);
 
-  --font-head: var(--font-space-grotesk), system-ui, sans-serif;
-  --font-body: var(--font-plex-sans), system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --surface-3-legacy: var(--surface-3);
+  --line-legacy: var(--line);
 
-  --line-strong: #cdd8e4;
-  --accent-soft: rgba(250, 84, 28, 0.12);
-  /* Turuncu ile mavi arasındaki geçiş açık zeminde çamurlu duruyor;
-     marka gradyanı burada turuncunun kendi tonlarıyla kurulur. */
-  --brand-gradient: linear-gradient(135deg, var(--accent), var(--accent-bright));
-  /* Mor, açık kurumsal palette yok; ikincil vurgu markanın mavisidir. */
-  --accent-alt: var(--blue-main);
-  /* Açık zeminde parlak turkuazlar okunmuyor; basamaklar açıktan koyuya
-     giden tek renkli mavi bir skalaya çevrildi — olgunluk arttıkça koyulaşır. */
-  --quick-1-bg: var(--accent);
-  --quick-1-fg: #ffffff;
+  /* Eski gölge adları: pano artık gölgesiz, hepsi kenarlığa/yüzeye düşer. */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: var(--shadow-overlay);
+  --shadow-card: none;
+  --shadow-glow: none;
+
+  /* Marka gradyanı yalnızca alan grafiği dolgusunda anlamlı; düz renge indi. */
+  --brand-gradient: var(--accent);
+
+  /* Grafik token'ları */
+  --chart-1: var(--series-1);
+  --chart-2: var(--series-2);
+  --chart-3: var(--series-3);
+  --chart-4: var(--series-4);
+  --chart-5: var(--series-5);
+  --chart-gradient-start: oklch(0.635 0.191 258 / 0.22);
+  --chart-gradient-end: oklch(0.635 0.191 258 / 0);
+  --chart-surface: var(--surface);
+  --chart-quadrant: var(--surface-2);
+  --chart-quadrant-hi: var(--accent-faint);
+  --chart-grid: oklch(0.315 0.013 264 / 0.8);
+  --chart-axis-line: var(--line-strong);
+  --chart-axis-text: var(--ink-3);
+  --chart-label: var(--ink-3);
+  --chart-label-hi: var(--accent);
+  --chart-ref: oklch(0.635 0.191 258 / 0.5);
+  --chart-peer: oklch(0.745 0.148 165 / 0.6);
+  --chart-point-ring: var(--surface);
+
+  /* Kıyaslama serileri: mavi/yeşil ayrımı renk körlüğünde de ayrışır. */
+  --series-current: var(--accent);
+  --series-target: var(--series-2);
+  --series-sector-current: var(--series-4);
+  --series-sector-target: var(--series-3);
+
+  /* Olgunluk basamakları: tek renkli mavi rampa — seviye arttıkça parlar. */
+  --level-1: oklch(0.430 0.075 258);
+  --level-2: oklch(0.500 0.110 258);
+  --level-3: oklch(0.570 0.150 258);
+  --level-4: oklch(0.635 0.191 258);
+  --level-5: oklch(0.720 0.165 258);
+
+  /* Pano kısayol kartları: dolu vurgu, ikincil yüzey, kenarlıklı yüzey. */
+  --quick-1-bg: var(--accent-solid);
+  --quick-1-fg: var(--on-accent);
   --quick-1-border: transparent;
-  --quick-2-bg: var(--text-main);
-  --quick-2-fg: #ffffff;
+  --quick-2-bg: var(--surface-2);
+  --quick-2-fg: var(--ink);
   --quick-2-border: transparent;
-  --quick-3-bg: var(--bg-card);
-  --quick-3-fg: var(--text-main);
+  --quick-3-bg: transparent;
+  --quick-3-fg: var(--ink);
   --quick-3-border: var(--line-strong);
-
-  --chart-surface: #ffffff;
-  --chart-quadrant: #f6f8fb;
-  --chart-quadrant-hi: rgba(250, 84, 28, 0.07);
-  --chart-grid: rgba(13, 26, 45, 0.10);
-  --chart-axis-line: rgba(13, 26, 45, 0.18);
-  --chart-axis-text: #46586e;
-  --chart-label: #7e8ea3;
-  --chart-label-hi: #fa541c;
-  --chart-ref: rgba(37, 99, 235, 0.45);
-  --chart-peer: rgba(37, 99, 235, 0.45);
-
-  --accent-tint: rgba(250, 84, 28, 0.05);
-  --accent-glow: rgba(250, 84, 28, 0.25);
-  --level-1: #93c5fd;
-  --level-2: #60a5fa;
-  --level-3: #3b82f6;
-  --level-4: #2563eb;
-  --level-5: #1d4ed8;
-  /* Marka turuncusu üzerinde beyaz metin (kılavuzdaki --on-accent). */
-  --on-accent: #ffffff;
 }
-
-/* Vurgu rengi seçenekleri — açık temada geçerli, varsayılan turuncu. */
-html[data-theme="light"][data-accent="blue"]   { --accent: #2563eb; --accent-dark: #1d4ed8; --accent-bright: #3b82f6; --accent-soft: rgba(37, 99, 235, 0.12); }
-html[data-theme="light"][data-accent="indigo"] { --accent: #4f46e5; --accent-dark: #4338ca; --accent-bright: #6366f1; --accent-soft: rgba(79, 70, 229, 0.12); }
-html[data-theme="light"][data-accent="cyan"]   { --accent: #0e7490; --accent-dark: #0c5f75; --accent-bright: #0891b2; --accent-soft: rgba(14, 116, 144, 0.12); }
-html[data-theme="light"][data-accent="green"]  { --accent: #1f8a5b; --accent-dark: #19714a; --accent-bright: #22a06b; --accent-soft: rgba(31, 138, 91, 0.12); }
 
 [data-hydration-error] {
   display: none !important;
 }
 
-/* ===== BASE BODY STYLING ===== */
-html, body {
+/* ===== TABAN ===== */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+html,
+body {
   font-family: var(--font-body);
+  font-size: var(--text-body);
   font-weight: 400;
-  line-height: 1.5;
-  letter-spacing: 0.01em;
-  color: var(--text-main);
-  background: var(--bg-main);
+  line-height: 1.55;
+  /* Koyu zeminde açık metin ince görünür; ölçüsüz bir tık nefes payı. */
+  letter-spacing: 0.006em;
+  color: var(--ink);
+  background: var(--canvas);
   min-height: 100vh;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  font-kerning: normal;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* KPI ve sayısal veriler: temanın teknik yazı ailesi */
-.font-mono, .font-numeric, [data-numeric], .stat-number, .kpi-value {
-  font-family: var(--font-mono);
-  font-weight: 600;
+/* Sayılar sütun halinde değişirken zıplamasın. */
+.font-mono,
+.font-numeric,
+[data-numeric],
+.stat-number,
+.kpi-value,
+.tabular,
+table td,
+table th {
+  font-variant-numeric: tabular-nums;
 }
 
-/* Başlık fontları */
 h1, h2, h3, h4, h5, h6, .heading {
   font-family: var(--font-head);
   font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--text-main);
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  text-wrap: balance;
 }
 
-/* ===== ANIMATION UTILITIES ===== */
-.animate-count-up {
-  animation: countUp 1.5s ease-out forwards;
+h1 { font-size: var(--text-display); line-height: 1.15; letter-spacing: -0.02em; }
+h2 { font-size: var(--text-title);   line-height: 1.25; }
+h3 { font-size: var(--text-subhead); line-height: 1.3; }
+h4, h5, h6 { font-size: var(--text-body); line-height: 1.4; letter-spacing: 0; }
+
+p { text-wrap: pretty; }
+
+a { color: inherit; text-decoration: none; }
+
+::selection {
+  background: var(--accent-quiet);
+  color: var(--ink);
 }
 
-@keyframes countUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Klavye odağı her yerde aynı görünür. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 5px var(--accent); }
-  50% { box-shadow: 0 0 20px var(--accent), 0 0 30px var(--accent-bright); }
+/* ===== TİPOGRAFİ YARDIMCILARI ===== */
+.t-display { font-size: var(--text-display); font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; }
+.t-title   { font-size: var(--text-title);   font-weight: 600; line-height: 1.25; letter-spacing: -0.015em; }
+.t-subhead { font-size: var(--text-subhead); font-weight: 600; line-height: 1.3;  letter-spacing: -0.01em; }
+.t-body    { font-size: var(--text-body);    font-weight: 400; line-height: 1.55; }
+.t-sm      { font-size: var(--text-sm);      font-weight: 400; line-height: 1.5; }
+.t-label   { font-size: var(--text-sm);      font-weight: 500; line-height: 1.4; letter-spacing: 0; }
+.t-caption {
+  font-size: var(--text-caption);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.t-metric {
+  font-size: var(--text-metric);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.t-metric-lg {
+  font-size: var(--text-metric-lg);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
+/* ===== HAREKET ===== */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
+  0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
-.animate-shimmer {
-  background: linear-gradient(90deg, var(--bg-card) 0%, var(--bg-card-2) 50%, var(--bg-card) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
 }
 
-/* ===== CARD STYLES ===== */
+.animate-count-up { animation: countUp var(--dur-slow) var(--ease-out-quart) forwards; }
+.animate-shimmer {
+  background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+/* Parıltı animasyonu kaldırıldı; adı kalan yerler sessizce hiçbir şey yapar. */
+.animate-pulse-glow { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ===== KART ===== */
 .theme-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  transition: all 0.3s ease;
+  transition: border-color var(--dur-base) var(--ease-out-quart);
 }
 
 .theme-card:hover {
-  border-color: var(--accent);
-  box-shadow: var(--shadow-glow);
-  transform: translateY(-2px);
+  border-color: var(--line-strong);
 }
 
 .theme-card-primary {
-  background: var(--bg-card);
+  background: var(--surface);
   border: 1px solid var(--accent);
   border-radius: var(--radius-lg);
-  box-shadow: 0 0 20px rgba(12, 193, 195, 0.15);
 }
 
+/* Kart içi ikincil blok — iç içe kart değil, kenarlıksız yüzey. */
 .theme-card-secondary {
-  background: var(--bg-card-2);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  border: 0;
+  border-radius: var(--radius-md);
 }
 
-/* ===== PROGRESS BAR ===== */
+/* ===== İLERLEME ÇUBUĞU ===== */
 .progress-bar {
-  height: 8px;
-  border-radius: 4px;
+  height: 6px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
-  background: var(--bg-card-2);
+  background: var(--surface-2);
 }
 
 .progress-bar-fill {
   height: 100%;
-  border-radius: 4px;
-  transition: width 0.7s ease-out;
-  background: linear-gradient(90deg, var(--accent) 0%, var(--accent-bright) 100%);
-}
-
-/* ===== BUTTON STYLES ===== */
-/* Primary Button */
-.btn-primary {
-  @apply px-6 py-3 rounded-[var(--radius-md)] font-semibold transition-all duration-200;
+  border-radius: var(--radius-pill);
   background: var(--accent);
-  color: var(--bg-deep);
-  box-shadow: 0 4px 15px rgba(12, 193, 195, 0.3);
+  transition: width 600ms var(--ease-out-quart);
 }
 
-.btn-primary:hover {
-  background: var(--accent-bright);
-  box-shadow: 0 6px 20px rgba(12, 193, 195, 0.4);
-  transform: translateY(-1px);
+/* ===== BUTONLAR ===== */
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] font-medium;
+  padding: 10px 16px;
+  font-size: var(--text-body);
+  background: var(--accent-solid);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-button);
+  transition: background-color var(--dur-fast) var(--ease-out-quart);
 }
 
-.btn-primary:active {
-  background: var(--accent-dark);
-  transform: translateY(0);
-}
-
-.btn-primary:focus-visible {
-  outline: 2px solid var(--accent-cyan);
-  outline-offset: 2px;
-}
-
+.btn-primary:hover { background: var(--accent); }
+.btn-primary:active { background: var(--accent-press); }
 .btn-primary:disabled {
-  background: var(--ui-passive);
-  color: var(--text-dim);
-  cursor: not-allowed;
+  background: var(--surface-2);
+  color: var(--ink-3);
   box-shadow: none;
-  opacity: 0.6;
-}
-
-/* Secondary/Outline Button */
-.btn-secondary, .btn-outline {
-  @apply px-6 py-3 rounded-[var(--radius-md)] font-semibold transition-all duration-200;
-  background: transparent;
-  border: 2px solid var(--accent);
-  color: var(--accent);
-}
-
-.btn-secondary:hover, .btn-outline:hover {
-  background: rgba(12, 193, 195, 0.1);
-  border-color: var(--accent-bright);
-  color: var(--accent-bright);
-}
-
-.btn-secondary:active, .btn-outline:active {
-  background: rgba(12, 193, 195, 0.15);
-}
-
-.btn-secondary:disabled, .btn-outline:disabled {
-  border-color: var(--ui-passive);
-  color: var(--text-dim);
   cursor: not-allowed;
-  opacity: 0.6;
 }
 
-/* Ghost/Tertiary Button */
+.btn-secondary,
+.btn-outline {
+  @apply inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] font-medium;
+  padding: 10px 16px;
+  font-size: var(--text-body);
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  transition: background-color var(--dur-fast) var(--ease-out-quart),
+              border-color var(--dur-fast) var(--ease-out-quart);
+}
+
+.btn-secondary:hover,
+.btn-outline:hover {
+  background: var(--surface-2);
+  border-color: var(--ink-3);
+}
+
+.btn-secondary:active,
+.btn-outline:active { background: var(--surface-3); }
+
+.btn-secondary:disabled,
+.btn-outline:disabled { opacity: 0.45; cursor: not-allowed; }
+
 .btn-ghost {
-  @apply px-4 py-2 rounded-[var(--radius-md)] font-medium transition-all duration-200;
-  background: transparent;
-  color: var(--text-muted);
+  @apply inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] font-medium;
+  padding: 8px 12px;
+  font-size: var(--text-body);
+  color: var(--ink-2);
+  transition: background-color var(--dur-fast) var(--ease-out-quart),
+              color var(--dur-fast) var(--ease-out-quart);
 }
 
-.btn-ghost:hover {
-  background: var(--bg-card-2);
-  color: var(--text-main);
-}
+.btn-ghost:hover { background: var(--surface-2); color: var(--ink); }
+.btn-ghost:active { background: var(--surface-3); }
 
-.btn-ghost:active {
-  background: var(--bg-card);
-}
-
-/* Icon Button */
 .icon-btn {
-  @apply p-2 rounded-[var(--radius-md)] transition-all duration-200;
-  background: rgba(12, 193, 195, 0.1);
-  color: var(--accent);
+  @apply inline-flex items-center justify-center rounded-[var(--radius-md)];
+  width: 36px;
+  height: 36px;
+  color: var(--ink-2);
+  transition: background-color var(--dur-fast) var(--ease-out-quart),
+              color var(--dur-fast) var(--ease-out-quart);
 }
 
-.icon-btn:hover {
-  background: rgba(12, 193, 195, 0.2);
-  color: var(--accent-bright);
-  transform: scale(1.05);
-}
+.icon-btn:hover { background: var(--surface-2); color: var(--ink); }
+.icon-btn:active { background: var(--surface-3); }
 
-.icon-btn:active {
-  background: rgba(12, 193, 195, 0.25);
-}
-
-/* ===== FORM ELEMENTS ===== */
-/* Input / Textarea */
-.theme-input {
-  @apply w-full px-4 py-3 rounded-[var(--radius-md)] transition-all duration-200 outline-none;
-  background: var(--bg-card-2);
-  border: 1px solid var(--border-soft);
-  color: var(--text-main);
-}
-
-.theme-input::placeholder {
-  color: var(--text-dim);
-}
-
-.theme-input:hover {
-  border-color: var(--ui-passive);
-}
-
-.theme-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
-}
-
-.theme-input:disabled {
-  background: var(--bg-deep);
-  color: var(--text-dim);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* Input States */
-.theme-input.error {
-  border-color: var(--error);
-  box-shadow: 0 0 0 3px var(--error-bg);
-}
-
-.theme-input.success {
-  border-color: var(--success);
-  box-shadow: 0 0 0 3px var(--success-bg);
-}
-
-.theme-input.warning {
-  border-color: var(--warning);
-  box-shadow: 0 0 0 3px var(--warning-bg);
-}
-
-/* Select/Dropdown */
+/* ===== FORM ===== */
+.theme-input,
 .theme-select {
-  @apply w-full px-4 py-3 rounded-[var(--radius-md)] transition-all duration-200 outline-none appearance-none;
-  background: var(--bg-card-2);
-  border: 1px solid var(--border-soft);
-  color: var(--text-main);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230CC1C3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 18px;
-  padding-right: 40px;
+  @apply w-full rounded-[var(--radius-xs)];
+  padding: 10px 12px;
+  font-size: var(--text-body);
+  background: var(--rail);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  transition: border-color var(--dur-fast) var(--ease-out-quart),
+              box-shadow var(--dur-fast) var(--ease-out-quart);
 }
 
-.theme-select:hover {
-  border-color: var(--ui-passive);
-}
+.theme-input::placeholder { color: var(--ink-3); }
+.theme-input:hover, .theme-select:hover { border-color: var(--ink-3); }
 
+.theme-input:focus,
 .theme-select:focus {
+  outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
+  box-shadow: 0 0 0 3px var(--accent-quiet);
 }
 
-/* Checkbox */
+.theme-input:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* `.theme-input`/.theme-select kendi `width` ve `padding` kurallarını yazıyor;
+   Tailwind yardımcıları aynı özgüllükte olduğu için sıra gereği kaybediyor.
+   Sık gereken iki kaçış yolu burada açıkça tanımlı. */
+.theme-input.w-auto,
+.theme-select.w-auto { width: auto; }
+.theme-input.error   { border-color: var(--error); }
+.theme-input.success { border-color: var(--success); }
+.theme-input.warning { border-color: var(--warning); }
+
 input[type="checkbox"] {
-  @apply w-5 h-5 rounded cursor-pointer appearance-none transition-all duration-200;
-  background: var(--bg-card-2);
-  border: 2px solid var(--border-soft);
+  @apply w-[18px] h-[18px] cursor-pointer appearance-none;
+  border-radius: 4px;
+  background: var(--rail);
+  border: 1px solid var(--line-strong);
+  transition: background-color var(--dur-fast) var(--ease-out-quart),
+              border-color var(--dur-fast) var(--ease-out-quart);
 }
 
 input[type="checkbox"]:checked {
   background: var(--accent);
   border-color: var(--accent);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23161628' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: center;
 }
 
-input[type="checkbox"]:focus-visible {
-  outline: 2px solid var(--accent-cyan);
-  outline-offset: 2px;
-}
-
-/* Radio */
 input[type="radio"] {
-  @apply w-5 h-5 rounded-full cursor-pointer appearance-none transition-all duration-200;
-  background: var(--bg-card-2);
-  border: 2px solid var(--border-soft);
+  @apply w-[18px] h-[18px] rounded-full cursor-pointer appearance-none;
+  background: var(--rail);
+  border: 1px solid var(--line-strong);
 }
 
 input[type="radio"]:checked {
-  background: var(--bg-card-2);
   border-color: var(--accent);
   box-shadow: inset 0 0 0 4px var(--accent);
 }
 
-input[type="radio"]:focus-visible {
-  outline: 2px solid var(--accent-cyan);
-  outline-offset: 2px;
-}
-
-/* Range Input */
 input[type="range"] {
-  @apply w-full h-2 rounded-full appearance-none cursor-pointer;
-  background: var(--bg-card-2);
+  @apply w-full h-1.5 rounded-full appearance-none cursor-pointer;
+  background: var(--surface-2);
 }
 
 input[type="range"]::-webkit-slider-thumb {
-  @apply appearance-none w-5 h-5 rounded-full cursor-pointer;
+  @apply appearance-none w-4 h-4 rounded-full cursor-pointer;
   background: var(--accent);
-  box-shadow: 0 2px 8px rgba(12, 193, 195, 0.4);
-  transition: all 0.2s ease;
+  transition: background-color var(--dur-fast) var(--ease-out-quart);
 }
 
-input[type="range"]::-webkit-slider-thumb:hover {
-  background: var(--accent-bright);
-  transform: scale(1.1);
-}
+input[type="range"]::-webkit-slider-thumb:hover { background: var(--accent-hover); }
 
-/* ===== TABLE STYLES ===== */
+/* ===== TABLO ===== */
 .theme-table {
   @apply w-full;
   border-collapse: separate;
@@ -613,548 +577,437 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .theme-table th {
-  @apply px-4 py-3 text-left text-sm font-semibold;
-  background: var(--bg-card);
-  color: var(--accent);
-  border-bottom: 1px solid var(--divider);
+  @apply px-4 py-2.5 text-left;
+  font-size: var(--text-caption);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--surface-2);
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--line);
 }
 
 .theme-table td {
-  @apply px-4 py-3 text-sm;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--divider);
+  @apply px-4 py-3;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  border-bottom: 1px solid var(--line);
 }
 
-.theme-table tr:hover td {
-  background: var(--bg-card-2);
-}
-
-.theme-table th.sorted {
-  color: var(--accent-bright);
-}
+.theme-table tr:hover td { background: var(--surface-2); }
+.theme-table th.sorted { color: var(--ink); }
 
 .theme-table th.sorted::after {
   content: '';
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   margin-left: 6px;
-  border-bottom: 2px solid var(--accent);
-  border-right: 2px solid var(--accent);
+  border-bottom: 1.5px solid var(--accent);
+  border-right: 1.5px solid var(--accent);
   transform: rotate(45deg);
 }
 
-/* ===== TAB STYLES ===== */
+/* ===== SEKME ===== */
 .theme-tabs {
-  @apply flex gap-1 p-1 rounded-[var(--radius-md)];
-  background: var(--bg-deep);
+  @apply flex gap-1;
+  border-bottom: 1px solid var(--line);
 }
 
 .theme-tab {
-  @apply px-4 py-2 rounded-[var(--radius-sm)] font-medium transition-all duration-200;
-  color: var(--text-dim);
+  @apply px-3 py-2.5 font-medium;
+  font-size: var(--text-sm);
+  color: var(--ink-3);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color var(--dur-fast) var(--ease-out-quart),
+              border-color var(--dur-fast) var(--ease-out-quart);
 }
 
-.theme-tab:hover:not(.active) {
-  color: var(--text-muted);
-  background: var(--bg-card-2);
-}
+.theme-tab:hover:not(.active) { color: var(--ink-2); }
 
 .theme-tab.active {
-  background: var(--bg-card);
-  color: var(--accent);
-  border-bottom: 2px solid var(--accent);
+  color: var(--ink);
+  border-bottom-color: var(--accent);
 }
 
-/* ===== BADGE STYLES ===== */
+/* ===== ROZET ===== */
 .badge {
-  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  @apply inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] font-medium;
+  padding: 3px 10px;
+  font-size: var(--text-caption);
+  letter-spacing: 0;
+  text-transform: none;
 }
 
-.badge-primary {
-  background: rgba(12, 193, 195, 0.15);
-  color: var(--accent);
+.badge-primary { background: var(--accent-quiet); color: var(--accent-hover); }
+.badge-success { background: var(--success-bg);  color: var(--success); }
+.badge-warning { background: var(--warning-bg);  color: var(--warning); }
+.badge-error   { background: var(--error-bg);    color: var(--error); }
+.badge-info    { background: var(--info-bg);     color: var(--accent-hover); }
+.badge-neutral { background: var(--surface-2);   color: var(--ink-2); }
+
+/* ===== KABUK YERLEŞİMİ =====
+   Sol menü ve üst şerit `position: fixed`. İçeriğin boşluğunu sayfalar değil,
+   kabuk açar: AppShell body'ye `shell-active` yazar, ölçü buradan gelir.
+   Böylece <Header /> çağıran her eski sayfa da doğru hizaya oturur. */
+body.shell-active {
+  padding-top: var(--shell-topbar);
 }
 
-.badge-success {
-  background: var(--success-bg);
-  color: var(--success);
+@media (min-width: 1024px) {
+  body.shell-active { padding-left: var(--shell-sidebar); }
+  body.shell-active.shell-collapsed { padding-left: var(--shell-sidebar-collapsed); }
+  body.shell-active [data-shell-topbar] { left: var(--shell-sidebar); }
+  body.shell-active.shell-collapsed [data-shell-topbar] { left: var(--shell-sidebar-collapsed); }
 }
 
-.badge-warning {
-  background: var(--warning-bg);
-  color: var(--warning);
+/* Kabuk içindeki sayfa gövdesi: 1200px'e kısılmaz, akışkan genişler. */
+body.shell-active main {
+  padding-inline: var(--shell-gutter);
+  padding-block: var(--sp-6);
+  /* Panonun genişliği akışkan; çok geniş ekranda satır uzunluğu kaçmasın
+     diye 1680'de durur. Sayfalar kendi max-w-* sınıfını yazmak zorunda değil. */
+  max-width: 1680px;
+  margin-inline: 0;
 }
 
-.badge-error {
-  background: var(--error-bg);
-  color: var(--error);
+@media (min-width: 1440px) {
+  body.shell-active main { padding-inline: var(--sp-7); }
 }
 
-.badge-info {
-  background: var(--info-bg);
-  color: var(--info);
-}
-
-/* ===== NAVIGATION / SIDEBAR ===== */
+/* ===== KABUK: SIDEBAR ===== */
 .sidebar {
-  background: var(--bg-deep);
+  background: var(--rail);
+  border-right: 1px solid var(--line);
+}
+
+.sidebar-group {
+  font-size: var(--text-caption);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 0 12px;
+  margin-bottom: 8px;
 }
 
 .sidebar-item {
-  @apply flex items-center gap-3 px-4 py-3 rounded-[var(--radius-md)] transition-all duration-200;
-  color: var(--ui-passive);
+  @apply relative flex items-center gap-3 rounded-[var(--radius-md)];
+  padding: 9px 12px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink-2);
+  transition: background-color var(--dur-fast) var(--ease-out-quart),
+              color var(--dur-fast) var(--ease-out-quart);
 }
 
-.sidebar-item:hover {
-  background: rgba(12, 193, 195, 0.05);
-  color: var(--text-muted);
-}
+.sidebar-item:hover { background: var(--surface-2); color: var(--ink); }
 
 .sidebar-item.active {
-  background: rgba(12, 193, 195, 0.1);
-  color: var(--accent);
-  border-left: 3px solid var(--accent);
+  background: var(--accent-quiet);
+  color: var(--ink);
 }
 
-.sidebar-item.active svg {
-  color: var(--accent);
+/* Sol gösterge yalnızca burada meşru: aktif menü satırının konum işareti. */
+.sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 18px;
+  border-radius: 0 2px 2px 0;
+  background: var(--accent);
 }
 
-/* ===== MODAL / DIALOG ===== */
+.sidebar-item.active svg { color: var(--accent); }
+
+/* ===== ÖRTÜ KATMANLARI ===== */
 .modal-backdrop {
-  @apply fixed inset-0 z-50 flex items-center justify-center;
-  background: rgba(22, 22, 40, 0.85);
-  backdrop-filter: blur(8px);
+  background: oklch(0.13 0.01 264 / 0.72);
+  z-index: var(--z-backdrop);
 }
 
 .modal-content {
-  background: var(--bg-card);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-}
-
-/* ===== TOAST / ALERT ===== */
-.toast {
-  background: var(--bg-card-2);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  color: var(--text-muted);
-}
-
-.toast-success {
-  border-left: 4px solid var(--success);
-}
-
-.toast-error {
-  border-left: 4px solid var(--error);
-}
-
-.toast-warning {
-  border-left: 4px solid var(--warning);
-}
-
-.toast-info {
-  border-left: 4px solid var(--accent);
-}
-
-/* ===== TOOLTIP ===== */
-.tooltip {
-  background: var(--bg-deep);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  padding: 8px 12px;
-  font-size: 0.875rem;
-  box-shadow: var(--shadow-md);
-}
-
-/* ===== CHARTS ===== */
-.chart-container {
-  background: var(--bg-card);
-  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 1.5rem;
+  box-shadow: var(--shadow-overlay);
+  z-index: var(--z-modal);
 }
 
-.chart-grid-line {
-  stroke: var(--border-soft);
-  stroke-opacity: 0.5;
+.dropdown-menu {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay);
+  overflow: hidden;
+  z-index: var(--z-dropdown);
 }
 
-.chart-axis-text {
-  fill: var(--text-dim);
-  font-size: 12px;
+.dropdown-item {
+  @apply px-3 py-2;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  transition: background-color var(--dur-fast) var(--ease-out-quart),
+              color var(--dur-fast) var(--ease-out-quart);
 }
 
+.dropdown-item:hover { background: var(--surface-2); color: var(--ink); }
+.dropdown-item.active { background: var(--accent-quiet); color: var(--ink); }
+
+.toast {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  box-shadow: var(--shadow-overlay);
+  z-index: var(--z-toast);
+}
+
+.toast-success { border-color: var(--success); }
+.toast-error   { border-color: var(--error); }
+.toast-warning { border-color: var(--warning); }
+.toast-info    { border-color: var(--accent); }
+
+.tooltip,
 .chart-tooltip {
-  background: var(--bg-deep);
-  border: 1px solid var(--border-soft);
-  color: var(--text-muted);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  padding: 8px 10px;
+  font-size: var(--text-sm);
+  box-shadow: var(--shadow-overlay);
+  z-index: var(--z-tooltip);
 }
 
-.chart-legend-active {
-  color: var(--accent);
+/* ===== GRAFİK ===== */
+.chart-container {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-5);
 }
 
-/* ===== STATS / KPI ===== */
+.chart-grid-line { stroke: var(--line); stroke-opacity: 0.8; }
+.chart-axis-text { fill: var(--ink-3); font-size: 12px; }
+.chart-legend-active { color: var(--ink); }
+
+/* ===== SAYI / KPI ===== */
 .stat-number {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 2.5rem;
-  color: var(--text-main);
+  font-weight: 600;
+  font-size: var(--text-metric-lg);
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-number-accent {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 2.5rem;
+  font-weight: 600;
+  font-size: var(--text-metric-lg);
+  letter-spacing: -0.025em;
   color: var(--accent);
+  font-variant-numeric: tabular-nums;
 }
 
 .kpi-value {
-  font-family: var(--font-mono);
   font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .metric-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  padding: 1.5rem;
-  transition: all 0.3s ease;
+  padding: var(--sp-5);
+  transition: border-color var(--dur-base) var(--ease-out-quart);
 }
 
-.metric-card:hover {
-  border-color: var(--accent);
-  box-shadow: var(--shadow-glow);
-}
+.metric-card:hover { border-color: var(--line-strong); }
 
-/* ===== SCROLLBAR ===== */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg-deep);
-  border-radius: 4px;
-}
-
+/* ===== KAYDIRMA ÇUBUĞU ===== */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: var(--ui-passive);
-  border-radius: 4px;
+  background: var(--line-strong);
+  border-radius: var(--radius-pill);
+  border: 3px solid var(--canvas);
 }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-dark);
-}
-
-/* ===== LOADING SPINNER ===== */
+/* ===== YÜKLEME ===== */
 .spinner {
-  @apply w-8 h-8 rounded-full animate-spin;
-  border: 3px solid var(--bg-card-2);
+  @apply w-5 h-5 rounded-full animate-spin;
+  border: 2px solid var(--surface-3);
   border-top-color: var(--accent);
 }
 
-/* ===== GLOW EFFECTS ===== */
-.glow-accent {
-  box-shadow: 0 0 20px rgba(12, 193, 195, 0.3);
-}
-
-.glow-blue {
-  box-shadow: 0 0 20px rgba(46, 134, 255, 0.3);
-}
-
-/* ===== EMPTY STATE ===== */
-.empty-state {
-  @apply flex flex-col items-center justify-center py-12 text-center;
-  color: var(--text-dim);
-}
-
-.empty-state svg {
-  color: var(--ui-passive);
-  margin-bottom: 1rem;
-}
-
-/* ===== SKELETON LOADING ===== */
 .skeleton {
-  background: linear-gradient(90deg, var(--bg-card) 0%, var(--bg-card-2) 50%, var(--bg-card) 100%);
+  background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: var(--radius-sm);
+  animation: shimmer 1.4s linear infinite;
+  border-radius: var(--radius-xs);
 }
 
-/* ===== DONUT/CIRCULAR PROGRESS ===== */
-.donut-chart {
-  @apply relative;
+/* Parıltı sınıfları artık görsel olarak sessiz — çağrı yerleri bozulmasın. */
+.glow-accent, .glow-blue { box-shadow: none; }
+
+/* ===== BOŞ DURUM ===== */
+.empty-state {
+  @apply flex flex-col items-center justify-center py-10 text-center;
+  color: var(--ink-2);
 }
 
-.donut-center {
-  @apply absolute inset-0 flex flex-col items-center justify-center;
-}
+.empty-state svg { color: var(--ink-3); margin-bottom: 12px; }
 
+/* ===== HALKA GRAFİK ===== */
+.donut-chart { @apply relative; }
+.donut-center { @apply absolute inset-0 flex flex-col items-center justify-center; }
 .donut-value {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 1.875rem;
-  color: var(--accent);
+  font-weight: 600;
+  font-size: var(--text-metric);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
-/* ===== NOTIFICATION DOT ===== */
+/* ===== BİLDİRİM NOKTASI ===== */
 .notification-dot {
-  @apply absolute -top-1 -right-1 w-4 h-4 rounded-full text-xs flex items-center justify-center;
+  @apply absolute rounded-full;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
   background: var(--error);
-  color: var(--text-main);
+  border: 2px solid var(--rail);
 }
 
-/* ===== PAGINATION ===== */
-.pagination {
-  @apply flex items-center gap-2;
-}
+/* ===== SAYFALAMA ===== */
+.pagination { @apply flex items-center gap-1; }
 
 .pagination-item {
-  @apply w-10 h-10 flex items-center justify-center rounded-[var(--radius-sm)] transition-all duration-200;
-  background: var(--bg-card);
-  color: var(--text-muted);
-  border: 1px solid var(--border-soft);
+  @apply w-9 h-9 flex items-center justify-center rounded-[var(--radius-md)];
+  font-size: var(--text-sm);
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid transparent;
+  transition: background-color var(--dur-fast) var(--ease-out-quart),
+              color var(--dur-fast) var(--ease-out-quart);
 }
 
-.pagination-item:hover:not(.active):not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
-}
+.pagination-item:hover:not(.active):not(:disabled) { background: var(--surface-2); color: var(--ink); }
+.pagination-item.active { background: var(--accent-solid); color: var(--on-accent); }
+.pagination-item:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.pagination-item.active {
-  background: var(--accent);
-  color: var(--bg-deep);
-  border-color: var(--accent);
-}
-
-.pagination-item:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ===== BREADCRUMB ===== */
-.breadcrumb {
-  @apply flex items-center gap-2 text-sm;
-  color: var(--text-dim);
-}
-
-.breadcrumb-item {
-  color: var(--text-dim);
-  transition: color 0.2s ease;
-}
-
-.breadcrumb-item:hover {
-  color: var(--accent);
-}
-
-.breadcrumb-item.active {
-  color: var(--text-main);
-}
-
-.breadcrumb-separator {
-  color: var(--ui-passive);
-}
+/* ===== KIRINTI YOLU ===== */
+.breadcrumb { @apply flex items-center gap-2; font-size: var(--text-sm); color: var(--ink-3); }
+.breadcrumb-item { color: var(--ink-3); transition: color var(--dur-fast) var(--ease-out-quart); }
+.breadcrumb-item:hover { color: var(--ink-2); }
+.breadcrumb-item.active { color: var(--ink); }
+.breadcrumb-separator { color: var(--line-strong); }
 
 /* ===== AVATAR ===== */
 .avatar {
   @apply rounded-full overflow-hidden flex items-center justify-center;
-  background: var(--bg-card-2);
-  border: 2px solid var(--border-soft);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
 }
 
-.avatar-text {
-  font-family: var(--font-head);
-  font-weight: 600;
-  color: var(--accent);
-}
+.avatar-text { font-weight: 600; color: var(--ink); }
 
-/* ===== LIST ===== */
+/* ===== LİSTE ===== */
 .list-item {
-  @apply flex items-center gap-3 px-4 py-3 transition-all duration-200;
-  border-bottom: 1px solid var(--divider);
+  @apply flex items-center gap-3 px-4 py-3;
+  border-bottom: 1px solid var(--line);
+  transition: background-color var(--dur-fast) var(--ease-out-quart);
 }
 
-.list-item:hover {
-  background: var(--bg-card-2);
-}
+.list-item:hover { background: var(--surface-2); }
 
-/* ===== DROPDOWN ===== */
-.dropdown-menu {
-  background: var(--bg-card);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
-}
-
-.dropdown-item {
-  @apply px-4 py-2 transition-all duration-200;
-  color: var(--text-muted);
-}
-
-.dropdown-item:hover {
-  background: var(--bg-card-2);
-  color: var(--text-main);
-}
-
-.dropdown-item.active {
-  background: rgba(12, 193, 195, 0.1);
-  color: var(--accent);
-}
-
-/* ===== AREA CHART GRADIENT ===== */
-.area-gradient {
-  fill: url(#areaGradient);
-}
-
-/* ===== NATIVE SELECT OVERRIDE ===== */
+/* ===== NATIVE FORM ÖĞELERİ ===== */
 select {
-  background: var(--bg-card-2) !important;
-  border: 1px solid var(--border-soft) !important;
-  color: var(--text-main) !important;
-  border-radius: var(--radius-md);
-  padding: 0.75rem 2.5rem 0.75rem 1rem;
+  background: var(--rail) !important;
+  border: 1px solid var(--line-strong) !important;
+  color: var(--ink) !important;
+  border-radius: var(--radius-xs);
+  padding: 9px 2.25rem 9px 12px;
+  font-size: var(--text-sm);
 }
 
 select:focus {
   border-color: var(--accent) !important;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
+  box-shadow: 0 0 0 3px var(--accent-quiet);
 }
 
 select option {
-  background: var(--bg-card) !important;
-  color: var(--text-main) !important;
-  padding: 0.5rem 1rem;
+  background: var(--surface) !important;
+  color: var(--ink) !important;
 }
 
-/* ===== NATIVE INPUT OVERRIDE ===== */
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
-  background: var(--bg-card-2);
-  border: 1px solid var(--border-soft);
-  color: var(--text-main);
+  background: var(--rail);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
 }
 
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
+  box-shadow: 0 0 0 3px var(--accent-quiet);
   outline: none;
 }
 
-/* ===== TABLE DATA CELLS ===== */
-table td, table th {
-  color: var(--text-main) !important;
+textarea {
+  background: var(--rail);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  border-radius: var(--radius-xs);
 }
 
-table tbody tr:hover {
-  background: var(--bg-card-2) !important;
-}
-
-/* ===== INFO BOX OVERRIDE ===== */
-.bg-blue-50, .bg-indigo-50, .bg-cyan-50 {
-  background: var(--bg-card-2) !important;
-  border: 1px solid var(--border-soft) !important;
-}
-
-
-/* ===== NATIVE SELECT OVERRIDE ===== */
-select {
-  background: var(--bg-card-2) !important;
-  border: 1px solid var(--border-soft) !important;
-  color: var(--text-main) !important;
-  border-radius: var(--radius-md);
-  padding: 0.75rem 2.5rem 0.75rem 1rem;
-}
-
-select:focus {
-  border-color: var(--accent) !important;
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
-}
-
-select option {
-  background: var(--bg-card) !important;
-  color: var(--text-main) !important;
-  padding: 0.5rem 1rem;
-}
-
-/* ===== NATIVE INPUT OVERRIDE ===== */
-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
-  background: var(--bg-card-2);
-  border: 1px solid var(--border-soft);
-  color: var(--text-main);
-}
-
-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus {
+textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.15);
+  box-shadow: 0 0 0 3px var(--accent-quiet);
   outline: none;
 }
 
-/* ===== TABLE DATA CELLS ===== */
-table td, table th {
-  color: var(--text-main) !important;
-}
-
-table tbody tr:hover {
-  background: var(--bg-card-2) !important;
-}
-
-/* ===== INFO BOX OVERRIDE ===== */
+/* ===== ESKİ TAILWIND GRİ SINIFLARI =====
+   Depoda hâlâ bg-white / text-gray-600 gibi açık tema sınıfları var; hepsi
+   tek tek temizlenene kadar koyu palete çevriliyor. Yeni kodda kullanılmaz. */
+.bg-white { background-color: var(--surface) !important; }
+.bg-gray-50, .bg-slate-50,
+.bg-gray-100, .bg-slate-100 { background-color: var(--surface-2) !important; }
+.bg-gray-200, .bg-slate-200 { background-color: var(--surface-3) !important; }
 .bg-blue-50, .bg-indigo-50, .bg-cyan-50 {
-  background: var(--bg-card-2) !important;
-  border: 1px solid var(--border-soft) !important;
+  background-color: var(--accent-quiet) !important;
+  border: 1px solid var(--line) !important;
 }
 
-/* ===== FORCE DARK THEME OVERRIDES ===== */
-/* These overrides ensure all Tailwind gray utilities use our dark theme colors */
+.text-gray-900, .text-slate-900,
+.text-gray-800, .text-slate-800 { color: var(--ink) !important; }
+.text-gray-700, .text-slate-700,
+.text-gray-600, .text-slate-600 { color: var(--ink-2) !important; }
+.text-gray-500, .text-slate-500,
+.text-gray-400, .text-slate-400,
+.text-gray-300, .text-slate-300 { color: var(--ink-3) !important; }
 
-/* Background color overrides */
-.bg-white { background-color: var(--bg-card) !important; }
-.bg-gray-50, .bg-slate-50 { background-color: var(--bg-card-2) !important; }
-.bg-gray-100, .bg-slate-100 { background-color: var(--bg-card-2) !important; }
-.bg-gray-200, .bg-slate-200 { background-color: var(--border-soft) !important; }
+.border-gray-100, .border-slate-100,
+.border-gray-200, .border-slate-200,
+.border-gray-300, .border-slate-300 { border-color: var(--line) !important; }
 
-/* Text color overrides */
-.text-gray-900, .text-slate-900 { color: var(--text-main) !important; }
-.text-gray-800, .text-slate-800 { color: var(--text-main) !important; }
-.text-gray-700, .text-slate-700 { color: var(--text-muted) !important; }
-.text-gray-600, .text-slate-600 { color: var(--text-muted) !important; }
-.text-gray-500, .text-slate-500 { color: var(--text-dim) !important; }
-.text-gray-400, .text-slate-400 { color: var(--text-dim) !important; }
-.text-gray-300, .text-slate-300 { color: var(--ui-passive) !important; }
+.divide-gray-200 > * + *, .divide-slate-200 > * + * { border-color: var(--line) !important; }
+.ring-gray-300 { --tw-ring-color: var(--line) !important; }
 
-/* Border color overrides */
-.border-gray-200, .border-slate-200 { border-color: var(--border-soft) !important; }
-.border-gray-300, .border-slate-300 { border-color: var(--border-soft) !important; }
-.border-gray-100, .border-slate-100 { border-color: var(--border-soft) !important; }
+.hover\:bg-gray-50:hover, .hover\:bg-slate-50:hover,
+.hover\:bg-gray-100:hover, .hover\:bg-slate-100:hover { background-color: var(--surface-2) !important; }
+.hover\:bg-gray-200:hover, .hover\:bg-slate-200:hover { background-color: var(--surface-3) !important; }
+.hover\:text-gray-900:hover, .hover\:text-slate-900:hover { color: var(--ink) !important; }
 
-/* Divide color overrides */
-.divide-gray-200 > * + *, .divide-slate-200 > * + * { border-color: var(--border-soft) !important; }
-
-/* Ring color overrides */
-.ring-gray-300 { --tw-ring-color: var(--border-soft) !important; }
-
-/* Hover state overrides */
-.hover\:bg-gray-50:hover, .hover\:bg-slate-50:hover { background-color: var(--bg-card-2) !important; }
-.hover\:bg-gray-100:hover, .hover\:bg-slate-100:hover { background-color: var(--bg-card-2) !important; }
-.hover\:bg-gray-200:hover, .hover\:bg-slate-200:hover { background-color: var(--bg-card) !important; }
-.hover\:text-gray-900:hover, .hover\:text-slate-900:hover { color: var(--text-main) !important; }
-
-/* Focus states */
 .focus\:ring-gray-300:focus { --tw-ring-color: var(--accent) !important; }
 .focus\:border-gray-300:focus { border-color: var(--accent) !important; }
 
-/* Placeholder colors */
-.placeholder-gray-400::placeholder, .placeholder\:text-gray-400::placeholder { color: var(--text-dim) !important; }
-.placeholder-gray-500::placeholder, .placeholder\:text-gray-500::placeholder { color: var(--text-dim) !important; }
-
-/* Remove all dark: variants - force single theme */
-[class*="dark:"] { /* Dark mode variants are disabled via theme overrides */ }
+.placeholder-gray-400::placeholder, .placeholder\:text-gray-400::placeholder,
+.placeholder-gray-500::placeholder, .placeholder\:text-gray-500::placeholder { color: var(--ink-3) !important; }

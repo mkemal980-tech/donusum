@@ -71,8 +71,8 @@ const STATUS_LABEL: Record<SectionStatus, string> = {
 
 const STATUS_STYLE: Record<SectionStatus, string> = {
   EMPTY: "bg-[var(--bg-card-2)] text-[var(--text-dim)] border-[var(--border-soft)]",
-  IN_PROGRESS: "bg-[var(--warning-bg)] text-[var(--warning)] border-[var(--warning)]/30",
-  DONE: "bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/50",
+  IN_PROGRESS: "bg-[var(--warning-bg)] text-[var(--warning-ink)] border-[var(--warning)]/30",
+  DONE: "bg-[var(--accent-soft)] text-[var(--accent-ink)] border-[var(--accent)]/50",
 };
 
 /** İnce ilerleme çubuğu — satır yüksekliğini büyütmeden doluluk göstersin. */
@@ -343,7 +343,7 @@ export default function SectionAssignmentsPage() {
         </button>
 
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[var(--text-main)] mb-1">Görev Dağılımı</h1>
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>Görev dağılımı</h1>
           <p className="text-[var(--text-muted)]">
             Anketin hangi bölümünü kimin dolduracağını belirleyin, nerede kalındığını takip edin.
           </p>
@@ -430,7 +430,7 @@ export default function SectionAssignmentsPage() {
         )}
 
         {!loading && !isCoordinator && (
-          <div className="mb-4 p-3 rounded-lg bg-[var(--warning-bg)] border border-[var(--warning)]/30 text-sm text-[var(--warning)]">
+          <div className="mb-4 p-3 rounded-lg bg-[var(--warning-bg)] border border-[var(--warning)]/30 text-sm text-[var(--warning-ink)]">
             Görev dağıtma yetkiniz yok; bu tablo yalnızca bilgi amaçlıdır. Değişiklik için birim
             yöneticinizle görüşün.
           </div>
@@ -441,7 +441,7 @@ export default function SectionAssignmentsPage() {
             <div className="w-10 h-10 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : sections.length === 0 ? (
-          <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-8 text-center">
+          <div className="theme-card p-8 text-center">
             <Users size={48} className="mx-auto text-[var(--ui-passive)] mb-4" />
             <h2 className="text-lg font-semibold text-[var(--text-muted)] mb-2">
               Dağıtılacak bölüm yok
@@ -453,7 +453,7 @@ export default function SectionAssignmentsPage() {
         ) : (
           <div className="space-y-4">
             {/* Kuruluşun bu anketteki durumu — panonun tek satırlık özeti. */}
-            <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-4">
+            <div className="theme-card p-4">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="font-semibold text-[var(--text-main)]">Anketin durumu</h2>
                 <span className="text-sm text-[var(--text-muted)] tabular-nums">
@@ -474,7 +474,7 @@ export default function SectionAssignmentsPage() {
               return (
               <div
                 key={category.id}
-                className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden"
+                className="theme-card overflow-hidden"
               >
                 <div className="px-4 py-3 border-b border-[var(--border-soft)] flex flex-wrap items-center justify-between gap-2">
                   <h2 className="font-semibold text-[var(--text-main)]">{category.name}</h2>
@@ -556,7 +556,7 @@ export default function SectionAssignmentsPage() {
             })}
 
             {workload.length > 0 && (
-              <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-4">
+              <div className="theme-card p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                   <div>
                     <h2 className="font-semibold text-[var(--text-main)] mb-1">
@@ -619,7 +619,7 @@ export default function SectionAssignmentsPage() {
 
             {/* Gönderim: akışın sonu, o yüzden ekranın da sonunda. */}
             {isCoordinator && !locked && (
-              <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-4">
+              <div className="theme-card p-4">
                 <h2 className="font-semibold text-[var(--text-main)] mb-1">
                   Değerlendirmeyi gönder
                 </h2>

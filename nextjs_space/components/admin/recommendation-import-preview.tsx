@@ -169,7 +169,7 @@ export default function RecommendationImportPreview({
       {/* Özet */}
       <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg bg-[var(--bg-card-2)] border border-[var(--border-soft)]">
         {payload.source === "ai" && (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-semibold bg-[var(--accent-soft)] text-[var(--accent-ink)]">
             <Sparkles size={13} /> AI taslağı
           </span>
         )}
@@ -291,7 +291,7 @@ export default function RecommendationImportPreview({
                 <span className="text-xs text-[var(--text-dim)]">Satır {index + 1}</span>
                 <button
                   onClick={() => removeRow(index)}
-                  className="p-1 rounded hover:bg-[var(--error-bg)] text-[var(--error)]"
+                  className="p-1 rounded hover:bg-[var(--error-bg)] text-[var(--error-ink)]"
                   title="Satırı çıkar"
                 >
                   <Trash2 size={14} />

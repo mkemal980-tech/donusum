@@ -28,6 +28,7 @@ const config: Config = {
         // Accent Turquoise
         'accent': {
           DEFAULT: 'var(--accent)',
+          solid: 'var(--accent-solid)',
           dark: 'var(--accent-dark)',
           bright: 'var(--accent-bright)',
           cyan: 'var(--accent-cyan)',
@@ -44,42 +45,44 @@ const config: Config = {
         // UI Passive
         'ui-passive': 'var(--ui-passive)',
         
-        // Legacy compatibility
+        /* Sayısal basamaklar tek mavi rampadır; eski turkuaz değerler
+           kaldırıldı, depoda kalan primary-500 gibi çağrılar da maviye iner. */
         primary: {
-          50: '#e6fafa',
-          100: '#ccf5f5',
-          200: '#99ebeb',
-          300: '#66e0e0',
-          400: '#33d6d6',
-          500: '#0CC1C3',
-          600: '#0BAFB3',
-          700: '#099a9c',
-          800: '#078586',
-          900: '#056f70',
+          50:  'oklch(0.960 0.020 258)',
+          100: 'oklch(0.900 0.045 258)',
+          200: 'oklch(0.830 0.080 258)',
+          300: 'oklch(0.760 0.120 258)',
+          400: 'oklch(0.700 0.165 258)',
+          500: 'var(--accent)',
+          600: 'var(--accent-solid)',
+          700: 'oklch(0.510 0.165 258)',
+          800: 'oklch(0.430 0.130 258)',
+          900: 'oklch(0.340 0.095 258)',
           DEFAULT: 'var(--accent)',
-          foreground: 'var(--bg-deep)',
+          foreground: 'var(--on-accent)',
         },
+        /* İkincil = 2. veri serisi (yeşil). Eylem rengi değildir. */
         secondary: {
-          50: '#e8f4ff',
-          100: '#d1e9ff',
-          200: '#a3d3ff',
-          300: '#75bdff',
-          400: '#47a7ff',
-          500: '#2E86FF',
-          600: '#1A63E8',
-          700: '#1550c0',
-          800: '#103d99',
-          900: '#0b2a71',
-          DEFAULT: 'var(--blue-main)',
-          foreground: '#ffffff',
+          50:  'oklch(0.955 0.025 165)',
+          100: 'oklch(0.900 0.050 165)',
+          200: 'oklch(0.850 0.085 165)',
+          300: 'oklch(0.800 0.115 165)',
+          400: 'oklch(0.775 0.135 165)',
+          500: 'var(--series-2)',
+          600: 'oklch(0.680 0.145 165)',
+          700: 'oklch(0.590 0.130 165)',
+          800: 'oklch(0.490 0.105 165)',
+          900: 'oklch(0.390 0.080 165)',
+          DEFAULT: 'var(--series-2)',
+          foreground: 'var(--canvas)',
         },
         
         // Background colors
         background: {
-          DEFAULT: 'var(--bg-main)',
-          secondary: 'var(--bg-deep)',
-          card: 'var(--bg-card)',
-          sidebar: 'var(--bg-deep)',
+          DEFAULT: 'var(--canvas)',
+          secondary: 'var(--rail)',
+          card: 'var(--surface)',
+          sidebar: 'var(--rail)',
         },
         
         // Card colors
@@ -97,31 +100,31 @@ const config: Config = {
         
         // Status colors
         success: {
-          50: 'rgba(12, 193, 195, 0.1)',
-          100: 'rgba(12, 193, 195, 0.15)',
+          50: 'var(--success-bg)',
+          100: 'var(--success-bg)',
           500: 'var(--success)',
-          600: '#0BAFB3',
+          600: 'oklch(0.680 0.145 165)',
           DEFAULT: 'var(--success)',
         },
         warning: {
-          50: 'rgba(245, 166, 35, 0.1)',
-          100: 'rgba(245, 166, 35, 0.15)',
+          50: 'var(--warning-bg)',
+          100: 'var(--warning-bg)',
           500: 'var(--warning)',
-          600: '#D99520',
+          600: 'oklch(0.710 0.130 70)',
           DEFAULT: 'var(--warning)',
         },
         error: {
-          50: 'rgba(229, 77, 77, 0.1)',
-          100: 'rgba(229, 77, 77, 0.15)',
+          50: 'var(--error-bg)',
+          100: 'var(--error-bg)',
           500: 'var(--error)',
-          600: '#CC4444',
+          600: 'oklch(0.600 0.170 22)',
           DEFAULT: 'var(--error)',
         },
         info: {
-          50: 'rgba(46, 134, 255, 0.1)',
-          100: 'rgba(46, 134, 255, 0.15)',
+          50: 'var(--info-bg)',
+          100: 'var(--info-bg)',
           500: 'var(--info)',
-          600: '#1A63E8',
+          600: 'var(--accent-press)',
           DEFAULT: 'var(--info)',
         },
         
@@ -133,8 +136,8 @@ const config: Config = {
         
         // Muted
         muted: {
-          DEFAULT: 'var(--bg-card-2)',
-          foreground: 'var(--text-dim)',
+          DEFAULT: 'var(--surface-2)',
+          foreground: 'var(--ink-3)',
         },
         
         // Popover
@@ -144,11 +147,36 @@ const config: Config = {
         },
         
         // Input
-        input: 'var(--border-soft)',
+        input: 'var(--line-strong)',
         
         // Ring
-        ring: 'var(--accent-cyan)',
+        ring: 'var(--accent)',
         
+        // Anlamsal yüzey/mürekkep adları — yeni kod bunları kullanır.
+        canvas: 'var(--canvas)',
+        rail: 'var(--rail)',
+        surface: {
+          DEFAULT: 'var(--surface)',
+          2: 'var(--surface-2)',
+          3: 'var(--surface-3)',
+        },
+        line: {
+          DEFAULT: 'var(--line)',
+          strong: 'var(--line-strong)',
+        },
+        ink: {
+          DEFAULT: 'var(--ink)',
+          2: 'var(--ink-2)',
+          3: 'var(--ink-3)',
+        },
+        series: {
+          1: 'var(--series-1)',
+          2: 'var(--series-2)',
+          3: 'var(--series-3)',
+          4: 'var(--series-4)',
+          5: 'var(--series-5)',
+        },
+
         // Chart colors
         chart: {
           '1': 'var(--chart-1)',
@@ -158,38 +186,75 @@ const config: Config = {
           '5': 'var(--chart-5)',
         },
       },
+      /* Dört token dışına çıkılmaz (bkz. DESIGN.md > Radius). Depoda kalan
+         rounded-2xl / rounded-3xl çağrıları da kart yarıçapına iner. */
       borderRadius: {
-        lg: 'var(--radius-lg)',
+        none: '0',
+        sm: 'var(--radius-xs)',
+        DEFAULT: 'var(--radius-xs)',
         md: 'var(--radius-md)',
-        sm: 'var(--radius-sm)',
-        xl: 'var(--radius-xl)',
-        '2xl': '1.5rem',
-        '3xl': '2rem',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-lg)',
+        '2xl': 'var(--radius-lg)',
+        '3xl': 'var(--radius-lg)',
+        full: 'var(--radius-pill)',
       },
+      /* Kart ve panelde gölge yok; ayrışma yüzey kontrastı + 1px kenarlık.
+         Tek istisna dolu buton ve üst katman (modal/dropdown/tooltip). */
       boxShadow: {
-        'soft': 'var(--shadow-card)',
-        'soft-lg': '0 8px 30px rgba(12, 193, 195, 0.12)',
-        'soft-xl': '0 12px 40px rgba(12, 193, 195, 0.15)',
-        'primary': '0 4px 15px rgba(12, 193, 195, 0.3)',
-        'primary-lg': '0 8px 25px rgba(12, 193, 195, 0.4)',
-        'card': 'var(--shadow-card)',
-        'card-hover': 'var(--shadow-glow)',
-        'glow': 'var(--shadow-glow)',
-        'glow-accent': '0 0 20px rgba(12, 193, 195, 0.3)',
-        'glow-blue': '0 0 20px rgba(46, 134, 255, 0.3)',
+        none: 'none',
+        sm: 'none',
+        DEFAULT: 'none',
+        md: 'none',
+        lg: 'none',
+        xl: 'none',
+        '2xl': 'none',
+        inner: 'none',
+        soft: 'none',
+        'soft-lg': 'none',
+        'soft-xl': 'none',
+        card: 'none',
+        'card-hover': 'none',
+        glow: 'none',
+        'glow-accent': 'none',
+        'glow-blue': 'none',
+        primary: 'var(--shadow-button)',
+        'primary-lg': 'var(--shadow-button)',
+        button: 'var(--shadow-button)',
+        overlay: 'var(--shadow-overlay)',
       },
+      /* Dekoratif degrade yok. Kalan adlar düz renge bağlandı ki depodaki
+         eski çağrı yerleri degrade değil, düz vurgu çizsin. */
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'gradient-primary': 'linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)',
-        'gradient-secondary': 'linear-gradient(135deg, var(--blue-main) 0%, var(--blue-dark) 100%)',
-        'gradient-accent': 'linear-gradient(135deg, var(--accent-bright) 0%, var(--accent) 100%)',
-        'gradient-dark': 'linear-gradient(180deg, var(--bg-main) 0%, var(--bg-deep) 100%)',
-        'gradient-card': 'linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-2) 100%)',
+        'gradient-primary': 'linear-gradient(var(--accent), var(--accent))',
+        'gradient-secondary': 'linear-gradient(var(--series-2), var(--series-2))',
+        'gradient-accent': 'linear-gradient(var(--accent), var(--accent))',
+        'gradient-dark': 'linear-gradient(var(--canvas), var(--canvas))',
+        'gradient-card': 'linear-gradient(var(--surface), var(--surface))',
+        'chart-area': 'linear-gradient(180deg, var(--chart-gradient-start), var(--chart-gradient-end))',
       },
       fontFamily: {
-        sans: ['var(--font-poppins)', 'system-ui', 'sans-serif'],
-        numeric: ['var(--font-roboto)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-inter)', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        numeric: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+      },
+      fontSize: {
+        caption: ['var(--text-caption)', { lineHeight: '1.4', letterSpacing: '0.06em' }],
+        sm: ['var(--text-sm)', { lineHeight: '1.5' }],
+        base: ['var(--text-body)', { lineHeight: '1.55' }],
+        subhead: ['var(--text-subhead)', { lineHeight: '1.3', letterSpacing: '-0.01em' }],
+        title: ['var(--text-title)', { lineHeight: '1.25', letterSpacing: '-0.015em' }],
+        metric: ['var(--text-metric)', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
+        display: ['var(--text-display)', { lineHeight: '1.15', letterSpacing: '-0.02em' }],
+      },
+      transitionTimingFunction: {
+        'out-quart': 'var(--ease-out-quart)',
+        'in-quart': 'var(--ease-in-quart)',
+      },
+      transitionDuration: {
+        fast: '120ms',
+        base: '170ms',
+        slow: '260ms',
       },
       keyframes: {
         'accordion-down': {
@@ -216,10 +281,6 @@ const config: Config = {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.7' },
         },
-        'glow': {
-          '0%, 100%': { boxShadow: '0 0 5px var(--accent)' },
-          '50%': { boxShadow: '0 0 20px var(--accent), 0 0 30px var(--accent-bright)' },
-        },
         'shimmer': {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
@@ -228,11 +289,10 @@ const config: Config = {
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        'fade-in': 'fade-in 0.3s ease-out',
-        'slide-in': 'slide-in 0.3s ease-out',
-        'scale-in': 'scale-in 0.2s ease-out',
+        'fade-in': 'fade-in 260ms var(--ease-out-quart)',
+        'slide-in': 'slide-in 260ms var(--ease-out-quart)',
+        'scale-in': 'scale-in 170ms var(--ease-out-quart)',
         'pulse-soft': 'pulse-soft 2s ease-in-out infinite',
-        'glow': 'glow 2s ease-in-out infinite',
         'shimmer': 'shimmer 1.5s infinite',
       },
     },

@@ -184,7 +184,7 @@ export default function MonitoringPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+        <div className="spinner" role="status" aria-label="Yükleniyor" />
       </div>
     );
   }
@@ -194,8 +194,8 @@ export default function MonitoringPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-main)]">Sistem İzleme</h1>
-          <p className="text-[var(--text-muted)] mt-1">Gerçek zamanlı sistem sağlığı ve performans metrikleri</p>
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>Sistem izleme</h1>
+          <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>Gerçek zamanlı sistem sağlığı ve performans metrikleri</p>
         </div>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
@@ -220,9 +220,7 @@ export default function MonitoringPage() {
       {/* E-posta sağlayıcısı */}
       {emailStatus && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-soft)]"
+          className="theme-card p-6 border border-[var(--border-soft)]"
         >
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -270,9 +268,7 @@ export default function MonitoringPage() {
       {/* Current Status */}
       {currentHealth && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-soft)]"
+          className="theme-card p-6 border border-[var(--border-soft)]"
         >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
@@ -305,7 +301,7 @@ export default function MonitoringPage() {
                 <span className="font-medium text-[var(--text-main)]">Veritabanı</span>
                 {getStatusIcon(currentHealth.checks.database.status)}
               </div>
-              <p className="text-2xl font-bold text-[var(--text-main)]">
+              <p className="t-metric" style={{ color: "var(--ink)" }}>
                 {currentHealth.checks.database.latency || '-'}ms
               </p>
               <p className="text-xs text-[var(--text-muted)]">Yanıt süresi</p>
@@ -318,7 +314,7 @@ export default function MonitoringPage() {
                 <span className="font-medium text-[var(--text-main)]">Bellek</span>
                 {getStatusIcon(currentHealth.checks.memory.status)}
               </div>
-              <p className="text-2xl font-bold text-[var(--text-main)]">
+              <p className="t-metric" style={{ color: "var(--ink)" }}>
                 {currentHealth.checks.memory.message?.match(/\d+%/)?.[0] || '-'}
               </p>
               <p className="text-xs text-[var(--text-muted)]">
@@ -333,7 +329,7 @@ export default function MonitoringPage() {
                 <span className="font-medium text-[var(--text-main)]">Yanıt Süresi</span>
                 {getStatusIcon(currentHealth.checks.responseTime.status)}
               </div>
-              <p className="text-2xl font-bold text-[var(--text-main)]">
+              <p className="t-metric" style={{ color: "var(--ink)" }}>
                 {currentHealth.checks.responseTime.latency || '-'}ms
               </p>
               <p className="text-xs text-[var(--text-muted)]">Health check süresi</p>
@@ -345,41 +341,41 @@ export default function MonitoringPage() {
       {/* Stats Summary */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-soft)]">
+          <div className="theme-card p-4 border border-[var(--border-soft)]">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp size={18} className="text-[var(--success)]" />
               <span className="text-sm text-[var(--text-muted)]">Sağlıklı</span>
             </div>
-            <p className="text-2xl font-bold text-[var(--success)]">
+            <p className="text-2xl font-semibold text-[var(--success)]">
               {stats.total > 0 ? Math.round((stats.healthy / stats.total) * 100) : 0}%
             </p>
             <p className="text-xs text-[var(--text-dim)]">{stats.healthy} / {stats.total} kontrol</p>
           </div>
 
-          <div className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-soft)]">
+          <div className="theme-card p-4 border border-[var(--border-soft)]">
             <div className="flex items-center gap-2 mb-2">
               <Database size={18} className="text-[var(--accent)]" />
               <span className="text-sm text-[var(--text-muted)]">Ort. DB Latency</span>
             </div>
-            <p className="text-2xl font-bold text-[var(--text-main)]">{stats.avgDbLatency}ms</p>
+            <p className="t-metric" style={{ color: "var(--ink)" }}>{stats.avgDbLatency}ms</p>
             <p className="text-xs text-[var(--text-dim)]">Son {timeRange} saat</p>
           </div>
 
-          <div className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-soft)]">
+          <div className="theme-card p-4 border border-[var(--border-soft)]">
             <div className="flex items-center gap-2 mb-2">
               <Cpu size={18} className="text-[var(--accent)]" />
               <span className="text-sm text-[var(--text-muted)]">Ort. Bellek</span>
             </div>
-            <p className="text-2xl font-bold text-[var(--text-main)]">{stats.avgMemory}%</p>
+            <p className="t-metric" style={{ color: "var(--ink)" }}>{stats.avgMemory}%</p>
             <p className="text-xs text-[var(--text-dim)]">Son {timeRange} saat</p>
           </div>
 
-          <div className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-soft)]">
+          <div className="theme-card p-4 border border-[var(--border-soft)]">
             <div className="flex items-center gap-2 mb-2">
               <Clock size={18} className="text-[var(--accent)]" />
               <span className="text-sm text-[var(--text-muted)]">Ort. Yanıt</span>
             </div>
-            <p className="text-2xl font-bold text-[var(--text-main)]">{stats.avgResponseTime}ms</p>
+            <p className="t-metric" style={{ color: "var(--ink)" }}>{stats.avgResponseTime}ms</p>
             <p className="text-xs text-[var(--text-dim)]">Son {timeRange} saat</p>
           </div>
         </div>
@@ -394,7 +390,7 @@ export default function MonitoringPage() {
             onClick={() => setTimeRange(hours)}
             className={`px-3 py-1 rounded-lg text-sm transition-colors ${
               timeRange === hours
-                ? 'bg-[var(--accent)] text-white'
+                ? 'bg-[var(--accent-solid)] text-[var(--on-accent)]'
                 : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--bg-card)]'
             }`}
           >
@@ -404,7 +400,7 @@ export default function MonitoringPage() {
       </div>
 
       {/* Logs Table */}
-      <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] overflow-hidden">
+      <div className="theme-card overflow-hidden">
         <div className="p-4 border-b border-[var(--border-soft)]">
           <h3 className="font-semibold text-[var(--text-main)] flex items-center gap-2">
             <Server size={18} />
@@ -412,15 +408,15 @@ export default function MonitoringPage() {
           </h3>
         </div>
         <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
-          <table className="w-full">
-            <thead className="bg-[var(--bg-card-2)] sticky top-0">
+          <table className="theme-table">
+            <thead>
               <tr>
-                <th className="text-left p-3 text-sm text-[var(--text-muted)]">Zaman</th>
-                <th className="text-left p-3 text-sm text-[var(--text-muted)]">Durum</th>
-                <th className="text-left p-3 text-sm text-[var(--text-muted)]">DB Latency</th>
-                <th className="text-left p-3 text-sm text-[var(--text-muted)]">Bellek</th>
-                <th className="text-left p-3 text-sm text-[var(--text-muted)]">Yanıt</th>
-                <th className="text-left p-3 text-sm text-[var(--text-muted)]">Hata</th>
+                <th>Zaman</th>
+                <th>Durum</th>
+                <th>DB Latency</th>
+                <th>Bellek</th>
+                <th>Yanıt</th>
+                <th>Hata</th>
               </tr>
             </thead>
             <tbody>

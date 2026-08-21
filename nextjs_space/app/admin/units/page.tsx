@@ -261,7 +261,7 @@ export default function UnitsPage() {
 
     return (
       <div key={unit.id} className={`${level > 0 ? 'ml-8 border-l-2 border-[var(--border-soft)] pl-4' : ''}`}>
-        <div className="bg-[var(--bg-card)] rounded-xl shadow-sm p-5 mb-4 hover:shadow-md transition-shadow">
+        <div className="theme-card p-5 mb-4 hover:shadow-md transition-shadow">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3">
               {hasSubUnits && (
@@ -290,7 +290,7 @@ export default function UnitsPage() {
                 title="Alt Birim Ekle"
                 variant="ghost"
                 size="icon"
-                className="text-[var(--text-dim)] hover:text-[var(--accent)] hover:bg-[var(--accent-soft)]"
+                className="text-[var(--text-dim)] hover:text-[var(--accent-ink)] hover:bg-[var(--accent-soft)]"
               >
                 <Plus size={16} />
               </Button>
@@ -308,7 +308,7 @@ export default function UnitsPage() {
                 title="Sil"
                 variant="ghost"
                 size="icon"
-                className="text-[var(--text-dim)] hover:text-[var(--error)] hover:bg-[var(--error-bg)]"
+                className="text-[var(--text-dim)] hover:text-[var(--error-ink)] hover:bg-[var(--error-bg)]"
               >
                 <Trash2 size={16} />
               </Button>
@@ -316,14 +316,14 @@ export default function UnitsPage() {
           </div>
 
           {/* Admins */}
-          <div className="mt-4 p-3 bg-[var(--accent)]/10 rounded-lg">
+          <div className="mt-4 p-3 bg-[var(--accent-quiet)] rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <Shield className="text-[var(--accent)]" size={18} />
               <span className="text-sm font-medium text-[var(--accent)]">Birim Adminleri</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {unit.admins.map(admin => (
-                <span key={admin.id} className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--accent)]/20 text-[var(--text-main)] text-xs rounded-full">
+                <span key={admin.id} className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--accent-quiet)] text-[var(--text-main)] text-xs rounded-full">
                   <Crown size={12} />
                   {admin.user.firstName} {admin.user.lastName}
                 </span>
@@ -377,7 +377,7 @@ export default function UnitsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+        <div className="spinner" role="status" aria-label="Yükleniyor" />
       </div>
     );
   }
@@ -385,9 +385,11 @@ export default function UnitsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Building2 className="text-[var(--accent)]" size={28} />
-          <h1 className="text-2xl font-bold text-[var(--text-main)]">Birim Yönetimi</h1>
+        <div>
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>Birimler</h1>
+          <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+            Kuruluş birimleri, alt birimler ve birim yöneticileri.
+          </p>
         </div>
         <Button
           onClick={() => openCreateModal()}
@@ -397,14 +399,16 @@ export default function UnitsPage() {
         </Button>
       </div>
 
-      {/* Info */}
-      <div className="bg-[var(--bg-card-2)] border border-[var(--blue-main)] rounded-xl p-4 mb-6">
-        <h4 className="font-semibold text-[var(--accent)] mb-2">Birim ve Alt Birim Yönetimi</h4>
-        <ul className="text-sm text-[var(--accent)] space-y-1">
-          <li>• <strong>Birim</strong> oluşturup içine <strong>Alt Birimler</strong> ekleyebilirsiniz.</li>
-          <li>• Her birime <strong>birden fazla Admin</strong> atayabilirsiniz.</li>
-          <li>• <strong>Üst birim adminleri</strong>, otomatik olarak tüm alt birimlerin de admini olur (miras).</li>
-          <li>• Alt birimlerde ayrıca admin ataması gerektirmez.</li>
+      {/* Kuralları anlatan blok; uyarı değil bilgi, o yüzden renksiz. */}
+      <div className="mb-6 rounded-[var(--radius-md)] p-4" style={{ background: "var(--surface-2)" }}>
+        <ul className="flex list-disc flex-col gap-1 pl-5 t-sm" style={{ color: "var(--ink-2)" }}>
+          <li>
+            Bir <strong className="font-medium" style={{ color: "var(--ink)" }}>birim</strong> oluşturup
+            içine alt birimler ekleyebilirsiniz.
+          </li>
+          <li>Her birime birden fazla yönetici atanabilir.</li>
+          <li>Üst birim yöneticisi, alt birimlerin de yöneticisi sayılır.</li>
+          <li>Alt birimlerde ayrıca yönetici ataması gerekmez.</li>
         </ul>
       </div>
 
@@ -414,7 +418,7 @@ export default function UnitsPage() {
       </div>
 
       {units.length === 0 && (
-        <div className="text-center py-12 text-[var(--text-dim)] bg-[var(--bg-card)] rounded-xl">
+        <div className="text-center py-12 text-[var(--text-dim)] theme-card">
           Henüz birim oluşturulmamış
         </div>
       )}
@@ -422,7 +426,7 @@ export default function UnitsPage() {
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[var(--bg-card)] rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="theme-card shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-[var(--bg-card)]">
               <h2 className="text-lg font-semibold text-[var(--text-main)]">
                 {editingUnit ? "Birim Düzenle" : formData.parentId ? "Alt Birim Ekle" : "Yeni Birim"}
@@ -503,7 +507,7 @@ export default function UnitsPage() {
                       <label
                         key={user.id}
                         className={`flex items-center gap-3 p-3 hover:bg-[var(--bg-card-2)] cursor-pointer border-b last:border-b-0 ${
-                          formData.adminIds.includes(user.id) ? 'bg-[var(--accent)]/10' : ''
+                          formData.adminIds.includes(user.id) ? 'bg-[var(--accent-quiet)]' : ''
                         }`}
                       >
                         <input
@@ -528,13 +532,13 @@ export default function UnitsPage() {
               </div>
 
               {formData.adminIds.length > 0 && (
-                <div className="p-3 bg-[var(--accent)]/10 rounded-lg">
+                <div className="p-3 bg-[var(--accent-quiet)] rounded-lg">
                   <p className="text-sm text-[var(--accent)] font-medium mb-2">Seçilen Adminler ({formData.adminIds.length}):</p>
                   <div className="flex flex-wrap gap-2">
                     {formData.adminIds.map(id => {
                       const user = allUsers.find(u => u.id === id);
                       return user ? (
-                        <span key={id} className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--accent)]/20 text-[var(--text-main)] text-xs rounded-full">
+                        <span key={id} className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--accent-quiet)] text-[var(--text-main)] text-xs rounded-full">
                           <Crown size={12} />
                           {user.firstName} {user.lastName}
                           <button
@@ -574,7 +578,7 @@ export default function UnitsPage() {
       {/* Users Modal */}
       {showUsersModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-[var(--bg-card)] rounded-xl shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="theme-card shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-4 border-b">
               <h2 className="text-lg font-semibold text-[var(--text-main)]">
                 {showUsersModal.name} - Kullanıcılar

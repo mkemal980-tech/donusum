@@ -249,25 +249,26 @@ export default function SurveyAssignmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-main)] flex items-center gap-2">
-            <UserCheck className="w-7 h-7 text-[var(--accent)]" />
-            Anket Atamaları
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>
+            Anket atamaları
           </h1>
-          <p className="text-[var(--text-muted)] mt-1">Kullanıcılara anket atayın ve yönetin</p>
+          <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+            Kullanıcılara anket atayın, süre tanımlayın.
+          </p>
         </div>
       </div>
 
       {message && (
         <div className={`p-4 rounded-lg ${
-          message.type === "success" ? "bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)]" : "bg-[var(--error-bg)] text-[var(--error)] border border-[var(--error)]/50"
+          message.type === "success" ? "bg-[var(--accent-soft)] text-[var(--accent-ink)] border border-[var(--accent)]" : "bg-[var(--error-bg)] text-[var(--error-ink)] border border-[var(--error)]/50"
         }`}>
           {message.text}
-          <button onClick={() => setMessage(null)} className="float-right font-bold">×</button>
+          <button onClick={() => setMessage(null)} className="float-right font-semibold">×</button>
         </div>
       )}
 
       {/* Yeni Atama Formu */}
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-sm border border-[var(--border-soft)] p-6">
+      <div className="theme-card border border-[var(--border-soft)] p-6">
         <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
           <Plus className="w-5 h-5 text-[var(--accent)]" />
           Yeni Anket Ata
@@ -360,7 +361,7 @@ export default function SurveyAssignmentsPage() {
       </div>
 
       {/* Atamalar Listesi */}
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-sm border border-[var(--border-soft)] overflow-hidden">
+      <div className="theme-card border border-[var(--border-soft)] overflow-hidden">
         <div className="p-4 border-b border-[var(--border-soft)]">
           <div className="flex items-center gap-4">
             <div className="relative flex-1">
@@ -386,27 +387,27 @@ export default function SurveyAssignmentsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-[var(--bg-card-2)]">
+            <table className="theme-table">
+              <thead>
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Kullanıcı</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Anket</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Atama Tarihi</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Süre Sınırı</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[var(--text-dim)] uppercase">Durum</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-[var(--text-dim)] uppercase">İşlemler</th>
+                  <th>Kullanıcı</th>
+                  <th>Anket</th>
+                  <th>Atama Tarihi</th>
+                  <th>Süre Sınırı</th>
+                  <th>Durum</th>
+                  <th className="text-right">İşlemler</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--border-soft)]">
+              <tbody>
                 {filteredAssignments.map((assignment) => {
                   const expired = isExpired(assignment);
                   const daysLeft = assignment.deadline ? getDaysRemaining(assignment.deadline) : null;
                   
                   return (
                   <tr key={assignment.id} className={`hover:bg-[var(--bg-card-2)] ${expired ? 'bg-[var(--error-bg)]' : ''}`}>
-                    <td className="px-4 py-3">
+                    <td>
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[var(--accent)]/15 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-full bg-[var(--accent-quiet)] flex items-center justify-center">
                           <Users className="w-4 h-4 text-[var(--accent)]" />
                         </div>
                         <div>
@@ -415,19 +416,19 @@ export default function SurveyAssignmentsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td>
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-[var(--accent)]" />
                         <span className="font-medium text-[var(--text-main)]">{assignment.survey.name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td>
                       <div className="flex items-center gap-2 text-[var(--text-muted)]">
                         <Calendar className="w-4 h-4" />
                         {new Date(assignment.assignedAt).toLocaleDateString("tr-TR")}
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td>
                       {assignment.hasDeadline && assignment.deadline ? (
                         <div className="space-y-1">
                           <div className={`flex items-center gap-2 ${expired ? 'text-[var(--error)]' : daysLeft !== null && daysLeft <= 3 ? 'text-[var(--warning)]' : 'text-[var(--text-muted)]'}`}>
@@ -457,9 +458,9 @@ export default function SurveyAssignmentsPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td>
                       {expired ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--error-bg)] text-[var(--error)]">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[var(--error-bg)] text-[var(--error-ink)]">
                           Süresi Doldu
                         </span>
                       ) : (
@@ -472,7 +473,7 @@ export default function SurveyAssignmentsPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         {/* Süre sınırı toggle */}
                         {!assignment.hasDeadline ? (
@@ -515,7 +516,7 @@ export default function SurveyAssignmentsPage() {
                           title="Atamayı Kaldır"
                           variant="ghost"
                           size="icon"
-                          className="text-[var(--error)] hover:bg-[var(--error-bg)]"
+                          className="text-[var(--error-ink)] hover:bg-[var(--error-bg)]"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -530,7 +531,7 @@ export default function SurveyAssignmentsPage() {
       </div>
 
       {/* Kullanıcı Bazlı Özet */}
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-sm border border-[var(--border-soft)] p-6">
+      <div className="theme-card border border-[var(--border-soft)] p-6">
         <h2 className="text-lg font-semibold text-[var(--text-main)] mb-4">Kullanıcı Bazlı Özet</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {users.slice(0, 9).map(user => {
@@ -538,7 +539,7 @@ export default function SurveyAssignmentsPage() {
             return (
               <div key={user.id} className="p-4 border border-[var(--border-soft)] rounded-lg">
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 rounded-full bg-[var(--accent)]/15 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-[var(--accent-quiet)] flex items-center justify-center">
                     <Users className="w-5 h-5 text-[var(--accent)]" />
                   </div>
                   <div>
@@ -552,7 +553,7 @@ export default function SurveyAssignmentsPage() {
                   ) : (
                     <div className="flex flex-wrap gap-1">
                       {userAssignments.map(a => (
-                        <span key={a.id} className="inline-flex items-center px-2 py-1 rounded text-xs bg-[var(--accent)]/15 text-primary-700">
+                        <span key={a.id} className="inline-flex items-center px-2 py-1 rounded text-xs bg-[var(--accent-quiet)] text-[var(--accent-ink)]">
                           {a.survey.name}
                         </span>
                       ))}
@@ -571,7 +572,7 @@ export default function SurveyAssignmentsPage() {
       {/* Süre Uzatma Modalı */}
       {extendModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-md mx-4 border border-[var(--border-soft)]">
+          <div className="theme-card p-6 w-full max-w-md mx-4 border border-[var(--border-soft)]">
             <h3 className="text-lg font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
               <RefreshCw className="w-5 h-5 text-[var(--accent)]" />
               Süre Uzat

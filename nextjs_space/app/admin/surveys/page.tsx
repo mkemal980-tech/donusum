@@ -249,7 +249,7 @@ export default function SurveysPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+        <div className="spinner" role="status" aria-label="Yükleniyor" />
       </div>
     );
   }
@@ -257,7 +257,7 @@ export default function SurveysPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Anket Yönetimi</h1>
+        <h1 className="t-display" style={{ color: "var(--ink)" }}>Anketler</h1>
         <Button
           onClick={() => openModal()}
         >
@@ -268,7 +268,7 @@ export default function SurveysPage() {
       {/* Survey List */}
       <div className="grid gap-4">
         {surveys.map((survey) => (
-          <div key={survey.id} className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden">
+          <div key={survey.id} className="theme-card overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-[var(--accent)] rounded-lg flex items-center justify-center">
@@ -278,7 +278,7 @@ export default function SurveysPage() {
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-[var(--text-main)]">{survey.name}</h3>
                     {survey.isActive ? (
-                      <span className="flex items-center gap-1 px-2 py-0.5 bg-[var(--accent-soft)] text-[var(--accent)] rounded text-xs">
+                      <span className="flex items-center gap-1 px-2 py-0.5 bg-[var(--accent-soft)] text-[var(--accent-ink)] rounded text-xs">
                         <CheckCircle size={12} /> Aktif
                       </span>
                     ) : (
@@ -309,7 +309,7 @@ export default function SurveysPage() {
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-[var(--accent)]">{survey._count.categories}</p>
+                  <p className="text-2xl font-semibold text-[var(--accent)]">{survey._count.categories}</p>
                   <p className="text-xs text-[var(--text-dim)]">Kategori</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -364,7 +364,7 @@ export default function SurveysPage() {
                     title="Sil"
                     variant="ghost"
                     size="icon"
-                    className="hover:bg-[var(--error-bg)] text-[var(--error)]"
+                    className="hover:bg-[var(--error-bg)] text-[var(--error-ink)]"
                   >
                     <Trash2 size={18} />
                   </Button>
@@ -389,7 +389,7 @@ export default function SurveysPage() {
         ))}
 
         {surveys.length === 0 && (
-          <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-8 text-center">
+          <div className="theme-card p-8 text-center">
             <FileText className="mx-auto text-[var(--text-dim)] mb-4" size={48} />
             <p className="text-[var(--text-dim)] mb-4">Henüz anket oluşturulmamış</p>
             <Button
@@ -404,9 +404,9 @@ export default function SurveysPage() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-lg">
+          <div className="theme-card p-6 w-full max-w-lg">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-[var(--text-main)]">{editItem ? 'Anket Düzenle' : 'Yeni Anket'}</h2>
+              <h2 className="text-xl font-semibold text-[var(--text-main)]">{editItem ? 'Anket Düzenle' : 'Yeni Anket'}</h2>
               <button onClick={() => setShowModal(false)} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
                 <X size={24} />
               </button>
@@ -499,7 +499,7 @@ export default function SurveysPage() {
       {/* Silme Onay Dialog */}
       {deleteConfirm.show && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-lg border border-[var(--error)]/30">
+          <div className="theme-card p-6 w-full max-w-lg border border-[var(--error)]/30">
             {deleteConfirm.loading ? (
               <div className="flex flex-col items-center justify-center py-8">
                 <Loader2 className="w-8 h-8 animate-spin text-[var(--accent)]" />
@@ -509,17 +509,17 @@ export default function SurveysPage() {
               <>
                 {/* Header */}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-[var(--error-bg)]0/20 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 bg-[var(--error-bg)] rounded-full flex items-center justify-center">
                     <AlertTriangle className="text-[var(--error)]" size={24} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold text-[var(--error)]">Tehlikeli İşlem!</h2>
+                    <h2 className="text-xl font-semibold text-[var(--error)]">Tehlikeli İşlem!</h2>
                     <p className="text-sm text-[var(--text-dim)]">Bu işlem geri alınamaz</p>
                   </div>
                 </div>
                 
                 {/* Anket Bilgisi */}
-                <div className="bg-[var(--error-bg)]0/10 border border-[var(--error)]/30 rounded-lg p-4 mb-4">
+                <div className="bg-[var(--error-bg)] border border-[var(--error)]/30 rounded-lg p-4 mb-4">
                   <p className="text-[var(--text-main)] font-medium">
                     &ldquo;{deleteConfirm.surveyName}&rdquo; anketini silmek üzeresiniz.
                   </p>
@@ -578,7 +578,7 @@ export default function SurveysPage() {
                     </div>
                     <div className="mt-3 pt-3 border-t border-[var(--border-soft)] flex justify-between">
                       <span className="text-[var(--text-main)] font-semibold">Toplam:</span>
-                      <span className="text-[var(--error)] font-bold">{deleteConfirm.impact.total} kayıt silinecek</span>
+                      <span className="text-[var(--error)] font-semibold">{deleteConfirm.impact.total} kayıt silinecek</span>
                     </div>
                   </div>
                 )}
@@ -586,7 +586,7 @@ export default function SurveysPage() {
                 {/* Onay Kutusu */}
                 <div className="mb-4">
                   <label className="block text-sm text-[var(--text-muted)] mb-2">
-                    Silmek için anket adını yazın: <span className="font-bold text-[var(--error)]">{deleteConfirm.surveyName}</span>
+                    Silmek için anket adını yazın: <span className="font-semibold text-[var(--error)]">{deleteConfirm.surveyName}</span>
                   </label>
                   <input
                     type="text"
@@ -610,7 +610,7 @@ export default function SurveysPage() {
                   <button
                     onClick={handleDelete}
                     disabled={deleteConfirm.confirmText !== deleteConfirm.surveyName || deleteConfirm.deleting}
-                    className="px-4 py-2 bg-[var(--error-bg)]0 text-white rounded-lg hover:bg-[var(--error)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-4 py-2 bg-[var(--error)] text-[var(--canvas)] rounded-lg hover:bg-[var(--error)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {deleteConfirm.deleting ? (
                       <>

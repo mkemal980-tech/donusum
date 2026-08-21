@@ -162,7 +162,7 @@ export default function SectorsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+        <div className="spinner" role="status" aria-label="Yükleniyor" />
       </div>
     );
   }
@@ -171,8 +171,8 @@ export default function SectorsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Sektör Yönetimi</h1>
-          <p className="text-[var(--text-muted)] mt-1">Sektör ve alt sektörleri tanımlayın</p>
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>Sektörler</h1>
+          <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>Sektör ve alt sektörleri tanımlayın</p>
         </div>
         <Button
           onClick={() => setShowNewSector(true)}
@@ -183,7 +183,7 @@ export default function SectorsPage() {
       </div>
 
       {showNewSector && (
-        <div className="bg-[var(--bg-card)] rounded-xl shadow-md p-4 mb-4">
+        <div className="theme-card p-4 mb-4">
           <div className="flex items-center gap-3">
             <input
               type="text"
@@ -220,7 +220,7 @@ export default function SectorsPage() {
 
       <div className="space-y-3">
         {sectors.map((sector) => (
-          <div key={sector.id} className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden">
+          <div key={sector.id} className="theme-card overflow-hidden">
             <div
               className="flex items-center justify-between p-4 cursor-pointer hover:bg-[var(--bg-card-2)]"
               onClick={() => setExpandedSector(expandedSector === sector.id ? null : sector.id)}
@@ -244,7 +244,7 @@ export default function SectorsPage() {
                       className="px-2 py-1 border rounded focus:ring-2 focus:ring-[var(--accent)] outline-none"
                       autoFocus
                     />
-                    <button onClick={() => handleUpdateSector(sector.id)} className="p-1 text-[var(--accent)] hover:bg-[var(--accent-soft)] rounded">
+                    <button onClick={() => handleUpdateSector(sector.id)} className="p-1 text-[var(--accent-ink)] hover:bg-[var(--accent-soft)] rounded">
                       <Save size={18} />
                     </button>
                     <button onClick={() => { setEditingSector(null); setEditSectorNaicsCode(""); }} className="p-1 text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] rounded">
@@ -278,7 +278,7 @@ export default function SectorsPage() {
                   onClick={() => handleDeleteSector(sector.id)}
                   variant="ghost"
                   size="icon"
-                  className="text-[var(--error)] hover:bg-[var(--error-bg)]"
+                  className="text-[var(--error-ink)] hover:bg-[var(--error-bg)]"
                 >
                   <Trash2 size={18} />
                 </Button>
@@ -301,7 +301,7 @@ export default function SectorsPage() {
                               className="px-2 py-1 border rounded focus:ring-2 focus:ring-[var(--accent)] outline-none text-sm"
                               autoFocus
                             />
-                            <button onClick={() => handleUpdateSubSector(sub.id)} className="p-1 text-[var(--accent)] hover:bg-[var(--accent-soft)] rounded">
+                            <button onClick={() => handleUpdateSubSector(sub.id)} className="p-1 text-[var(--accent-ink)] hover:bg-[var(--accent-soft)] rounded">
                               <Save size={16} />
                             </button>
                             <button onClick={() => setEditingSubSector(null)} className="p-1 text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] rounded">
@@ -321,7 +321,7 @@ export default function SectorsPage() {
                         </button>
                         <button
                           onClick={() => handleDeleteSubSector(sub.id)}
-                          className="p-1 text-[var(--error)] hover:bg-[var(--error-bg)] rounded"
+                          className="p-1 text-[var(--error-ink)] hover:bg-[var(--error-bg)] rounded"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -340,7 +340,7 @@ export default function SectorsPage() {
                         className="flex-1 px-2 py-1 border rounded focus:ring-2 focus:ring-[var(--accent)] outline-none text-sm"
                         autoFocus
                       />
-                      <button onClick={() => handleCreateSubSector(sector.id)} className="p-1 text-[var(--accent)] hover:bg-[var(--accent-soft)] rounded">
+                      <button onClick={() => handleCreateSubSector(sector.id)} className="p-1 text-[var(--accent-ink)] hover:bg-[var(--accent-soft)] rounded">
                         <Save size={16} />
                       </button>
                       <button onClick={() => { setShowNewSubSector(null); setNewSubSectorName(""); }} className="p-1 text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] rounded">
@@ -350,7 +350,7 @@ export default function SectorsPage() {
                   ) : (
                     <button
                       onClick={() => setShowNewSubSector(sector.id)}
-                      className="flex items-center gap-2 py-2 px-3 text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-lg w-full"
+                      className="flex items-center gap-2 py-2 px-3 text-[var(--accent-ink)] hover:bg-[var(--accent-quiet)] rounded-lg w-full"
                     >
                       <Plus size={16} />
                       Alt Sektör Ekle
@@ -363,7 +363,7 @@ export default function SectorsPage() {
         ))}
 
         {sectors.length === 0 && (
-          <div className="text-center py-12 bg-[var(--bg-card)] rounded-xl shadow-md">
+          <div className="text-center py-12 theme-card">
             <Factory size={48} className="mx-auto text-[var(--ui-passive)] mb-4" />
             <p className="text-[var(--text-dim)]">Henüz sektör tanımlanmamış</p>
             <p className="text-sm text-[var(--text-dim)] mt-1">Yukarıdaki butonu kullanarak sektör ekleyin</p>

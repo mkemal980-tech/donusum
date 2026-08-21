@@ -162,7 +162,7 @@ export default function IronmanBenchmarksPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+        <div className="spinner" role="status" aria-label="Yükleniyor" />
       </div>
     );
   }
@@ -171,11 +171,12 @@ export default function IronmanBenchmarksPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-3" style={{ color: 'var(--text-main)' }}>
-            <Activity className="text-[var(--accent)]" />
-            Ironman Benchmark Verileri
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>
+            Ironman benchmark
           </h1>
-          <p className="text-[var(--text-dim)] mt-1">Sektör bazlı Velocity (Hız) ve Endurance (Olgunluk) değerlerini yönetin</p>
+          <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+            Sektör bazlı hız (velocity) ve dayanıklılık (endurance) değerleri.
+          </p>
         </div>
         <Button
           onClick={() => openModal()}
@@ -197,49 +198,59 @@ export default function IronmanBenchmarksPage() {
             <br /><span className="text-xs text-[var(--text-dim)]">(Politikalar, izleme, raporlama)</span>
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-4 gap-2 text-xs">
-          <div className="bg-[var(--error-bg)] text-[var(--error)] p-2 rounded text-center">
-            <strong>Walker</strong><br />Düşük Hız + Düşük Olgunluk
-          </div>
-          <div className="bg-[var(--warning-bg)] text-[var(--warning)] p-2 rounded text-center">
-            <strong>Sprinter</strong><br />Yüksek Hız + Düşük Olgunluk
-          </div>
-          <div className="bg-[var(--accent)]/15 text-[var(--accent)] p-2 rounded text-center">
-            <strong>Marathon Runner</strong><br />Düşük Hız + Yüksek Olgunluk
-          </div>
-          <div className="bg-[var(--accent-soft)] text-[var(--accent)] p-2 rounded text-center">
-            <strong>Iron Man</strong><br />Yüksek Hız + Yüksek Olgunluk
-          </div>
+        {/* Dört kadran bir ölçek değil, bir sınıflama; iyi/kötü demeyen
+            nötr bir yüzey üzerinde nokta rengiyle ayrılır. */}
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { name: "Walker", hint: "düşük hız + düşük olgunluk", dot: "var(--ink-3)" },
+            { name: "Sprinter", hint: "yüksek hız + düşük olgunluk", dot: "var(--accent)" },
+            { name: "Maraton koşucusu", hint: "düşük hız + yüksek olgunluk", dot: "var(--series-4)" },
+            { name: "Demir adam", hint: "yüksek hız + yüksek olgunluk", dot: "var(--series-2)" },
+          ].map((q) => (
+            <div
+              key={q.name}
+              className="rounded-[var(--radius-xs)] p-3"
+              style={{ background: "var(--surface-2)" }}
+            >
+              <p className="flex items-center gap-2 t-sm font-medium" style={{ color: "var(--ink)" }}>
+                <span className="h-2 w-2 rounded-full" style={{ background: q.dot }} aria-hidden="true" />
+                {q.name}
+              </p>
+              <p className="mt-0.5 t-sm" style={{ color: "var(--ink-3)" }}>
+                {q.hint}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Benchmark Table */}
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden">
+      <div className="theme-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-[var(--bg-card-2)]">
+          <table className="theme-table">
+            <thead>
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">Sektör</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">Alt Sektör</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-[var(--blue-main)]">V. Ort.</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-[var(--blue-main)]">V. Best</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-[var(--blue-main)]">V. Target</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-[var(--accent)]">E. Ort.</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-[var(--accent)]">E. Best</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-[var(--accent)]">E. Target</th>
-                <th className="px-4 py-3 text-center text-sm font-semibold text-[var(--text-muted)]">Işlemler</th>
+                <th>Sektör</th>
+                <th>Alt Sektör</th>
+                <th className="text-center">V. Ort.</th>
+                <th className="text-center">V. Best</th>
+                <th className="text-center">V. Target</th>
+                <th className="text-center">E. Ort.</th>
+                <th className="text-center">E. Best</th>
+                <th className="text-center">E. Target</th>
+                <th className="text-center">Işlemler</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--border-soft)]">
+            <tbody>
               {benchmarks.map((benchmark) => (
-                <tr key={benchmark.id} className="hover:bg-[var(--bg-card-2)]">
-                  <td className="px-4 py-3">
+                <tr key={benchmark.id}>
+                  <td>
                     <div className="flex items-center gap-2">
                       <Factory size={16} className="text-[var(--text-dim)]" />
                       <span className="font-medium text-[var(--text-main)]">{benchmark.sector.name}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td>
                     {benchmark.subSector ? (
                       <div className="flex items-center gap-2">
                         <Layers size={14} className="text-[var(--text-dim)]" />
@@ -249,37 +260,37 @@ export default function IronmanBenchmarksPage() {
                       <span className="text-[var(--text-dim)] text-sm">Tüm alt sektörler</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--info-bg)] text-[var(--blue-main)] font-semibold text-sm">
+                  <td className="text-center">
+                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--info-bg)] text-[var(--accent-ink)] font-semibold text-sm">
                       {benchmark.velocityAverage.toFixed(1)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="text-center">
                     <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--info-bg)] text-[var(--blue-dark)] font-semibold text-sm">
                       {benchmark.velocityBest.toFixed(1)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="text-center">
                     <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent)] text-[var(--accent)] font-semibold text-sm">
                       {(benchmark.velocityAverageTarget || 3.0).toFixed(1)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent)]/15 text-[var(--accent)] font-semibold text-sm">
+                  <td className="text-center">
+                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent-quiet)] text-[var(--accent-ink)] font-semibold text-sm">
                       {benchmark.enduranceAverage.toFixed(1)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent)]/20 text-[var(--accent)] font-semibold text-sm">
+                  <td className="text-center">
+                    <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent-quiet)] text-[var(--accent-ink)] font-semibold text-sm">
                       {benchmark.enduranceBest.toFixed(1)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="text-center">
                     <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[var(--accent)] text-[var(--accent)] font-semibold text-sm">
                       {(benchmark.enduranceAverageTarget || 3.0).toFixed(1)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="text-center">
                     <div className="flex items-center justify-center gap-2">
                       <Button
                         onClick={() => openModal(benchmark)}
@@ -295,7 +306,7 @@ export default function IronmanBenchmarksPage() {
                         title="Sil"
                         variant="ghost"
                         size="icon"
-                        className="hover:bg-[var(--error-bg)] text-[var(--error)]"
+                        className="hover:bg-[var(--error-bg)] text-[var(--error-ink)]"
                       >
                         <Trash2 size={18} />
                       </Button>
@@ -318,9 +329,9 @@ export default function IronmanBenchmarksPage() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="theme-card p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-[var(--text-main)]">
+              <h2 className="text-xl font-semibold text-[var(--text-main)]">
                 {editItem ? 'Benchmark Düzenle' : 'Yeni Ironman Benchmark'}
               </h2>
               <button onClick={() => setShowModal(false)} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
@@ -434,7 +445,7 @@ export default function IronmanBenchmarksPage() {
               </div>
 
               {/* Endurance Değerleri */}
-              <div className="p-4 bg-[var(--accent)]/10 rounded-lg">
+              <div className="p-4 bg-[var(--accent-quiet)] rounded-lg">
                 <h3 className="font-semibold text-[var(--accent)] mb-3 flex items-center gap-2">
                   <Target size={16} /> Endurance (Olgunluk) Değerleri
                 </h3>

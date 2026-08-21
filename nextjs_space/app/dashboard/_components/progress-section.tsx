@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ProgressBenchmarkChart } from "@/components/ui/progress-benchmark-chart";
-import { TrendingUp, Target, Info } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import Link from "next/link";
 
 interface CategoryItem {
@@ -63,30 +63,22 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
   }, [surveyId]);
 
   if (loading) {
-    return (
-      <div className="bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl shadow-xl p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Target className="text-[var(--accent)]" size={24} />
-          <h3 className="text-lg font-semibold text-[var(--text-main)]">Benchmark</h3>
-        </div>
-        <div className="flex items-center justify-center h-48">
-          <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
-    );
+    return <div className="skeleton h-[420px]" />;
   }
 
   if (!data || !data.categories || !Array.isArray(data.categories)) {
     return (
-      <div className="bg-[var(--bg-card)] border border-[var(--border-soft)] rounded-2xl shadow-xl p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Target className="text-[var(--accent)]" size={24} />
-          <h3 className="text-lg font-semibold text-[var(--text-main)]">Benchmark</h3>
-        </div>
-        <div className="text-center py-8 text-[var(--text-muted)]">
-          Henüz veri bulunmuyor
-        </div>
-      </div>
+      <section
+        className="rounded-[var(--radius-lg)] p-6"
+        style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+      >
+        <h3 className="t-subhead" style={{ color: "var(--ink)" }}>
+          İlerleme ve gelişim
+        </h3>
+        <p className="mt-2 t-sm" style={{ color: "var(--ink-3)" }}>
+          Öneriler tamamlandıkça kazanılan puan burada görünür.
+        </p>
+      </section>
     );
   }
 
@@ -121,41 +113,40 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
   const hasDelta = overallBonusPoints > 0;
 
   return (
-    <div className="space-y-4">
-      {/* Info Box — zemin zaten --success-bg (turkuaz); yazı sabit yeşildi,
-          ikisi birbirini tutmuyordu. İkisi de aynı token'dan okunur. */}
+    <div className="flex flex-col gap-4">
       {hasDelta && (
-        <div className="bg-[var(--success-bg)] border border-[var(--accent-soft)] rounded-xl p-4 flex items-start gap-3">
-          <TrendingUp className="text-[var(--success)] mt-0.5 flex-shrink-0" size={20} />
-          <div>
-            <p className="font-medium text-[var(--success)]">Gelişim Kaydedildi!</p>
-            <p className="text-sm text-[var(--success)]">
-              Önerileri tamamlayarak skorunuzu <span className="font-bold">+{overallBonusPoints.toFixed(2)}</span> puan artırdınız.
-              <Link href="/roadmap" className="underline ml-1 hover:text-[var(--accent-bright)]">Yol haritasına git →</Link>
-            </p>
-          </div>
-        </div>
+        <p
+          className="flex items-start gap-2.5 rounded-[var(--radius-xs)] p-3 t-sm"
+          style={{ background: "var(--success-bg)", color: "var(--success)" }}
+        >
+          <TrendingUp className="mt-0.5 shrink-0" size={16} aria-hidden="true" />
+          <span>
+            Tamamlanan öneriler puanınızı{" "}
+            <span className="tabular font-medium">+{overallBonusPoints.toFixed(2)}</span> artırdı.{" "}
+            <Link href="/roadmap" className="underline underline-offset-4">
+              Yol haritasına git
+            </Link>
+          </span>
+        </p>
       )}
 
-      {/* View Mode Toggle */}
-      <div className="flex gap-2">
+      {/* Kırılım seçimi: aynı grafiğin iki görünümü, sekme dili kullanılır. */}
+      <div className="theme-tabs" role="tablist" aria-label="Kırılım">
         <button
+          type="button"
+          role="tab"
+          aria-selected={viewMode === 'subcategory'}
           onClick={() => setViewMode('subcategory')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            viewMode === 'subcategory'
-              ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
-              : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--bg-card)]'
-          }`}
+          className={`theme-tab ${viewMode === 'subcategory' ? 'active' : ''}`}
         >
-          Alt Kategoriler
+          Alt kategoriler
         </button>
         <button
+          type="button"
+          role="tab"
+          aria-selected={viewMode === 'category'}
           onClick={() => setViewMode('category')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            viewMode === 'category'
-              ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
-              : 'bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:bg-[var(--bg-card)]'
-          }`}
+          className={`theme-tab ${viewMode === 'category' ? 'active' : ''}`}
         >
           Kategoriler
         </button>

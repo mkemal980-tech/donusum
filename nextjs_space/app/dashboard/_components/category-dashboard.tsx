@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MaturityGauge, getScoreLevel } from "@/components/ui/maturity-gauge";
 import { GapRadarChart } from "@/components/ui/gap-radar-chart";
-import { ArrowLeft, TrendingUp, Layers, ChevronRight, Award } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 
 interface SubLevel {
   id: string;
@@ -43,11 +43,11 @@ interface CategoryScores {
 // Theme colors - Cyan/Teal tones (matching template)
 const getCategoryColor = (index: number): string => {
   const colors = [
-    "#22d3ee", // cyan primary
-    "#38bdf8", // light blue
-    "#2dd4bf", // teal
-    "#5eead4", // cyan light
-    "#67e8f9", // cyan lightest
+    "var(--series-1)",
+    "var(--series-2)",
+    "var(--series-3)",
+    "var(--series-4)",
+    "var(--series-5)"
   ];
   return colors[index % colors.length];
 };
@@ -85,24 +85,19 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
   }, [surveyId]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div 
-          className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin" 
-          style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }}
-        />
-      </div>
-    );
+    return <div className="skeleton h-[420px]" />;
   }
 
   if (!data || data.categories.length === 0) {
     return (
-      <div 
-        className="rounded-2xl shadow-lg p-8 text-center border"
-        style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
+      <section
+        className="rounded-[var(--radius-lg)] p-6"
+        style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
       >
-        <p style={{ color: 'var(--text-muted)' }}>Henüz kategori verisi bulunmuyor</p>
-      </div>
+        <p className="t-body" style={{ color: "var(--ink-2)" }}>
+          Kategori kırılımı, anketin ilk bölümü tamamlandığında oluşur.
+        </p>
+      </section>
     );
   }
 
@@ -116,42 +111,26 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
     
     return (
       <div className="space-y-6">
-        {/* Back button */}
         <button
+          type="button"
           onClick={() => setSelectedSubCategory(null)}
-          className="flex items-center gap-2 transition-colors"
-          style={{ color: 'var(--text-muted)' }}
+          className="btn-ghost -ml-3 self-start"
         >
-          <ArrowLeft size={20} />
-          <span>Geri Dön</span>
+          <ArrowLeft size={16} aria-hidden="true" />
+          Kategori kırılımına dön
         </button>
 
-        {/* SubCategory Header */}
-        <div 
-          className="rounded-2xl p-6 shadow-lg border"
-          style={{ 
-            background: 'var(--brand-gradient)',
-            borderColor: 'var(--border-soft)'
-          }}
-        >
-          <h2 className="text-2xl font-bold text-white">{selectedSubCategory.name}</h2>
-          <p className="text-white/70 mt-1">{currentCategory.name}</p>
-          <div className="flex items-center gap-4 mt-4">
-            <div 
-              className="rounded-xl px-4 py-2 backdrop-blur-sm"
-              style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
-            >
-              <span className="text-white/70 text-sm">Puan</span>
-              <p className="text-2xl font-bold text-white">{selectedSubCategory.score.toFixed(1)}</p>
-            </div>
-            <div 
-              className="rounded-xl px-4 py-2"
-              style={{ backgroundColor: subCatLevel.color }}
-            >
-              <span className="text-white/70 text-sm">Seviye</span>
-              <p className="text-xl font-bold text-white">{subCatLevel.label}</p>
-            </div>
-          </div>
+        <div>
+          <p className="t-caption">{currentCategory.name}</p>
+          <h3 className="mt-1.5 t-title" style={{ color: "var(--ink)" }}>
+            {selectedSubCategory.name}
+          </h3>
+          <p className="mt-2 flex items-center gap-2.5 t-body" style={{ color: "var(--ink-2)" }}>
+            <span className="tabular font-medium" style={{ color: "var(--ink)" }}>
+              {selectedSubCategory.score.toFixed(1)} / 5
+            </span>
+            <span className="badge badge-neutral">{subCatLevel.label}</span>
+          </p>
         </div>
 
         {/* SubLevels */}
@@ -159,38 +138,31 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
           {selectedSubCategory.subLevels.map((subLevel) => {
             const levelInfo = getScoreLevel(subLevel.score);
             return (
-              <div 
-                key={subLevel.id} 
-                className="rounded-2xl shadow-lg p-5 border"
-                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
+              <div
+                key={subLevel.id}
+                className="rounded-[var(--radius-lg)] p-5"
+                style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
               >
-                <h4 className="font-medium mb-3" style={{ color: 'var(--text-main)' }}>{subLevel.name}</h4>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Puan</span>
-                  <span className="text-xl font-bold" style={{ color: levelInfo.color }}>
-                    {subLevel.score.toFixed(1)}
+                <h4 className="text-[15px] font-medium" style={{ color: "var(--ink)" }}>
+                  {subLevel.name}
+                </h4>
+                <p className="mt-2 t-metric" style={{ color: "var(--ink)" }}>
+                  {subLevel.score.toFixed(1)}
+                  <span className="t-sm" style={{ color: "var(--ink-3)" }}>
+                    {" "}/ 5
                   </span>
-                </div>
-                <div 
-                  className="w-full rounded-full h-2.5 mb-3"
-                  style={{ backgroundColor: 'var(--bg-card-2)' }}
-                >
+                </p>
+                <div className="progress-bar mt-3">
                   <div
-                    className="h-2.5 rounded-full transition-all duration-500"
-                    style={{ 
-                      width: `${subLevel.percentage}%`,
-                      backgroundColor: levelInfo.color
-                    }}
+                    className="progress-bar-fill"
+                    style={{ width: `${subLevel.percentage}%`, background: "var(--accent)" }}
                   />
                 </div>
-                <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-dim)' }}>
-                  <span 
-                    className="px-3 py-1 rounded-full text-white text-xs font-medium"
-                    style={{ backgroundColor: levelInfo.color }}
-                  >
-                    {levelInfo.label}
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <span className="badge badge-neutral">{levelInfo.label}</span>
+                  <span className="t-sm tabular" style={{ color: "var(--ink-3)" }}>
+                    {subLevel.answeredCount}/{subLevel.questionCount} soru
                   </span>
-                  <span>{subLevel.answeredCount}/{subLevel.questionCount} soru</span>
                 </div>
               </div>
             );
@@ -202,60 +174,36 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
 
   return (
     <div className="space-y-6">
-      {/* Overall Score Card */}
-      <div 
-        className="rounded-2xl p-6 shadow-lg border"
-        style={{ 
-          background: 'var(--brand-gradient)',
-          borderColor: 'var(--border-soft)'
-        }}
-      >
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <div 
-              className="w-14 h-14 rounded-2xl flex items-center justify-center backdrop-blur-sm"
-              style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
-            >
-              <Award className="text-white" size={28} />
-            </div>
-            <div>
-              <p className="text-white/70 text-sm">Genel Olgunluk Seviyesi</p>
-              <p className="text-3xl font-bold text-white">{data.overallScore.toFixed(1)} / 5.0</p>
-            </div>
-          </div>
-          <div 
-            className="px-6 py-3 rounded-2xl text-white font-bold text-lg shadow-lg"
-            style={{ backgroundColor: overallLevel.color }}
-          >
-            {overallLevel.label}
-          </div>
-        </div>
-      </div>
+      {/* Genel seviye: panonun tepesindeki puanın 1-5 karşılığı. Kendi
+          renkli bloğunda değil, tek satırlık bir özet olarak durur. */}
+      <p className="t-sm" style={{ color: "var(--ink-2)" }}>
+        Genel olgunluk{" "}
+        <span className="tabular font-medium" style={{ color: "var(--ink)" }}>
+          {data.overallScore.toFixed(1)} / 5.0
+        </span>{" "}
+        · <span style={{ color: "var(--ink)" }}>{overallLevel.label}</span>
+      </p>
 
-      {/* Category Tabs */}
-      <div 
-        className="flex flex-wrap gap-2 p-1 rounded-xl border"
-        style={{ backgroundColor: 'var(--bg-card-2)', borderColor: 'var(--border-soft)' }}
-      >
-        {data.categories.map((category, index) => {
+      {/* Kategori sekmeleri */}
+      <div className="theme-tabs flex-wrap" role="tablist" aria-label="Kategori">
+        {data.categories.map((category) => {
           const isActive = activeCategory === category.id;
-          const color = getCategoryColor(index);
-          
+
           return (
             <button
               key={category.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
               onClick={() => setActiveCategory(category.id)}
-              className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200"
-              style={isActive ? { 
-                backgroundColor: color, 
-                color: 'var(--bg-deep)' 
-              } : { 
-                color: 'var(--text-muted)' 
-              }}
+              className={`theme-tab ${isActive ? "active" : ""}`}
             >
               {category.name}
               {category.weight !== 1 && (
-                <span className="ml-2 text-xs opacity-75">({(category.weight * 100).toFixed(0)}%)</span>
+                /* Ağırlık bir yüzde değil çarpan; "%200" yanlış okunuyordu. */
+                <span className="ml-1.5 t-caption" style={{ letterSpacing: 0, color: "var(--ink-3)" }}>
+                  ×{category.weight}
+                </span>
               )}
             </button>
           );
@@ -267,8 +215,6 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
         {currentCategory && (
           <motion.div
             key={currentCategory.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
             className="grid grid-cols-1 lg:grid-cols-2 gap-6"
@@ -295,69 +241,55 @@ export function CategoryDashboard({ surveyId }: CategoryDashboardProps) {
 
       {/* SubCategories List */}
       {currentCategory && currentCategory.subCategories.length > 0 && (
-        <div 
-          className="rounded-2xl shadow-lg p-6 border"
-          style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-soft)' }}
+        <section
+          className="rounded-[var(--radius-lg)] p-6"
+          style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+          aria-labelledby="subcategory-heading"
         >
-          <h3 
-            className="text-lg font-semibold mb-4 flex items-center gap-2"
-            style={{ color: 'var(--text-main)' }}
-          >
-            <Layers size={20} style={{ color: 'var(--accent)' }} />
-            Alt Kategoriler
+          <h3 id="subcategory-heading" className="t-subhead" style={{ color: "var(--ink)" }}>
+            Alt kategoriler
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
             {currentCategory.subCategories.map((subCat) => {
               const levelInfo = getScoreLevel(subCat.score);
               return (
                 <button
                   key={subCat.id}
+                  type="button"
                   onClick={() => setSelectedSubCategory(subCat)}
-                  className="rounded-xl p-4 text-left transition-all duration-200 group border"
-                  style={{ 
-                    backgroundColor: 'var(--bg-card-2)', 
-                    borderColor: 'var(--border-soft)' 
-                  }}
+                  className="group rounded-[var(--radius-md)] p-4 text-left transition-colors duration-fast ease-out-quart hover:bg-[var(--surface-3)]"
+                  style={{ background: "var(--surface-2)" }}
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium" style={{ color: 'var(--text-main)' }}>{subCat.name}</h4>
-                    <ChevronRight style={{ color: 'var(--ui-passive)' }} size={20} />
+                  <div className="flex items-center justify-between gap-3">
+                    <h4 className="truncate text-[15px] font-medium" style={{ color: "var(--ink)" }}>
+                      {subCat.name}
+                    </h4>
+                    <ChevronRight
+                      size={16}
+                      style={{ color: "var(--ink-3)" }}
+                      className="shrink-0 transition-transform duration-fast ease-out-quart group-hover:translate-x-0.5"
+                      aria-hidden="true"
+                    />
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Puan</span>
-                        <span className="font-bold" style={{ color: levelInfo.color }}>
-                          {subCat.score.toFixed(1)}
-                        </span>
-                      </div>
-                      <div 
-                        className="w-full rounded-full h-2"
-                        style={{ backgroundColor: 'var(--border-soft)' }}
-                      >
-                        <div
-                          className="h-2 rounded-full transition-all duration-500"
-                          style={{ 
-                            width: `${subCat.percentage}%`,
-                            backgroundColor: levelInfo.color
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <span 
-                        className="text-xs px-3 py-1 rounded-full text-white font-medium"
-                        style={{ backgroundColor: levelInfo.color }}
-                      >
-                        {levelInfo.label}
-                      </span>
-                    </div>
+
+                  <div className="mt-3 flex items-baseline justify-between gap-3">
+                    <span className="badge badge-neutral">{levelInfo.label}</span>
+                    <span className="t-sm tabular" style={{ color: "var(--ink-2)" }}>
+                      {subCat.score.toFixed(1)} / 5
+                    </span>
+                  </div>
+
+                  <div className="progress-bar mt-2">
+                    <div
+                      className="progress-bar-fill"
+                      style={{ width: `${subCat.percentage}%`, background: "var(--accent)" }}
+                    />
                   </div>
                 </button>
               );
             })}
           </div>
-        </div>
+        </section>
       )}
     </div>
   );

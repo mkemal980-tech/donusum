@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useTheme } from "next-themes";
 
 interface DataPoint {
   name: string;
@@ -18,21 +17,32 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  /* Tuval `var(--…)` anlamaz; token'lar kök öğeden okunup gerçek renge
+     çevrilir. Önceden değişken adı doğrudan fillStyle'a veriliyor, tarayıcı
+     bunu yok sayıp varsayılan siyahla çiziyordu. */
+  const colors = useMemo(() => {
+    const read = (name: string, fallback: string) => {
+      if (typeof window === "undefined") return fallback;
+      const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return value || fallback;
+    };
 
-  // Theme-aware colors
-  const colors = useMemo(() => ({
-    primary: isDark ? 'var(--accent-cyan)' : 'var(--blue-main)',
-    primaryLight: isDark ? 'rgba(34, 211, 238, 0.2)' : 'rgba(59, 130, 246, 0.15)',
-    secondary: isDark ? '#818cf8' : '#06b6d4',
-    secondaryLight: isDark ? 'rgba(129, 140, 248, 0.3)' : 'rgba(6, 182, 212, 0.3)',
-    accent: isDark ? '#f472b6' : '#ec4899',
-    accentLight: isDark ? 'rgba(244, 114, 182, 0.3)' : 'rgba(236, 72, 153, 0.3)',
-    grid: isDark ? 'rgba(34, 211, 238, 0.15)' : 'rgba(59, 130, 246, 0.2)',
-    text: isDark ? '#e2e8f0' : '#374151',
-    textMuted: isDark ? '#94a3b8' : '#9ca3af',
-  }), [isDark]);
+    return {
+      /* İki seri: "mevcut durum" vurgu mavisi (accent), "hedef" ikinci seri
+         yeşili (primary). Adlar dosyanın eskisinden geliyor; renkler
+         DESIGN.md'deki seri paletine bağlı. */
+      primary: read("--series-2", "#27C08A"),
+      primaryLight: read("--success-bg", "rgba(39,192,138,0.14)"),
+      secondary: read("--series-4", "#9A79D6"),
+      secondaryLight: read("--accent-faint", "rgba(46,134,255,0.07)"),
+      accent: read("--accent", "#2E86FF"),
+      accentLight: read("--accent-quiet", "rgba(46,134,255,0.14)"),
+      grid: read("--line", "#2E313D"),
+      text: read("--ink-2", "#B3B7C4"),
+      textMuted: read("--ink-3", "#8B90A2"),
+      ring: read("--surface", "#1E212A"),
+    };
+  }, [mounted]);
 
   useEffect(() => {
     setMounted(true);
@@ -261,7 +271,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       ctx.arc(x, y, 5, 0, Math.PI * 2);
       ctx.fillStyle = colors.accent;
       ctx.fill();
-      ctx.strokeStyle = isDark ? "#162033" : "#fff";
+      ctx.strokeStyle = colors.ring;
       ctx.lineWidth = 2;
       ctx.stroke();
     }
@@ -328,7 +338,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
         ctx.fillText(line, x, startY + idx * lineHeight);
       });
     }
-  }, [data, colors, isDark]);
+  }, [data, colors]);
 
   // Doğru çizim fonksiyonunu seç: 3+ için radar, 1-2 için bar chart
   const draw = useCallback(() => {
@@ -351,7 +361,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
     
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [data, mounted, draw, theme]);
+  }, [data, mounted, draw]);
 
   // Re-draw after a short delay to ensure container is sized
   useEffect(() => {
@@ -388,37 +398,37 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
   const isBarChart = data.length < 3;
 
   return (
-    <div className="bg-[var(--bg-card)]  rounded-2xl shadow-soft  p-6 h-full border border-[var(--border-soft)]  transition-colors duration-300">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-[var(--text-main)] ">{title}</h3>
-        {isBarChart && (
-          <span className="text-xs text-[var(--text-dim)]  bg-[var(--bg-card-2)]  px-2 py-1 rounded">
-            3+ alt kategori ile örümcek grafik
+    <section
+      className="h-full rounded-[var(--radius-lg)] p-6"
+      style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+      aria-label={title}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h3 className="t-subhead" style={{ color: "var(--ink)" }}>
+          {title}
+        </h3>
+
+        <div className="flex items-center gap-4 t-sm">
+          <span className="flex items-center gap-2" style={{ color: "var(--ink-2)" }}>
+            <span className="h-2 w-2 rounded-full" style={{ background: colors.accent }} aria-hidden="true" />
+            Mevcut
           </span>
-        )}
-      </div>
-      
-      {/* Legend */}
-      <div className="flex items-center justify-center gap-8 mb-4">
-        <div className="flex items-center gap-2">
-          <div 
-            className={`w-4 h-4 ${isBarChart ? 'rounded' : 'rounded-full'}`} 
-            style={{ backgroundColor: colors.accent }} 
-          />
-          <span className="text-sm text-[var(--text-muted)]  font-medium">Mevcut Durum</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div 
-            className={`w-4 h-4 ${isBarChart ? 'rounded' : 'rounded-full'}`} 
-            style={{ backgroundColor: colors.primary }} 
-          />
-          <span className="text-sm text-[var(--text-muted)]  font-medium">Hedef</span>
+          <span className="flex items-center gap-2" style={{ color: "var(--ink-2)" }}>
+            <span className="h-2 w-2 rounded-full" style={{ background: colors.primary }} aria-hidden="true" />
+            Hedef
+          </span>
         </div>
       </div>
+
+      {isBarChart && (
+        <p className="mt-1.5 t-sm" style={{ color: "var(--ink-3)" }}>
+          Üç ve üzeri alt kategoride örümcek grafiğe geçer.
+        </p>
+      )}
       
-      <div ref={containerRef} className="h-[300px] w-full">
+      <div ref={containerRef} className="mt-4 h-[300px] w-full">
         <canvas ref={canvasRef} />
       </div>
-    </div>
+    </section>
   );
 }

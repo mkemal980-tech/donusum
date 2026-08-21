@@ -63,6 +63,11 @@ RUN set -eux; \
   fi
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/static ./.next/static
+# scripts/ altindaki seed ve bakim scriptleri ../lib'den import ediyor
+# (seed-sector-scope, seed-demo-survey, check-ai-draft, build-tersane-oneriler).
+# Standalone sunucu lib'i kendi bundle'ina aliyor ama scriptler calisma aninda
+# kaynak dosyalari ariyor; kopyalanmazsa MODULE_NOT_FOUND ile duserler.
+COPY --from=builder /app/lib ./lib
 
 EXPOSE 3000
 

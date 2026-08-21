@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import Header from "@/components/ui/header";
+import AppShell from "@/components/ui/app-shell";
+import PageHeader from "@/components/ui/page-header";
+import EmptyState from "@/components/ui/empty-state";
+import Panel from "@/components/ui/panel";
 import RecommendationCard from "@/components/ui/recommendation-card";
 import { BubbleChart } from "@/components/ui/bubble-chart";
 import { 
@@ -274,244 +277,205 @@ export default function RecommendationsClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[var(--bg-main)]">
-        <Header />
-        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-          <div className="w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
+      <>
+        <AppShell />
+        <main>
+          <div className="skeleton mb-6 h-8 w-48" />
+          <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="skeleton h-24" />
+            ))}
+          </div>
+          <div className="skeleton h-[420px]" />
+        </main>
+      </>
     );
   }
 
+  const statusCards = [
+    { key: 'all' as const, label: 'Toplam öneri', value: stats.total },
+    { key: 'NOT_STARTED' as const, label: 'Başlanmadı', value: stats.notStarted },
+    { key: 'IN_PROGRESS' as const, label: 'Devam ediyor', value: stats.inProgress },
+    { key: 'COMPLETED' as const, label: 'Tamamlandı', value: stats.completed },
+  ];
+
   return (
-    <div className="min-h-screen bg-[var(--bg-main)]">
-      <Header />
-      
-      <main className="max-w-[1400px] mx-auto px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-        >
-          <div>
-            <h1 className="text-3xl font-bold text-[var(--text-main)] mb-2 flex items-center gap-3">
-              <Lightbulb className="text-[var(--accent)]" />
-              Öneriler
-            </h1>
-            <p className="text-[var(--text-muted)]">
-              {surveys.length > 1
-                ? `${selectedSurveyName} değerlendirmenize göre hazırlanan iyileştirme önerileri`
-                : "Değerlendirme sonuçlarınıza göre hazırlanan iyileştirme önerileri"}
-            </p>
-          </div>
+    <>
+      <AppShell />
 
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Birden fazla ankete erişimi olanlar için anket seçici.
-                Tek ankette gösterilmez — gereksiz karar yükü olur. */}
-            {surveys.length > 1 && (
-              <select
-                value={selectedSurveyId}
-                onChange={(event) => setSelectedSurveyId(event.target.value)}
-                className="px-4 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-soft)] text-[var(--text-main)] text-sm shadow-sm"
-                title="Öneriler seçili ankete göre listelenir"
-              >
-                {surveys.map((survey) => (
-                  <option key={survey.id} value={survey.id}>
-                    {survey.name}
-                  </option>
-                ))}
-              </select>
-            )}
+      <main>
+        <PageHeader
+          title="Öneriler"
+          subtitle={
+            surveys.length > 1
+              ? `${selectedSurveyName} değerlendirmesine göre hazırlanan iyileştirme adımları`
+              : "Değerlendirme sonucunuza göre hazırlanan iyileştirme adımları"
+          }
+          actions={
+            <>
+              {/* Birden fazla ankete erişimi olanlar için anket seçici.
+                  Tek ankette gösterilmez — gereksiz karar yükü olur. */}
+              {surveys.length > 1 && (
+                <>
+                  <label htmlFor="rec-survey" className="sr-only">
+                    Anket
+                  </label>
+                  <select
+                    id="rec-survey"
+                    value={selectedSurveyId}
+                    onChange={(event) => setSelectedSurveyId(event.target.value)}
+                    className="theme-select w-auto"
+                    title="Öneriler seçili ankete göre listelenir"
+                  >
+                    {surveys.map((survey) => (
+                      <option key={survey.id} value={survey.id}>
+                        {survey.name}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
 
-            {/* View Mode Toggle */}
-            <div className="flex bg-[var(--bg-card)] rounded-lg shadow-sm border border-[var(--border-soft)] p-1">
+              <div className="theme-tabs" role="tablist" aria-label="Görünüm">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={viewMode === 'bubble'}
+                  onClick={() => setViewMode('bubble')}
+                  className={`theme-tab ${viewMode === 'bubble' ? 'active' : ''}`}
+                >
+                  <ScatterChart size={15} className="mr-1.5 inline-block align-[-2px]" aria-hidden="true" />
+                  Grafik
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={viewMode === 'list'}
+                  onClick={() => setViewMode('list')}
+                  className={`theme-tab ${viewMode === 'list' ? 'active' : ''}`}
+                >
+                  <LayoutGrid size={15} className="mr-1.5 inline-block align-[-2px]" aria-hidden="true" />
+                  Liste
+                </button>
+              </div>
+            </>
+          }
+        />
+
+        {/* Sayı kartları aynı zamanda durum filtresi: seçili olan vurgu
+            kenarlığıyla işaretlenir, dekoratif ikon kutusu taşımaz. */}
+        <div className="mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
+          {statusCards.map((card) => {
+            const selected = statusFilter === card.key;
+            return (
               <button
-                onClick={() => setViewMode('bubble')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
-                  viewMode === 'bubble' 
-                    ? 'bg-[var(--accent)] text-white' 
-                    : 'text-[var(--text-muted)] hover:bg-[var(--bg-card-2)]'
-                }`}
+                key={card.key}
+                type="button"
+                onClick={() => setStatusFilter(card.key)}
+                aria-pressed={selected}
+                className="rounded-[var(--radius-lg)] p-5 text-left transition-colors duration-fast ease-out-quart"
+                style={{
+                  background: selected ? "var(--accent-quiet)" : "var(--surface)",
+                  border: `1px solid ${selected ? "var(--accent)" : "var(--line)"}`,
+                }}
               >
-                <ScatterChart size={18} />
-                <span className="hidden sm:inline">Bubble Chart</span>
+                <span className="block t-label" style={{ color: "var(--ink-2)" }}>
+                  {card.label}
+                </span>
+                <span className="mt-2 block t-metric" style={{ color: "var(--ink)" }}>
+                  {card.value}
+                </span>
               </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
-                  viewMode === 'list' 
-                    ? 'bg-[var(--accent)] text-white' 
-                    : 'text-[var(--text-muted)] hover:bg-[var(--bg-card-2)]'
-                }`}
-              >
-                <LayoutGrid size={18} />
-                <span className="hidden sm:inline">Liste</span>
-              </button>
-            </div>
-          </div>
-        </motion.div>
+            );
+          })}
+        </div>
 
-        {/* Stats Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"
-        >
-          <div 
-            onClick={() => setStatusFilter('all')}
-            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-soft)] cursor-pointer transition-all hover:shadow-md ${
-              statusFilter === 'all' ? 'ring-2 ring-[var(--accent)] border-[var(--accent)]' : ''
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-[var(--bg-card-2)] rounded-lg">
-                <BarChart3 size={20} className="text-[var(--primary)]" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-[var(--text-main)]">{stats.total}</p>
-                <p className="text-sm text-[var(--text-muted)]">Toplam Öneri</p>
-              </div>
-            </div>
+        {/* Filtreler */}
+        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start">
+          <div className="relative flex-1">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2"
+              size={16}
+              style={{ color: "var(--ink-3)" }}
+              aria-hidden="true"
+            />
+            <label htmlFor="rec-search" className="sr-only">
+              Önerilerde ara
+            </label>
+            <input
+              id="rec-search"
+              type="search"
+              placeholder="Önerilerde ara"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target?.value ?? '')}
+              className="theme-input"
+              style={{ paddingLeft: 34 }}
+            />
           </div>
-          
-          <div 
-            onClick={() => setStatusFilter('NOT_STARTED')}
-            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-soft)] cursor-pointer transition-all hover:shadow-md ${
-              statusFilter === 'NOT_STARTED' ? 'ring-2 ring-gray-400' : ''
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-[var(--bg-card-2)] rounded-lg">
-                <Circle size={20} className="text-[var(--text-dim)]" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-[var(--text-muted)]">{stats.notStarted}</p>
-                <p className="text-sm text-[var(--text-muted)]">Başlanmadı</p>
-              </div>
-            </div>
-          </div>
-          
-          <div 
-            onClick={() => setStatusFilter('IN_PROGRESS')}
-            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-soft)] cursor-pointer transition-all hover:shadow-md ${
-              statusFilter === 'IN_PROGRESS' ? 'ring-2 ring-[var(--warning)]' : ''
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-[var(--warning-bg)] rounded-lg">
-                <Play size={20} className="text-[var(--warning)]" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-[var(--warning)]">{stats.inProgress}</p>
-                <p className="text-sm text-[var(--text-muted)]">Devam Ediyor</p>
-              </div>
-            </div>
-          </div>
-          
-          <div 
-            onClick={() => setStatusFilter('COMPLETED')}
-            className={`bg-[var(--bg-card)] rounded-xl p-4 shadow-sm border border-[var(--border-soft)] cursor-pointer transition-all hover:shadow-md ${
-              statusFilter === 'COMPLETED' ? 'ring-2 ring-green-400' : ''
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-[var(--accent-soft)] rounded-lg">
-                <CheckCircle2 size={20} className="text-[var(--accent)]" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-[var(--accent)]">{stats.completed}</p>
-                <p className="text-sm text-[var(--text-muted)]">Tamamlandı</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
 
-        {/* Filters */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-[var(--bg-card)] rounded-xl shadow-md border border-[var(--border-soft)] p-6 mb-8"
-        >
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={20} />
-              <input
-                type="text"
-                placeholder="Önerilerde ara..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target?.value ?? '')}
-                className="w-full pl-12 pr-4 py-3 bg-[var(--bg-main)] border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent outline-none text-[var(--text-main)] placeholder:text-[var(--text-muted)]"
-              />
-            </div>
-            
-            <div className="flex gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <Clock size={18} className="text-[var(--text-muted)]" />
-                <select
-                  value={filters?.timeframe ?? 'all'}
-                  onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), timeframe: e.target?.value ?? 'all' }))}
-                  className="px-4 py-3 bg-[var(--bg-main)] border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none text-[var(--text-main)]"
-                >
-                  <option value="all">Tüm Zaman Dilimleri</option>
-                  <option value="SHORT_TERM">Kısa Vade</option>
-                  <option value="MEDIUM_TERM">Orta Vade</option>
-                  <option value="LONG_TERM">Uzun Vade</option>
-                </select>
-              </div>
+          <div className="flex flex-wrap gap-2">
+            <label htmlFor="filter-timeframe" className="sr-only">
+              Zaman dilimi
+            </label>
+            <select
+              id="filter-timeframe"
+              value={filters?.timeframe ?? 'all'}
+              onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), timeframe: e.target?.value ?? 'all' }))}
+              className="theme-select w-auto"
+            >
+              <option value="all">Tüm zaman dilimleri</option>
+              <option value="SHORT_TERM">Kısa vade</option>
+              <option value="MEDIUM_TERM">Orta vade</option>
+              <option value="LONG_TERM">Uzun vade</option>
+            </select>
 
-              <div className="flex items-center gap-2">
-                <DollarSign size={18} className="text-[var(--text-muted)]" />
-                <select
-                  value={filters?.costType ?? 'all'}
-                  onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), costType: e.target?.value ?? 'all' }))}
-                  className="px-4 py-3 bg-[var(--bg-main)] border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none text-[var(--text-main)]"
-                >
-                  <option value="all">Tüm Maliyet Tipleri</option>
-                  <option value="CAPEX">CAPEX (Yatırım)</option>
-                  <option value="OPEX">OPEX (İşletme)</option>
-                </select>
-              </div>
+            <label htmlFor="filter-cost" className="sr-only">
+              Maliyet tipi
+            </label>
+            <select
+              id="filter-cost"
+              value={filters?.costType ?? 'all'}
+              onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), costType: e.target?.value ?? 'all' }))}
+              className="theme-select w-auto"
+            >
+              <option value="all">Tüm maliyet tipleri</option>
+              <option value="CAPEX">CAPEX (yatırım)</option>
+              <option value="OPEX">OPEX (işletme)</option>
+            </select>
 
-              <div className="flex items-center gap-2">
-                <Zap size={18} className="text-[var(--text-muted)]" />
-                <select
-                  value={filters?.strategicType ?? 'all'}
-                  onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), strategicType: e.target?.value ?? 'all' }))}
-                  className="px-4 py-3 bg-[var(--bg-main)] border border-[var(--border-soft)] rounded-lg focus:ring-2 focus:ring-[var(--accent)] outline-none text-[var(--text-main)]"
-                >
-                  <option value="all">Tüm Tipler</option>
-                  <option value="QUICK_WIN">Hızlı Kazanım</option>
-                  <option value="PROJECT">Proje</option>
-                  <option value="BIG_BET">Büyük Yatırım</option>
-                </select>
-              </div>
-            </div>
+            <label htmlFor="filter-strategic" className="sr-only">
+              Öneri tipi
+            </label>
+            <select
+              id="filter-strategic"
+              value={filters?.strategicType ?? 'all'}
+              onChange={(e) => setFilters(prev => ({ ...(prev ?? {}), strategicType: e.target?.value ?? 'all' }))}
+              className="theme-select w-auto"
+            >
+              <option value="all">Tüm tipler</option>
+              <option value="QUICK_WIN">Hızlı kazanım</option>
+              <option value="PROJECT">Proje</option>
+              <option value="BIG_BET">Büyük yatırım</option>
+            </select>
           </div>
-        </motion.div>
+        </div>
 
         {/* Bubble Chart View */}
         {viewMode === 'bubble' && (filteredRecommendations?.length ?? 0) > 0 && (
           <>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="mb-8"
-            >
+            <div className="mb-6">
               {/* Durum filtresi yüzünden yapılabilir öneri kalmayabilir;
                   boş bir grafik çizmek yerine sebebini söyle. */}
               {chartRecommendations.length === 0 ? (
-                <div className="bg-[var(--bg-card)] rounded-xl p-8 text-center border border-[var(--border-soft)]">
-                  <ScatterChart size={40} className="mx-auto text-[var(--text-dim)] mb-3" />
-                  <p className="text-[var(--text-muted)]">
-                    Seçili filtrelerde şu an yapılabilecek öneri yok.
-                  </p>
-                  <p className="text-sm text-[var(--text-dim)] mt-1">
-                    Sırası gelmemiş {lockedCount} öneri liste görünümünde görülebilir.
-                  </p>
-                </div>
+                <EmptyState
+                  title="Seçili filtrelerde yapılabilecek öneri yok"
+                  description={`Sırası gelmemiş ${lockedCount} öneri liste görünümünde görülebilir.`}
+                  action={
+                    <Button variant="outline" onClick={() => setViewMode('list')}>
+                      Liste görünümüne geç
+                    </Button>
+                  }
+                />
               ) : (
                 <BubbleChart
                   recommendations={chartRecommendations as Recommendation[]}
@@ -520,75 +484,56 @@ export default function RecommendationsClient() {
               )}
               {/* Grafikten ne çıkarıldığı sessiz kalmamalı. */}
               {lockedCount > 0 && chartRecommendations.length > 0 && (
-                <p className="mt-2 text-xs text-[var(--text-dim)]">
+                <p className="mt-2 t-sm" style={{ color: "var(--ink-3)" }}>
                   Grafikte şu an yapılabilecek {chartRecommendations.length} öneri gösteriliyor.
                   Sırası gelmemiş {lockedCount} öneri, önceki basamak tamamlandıkça açılır —
                   hepsini{" "}
                   <button
+                    type="button"
                     onClick={() => setViewMode('list')}
-                    className="underline hover:text-[var(--accent)]"
+                    className="underline underline-offset-4"
+                    style={{ color: "var(--accent)" }}
                   >
                     liste görünümünde
                   </button>{" "}
                   görebilirsiniz.
                 </p>
               )}
-            </motion.div>
+            </div>
 
             {/* Eğitim ve Danışmanlık Bölümü */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mb-8"
-            >
-              <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] p-6">
-                <h3 className="text-lg font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
-                  <Video className="text-[var(--accent)]" size={20} />
-                  Eğitim ve Danışmanlık
-                </h3>
-                
-                {filteredRecommendations.filter(r => r.videoUrl).length > 0 ? (
-                  <div className="space-y-3">
-                    {filteredRecommendations
-                      .filter(r => r.videoUrl)
-                      .map((rec, index) => (
-                        <motion.div
-                          key={rec.id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.05 * index }}
-                          className="flex items-center justify-between p-4 bg-[var(--bg-card-2)] rounded-lg border border-[var(--border-soft)] hover:border-[var(--accent)]/50 transition-colors"
+            {filteredRecommendations.filter(r => r.videoUrl).length > 0 && (
+              <Panel title="Eğitim ve danışmanlık" padding="md" className="mb-6">
+                <ul className="flex flex-col">
+                  {filteredRecommendations
+                    .filter(r => r.videoUrl)
+                    .map((rec, index) => (
+                      <li
+                        key={rec.id}
+                        className="flex items-center justify-between gap-4 py-3"
+                        style={{ borderTop: index === 0 ? undefined : "1px solid var(--line)" }}
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate t-body" style={{ color: "var(--ink)" }}>
+                            {rec.title}
+                          </p>
+                          <p className="t-sm" style={{ color: "var(--ink-3)" }}>
+                            Video eğitim mevcut
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setActiveVideo({ url: rec.videoUrl || '', title: rec.title })}
                         >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--error)] to-[var(--accent-bright)] flex items-center justify-center flex-shrink-0">
-                              <Video size={18} className="text-white" />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-[var(--text-main)] truncate">{rec.title}</p>
-                              <p className="text-xs text-[var(--text-muted)]">Video eğitim mevcut</p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => setActiveVideo({ url: rec.videoUrl || '', title: rec.title })}
-                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[var(--error)] to-[var(--accent-bright)] text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity flex-shrink-0"
-                          >
-                            <Play size={14} />
-                            <span>İzle</span>
-                          </button>
-                        </motion.div>
-                      ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="w-16 h-16 rounded-full bg-[var(--bg-card-2)] flex items-center justify-center mb-4">
-                      <Video size={28} className="text-[var(--text-dim)]" />
-                    </div>
-                    <p className="text-[var(--text-muted)] text-sm">Eğitim ve Danışmanlık Videonuz Bulunmamaktadır</p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
+                          <Play size={14} aria-hidden="true" />
+                          İzle
+                        </Button>
+                      </li>
+                    ))}
+                </ul>
+              </Panel>
+            )}
           </>
         )}
 
@@ -597,115 +542,77 @@ export default function RecommendationsClient() {
           <>
             {/* Quick Wins Section */}
             {(quickWins?.length ?? 0) > 0 && (
-              <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="mb-10"
-              >
-                <h2 className="text-xl font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[var(--accent-soft)]0" />
-                  Hızlı Kazanımlar ({quickWins?.length ?? 0})
+              <section className="mb-8">
+                <h2 className="mb-4 flex items-center gap-2 t-subhead" style={{ color: "var(--ink)" }}>
+                  <span className="h-2 w-2 rounded-full" style={{ background: "var(--series-2)" }} aria-hidden="true" />
+                  Hızlı kazanımlar ({quickWins?.length ?? 0})
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {quickWins?.map((rec, index) => (
-                    <motion.div
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {quickWins?.map((rec) => (
+                    <RecommendationCard
                       key={rec?.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 * index }}
-                    >
-                      <RecommendationCard
-                        recommendation={rec}
-                        onAddToRoadmap={handleAddToRoadmap}
-                        onStatusChange={handleStatusChange}
-                      />
-                    </motion.div>
+                      recommendation={rec}
+                      onAddToRoadmap={handleAddToRoadmap}
+                      onStatusChange={handleStatusChange}
+                    />
                   ))}
                 </div>
-              </motion.section>
+              </section>
             )}
 
             {/* Projects Section */}
             {(projects?.length ?? 0) > 0 && (
-              <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="mb-10"
-              >
-                <h2 className="text-xl font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[var(--accent)]" />
+              <section className="mb-8">
+                <h2 className="mb-4 flex items-center gap-2 t-subhead" style={{ color: "var(--ink)" }}>
+                  <span className="h-2 w-2 rounded-full" style={{ background: "var(--accent)" }} aria-hidden="true" />
                   Projeler ({projects?.length ?? 0})
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {projects?.map((rec, index) => (
-                    <motion.div
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {projects?.map((rec) => (
+                    <RecommendationCard
                       key={rec?.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 * index }}
-                    >
-                      <RecommendationCard
-                        recommendation={rec}
-                        onAddToRoadmap={handleAddToRoadmap}
-                        onStatusChange={handleStatusChange}
-                      />
-                    </motion.div>
+                      recommendation={rec}
+                      onAddToRoadmap={handleAddToRoadmap}
+                      onStatusChange={handleStatusChange}
+                    />
                   ))}
                 </div>
-              </motion.section>
+              </section>
             )}
 
             {/* Big Bets Section */}
             {(bigBets?.length ?? 0) > 0 && (
-              <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="mb-10"
-              >
-                <h2 className="text-xl font-semibold text-[var(--text-main)] mb-4 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[var(--accent)]" />
-                  Büyük Yatırımlar ({bigBets?.length ?? 0})
+              <section className="mb-8">
+                <h2 className="mb-4 flex items-center gap-2 t-subhead" style={{ color: "var(--ink)" }}>
+                  <span className="h-2 w-2 rounded-full" style={{ background: "var(--series-3)" }} aria-hidden="true" />
+                  Büyük yatırımlar ({bigBets?.length ?? 0})
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {bigBets?.map((rec, index) => (
-                    <motion.div
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {bigBets?.map((rec) => (
+                    <RecommendationCard
                       key={rec?.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 * index }}
-                    >
-                      <RecommendationCard
-                        recommendation={rec}
-                        onAddToRoadmap={handleAddToRoadmap}
-                        onStatusChange={handleStatusChange}
-                      />
-                    </motion.div>
+                      recommendation={rec}
+                      onAddToRoadmap={handleAddToRoadmap}
+                      onStatusChange={handleStatusChange}
+                    />
                   ))}
                 </div>
-              </motion.section>
+              </section>
             )}
           </>
         )}
 
         {(filteredRecommendations?.length ?? 0) === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-16"
-          >
-            <Lightbulb size={64} className="mx-auto text-[var(--text-muted)] mb-4" />
-            <h2 className="text-xl font-semibold text-[var(--text-main)] mb-2">Öneri Bulunamadı</h2>
-            <p className="text-[var(--text-muted)]">
-              {searchTerm || filters?.timeframe !== "all" || filters?.costType !== "all" || filters?.strategicType !== "all" || statusFilter !== "all"
-                ? "Filtrelerinizi değiştirmeyi deneyin"
+          <EmptyState
+            title="Gösterilecek öneri yok"
+            description={
+              searchTerm || filters?.timeframe !== "all" || filters?.costType !== "all" || filters?.strategicType !== "all" || statusFilter !== "all"
+                ? "Seçili filtrelerde eşleşen öneri kalmadı. Filtreleri gevşetin."
                 : surveys.length > 1 && selectedSurveyName
-                  ? `Kişisel öneriler almak için "${selectedSurveyName}" anketini tamamlayın`
-                  : "Kişisel öneriler almak için anketi tamamlayın"}
-            </p>
-          </motion.div>
+                  ? `Öneriler, "${selectedSurveyName}" anketi cevaplandıkça üretilir.`
+                  : "Öneriler, anket cevaplandıkça üretilir."
+            }
+          />
         )}
       </main>
 
@@ -715,41 +622,65 @@ export default function RecommendationsClient() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          className="modal-backdrop fixed inset-0 flex items-center justify-center p-4"
           onClick={() => setActiveVideo(null)}
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="relative bg-[var(--bg-card)] rounded-xl border border-[var(--border-soft)] overflow-hidden shadow-2xl"
+            className="modal-content relative overflow-hidden"
             style={{ width: videoSize.width, maxWidth: '95vw', maxHeight: '90vh' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-[var(--border-soft)] bg-[var(--bg-card-2)]">
-              <h3 className="text-sm font-semibold text-[var(--text-main)] truncate flex-1 mr-4">
+            <div
+              className="flex items-center justify-between gap-4 p-4"
+              style={{ borderBottom: "1px solid var(--line)", background: "var(--surface-2)" }}
+            >
+              <h3 className="min-w-0 flex-1 truncate t-body font-medium" style={{ color: "var(--ink)" }}>
                 {activeVideo.title}
               </h3>
               <div className="flex items-center gap-2">
                 {/* Boyut Ayarlama Butonları */}
                 <button
                   onClick={() => setVideoSize({ width: 640, height: 360 })}
-                  className={`p-2 rounded-lg transition-colors ${videoSize.width === 640 ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                  type="button"
+                  className="icon-btn"
+                  style={
+                    videoSize.width === 640
+                      ? { background: "var(--accent-quiet)", color: "var(--ink)" }
+                      : undefined
+                  }
+                  aria-pressed={videoSize.width === 640}
                   title="Küçük"
                 >
                   <Minimize2 size={16} />
                 </button>
                 <button
                   onClick={() => setVideoSize({ width: 800, height: 450 })}
-                  className={`p-2 rounded-lg transition-colors ${videoSize.width === 800 ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                  type="button"
+                  className="icon-btn"
+                  style={
+                    videoSize.width === 800
+                      ? { background: "var(--accent-quiet)", color: "var(--ink)" }
+                      : undefined
+                  }
+                  aria-pressed={videoSize.width === 800}
                   title="Orta"
                 >
                   <Video size={16} />
                 </button>
                 <button
                   onClick={() => setVideoSize({ width: 1200, height: 675 })}
-                  className={`p-2 rounded-lg transition-colors ${videoSize.width === 1200 ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)]'}`}
+                  type="button"
+                  className="icon-btn"
+                  style={
+                    videoSize.width === 1200
+                      ? { background: "var(--accent-quiet)", color: "var(--ink)" }
+                      : undefined
+                  }
+                  aria-pressed={videoSize.width === 1200}
                   title="Büyük"
                 >
                   <Maximize2 size={16} />
@@ -759,9 +690,10 @@ export default function RecommendationsClient() {
                   onClick={() => setActiveVideo(null)}
                   variant="ghost"
                   size="icon"
-                  className="text-[var(--error)] ml-2"
+                  aria-label="Videoyu kapat"
+                  className="ml-1"
                 >
-                  <X size={16} />
+                  <X size={16} aria-hidden="true" />
                 </Button>
               </div>
             </div>
@@ -798,6 +730,6 @@ export default function RecommendationsClient() {
           </motion.div>
         </motion.div>
       )}
-    </div>
+    </>
   );
 }

@@ -17,33 +17,31 @@ export const dynamic = 'force-dynamic';
 
 // Kadran belirleme lib/scoring.classifyQuadrant üzerinden (tek doğru kaynak)
 
-// Kadran açıklamaları. Renkler olgunluk skalasının token'larıdır: aynı kadran
-// KPI ucunda (api/dashboard/kpi) da döndüğü için iki uç aynı ölçeği kullanır —
-// eskiden burası trafik ışığı, orası turkuaz skalasıydı.
+// Kadran açıklamaları
 const quadrantInfo: Record<string, { title: string; titleEn: string; description: string; color: string }> = {
   IRONMAN: {
     title: 'Demir Adam',
     titleEn: 'Iron Man',
     description: 'Demir Adam şirketleri hem güçlü hıza hem de dayanıklılığa sahiptir. Sürdürülebilir politikalar ve süreçler koruyarak hızlı aksiyon alabilirsiniz.',
-    color: 'var(--level-5)',
+    color: '#22c55e',
   },
   SPRINTER: {
     title: 'Sprinter',
     titleEn: 'Sprinter',
     description: 'Sprinter şirketleri güçlü hıza sahip ancak dayanıklılıktan yoksundur. Hızlı aksiyon alıyorsunuz ancak sürdürülebilir politikalar ve dokümantasyon geliştirmelisiniz.',
-    color: 'var(--level-3)',
+    color: '#f59e0b',
   },
   MARATHON_RUNNER: {
     title: 'Maraton Koşucusu',
     titleEn: 'Marathon Runner',
     description: 'Maraton Koşucusu şirketleri güçlü dayanıklılığa sahip ancak hızdan yoksundur. Politikalarınız sağlam ancak aksiyonlarınızı hızlandırmalısınız.',
-    color: 'var(--level-4)',
+    color: '#3b82f6',
   },
   WALKER: {
     title: 'Yaya',
     titleEn: 'Walker',
     description: 'Yaya şirketleri henüz güçlü hıza ve dayanıklılığa sahip değildir. Bu grafiğin bu bölgesindeyseniz, türbülanslı iç veya dış koşullar altında savunmasız olabilirsiniz.',
-    color: 'var(--level-1)',
+    color: '#ef4444',
   },
 };
 

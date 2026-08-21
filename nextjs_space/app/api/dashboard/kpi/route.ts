@@ -127,24 +127,20 @@ export async function GET(request: NextRequest) {
     else if (velocityScore >= THRESHOLD && enduranceScore < THRESHOLD) quadrant = 'SPRINTER';
     else if (velocityScore < THRESHOLD && enduranceScore >= THRESHOLD) quadrant = 'MARATHON_RUNNER';
 
-    // Renkler CSS token'ı olarak döner; panodaki olgunluk skalasıyla aynı
-    // kaynağı kullanır ve temaya uyar. Buradaki değerler eskiden trafik ışığı
-    // (kırmızı/sarı/yeşil) idi; aynı seviyeyi panonun geri kalanı turkuaz
-    // skalasında gösterdiği için tek kayıt iki ayrı renkte görünüyordu.
     const quadrantLabels: Record<string, { title: string; color: string }> = {
-      IRONMAN: { title: 'Iron Man', color: 'var(--level-5)' },
-      SPRINTER: { title: 'Sprinter', color: 'var(--level-3)' },
-      MARATHON_RUNNER: { title: 'Marathon Runner', color: 'var(--level-4)' },
-      WALKER: { title: 'Walker', color: 'var(--level-1)' },
+      IRONMAN: { title: 'Iron Man', color: '#22c55e' },
+      SPRINTER: { title: 'Sprinter', color: '#f59e0b' },
+      MARATHON_RUNNER: { title: 'Marathon Runner', color: '#3b82f6' },
+      WALKER: { title: 'Walker', color: '#ef4444' },
     };
 
     // Maturity level
     const getMaturityLevel = (pct: number) => {
-      if (pct >= 80) return { level: 5, label: 'Lider', color: 'var(--level-5)' };
-      if (pct >= 60) return { level: 4, label: 'Olgun', color: 'var(--level-4)' };
-      if (pct >= 40) return { level: 3, label: 'Gelişen', color: 'var(--level-3)' };
-      if (pct >= 20) return { level: 2, label: 'Farkındalık', color: 'var(--level-2)' };
-      return { level: 1, label: 'Başlangıç', color: 'var(--level-1)' };
+      if (pct >= 80) return { level: 5, label: 'Lider', color: '#22c55e' };
+      if (pct >= 60) return { level: 4, label: 'Olgun', color: '#2dd4bf' };
+      if (pct >= 40) return { level: 3, label: 'Gelişen', color: '#38bdf8' };
+      if (pct >= 20) return { level: 2, label: 'Farkındalık', color: '#fbbf24' };
+      return { level: 1, label: 'Başlangıç', color: '#ef4444' };
     };
 
     // Kategoriler

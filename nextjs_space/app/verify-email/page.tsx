@@ -3,8 +3,9 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { CheckCircle2, XCircle, Loader2, Mail, ArrowRight, Sparkles } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import AuthLayout from "@/components/ui/auth-layout";
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
@@ -74,254 +75,114 @@ function VerifyEmailContent() {
     }
   };
 
-  return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ backgroundColor: "var(--bg-main)" }}
+  /* Dört durum, tek iskelet: başlık ve gövde duruma göre değişir. */
+  const copy = {
+    loading: {
+      title: "Adres doğrulanıyor",
+      subtitle: "Bağlantı kontrol ediliyor, birkaç saniye sürebilir.",
+    },
+    success: {
+      title: "Adres doğrulandı",
+      subtitle: "Artık giriş yapabilirsiniz.",
+    },
+    error: {
+      title: "Doğrulama tamamlanamadı",
+      subtitle: "Bağlantının süresi dolmuş ya da daha önce kullanılmış olabilir.",
+    },
+    "no-token": {
+      title: "E-posta doğrulama",
+      subtitle: "Size gönderilen bağlantıya tıklayarak adresinizi doğrulayın.",
+    },
+  }[status];
+
+  const resendBlock = resendSuccess ? (
+    <p
+      role="status"
+      aria-live="polite"
+      className="rounded-[var(--radius-xs)] p-3 t-sm"
+      style={{ background: "var(--success-bg)", color: "var(--success)" }}
     >
-      {/* Background Effects */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -top-1/2 -left-1/2 w-full h-full rounded-full opacity-20 blur-3xl"
-          style={{ backgroundColor: "var(--accent)" }}
+      Bu adres kayıtlıysa doğrulama bağlantısı gönderildi. Gelen kutunuzu ve spam
+      klasörünü kontrol edin.
+    </p>
+  ) : (
+    <div>
+      <label htmlFor="resend-email" className="t-label mb-1.5 block" style={{ color: "var(--ink-2)" }}>
+        Yeni bağlantı iste
+      </label>
+      <div className="flex gap-2">
+        <input
+          id="resend-email"
+          type="email"
+          autoComplete="email"
+          value={resendEmail}
+          onChange={(e) => setResendEmail(e.target.value)}
+          placeholder="ad.soyad@kurum.com"
+          className="theme-input"
         />
-        <div
-          className="absolute -bottom-1/2 -right-1/2 w-full h-full rounded-full opacity-10 blur-3xl"
-          style={{ backgroundColor: "var(--blue-main)" }}
-        />
+        <Button type="button" onClick={handleResend} disabled={resending || !resendEmail}>
+          {resending ? <Loader2 size={16} className="animate-spin" aria-hidden="true" /> : "Gönder"}
+        </Button>
       </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full max-w-md"
-      >
-        <div
-          className="rounded-2xl p-8"
-          style={{
-            backgroundColor: "var(--bg-card)",
-            border: "1px solid var(--border-soft)",
-          }}
-        >
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center"
-              style={{ backgroundColor: "var(--accent)" }}
-            >
-              <Sparkles className="w-8 h-8" style={{ color: "var(--bg-deep)" }} />
-            </div>
-          </div>
-
-          {/* Loading */}
-          {status === "loading" && (
-            <div className="text-center">
-              <Loader2
-                className="w-12 h-12 mx-auto mb-4 animate-spin"
-                style={{ color: "var(--accent)" }}
-              />
-              <h2
-                className="text-xl font-semibold mb-2"
-                style={{ color: "var(--text-main)" }}
-              >
-                Email Adresiniz Doğrulanıyor...
-              </h2>
-              <p style={{ color: "var(--text-muted)" }}>
-                Lütfen bekleyin.
-              </p>
-            </div>
-          )}
-
-          {/* Success */}
-          {status === "success" && (
-            <div className="text-center">
-              <div
-                className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: "var(--success-bg)" }}
-              >
-                <CheckCircle2 className="w-10 h-10 text-[var(--success)]" />
-              </div>
-              <h2
-                className="text-xl font-semibold mb-2"
-                style={{ color: "var(--text-main)" }}
-              >
-                Email Doğrulandı! 🎉
-              </h2>
-              <p className="mb-6" style={{ color: "var(--text-muted)" }}>
-                {message}
-              </p>
-              <p className="text-sm mb-4" style={{ color: "var(--text-dim)" }}>
-                Giriş sayfasına yönlendiriliyorsunuz...
-              </p>
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all hover:scale-105"
-                style={{
-                  backgroundColor: "var(--accent)",
-                  color: "var(--bg-deep)",
-                }}
-              >
-                Giriş Yap
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          )}
-
-          {/* Error */}
-          {status === "error" && (
-            <div className="text-center">
-              <div
-                className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: "var(--error-bg)" }}
-              >
-                <XCircle className="w-10 h-10 text-[var(--error)]" />
-              </div>
-              <h2
-                className="text-xl font-semibold mb-2"
-                style={{ color: "var(--text-main)" }}
-              >
-                Doğrulama Başarısız
-              </h2>
-              <p className="mb-6" style={{ color: "var(--text-muted)" }}>
-                {message}
-              </p>
-
-              {/* Resend Form */}
-              {!resendSuccess ? (
-                <div
-                  className="p-4 rounded-lg"
-                  style={{ backgroundColor: "var(--bg-card-2)" }}
-                >
-                  <p className="text-sm mb-3" style={{ color: "var(--text-muted)" }}>
-                    Yeni doğrulama linki almak için email adresinizi girin:
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="email"
-                      value={resendEmail}
-                      onChange={(e) => setResendEmail(e.target.value)}
-                      placeholder="Email adresiniz"
-                      className="flex-1 px-4 py-2 rounded-lg text-sm"
-                      style={{
-                        backgroundColor: "var(--bg-card)",
-                        border: "1px solid var(--border-soft)",
-                        color: "var(--text-main)",
-                      }}
-                    />
-                    <button
-                      onClick={handleResend}
-                      disabled={resending || !resendEmail}
-                      className="px-4 py-2 rounded-lg font-medium text-sm transition-all disabled:opacity-50"
-                      style={{
-                        backgroundColor: "var(--accent)",
-                        color: "var(--bg-deep)",
-                      }}
-                    >
-                      {resending ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        "Gönder"
-                      )}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className="p-4 rounded-lg"
-                  style={{ backgroundColor: "var(--success-bg)" }}
-                >
-                  <p className="text-sm text-[var(--success)]">
-                    ✅ Eğer email adresi kayıtlıysa, doğrulama linki gönderildi.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* No Token */}
-          {status === "no-token" && (
-            <div className="text-center">
-              <div
-                className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: "var(--accent-soft)" }}
-              >
-                <Mail className="w-10 h-10" style={{ color: "var(--accent)" }} />
-              </div>
-              <h2
-                className="text-xl font-semibold mb-2"
-                style={{ color: "var(--text-main)" }}
-              >
-                Email Doğrulama
-              </h2>
-              <p className="mb-6" style={{ color: "var(--text-muted)" }}>
-                Email adresinizi doğrulamak için size gönderilen linke tıklayın.
-              </p>
-
-              {/* Resend Form */}
-              {!resendSuccess ? (
-                <div
-                  className="p-4 rounded-lg"
-                  style={{ backgroundColor: "var(--bg-card-2)" }}
-                >
-                  <p className="text-sm mb-3" style={{ color: "var(--text-muted)" }}>
-                    Doğrulama linki almadınız mı? Email adresinizi girin:
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="email"
-                      value={resendEmail}
-                      onChange={(e) => setResendEmail(e.target.value)}
-                      placeholder="Email adresiniz"
-                      className="flex-1 px-4 py-2 rounded-lg text-sm"
-                      style={{
-                        backgroundColor: "var(--bg-card)",
-                        border: "1px solid var(--border-soft)",
-                        color: "var(--text-main)",
-                      }}
-                    />
-                    <button
-                      onClick={handleResend}
-                      disabled={resending || !resendEmail}
-                      className="px-4 py-2 rounded-lg font-medium text-sm transition-all disabled:opacity-50"
-                      style={{
-                        backgroundColor: "var(--accent)",
-                        color: "var(--bg-deep)",
-                      }}
-                    >
-                      {resending ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        "Gönder"
-                      )}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className="p-4 rounded-lg"
-                  style={{ backgroundColor: "var(--success-bg)" }}
-                >
-                  <p className="text-sm text-[var(--success)]">
-                    ✅ Eğer email adresi kayıtlıysa, doğrulama linki gönderildi.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Back to Login */}
-          <div className="mt-6 text-center">
-            <Link
-              href="/login"
-              className="text-sm transition-colors"
-              style={{ color: "var(--text-muted)" }}
-            >
-              ← Giriş sayfasına dön
-            </Link>
-          </div>
-        </div>
-      </motion.div>
     </div>
+  );
+
+  return (
+    <AuthLayout
+      title={copy.title}
+      subtitle={copy.subtitle}
+      footer={
+        <p className="t-sm" style={{ color: "var(--ink-2)" }}>
+          <Link href="/login" className="font-medium hover:underline" style={{ color: "var(--accent)" }}>
+            Giriş sayfasına dön
+          </Link>
+        </p>
+      }
+    >
+      <div className="flex flex-col gap-5">
+        {status === "loading" && (
+          <p role="status" aria-live="polite" className="flex items-center gap-2.5 t-body" style={{ color: "var(--ink-2)" }}>
+            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+            Bekleyin.
+          </p>
+        )}
+
+        {status === "success" && (
+          <>
+            <p
+              role="status"
+              aria-live="polite"
+              className="rounded-[var(--radius-xs)] p-3 t-body"
+              style={{ background: "var(--success-bg)", color: "var(--success)" }}
+            >
+              {message}
+            </p>
+            <Button asChild>
+              <Link href="/login">Giriş yap</Link>
+            </Button>
+            <p className="t-sm" style={{ color: "var(--ink-3)" }}>
+              Giriş sayfasına yönlendiriliyorsunuz.
+            </p>
+          </>
+        )}
+
+        {status === "error" && (
+          <>
+            <p
+              role="alert"
+              aria-live="assertive"
+              className="rounded-[var(--radius-xs)] p-3 t-body"
+              style={{ background: "var(--error-bg)", color: "var(--error)" }}
+            >
+              {message}
+            </p>
+            {resendBlock}
+          </>
+        )}
+
+        {status === "no-token" && resendBlock}
+      </div>
+    </AuthLayout>
   );
 }
 
@@ -329,14 +190,8 @@ export default function VerifyEmailPage() {
   return (
     <Suspense
       fallback={
-        <div
-          className="min-h-screen flex items-center justify-center"
-          style={{ backgroundColor: "var(--bg-main)" }}
-        >
-          <Loader2
-            className="w-8 h-8 animate-spin"
-            style={{ color: "var(--accent)" }}
-          />
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="spinner" role="status" aria-label="Yükleniyor" />
         </div>
       }
     >

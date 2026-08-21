@@ -13,30 +13,32 @@ import { cn } from "@/lib/utils"
  * ama dolgu, köşe, hover ve disabled davranışı sayfadan sayfaya kayıyordu ve
  * bir ölçüyü değiştirmek için tek bir dosya yoktu.
  *
- * Dolgu turkuaz üzerine koyu metin kullanır: beyaz metnin kontrastı 2.2:1 ile
- * WCAG'in 4.5:1 eşiğinin çok altında kalıyor, koyu metin 8.1:1 veriyor.
+ * Dolgu, veri mavisinden bir tık koyu olan --accent-solid'i kullanır: parlak
+ * mavi üzerinde beyaz metin 3.5:1'de kalıyordu, bu tonda 4.7:1 veriyor.
  */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg font-medium transition-colors " +
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium " +
+    "transition-colors duration-fast ease-out-quart " +
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 " +
-    "focus-visible:ring-offset-[var(--bg-main)] disabled:pointer-events-none disabled:opacity-50",
+    "focus-visible:ring-offset-[var(--canvas)] disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        default: "bg-[var(--accent)] text-[var(--bg-deep)] hover:bg-[var(--accent-dark)]",
-        destructive: "bg-[var(--error)] text-white hover:opacity-90",
+        default:
+          "bg-[var(--accent-solid)] text-[var(--on-accent)] shadow-button hover:bg-[var(--accent)] active:bg-[var(--accent-press)]",
+        destructive: "bg-[var(--error)] text-[var(--canvas)] hover:opacity-90",
         outline:
-          "border border-[var(--accent)] text-[var(--accent)] bg-transparent hover:bg-[var(--accent-soft)]",
+          "border border-[var(--line-strong)] text-[var(--ink)] bg-transparent hover:bg-[var(--surface-2)] hover:border-[var(--ink-3)]",
         secondary:
-          "bg-[var(--bg-card-2)] text-[var(--text-muted)] hover:text-[var(--text-main)]",
-        ghost: "text-[var(--text-muted)] hover:bg-[var(--bg-card-2)] hover:text-[var(--text-main)]",
+          "bg-[var(--surface-2)] text-[var(--ink)] hover:bg-[var(--surface-3)]",
+        ghost: "text-[var(--ink-2)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]",
         link: "text-[var(--accent)] underline-offset-4 hover:underline",
-        soft: "bg-[var(--accent-soft)] text-[var(--accent)] hover:bg-[var(--accent-soft)]",
+        soft: "bg-[var(--accent-quiet)] text-[var(--accent-ink)] hover:bg-[var(--accent-faint)]",
       },
       size: {
-        sm: "h-9 px-3 text-xs",
-        default: "h-10 px-4 text-sm",
-        lg: "h-12 px-6 text-base",
+        sm: "h-8 px-3 text-sm",
+        default: "h-10 px-4 text-base",
+        lg: "h-11 px-5 text-base",
         icon: "h-9 w-9",
       },
     },

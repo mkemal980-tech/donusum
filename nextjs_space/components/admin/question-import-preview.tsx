@@ -218,19 +218,19 @@ export default function QuestionImportPreview({
       {/* Özet */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-          <div className="text-lg font-bold text-[var(--text-muted)]">{rows.length}</div>
+          <div className="text-lg font-semibold text-[var(--text-muted)]">{rows.length}</div>
           <div className="text-xs text-[var(--text-dim)]">Okunan Satır</div>
         </div>
         <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-          <div className="text-lg font-bold text-[var(--success)]">{validCount}</div>
+          <div className="text-lg font-semibold text-[var(--success)]">{validCount}</div>
           <div className="text-xs text-[var(--text-dim)]">Aktarılacak</div>
         </div>
         <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-          <div className="text-lg font-bold text-[var(--error)]">{errorCount}</div>
+          <div className="text-lg font-semibold text-[var(--error)]">{errorCount}</div>
           <div className="text-xs text-[var(--text-dim)]">Düzeltilecek</div>
         </div>
         <div className="text-center p-2 bg-[var(--bg-card)] rounded-lg">
-          <div className="text-lg font-bold text-[var(--text-dim)]">{payload.skippedRows}</div>
+          <div className="text-lg font-semibold text-[var(--text-dim)]">{payload.skippedRows}</div>
           <div className="text-xs text-[var(--text-dim)]">Atlanan (boş)</div>
         </div>
       </div>
@@ -259,7 +259,7 @@ export default function QuestionImportPreview({
           onClick={() => setOnlyErrors((current) => !current)}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm border ${
             onlyErrors
-              ? "bg-[var(--accent-dark)] text-white border-transparent"
+              ? "bg-[var(--accent-solid)] text-[var(--on-accent)] border-transparent"
               : "bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-soft)]"
           }`}
         >
@@ -452,7 +452,7 @@ export default function QuestionImportPreview({
           type="button"
           onClick={() => onConfirm(rows)}
           disabled={saving || rows.length === 0 || errorCount > 0}
-          className="px-4 py-2 bg-[var(--accent-dark)] text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-[var(--accent-solid)] text-[var(--on-accent)] rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? "Aktarılıyor..." : `Onayla ve Aktar (${rows.length} soru)`}
         </button>

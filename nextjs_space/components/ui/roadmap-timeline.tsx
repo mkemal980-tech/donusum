@@ -122,7 +122,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                   </div>
                   <button
                     onClick={() => onRemove?.(item?.recommendationId)}
-                    className="p-1 rounded transition-colors flex-shrink-0 hover:bg-[var(--error-bg)]0/20"
+                    className="p-1 rounded transition-colors flex-shrink-0 hover:bg-[var(--error-bg)]"
                     style={{ color: 'var(--ui-passive)' }}
                   >
                     <X size={14} />
@@ -163,7 +163,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                       borderColor: 'var(--blue-main)' 
                     }}
                   >
-                    <span className="text-xs font-bold" style={{ color: 'var(--blue-main)' }}>Ç{quarter?.q}</span>
+                    <span className="text-xs font-semibold" style={{ color: 'var(--blue-main)' }}>Ç{quarter?.q}</span>
                   </div>
                 </div>
               </div>
@@ -188,8 +188,6 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
               return (
                 <motion.div
                   key={`col-${quarter?.q}-${quarter?.year}`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, quarter?.q, quarter?.year)}
                   className="flex-1 min-h-[200px] rounded-xl p-3 border-2 border-dashed transition-all"
@@ -226,7 +224,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                             </div>
                             <button
                               onClick={() => onRemove?.(item?.recommendationId)}
-                              className="p-0.5 rounded transition-colors flex-shrink-0 hover:bg-[var(--error-bg)]0/20"
+                              className="p-0.5 rounded transition-colors flex-shrink-0 hover:bg-[var(--error-bg)]"
                               style={{ color: 'var(--ui-passive)' }}
                             >
                               <X size={12} />

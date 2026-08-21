@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { validators } from "@/lib/api-utils";
 import { sendEmail } from "@/lib/email";
 import bcrypt from "bcryptjs";
 
@@ -16,9 +17,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    // Kayıt akışıyla aynı kural (bkz. lib/api-utils validators.password);
+    // reset üzerinden daha zayıf şifre belirlenmesini engeller.
+    const passwordCheck = validators.password(password);
+    if (!passwordCheck.valid) {
       return NextResponse.json(
-        { error: "Şifre en az 6 karakter olmalı" },
+        { error: passwordCheck.message },
         { status: 400 }
       );
     }

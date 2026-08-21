@@ -419,8 +419,6 @@ export function IronmanChart() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
       className="bg-[var(--bg-card)] rounded-2xl shadow-sm overflow-hidden border border-[var(--border-soft)]"
     >
       <div className="p-6">
@@ -586,7 +584,7 @@ export function IronmanChart() {
             <div className="grid grid-cols-2 gap-4">
               {/* Quadrant Info */}
               <div className="bg-[var(--bg-card-2)] rounded-xl p-4">
-                <h4 className="text-sm font-bold text-[var(--text-dim)] mb-2">{data.current.quadrantInfo.title}</h4>
+                <h4 className="text-sm font-semibold text-[var(--text-dim)] mb-2">{data.current.quadrantInfo.title}</h4>
                 <p className="text-xs text-[var(--text-dim)] leading-relaxed">
                   {data.current.quadrantInfo.description}
                 </p>

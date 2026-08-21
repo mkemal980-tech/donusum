@@ -4,7 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import Header from "@/components/ui/header";
+import AppShell from "@/components/ui/app-shell";
+import PageHeader from "@/components/ui/page-header";
+import StatCard from "@/components/ui/stat-card";
+import EmptyState from "@/components/ui/empty-state";
 import { getWithRetry } from "@/lib/retrying-fetch";
 import { toast } from "sonner";
 import {
@@ -74,20 +77,13 @@ interface Document {
   } | null;
 }
 
-const getScoreColor = (score: number) => {
-  if (score >= 80) return "text-[var(--accent)] bg-[var(--accent-soft)]";
-  if (score >= 60) return "text-[var(--blue-main)] bg-[var(--info-bg)]";
-  if (score >= 40) return "text-[var(--accent)] bg-[var(--accent)]/15";
-  if (score >= 20) return "text-[var(--warning)] bg-[var(--warning-bg)]";
-  return "text-[var(--error)] bg-[var(--error-bg)]";
-};
-
+/* Puan renkle değil sayıyla okunur; tabloda renk yalnızca durum sütununda. */
 const getMaturityLabel = (score: number) => {
-  if (score >= 4.5) return { label: "Lider", color: "text-[var(--accent)]" };
-  if (score >= 3.5) return { label: "Olgun", color: "text-[var(--blue-main)]" };
-  if (score >= 2.5) return { label: "Gelişen", color: "text-[var(--accent)]" };
-  if (score >= 1.5) return { label: "Farkındalık", color: "text-[var(--warning)]" };
-  return { label: "Başlangıç", color: "text-[var(--error)]" };
+  if (score >= 4.5) return { label: "Lider" };
+  if (score >= 3.5) return { label: "Olgun" };
+  if (score >= 2.5) return { label: "Gelişen" };
+  if (score >= 1.5) return { label: "Farkındalık" };
+  return { label: "Başlangıç" };
 };
 
 export default function UnitManagerPage() {
@@ -191,26 +187,24 @@ export default function UnitManagerPage() {
     return "";
   };
 
-  const getFileIcon = (fileType: string) => {
-    if (fileType.includes("pdf")) return "📄";
-    if (fileType.includes("image")) return "🖼️";
-    if (fileType.includes("word") || fileType.includes("document")) return "📝";
-    if (fileType.includes("excel") || fileType.includes("sheet")) return "📊";
-    return "📎";
-  };
-
   const getUserName = (doc: Document) => {
     return [doc.user.firstName, doc.user.lastName].filter(Boolean).join(" ") || doc.user.email;
   };
 
   if (loading || status === "loading") {
     return (
-      <div className="min-h-screen bg-[var(--bg-main)]">
-        <Header />
-        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-          <div className="w-12 h-12 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
-        </div>
-      </div>
+      <>
+        <AppShell />
+        <main>
+          <div className="skeleton mb-6 h-8 w-72" />
+          <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="skeleton h-24" />
+            ))}
+          </div>
+          <div className="skeleton h-[320px]" />
+        </main>
+      </>
     );
   }
 
@@ -223,133 +217,58 @@ export default function UnitManagerPage() {
       : 0;
 
   return (
-    <div className="min-h-screen bg-[var(--bg-main)]">
-      <Header />
+    <>
+      <AppShell />
 
-      <main className="max-w-[1200px] mx-auto px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-[var(--text-main)] mb-2 flex items-center gap-3">
-                <Building2 className="text-[var(--accent)]" />
-                Birim Yöneticisi Paneli
-              </h1>
-              <p className="text-[var(--text-muted)]">Biriminizdeki kullanıcıların anket ilerleme ve sonuçlarını takip edin</p>
-            </div>
-
-            {/* Anketin hangi bölümünü kimin dolduracağı buradan belirlenir. */}
-            <Button
-              onClick={() => router.push("/unit-manager/assignments")}
-              className="font-medium"
-            >
-              <ListChecks size={18} />
-              Görev Dağılımı
+      <main>
+        <PageHeader
+          title="Birim takibi"
+          subtitle="Birimlerinizdeki değerlendirmelerin ilerleyişi ve sonuçları."
+          actions={
+            /* Anketin hangi bölümünü kimin dolduracağı buradan belirlenir. */
+            <Button onClick={() => router.push("/unit-manager/assignments")}>
+              <ListChecks size={16} aria-hidden="true" />
+              Görev dağılımı
             </Button>
-          </div>
-        </motion.div>
+          }
+        />
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-[var(--bg-card)]  rounded-xl shadow-md p-6 border border-[var(--border-soft)] "
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[var(--info-bg)]  rounded-lg flex items-center justify-center">
-                <Building2 className="text-[var(--accent)] " size={24} />
-              </div>
-              <div>
-                <p className="text-sm text-[var(--text-dim)] ">Birim Sayısı</p>
-                <p className="text-2xl font-bold text-[var(--text-main)] ">{units.length}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-[var(--bg-card)]  rounded-xl shadow-md p-6 border border-[var(--border-soft)] "
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[var(--accent)]/15  rounded-lg flex items-center justify-center">
-                <Users className="text-[var(--accent)] " size={24} />
-              </div>
-              <div>
-                <p className="text-sm text-[var(--text-dim)] ">Değerlendirme</p>
-                <p className="text-2xl font-bold text-[var(--text-main)] ">{totalAssessments}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-[var(--bg-card)]  rounded-xl shadow-md p-6 border border-[var(--border-soft)] "
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[var(--accent-soft)]  rounded-lg flex items-center justify-center">
-                <CheckCircle className="text-[var(--accent)] " size={24} />
-              </div>
-              <div>
-                <p className="text-sm text-[var(--text-dim)] ">Başlanan</p>
-                <p className="text-2xl font-bold text-[var(--text-main)] ">
-                  {startedAssessments.length} / {totalAssessments}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-[var(--bg-card)]  rounded-xl shadow-md p-6 border border-[var(--border-soft)] "
-          >
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[var(--warning-bg)]  rounded-lg flex items-center justify-center">
-                <TrendingUp className="text-[var(--warning)] " size={24} />
-              </div>
-              <div>
-                <p className="text-sm text-[var(--text-dim)] ">Ortalama Skor</p>
-                <p className="text-2xl font-bold text-[var(--text-main)] ">%{Math.round(avgScore)}</p>
-              </div>
-            </div>
-          </motion.div>
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Birim" value={units.length} />
+          <StatCard label="Değerlendirme" value={totalAssessments} />
+          <StatCard
+            label="Başlanan"
+            value={`${startedAssessments.length} / ${totalAssessments}`}
+            note={totalAssessments > 0 ? "cevap girilmiş değerlendirme" : "henüz değerlendirme yok"}
+          />
+          <StatCard
+            label="Ortalama puan"
+            value={`${Math.round(avgScore)}%`}
+            note="başlanmış değerlendirmelerin ortalaması"
+          />
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 bg-[var(--bg-main)]  p-1 rounded-xl w-fit border border-[var(--border-soft)] ">
+        <div className="theme-tabs mb-6" role="tablist" aria-label="Görünüm">
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "team"}
             onClick={() => setActiveTab("team")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
-              activeTab === "team"
-                ? "bg-[var(--accent)] text-white shadow-md"
-                : "text-[var(--text-muted)]  hover:bg-[var(--border-soft)] "
-            }`}
+            className={`theme-tab ${activeTab === "team" ? "active" : ""}`}
           >
-            <Users size={18} />
             Değerlendirmeler
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "documents"}
             onClick={() => setActiveTab("documents")}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-all duration-200 ${
-              activeTab === "documents"
-                ? "bg-[var(--accent)] text-white shadow-md"
-                : "text-[var(--text-muted)]  hover:bg-[var(--border-soft)] "
-            }`}
+            className={`theme-tab ${activeTab === "documents" ? "active" : ""}`}
           >
-            <Files size={18} />
-            Yüklenen Dosyalar
+            Yüklenen dosyalar
             {documents.length > 0 && (
-              <span className="ml-1 px-2 py-0.5 bg-[var(--bg-card)]/20 rounded-full text-xs">
+              <span className="ml-1.5 tabular" style={{ color: "var(--ink-3)" }}>
                 {documents.length}
               </span>
             )}
@@ -364,84 +283,83 @@ export default function UnitManagerPage() {
             const isExpanded = expandedUnits.has(unit.id);
 
             return (
-              <motion.div
+              <div
                 key={unit.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-[var(--bg-card)] rounded-xl shadow-md overflow-hidden"
+                className="overflow-hidden rounded-[var(--radius-lg)]"
+                style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
               >
-                {/* Unit Header */}
-                <div
-                  className="p-6 cursor-pointer hover:bg-[var(--bg-main)] transition-colors"
+                {/* Birim başlığı — tıklanınca değerlendirme tablosunu açar. */}
+                <button
+                  type="button"
+                  className="w-full p-5 text-left transition-colors duration-fast ease-out-quart hover:bg-[var(--surface-2)]"
                   onClick={() => toggleUnit(unit.id)}
+                  aria-expanded={isExpanded}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3">
                       {isExpanded ? (
-                        <ChevronDown className="text-[var(--text-dim)]" size={20} />
+                        <ChevronDown size={16} style={{ color: "var(--ink-3)" }} aria-hidden="true" />
                       ) : (
-                        <ChevronRight className="text-[var(--text-dim)]" size={20} />
+                        <ChevronRight size={16} style={{ color: "var(--ink-3)" }} aria-hidden="true" />
                       )}
-                      <div>
-                        <h3 className="text-lg font-semibold text-[var(--text-main)]">{unit.name}</h3>
+                      <div className="min-w-0">
+                        <h3 className="truncate text-[15px] font-semibold" style={{ color: "var(--ink)" }}>
+                          {unit.name}
+                        </h3>
                         {unit.description && (
-                          <p className="text-sm text-[var(--text-dim)]">{unit.description}</p>
+                          <p className="truncate t-sm" style={{ color: "var(--ink-3)" }}>
+                            {unit.description}
+                          </p>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-center">
-                        <p className="text-sm text-[var(--text-dim)]">Değerlendirme</p>
-                        <p className="font-semibold text-[var(--text-main)]">
+                    <dl className="flex items-baseline gap-6 t-sm">
+                      <div className="text-right">
+                        <dt style={{ color: "var(--ink-3)" }}>Değerlendirme</dt>
+                        <dd className="tabular font-medium" style={{ color: "var(--ink)" }}>
                           {unit.assessmentCount}
-                        </p>
+                        </dd>
                       </div>
-                      <div className="text-center">
-                        <p className="text-sm text-[var(--text-dim)]">Başlanan</p>
-                        <p className="font-semibold text-[var(--accent)]">{unit.startedCount}</p>
+                      <div className="text-right">
+                        <dt style={{ color: "var(--ink-3)" }}>Başlanan</dt>
+                        <dd className="tabular font-medium" style={{ color: "var(--ink)" }}>
+                          {unit.startedCount}
+                        </dd>
                       </div>
-                      <div className="text-center">
-                        <p className="text-sm text-[var(--text-dim)]">Ort. Skor</p>
-                        <p className="font-semibold text-[var(--accent)]">%{unit.averageScore}</p>
+                      <div className="text-right">
+                        <dt style={{ color: "var(--ink-3)" }}>Ort. puan</dt>
+                        <dd className="tabular font-medium" style={{ color: "var(--ink)" }}>
+                          %{unit.averageScore}
+                        </dd>
                       </div>
-                    </div>
+                    </dl>
                   </div>
-                </div>
+                </button>
 
                 {/* Team Members */}
                 {isExpanded && unitAssessments.length > 0 && (
-                  <div className="border-t">
-                    <table className="w-full">
-                      <thead className="bg-[var(--bg-main)]">
+                  <div className="overflow-x-auto" style={{ borderTop: "1px solid var(--line)" }}>
+                    <table className="theme-table">
+                      <thead>
                         <tr>
-                          <th className="px-6 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">
-                            Değerlendirme
-                          </th>
-                          <th className="px-6 py-3 text-left text-sm font-semibold text-[var(--text-muted)]">
-                            Katkı veren
-                          </th>
-                          <th className="px-6 py-3 text-center text-sm font-semibold text-[var(--text-muted)]">
-                            Durum
-                          </th>
-                          <th className="px-6 py-3 text-center text-sm font-semibold text-[var(--text-muted)]">
-                            Skor
-                          </th>
-                          <th className="px-6 py-3 text-center text-sm font-semibold text-[var(--text-muted)]">
-                            Olgunluk
-                          </th>
+                          <th>Değerlendirme</th>
+                          <th>Katkı veren</th>
+                          <th>Durum</th>
+                          <th className="text-right">Puan</th>
+                          <th className="text-right">Olgunluk</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody>
                         {unitAssessments.map((row) => {
                           const maturity = getMaturityLabel(row.maturityScore);
                           return (
-                            <tr key={row.id} className="hover:bg-[var(--bg-main)]">
-                              <td className="px-6 py-4">
+                            <tr key={row.id}>
+                              <td>
                                 <div>
-                                  <p className="font-medium text-[var(--text-main)]">
+                                  <p className="font-medium" style={{ color: "var(--ink)" }}>
                                     {row.surveyName}
                                   </p>
-                                  <p className="text-sm text-[var(--text-dim)] tabular-nums">
+                                  <p className="t-sm tabular" style={{ color: "var(--ink-3)" }}>
                                     {row.responseCount} cevap
                                     {row.lastActivityAt
                                       ? ` · son giriş ${new Date(
@@ -451,40 +369,27 @@ export default function UnitManagerPage() {
                                   </p>
                                 </div>
                               </td>
-                              <td className="px-6 py-4 text-sm text-[var(--text-muted)] tabular-nums">
-                                {row.contributorCount > 0 ? `${row.contributorCount} kişi` : "-"}
+                              <td className="tabular">
+                                {row.contributorCount > 0 ? `${row.contributorCount} kişi` : "—"}
                               </td>
-                              <td className="px-6 py-4 text-center">
+                              <td>
                                 {row.responseCount > 0 ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--accent-soft)] text-[var(--accent)] rounded-full text-xs font-medium">
-                                    <CheckCircle size={12} />
-                                    Başlandı
-                                  </span>
+                                  <span className="badge badge-success">Başlandı</span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-[var(--warning-bg)] text-[var(--warning)] rounded-full text-xs font-medium">
-                                    <Clock size={12} />
-                                    Bekliyor
-                                  </span>
+                                  <span className="badge badge-neutral">Bekliyor</span>
                                 )}
                               </td>
-                              <td className="px-6 py-4 text-center">
-                                <span
-                                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getScoreColor(
-                                    row.score
-                                  )}`}
-                                >
-                                  <BarChart3 size={14} />
-                                  %{row.score}
-                                </span>
+                              <td className="text-right tabular font-medium" style={{ color: "var(--ink)" }}>
+                                %{row.score}
                               </td>
-                              <td className="px-6 py-4 text-center">
-                                <span className={`font-medium ${maturity.color}`}>
+                              <td className="text-right">
+                                <span className="t-sm tabular" style={{ color: "var(--ink-2)" }}>
                                   {row.maturityScore > 0 ? (
                                     <>
-                                      {row.maturityScore.toFixed(1)} - {maturity.label}
+                                      {row.maturityScore.toFixed(1)} · {maturity.label}
                                     </>
                                   ) : (
-                                    "-"
+                                    "—"
                                   )}
                                 </span>
                               </td>
@@ -497,95 +402,87 @@ export default function UnitManagerPage() {
                 )}
 
                 {isExpanded && unitAssessments.length === 0 && (
-                  <div className="border-t p-8 text-center text-[var(--text-dim)]">
-                    Bu birimde henüz değerlendirme başlatılmadı
-                  </div>
+                  <p
+                    className="p-5 t-sm"
+                    style={{ borderTop: "1px solid var(--line)", color: "var(--ink-3)" }}
+                  >
+                    Bu birimde henüz değerlendirme başlatılmadı.
+                  </p>
                 )}
-              </motion.div>
+              </div>
             );
           })}
 
           {units.length === 0 && (
-            <div className="bg-[var(--bg-card)]  rounded-xl shadow-md p-12 text-center border border-[var(--border-soft)] ">
-              <Building2 size={48} className="mx-auto text-[var(--ui-passive)]  mb-4" />
-              <h2 className="text-xl font-semibold text-[var(--text-muted)]  mb-2">
-                Yönettiğiniz Birim Bulunamadı
-              </h2>
-              <p className="text-[var(--text-dim)] ">
-                Henüz yöneticiniz olarak atandığınız bir birim bulunmuyor.
-              </p>
-            </div>
+            <EmptyState
+              title="Yönettiğiniz birim yok"
+              description="Bir birime yönetici olarak atandığınızda o birimin değerlendirmeleri burada listelenir."
+            />
           )}
         </div>
         ) : (
           /* Documents Tab */
           <div className="space-y-4">
             {loadingDocs ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
-              </div>
+              <div className="skeleton h-64" />
             ) : documents.length === 0 ? (
-              <div className="bg-[var(--bg-card)]  rounded-xl p-12 text-center border border-[var(--border-soft)] ">
-                <FileText className="mx-auto text-[var(--ui-passive)]  mb-4" size={48} />
-                <p className="text-[var(--text-dim)] ">Henüz yüklenmiş dosya bulunmuyor</p>
-              </div>
+              <EmptyState
+                title="Yüklenmiş dosya yok"
+                description="Ekip üyeleri ankette belge yüklediğinde dosyalar burada listelenir."
+              />
             ) : (
-              <div className="bg-[var(--bg-card)]  rounded-xl shadow-md border border-[var(--border-soft)]  overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-[var(--bg-main)] ">
+              <div
+                className="overflow-x-auto rounded-[var(--radius-lg)]"
+                style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+              >
+                <table className="theme-table">
+                  <thead>
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Dosya</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Kullanıcı</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Soru Bağlamı</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">Tarih</th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-[var(--text-dim)]  uppercase tracking-wider">İndir</th>
+                      <th>Dosya</th>
+                      <th>Kullanıcı</th>
+                      <th>Soru bağlamı</th>
+                      <th>Tarih</th>
+                      <th className="text-right">İndir</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 ">
+                  <tbody>
                     {documents.map((doc) => (
-                      <tr key={doc.id} className="hover:bg-[var(--bg-main)]  transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{getFileIcon(doc.fileType)}</span>
-                            <div>
-                              <p className="font-medium text-[var(--text-main)] ">{doc.fileName}</p>
-                              <p className="text-xs text-[var(--text-dim)] ">{doc.fileType}</p>
-                            </div>
-                          </div>
+                      <tr key={doc.id}>
+                        <td>
+                          <p className="font-medium" style={{ color: "var(--ink)" }}>
+                            {doc.fileName}
+                          </p>
+                          <p className="t-sm" style={{ color: "var(--ink-3)" }}>
+                            {doc.fileType}
+                          </p>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <User size={16} className="text-[var(--text-dim)]" />
-                            <div>
-                              <p className="text-[var(--text-main)] ">{getUserName(doc)}</p>
-                              <p className="text-xs text-[var(--text-dim)] ">{doc.user.email}</p>
-                            </div>
-                          </div>
+                        <td>
+                          <p style={{ color: "var(--ink)" }}>{getUserName(doc)}</p>
+                          <p className="t-sm" style={{ color: "var(--ink-3)" }}>
+                            {doc.user.email}
+                          </p>
                         </td>
-                        <td className="px-6 py-4">
-                          <p className="text-sm text-[var(--text-muted)]  max-w-xs truncate" title={getQuestionContext(doc)}>
+                        <td>
+                          <p className="max-w-xs truncate" title={getQuestionContext(doc)}>
                             {getQuestionContext(doc)}
                           </p>
                         </td>
-                        <td className="px-6 py-4">
-                          <p className="text-sm text-[var(--text-dim)] ">
-                            {new Date(doc.createdAt).toLocaleDateString("tr-TR", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
-                            })}
-                          </p>
+                        <td className="tabular">
+                          {new Date(doc.createdAt).toLocaleDateString("tr-TR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          })}
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="text-right">
                           {doc.downloadUrl && (
                             <Button
                               onClick={() => handleDownload(doc)}
-                              title="İndir"
+                              aria-label={`${doc.fileName} dosyasını indir`}
                               variant="ghost"
                               size="icon"
-                              className="text-[var(--accent)] hover:bg-[var(--info-bg)]"
                             >
-                              <Download size={18} />
+                              <Download size={16} aria-hidden="true" />
                             </Button>
                           )}
                         </td>
@@ -598,6 +495,6 @@ export default function UnitManagerPage() {
           </div>
         )}
       </main>
-    </div>
+    </>
   );
 }

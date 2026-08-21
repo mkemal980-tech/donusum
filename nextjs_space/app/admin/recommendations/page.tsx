@@ -127,9 +127,9 @@ const timeframes = [
 ];
 
 const strategicTypes = [
-  { value: 'QUICK_WIN', label: 'Hızlı Kazanım', color: 'bg-[var(--accent-soft)] text-[var(--accent)]' },
-  { value: 'PROJECT', label: 'Proje', color: 'bg-[var(--warning-bg)] text-[var(--warning)]' },
-  { value: 'BIG_BET', label: 'Büyük Yatırım', color: 'bg-[var(--error-bg)] text-[var(--error)]' },
+  { value: 'QUICK_WIN', label: 'Hızlı Kazanım', color: 'bg-[var(--accent-soft)] text-[var(--accent-ink)]' },
+  { value: 'PROJECT', label: 'Proje', color: 'bg-[var(--warning-bg)] text-[var(--warning-ink)]' },
+  { value: 'BIG_BET', label: 'Büyük Yatırım', color: 'bg-[var(--error-bg)] text-[var(--error-ink)]' },
 ];
 
 const DollarIndicator = ({ level, max = 5 }: { level: number; max?: number }) => (
@@ -552,7 +552,7 @@ export default function RecommendationsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
+        <div className="spinner" role="status" aria-label="Yükleniyor" />
       </div>
     );
   }
@@ -560,7 +560,7 @@ export default function RecommendationsPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-main)' }}>Öneri Yönetimi</h1>
+        <h1 className="t-display" style={{ color: "var(--ink)" }}>Öneriler</h1>
         <div className="flex items-center gap-2">
           <Button
             onClick={() => setShowBulkPanel(true)}
@@ -588,7 +588,7 @@ export default function RecommendationsPage() {
       )}
 
       {/* Filters */}
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-soft p-4 mb-6">
+      <div className="theme-card shadow-soft p-4 mb-6">
         <div className="flex gap-4 flex-wrap">
           <div className="flex-1 min-w-[200px] relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)]" size={20} />
@@ -639,7 +639,7 @@ export default function RecommendationsPage() {
 
       {/* Seçim çubuğu — yalnızca seçim varken görünür */}
       {selectedIds.length > 0 && (
-        <div className="bg-[var(--bg-card)] rounded-xl shadow-soft p-4 mb-4 flex items-center justify-between gap-4 flex-wrap">
+        <div className="theme-card shadow-soft p-4 mb-4 flex items-center justify-between gap-4 flex-wrap">
           <p className="text-[var(--text-main)] font-medium">
             {selectedIds.length} öneri seçildi
             <span className="text-[var(--text-dim)] font-normal"> · listede {filteredRecs.length} öneri var</span>
@@ -665,11 +665,11 @@ export default function RecommendationsPage() {
       )}
 
       {/* Table */}
-      <div className="bg-[var(--bg-card)] rounded-xl shadow-soft overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-[var(--bg-card-2)]">
+      <div className="theme-card shadow-soft overflow-hidden">
+        <table className="theme-table">
+          <thead>
             <tr>
-              <th className="p-4 w-12">
+              <th>
                 <input
                   type="checkbox"
                   checked={allVisibleSelected}
@@ -683,13 +683,13 @@ export default function RecommendationsPage() {
                   className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
                 />
               </th>
-              <th className="text-left p-4 font-semibold text-[var(--text-muted)]">Başlık</th>
-              <th className="text-left p-4 font-semibold text-[var(--text-muted)]">Anket</th>
-              <th className="text-left p-4 font-semibold text-[var(--text-muted)]">Tetikleyici</th>
-              <th className="text-left p-4 font-semibold text-[var(--text-muted)]">CAPEX</th>
-              <th className="text-left p-4 font-semibold text-[var(--text-muted)]">OPEX</th>
-              <th className="text-left p-4 font-semibold text-[var(--text-muted)]">Tip</th>
-              <th className="text-right p-4 font-semibold text-[var(--text-muted)]">İşlemler</th>
+              <th>Başlık</th>
+              <th>Anket</th>
+              <th>Tetikleyici</th>
+              <th>CAPEX</th>
+              <th>OPEX</th>
+              <th>Tip</th>
+              <th className="text-right">İşlemler</th>
             </tr>
           </thead>
           <tbody>
@@ -718,7 +718,7 @@ export default function RecommendationsPage() {
                   </td>
                   <td className="p-4">
                     {surveyName ? (
-                      <span className="px-2 py-1 bg-[var(--accent)]/15 text-primary-700 rounded text-xs flex items-center gap-1 w-fit">
+                      <span className="px-2 py-1 bg-[var(--accent-quiet)] text-[var(--accent-ink)] rounded text-xs flex items-center gap-1 w-fit">
                         <FileText size={12} />
                         {surveyName}
                       </span>
@@ -729,14 +729,14 @@ export default function RecommendationsPage() {
                   <td className="p-4">
                     {triggerInfo ? (
                       <div className="flex flex-col gap-1">
-                        <span className="px-2 py-1 bg-[var(--accent-soft)] text-[var(--accent)] rounded text-xs flex items-center gap-1 w-fit">
+                        <span className="px-2 py-1 bg-[var(--accent-soft)] text-[var(--accent-ink)] rounded text-xs flex items-center gap-1 w-fit">
                           <HelpCircle size={12} />
                           Soru Bağlı
                         </span>
                         <span className="text-xs text-[var(--text-dim)]">{triggerInfo.optionsCount} şık</span>
                       </div>
                     ) : (
-                      <span className="px-2 py-1 bg-[var(--warning-bg)] text-[var(--warning)] rounded text-xs">
+                      <span className="px-2 py-1 bg-[var(--warning-bg)] text-[var(--warning-ink)] rounded text-xs">
                         Puan Aralığı: %{rec.minScoreThreshold}-{rec.maxScoreThreshold}
                       </span>
                     )}
@@ -756,7 +756,7 @@ export default function RecommendationsPage() {
                     <button onClick={() => openModal(rec)} className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]">
                       <Edit size={18} />
                     </button>
-                    <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-[var(--error-bg)] rounded text-[var(--error)]">
+                    <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-[var(--error-bg)] rounded text-[var(--error-ink)]">
                       <Trash2 size={18} />
                     </button>
                   </td>
@@ -775,9 +775,9 @@ export default function RecommendationsPage() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[var(--bg-card)] rounded-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="theme-card p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">{editItem ? 'Öneri Düzenle' : 'Yeni Öneri'}</h2>
+              <h2 className="text-xl font-semibold">{editItem ? 'Öneri Düzenle' : 'Yeni Öneri'}</h2>
               <button onClick={() => setShowModal(false)} className="text-[var(--text-dim)] hover:text-[var(--text-muted)]">
                 <X size={24} />
               </button>
@@ -989,7 +989,7 @@ export default function RecommendationsPage() {
                           ))}
                         </div>
                         {selectedTriggerOptions.length > 0 && (
-                          <p className="mt-2 text-xs text-[var(--accent)] bg-[var(--accent-soft)] p-2 rounded">
+                          <p className="mt-2 text-xs text-[var(--accent-ink)] bg-[var(--accent-soft)] p-2 rounded">
                             ✅ Seçili {selectedTriggerOptions.length} şıktan birine cevap verildiğinde bu öneri gösterilecek.
                           </p>
                         )}
@@ -1063,7 +1063,7 @@ export default function RecommendationsPage() {
                     className="flex-1"
                   />
                   <div className="w-20 text-center">
-                    <span className="text-2xl font-bold text-[var(--accent)]">{(formData.points || 0.5).toFixed(1)}</span>
+                    <span className="text-2xl font-semibold text-[var(--accent)]">{(formData.points || 0.5).toFixed(1)}</span>
                     <p className="text-xs text-[var(--text-dim)]">puan</p>
                   </div>
                 </div>
@@ -1074,7 +1074,7 @@ export default function RecommendationsPage() {
               </div>
 
               {/* Bubble Chart Ayarları */}
-              <div className="p-4 bg-[var(--accent)]/10 rounded-lg">
+              <div className="p-4 bg-[var(--accent-quiet)] rounded-lg">
                 <div className="flex items-center gap-2 mb-3">
                   <Target size={18} className="text-[var(--accent)]" />
                   <label className="text-sm font-medium text-[var(--text-main)]">Bubble Chart Konumu</label>
