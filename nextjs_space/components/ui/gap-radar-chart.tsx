@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { readToken, useThemeVersion } from "./use-theme-tokens";
 
 interface DataPoint {
   name: string;
@@ -17,15 +18,12 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const themeVersion = useThemeVersion();
   /* Tuval `var(--…)` anlamaz; token'lar kök öğeden okunup gerçek renge
      çevrilir. Önceden değişken adı doğrudan fillStyle'a veriliyor, tarayıcı
      bunu yok sayıp varsayılan siyahla çiziyordu. */
   const colors = useMemo(() => {
-    const read = (name: string, fallback: string) => {
-      if (typeof window === "undefined") return fallback;
-      const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-      return value || fallback;
-    };
+    const read = readToken;
 
     return {
       /* İki seri: "mevcut durum" vurgu mavisi (accent), "hedef" ikinci seri
@@ -42,7 +40,8 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
       textMuted: read("--ink-3", "#8B90A2"),
       ring: read("--surface", "#1E212A"),
     };
-  }, [mounted]);
+    // themeVersion tema değişince artar; renkler yeniden okunur.
+  }, [mounted, themeVersion]);
 
   useEffect(() => {
     setMounted(true);

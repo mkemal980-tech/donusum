@@ -1387,7 +1387,10 @@ export default function DashboardClient() {
             label="Olgunluk puanı"
             value={`${Math.round(scoreData?.totalScore ?? 0)}%`}
             note={maturity.label}
-            noteColor={maturity.color}
+            /* Seviyenin kendi rengi halkada; buradaki metin rozet mürekkebini
+               kullanır — olgunluk rampasının uçları metin olarak iki temada da
+               eşiği geçmiyor (koyuda level-1, açıkta level-3 sönük kalıyor). */
+            noteColor="var(--accent-ink)"
           />
           <MetricCard
             label="Anket ilerlemesi"

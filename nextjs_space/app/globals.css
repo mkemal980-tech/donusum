@@ -105,6 +105,11 @@
   /* ---- Gölge yok. Tek istisna dolu buton (refero kuralı). ---- */
   --shadow-button: 0 1px 4px rgba(0, 0, 0, 0.16);
   --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.55);
+  --backdrop: oklch(0.13 0.01 264 / 0.72);
+
+  /* Koyu zeminde açık metin ince görünür; ölçüsüz bir tık nefes payı.
+     Açık temada gerek yok, orada 0'a iner. */
+  --tracking-body: 0.006em;
 
   /* ---- Boşluk: 4px tabanlı ---- */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
@@ -257,6 +262,98 @@
   --quick-3-border: var(--line-strong);
 }
 
+
+/* ============================================================================
+   AÇIK TEMA
+   Koyu temanın aynadaki karşılığı: aynı token adları, ters yüzey sırası.
+   Koyuda sidebar zeminden koyu; açıkta beyaz, zemin ise açık gri — kart
+   kontrastla ayrışsın diye (refero: "kartlar #ffffff'in #f2f2f2 üstünde
+   yükselmesiyle ayrışır").
+
+   Koyu temadaki base / -ink / -solid üçlüsü burada da geçerli ama ölçü ters
+   yönde çalışır: orada metin bir kademe AÇILIR, burada bir kademe KOYULAŞIR.
+   Ölçülen değerler her satırın yanında.
+   ========================================================================= */
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Zemin ile kart arasındaki fark gölgenin yerini tutuyor; 0.968'de ikisi
+     neredeyse aynı griydi ve kartın kenarı yalnızca 1px çizgiden okunuyordu. */
+  --canvas:     oklch(0.952 0.005 264);   /* sayfa zemini */
+  --rail:       oklch(0.999 0.001 264);   /* beyaz — sidebar, topbar */
+  --surface:    oklch(0.992 0.002 264);   /* kart */
+  --surface-2:  oklch(0.938 0.006 264);   /* kart içi blok */
+  --surface-3:  oklch(0.900 0.008 264);   /* seçili/hover */
+
+  --line:        oklch(0.880 0.008 264);
+  --line-strong: oklch(0.800 0.011 264);
+
+  --ink:   oklch(0.265 0.016 264);   /* #21252D · 14.99:1 */
+  --ink-2: oklch(0.470 0.017 264);   /* #565B65 ·  6.65:1 */
+  --ink-3: oklch(0.520 0.017 264);   /* --surface-2 üzerinde 4.7:1 */
+
+  /* Açık zeminde tek mavi yetiyor: #245CCA hem metin olarak 5.93:1, hem de
+     üzerinde beyaz metinle dolgu olarak 6.07:1. Koyuda iki ton gerekiyordu. */
+  --accent:        oklch(0.505 0.181 262);
+  --accent-hover:  oklch(0.560 0.185 262);
+  --accent-solid:  oklch(0.505 0.181 262);
+  --accent-press:  oklch(0.445 0.165 262);
+  --accent-quiet:  oklch(0.505 0.181 262 / 0.12);
+  --accent-faint:  oklch(0.505 0.181 262 / 0.06);
+  --on-accent:     oklch(0.999 0 0);
+
+  /* Veri serileri koyulaşır; koyu temadaki parlak tonlar beyazda kayboluyor. */
+  --series-2: oklch(0.545 0.130 165);   /* #00875D */
+  --series-3: oklch(0.585 0.130 70);    /* #AC6B00 */
+  --series-4: oklch(0.505 0.140 300);   /* #724EA8 */
+
+  --success:    oklch(0.545 0.130 165);
+  --success-bg: oklch(0.545 0.130 165 / 0.12);
+  --warning:    oklch(0.585 0.130 70);
+  --warning-bg: oklch(0.585 0.130 70 / 0.14);
+  --error:      oklch(0.520 0.185 27);
+  --error-bg:   oklch(0.520 0.185 27 / 0.10);
+  --series-4-bg: oklch(0.505 0.140 300 / 0.12);
+
+  /* Rozet mürekkebi: tint üzerinde metin, base'ten bir kademe koyu. */
+  --success-ink:  oklch(0.470 0.115 165);   /* 6.16:1 */
+  --warning-ink:  oklch(0.490 0.115 70);    /* 6.27:1 */
+  --error-ink:    oklch(0.480 0.175 27);    /* 7.01:1 */
+  --accent-ink:   oklch(0.460 0.170 262);   /* 7.16:1 */
+  --series-4-ink: oklch(0.460 0.135 300);   /* 7.37:1 */
+
+  /* Dolgu varyantları: üzerinde beyaz metin ≥4.5:1. */
+  --success-solid:  oklch(0.500 0.125 165);  /* beyaz 5.45:1 */
+  --warning-solid:  oklch(0.530 0.125 70);   /* beyaz 5.40:1 */
+  --error-solid:    oklch(0.520 0.185 27);   /* beyaz 6.05:1 */
+  --series-4-solid: oklch(0.505 0.140 300);  /* beyaz 6.23:1 */
+
+  /* Açık zeminde koyu metin kalınlaşmaz; ek harf aralığı gereksiz. */
+  --tracking-body: 0;
+
+  /* Örtü katmanı siyah bir perde değil, kısılmış bir zemin. */
+  --backdrop: oklch(0.30 0.02 264 / 0.40);
+  --shadow-overlay: 0 16px 40px rgba(24, 28, 38, 0.16);
+
+  --secondary-light: oklch(0.620 0.120 165);
+  --secondary-dark: oklch(0.470 0.115 165);
+
+  --chart-gradient-start: oklch(0.505 0.181 262 / 0.18);
+  --chart-gradient-end: oklch(0.505 0.181 262 / 0);
+  --chart-grid: oklch(0.880 0.008 264);
+  --chart-axis-line: var(--line-strong);
+  --chart-ref: oklch(0.505 0.181 262 / 0.45);
+  --chart-peer: oklch(0.545 0.130 165 / 0.55);
+
+  /* Olgunluk rampası: seviye arttıkça KOYULAŞIR (koyu temada tersi, orada
+     parlar). İki temada da tek renkli mavi kalır. */
+  --level-1: oklch(0.800 0.055 262);
+  --level-2: oklch(0.715 0.095 262);
+  --level-3: oklch(0.620 0.140 262);
+  --level-4: oklch(0.505 0.181 262);
+  --level-5: oklch(0.420 0.160 262);
+}
+
 [data-hydration-error] {
   display: none !important;
 }
@@ -272,8 +369,7 @@ body {
   font-size: var(--text-body);
   font-weight: 400;
   line-height: 1.55;
-  /* Koyu zeminde açık metin ince görünür; ölçüsüz bir tık nefes payı. */
-  letter-spacing: 0.006em;
+  letter-spacing: var(--tracking-body);
   color: var(--ink);
   background: var(--canvas);
   min-height: 100vh;
@@ -726,7 +822,7 @@ body.shell-active main {
 
 /* ===== ÖRTÜ KATMANLARI ===== */
 .modal-backdrop {
-  background: oklch(0.13 0.01 264 / 0.72);
+  background: var(--backdrop);
   z-index: var(--z-backdrop);
 }
 

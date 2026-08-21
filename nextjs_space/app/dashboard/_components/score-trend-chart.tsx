@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { TrendingUp, TrendingDown, Minus, Calendar, Activity, Award, RefreshCw } from "lucide-react";
+import { readToken, useThemeVersion } from "@/components/ui/use-theme-tokens";
 
 interface ScoreHistoryRecord {
   id: string;
@@ -66,6 +67,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('6months');
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const themeVersion = useThemeVersion();
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -107,6 +109,14 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
     const chartWidth = width - padding.left - padding.right;
     const chartHeight = height - padding.top - padding.bottom;
 
+    // Renkler token'lardan okunur; tuval `var(--…)` anlamıyor ve iki temada
+    // aynı sabitler kullanılamaz.
+    const cOverall = readToken('--accent', '#2E86FF');
+    const cVelocity = readToken('--series-4', '#9A79D6');
+    const cEndurance = readToken('--series-2', '#27C08A');
+    const cGrid = readToken('--line', '#2E313D');
+    const cAxis = readToken('--ink-3', '#8B90A2');
+
     // Temizle
     ctx.clearRect(0, 0, width, height);
 
@@ -114,7 +124,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
     if (data.length === 0) return;
 
     // Grid çizgileri
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.strokeStyle = cGrid;
     ctx.lineWidth = 1;
     for (let i = 0; i <= 5; i++) {
       const y = padding.top + (chartHeight / 5) * i;
@@ -124,7 +134,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
       ctx.stroke();
 
       // Y ekseni etiketleri
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.fillStyle = cAxis;
       ctx.font = '10px sans-serif';
       ctx.textAlign = 'right';
       ctx.fillText((5 - i).toString(), padding.left - 8, y + 3);
@@ -133,9 +143,9 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
     // Veri noktaları
     const xStep = chartWidth / Math.max(data.length - 1, 1);
 
-    // Overall Score çizgisi (cyan)
+    // Genel skor çizgisi — birincil seri
     ctx.beginPath();
-    ctx.strokeStyle = '#22d3ee';
+    ctx.strokeStyle = cOverall;
     ctx.lineWidth = 2;
     data.forEach((d, i) => {
       const x = padding.left + i * xStep;
@@ -145,9 +155,9 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
     });
     ctx.stroke();
 
-    // Velocity çizgisi (mavi)
+    // Velocity — kesik çizgi, dördüncü seri
     ctx.beginPath();
-    ctx.strokeStyle = '#3b82f6';
+    ctx.strokeStyle = cVelocity;
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 5]);
     data.forEach((d, i) => {
@@ -159,9 +169,9 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Endurance çizgisi (yeşil)
+    // Endurance — noktalı çizgi, ikinci seri
     ctx.beginPath();
-    ctx.strokeStyle = '#14b8a6';
+    ctx.strokeStyle = cEndurance;
     ctx.lineWidth = 2;
     ctx.setLineDash([2, 2]);
     data.forEach((d, i) => {
@@ -181,12 +191,12 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
       const yOverall = padding.top + chartHeight - (d.avgOverall / 5) * chartHeight;
       ctx.beginPath();
       ctx.arc(x, yOverall, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#22d3ee';
+      ctx.fillStyle = cOverall;
       ctx.fill();
 
       // X ekseni etiketi
       if (i % Math.ceil(data.length / 6) === 0 || i === data.length - 1) {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.fillStyle = cAxis;
         ctx.font = '10px sans-serif';
         ctx.textAlign = 'center';
         const [year, month] = d.date.split('-');
@@ -196,7 +206,8 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
       }
     });
 
-  }, [groupedData]);
+    // themeVersion tema değişince artar; grafik yeni renklerle yeniden çizilir.
+  }, [groupedData, themeVersion]);
 
   const renderTrendIcon = (change: number | null) => {
     if (change === null) return null;
@@ -262,7 +273,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
           {/* Velocity */}
           <div className="bg-[var(--bg-card-2)] rounded-lg p-4 text-center">
             <p className="text-xs text-[var(--text-muted)] mb-1">Velocity</p>
-            <p className="text-2xl font-semibold text-[#818cf8]">
+            <p className="t-metric" style={{ color: "var(--ink)" }}>
               {current.velocityScore?.toFixed(1) || '-'}
             </p>
           </div>
@@ -270,7 +281,7 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
           {/* Endurance */}
           <div className="bg-[var(--bg-card-2)] rounded-lg p-4 text-center">
             <p className="text-xs text-[var(--text-muted)] mb-1">Endurance</p>
-            <p className="text-2xl font-semibold text-[#34d399]">
+            <p className="t-metric" style={{ color: "var(--ink)" }}>
               {current.enduranceScore?.toFixed(1) || '-'}
             </p>
           </div>
@@ -330,15 +341,15 @@ export function ScoreTrendChart({ surveyId }: ScoreTrendChartProps) {
         <div className="lg:col-span-2">
           <div className="mb-4 flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1">
-              <div className="w-3 h-0.5 bg-[#22d3ee]"></div>
+              <div className="h-0.5 w-3" style={{ background: "var(--accent)" }} aria-hidden="true" />
               <span className="text-[var(--text-muted)]">Genel Skor</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-0.5 bg-[#3b82f6]" style={{borderStyle: 'dashed'}}></div>
+              <div className="h-0.5 w-3" style={{ background: "var(--series-4)" }} aria-hidden="true" />
               <span className="text-[var(--text-muted)]">Velocity</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-0.5 bg-[#14b8a6]"></div>
+              <div className="h-0.5 w-3" style={{ background: "var(--series-2)" }} aria-hidden="true" />
               <span className="text-[var(--text-muted)]">Endurance</span>
             </div>
           </div>
