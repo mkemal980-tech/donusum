@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { useTheme } from "next-themes";
 import { useAdminNavGroups } from "./admin-nav";
 import {
   ArrowLeft,
@@ -15,9 +16,11 @@ import {
   LogOut,
   Map,
   Menu,
+  Moon,
   Search,
   Settings,
   Shield,
+  Sun,
   X,
 } from "lucide-react";
 
@@ -81,11 +84,13 @@ export default function AppShell() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession() || {};
+  const { resolvedTheme, setTheme } = useTheme();
 
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [themeReady, setThemeReady] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -115,6 +120,12 @@ export default function AppShell() {
       (item.prefix ? pathname?.startsWith(item.href) : pathname === item.href) ?? false,
     [pathname],
   );
+
+  /* Tema sunucuda bilinmiyor; düğme ancak istemcide çözüldükten sonra
+     doğru simgeyi gösterebilir, yoksa ilk boyamada yanlış ikon çakıyor. */
+  useEffect(() => {
+    setThemeReady(true);
+  }, []);
 
   /* Menü genişliği tercihini cihaz hatırlar. */
   useEffect(() => {
@@ -361,11 +372,27 @@ export default function AppShell() {
           )}
         </form>
 
-        <div className="ml-auto flex items-center gap-2" ref={userMenuRef}>
+        <div className="ml-auto flex items-center gap-1" ref={userMenuRef}>
+          {/* Tema düğmesi: tek tıkla iki tema arasında geçer, ayrı bir menü
+              açmaz — iki seçenek için açılır liste fazla. */}
+          <button
+            type="button"
+            onClick={() => setTheme(resolvedTheme === "light" ? "dark" : "light")}
+            className="icon-btn"
+            aria-label={resolvedTheme === "light" ? "Koyu temaya geç" : "Açık temaya geç"}
+            title={resolvedTheme === "light" ? "Koyu tema" : "Açık tema"}
+          >
+            {themeReady && resolvedTheme === "light" ? (
+              <Moon size={17} aria-hidden="true" />
+            ) : (
+              <Sun size={17} aria-hidden="true" />
+            )}
+          </button>
+
           <button
             type="button"
             onClick={() => setUserMenuOpen((o) => !o)}
-            className="flex items-center gap-2.5 rounded-[var(--radius-md)] px-2 py-1.5 transition-colors duration-fast ease-out-quart hover:bg-[var(--surface-2)]"
+            className="ml-1 flex items-center gap-2.5 rounded-[var(--radius-md)] px-2 py-1.5 transition-colors duration-fast ease-out-quart hover:bg-[var(--surface-2)]"
             aria-haspopup="menu"
             aria-expanded={userMenuOpen}
           >

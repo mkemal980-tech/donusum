@@ -7,7 +7,8 @@ refero "Square" stil sistemi — yalnızca görselle çelişmeyen kuralları al�
 
 ## Theme
 
-Tek tema: **koyu**. Açık tema yok.
+İki tema: **koyu varsayılan, açık seçenek.** Geçiş üst şeritteki düğmededir;
+tercih cihazda saklanır (next-themes → `<html data-theme="…">`).
 
 Sahne cümlesi: sürdürülebilirlik yöneticisi, kapalı bir toplantı odasında,
 projeksiyonun kısılmış ışığında, 27 inç ekranda yönetime puan sunuyor; ekran
@@ -15,7 +16,15 @@ saatlerce açık kalıyor ve yanındaki grafikler ortamdan daha parlak olmamalı
 
 Koyu zemin burada estetik tercih değil: veri mürekkebi (grafik çizgileri,
 sayılar, durum renkleri) tek parlak katman olsun diye arayüz kendini geri
-çekiyor.
+çekiyor. Açık tema aynı sistemin aynadaki hâlidir — aynı token adları, ters
+yüzey sırası: koyuda sidebar zeminden koyu, açıkta beyaz ve zemin açık gri
+(kart kontrastla ayrışır, gölgeyle değil).
+
+İki temada da geçerli tek kural: `base` renk **grafik/dolgu**, `-ink` varyantı
+**metin**, `-solid` varyantı **üzerine beyaz yazılan dolgu**. Ölçü yön değiştirir
+— koyuda metin bir kademe açılır, açıkta bir kademe koyulaşır. Tuvale çizen
+grafikler renkleri `readToken()` ile okur ve `useThemeVersion()` ile tema
+değişiminde yeniden çizilir; `<canvas>` `var(--…)` anlamıyor.
 
 ## Color
 

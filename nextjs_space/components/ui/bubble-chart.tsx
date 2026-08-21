@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DollarSign, ChevronDown, ChevronUp, Clock, Target, TrendingUp } from "lucide-react";
 import { useTheme } from "next-themes";
+import { readToken, useThemeVersion } from "./use-theme-tokens";
 import { bubbleRadiusFor, spreadOverlapping } from "@/lib/recommendation-position";
 
 interface Recommendation {
@@ -26,21 +27,21 @@ interface BubbleChartProps {
 }
 
 const strategicColors = {
-  /* Seri paleti (bkz. DESIGN.md > Color). Tuval `var(--…)` okuyamadığı için
-     bg/border/text burada sabit hex; DESIGN.md token'larının karşılıkları.
-     DOM tarafındaki rozet ve numara dairesi ise token kullanır:
-     `tint` + `ink` rozet dilidir (kontrast 4.5:1 üstü), `solid` üzerine
-     beyaz metin alan dolgudur. */
+  /* DOM tarafındaki rozet ve numara dairesi token kullanır: `tint` + `ink`
+     rozet dilidir (kontrast 4.5:1 üstü), `solid` üzerine beyaz metin alan
+     dolgudur. Tuval `var(--…)` anlamadığı için baloncuk renkleri çizim
+     anında `bubblePalette()` ile token'lardan okunur — iki temada da
+     doğru değeri versin diye. */
   QUICK_WIN: {
-    bg: '#27C08A', border: '#1F9E71', text: '#0C1F18', label: 'Hızlı kazanım',
+    label: 'Hızlı kazanım',
     tint: 'var(--success-bg)', ink: 'var(--success-ink)', solid: 'var(--success-solid)'
   },
   PROJECT: {
-    bg: '#2E86FF', border: '#1E6FE8', text: '#08152B', label: 'Proje',
+    label: 'Proje',
     tint: 'var(--info-bg)', ink: 'var(--accent-ink)', solid: 'var(--accent-solid)'
   },
   BIG_BET: {
-    bg: '#9A79D6', border: '#7F5CBE', text: '#150F22', label: 'Büyük yatırım',
+    label: 'Büyük yatırım',
     tint: 'var(--series-4-bg)', ink: 'var(--series-4-ink)', solid: 'var(--series-4-solid)'
   }
 };
@@ -85,6 +86,33 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
   );
 
   const isDark = mounted && theme === 'dark';
+  const themeVersion = useThemeVersion();
+
+  /* Baloncuk dolgusu, kenarlığı ve içindeki numaranın rengi. Dolgu üzerine
+     beyaz yazıldığı için `-solid` varyantları kullanılır. */
+  const bubblePalette = useCallback(
+    () => ({
+      QUICK_WIN: {
+        bg: readToken('--success-solid', '#1F9E71'),
+        border: readToken('--success', '#27C08A'),
+      },
+      PROJECT: {
+        bg: readToken('--accent-solid', '#1E6FE8'),
+        border: readToken('--accent', '#2E86FF'),
+      },
+      BIG_BET: {
+        bg: readToken('--series-4-solid', '#7F5CBE'),
+        border: readToken('--series-4', '#9A79D6'),
+      },
+      text: readToken('--on-accent', '#FFFFFF'),
+      surface: readToken('--surface', '#1E212A'),
+      line: readToken('--line', '#2E313D'),
+      ink2: readToken('--ink-2', '#B3B7C4'),
+      ink3: readToken('--ink-3', '#8B90A2'),
+    }),
+    // themeVersion tema değişince artar; renkler yeniden okunur.
+    [themeVersion],
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -110,11 +138,12 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
     const chartHeight = height - padding.top - padding.bottom;
 
     // Theme-aware colors
-    const bgColor = '#1E212A';   /* --surface */
-    const gridColor = '#2E313D'; /* --line */
-    const axisColor = '#8B90A2'; /* --ink-3 */
-    const labelColor = '#8B90A2';
-    const titleColor = '#B3B7C4'; /* --ink-2 */
+    const palette = bubblePalette();
+    const bgColor = palette.surface;
+    const gridColor = palette.line;
+    const axisColor = palette.ink3;
+    const labelColor = palette.ink3;
+    const titleColor = palette.ink2;
 
     // Clear canvas
     ctx.fillStyle = bgColor;
@@ -194,7 +223,7 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
       const x = padding.left + ((rec.xPosition || 5) / 10) * chartWidth;
       const y = height - padding.bottom - ((rec.yPosition || 5) / 10) * chartHeight;
       const radius = bubbleRadiusFor(rec.estimatedImpact);
-      const colors = strategicColors[rec.strategicType];
+      const colors = palette[rec.strategicType];
       const isSelected = selectedId === rec.id;
       const isHovered = hoveredId === rec.id;
 
@@ -210,14 +239,14 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
       ctx.stroke();
 
       // Draw number
-      ctx.fillStyle = colors.text;
+      ctx.fillStyle = palette.text;
       ctx.font = `bold ${Math.max(14, radius * 0.7)}px system-ui`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText((index + 1).toString(), x, y);
     });
 
-  }, [recommendations, selectedId, hoveredId, sortedRecs, isDark]);
+  }, [recommendations, selectedId, hoveredId, sortedRecs, isDark, bubblePalette]);
 
   // Handle canvas click
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -312,11 +341,12 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
           <div className="flex flex-wrap justify-center gap-4 mt-4">
             {Object.entries(strategicColors).map(([key, value]) => (
               <div key={key} className="flex items-center gap-2">
-                <div 
-                  className="w-4 h-4 rounded-full" 
-                  style={{ backgroundColor: value.bg, border: `2px solid ${value.border}` }}
+                <div
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: value.solid }}
+                  aria-hidden="true"
                 />
-                <span className="text-sm text-[var(--text-secondary)]">{value.label}</span>
+                <span className="t-sm" style={{ color: "var(--ink-2)" }}>{value.label}</span>
               </div>
             ))}
             <div className="flex items-center gap-2 ml-4">

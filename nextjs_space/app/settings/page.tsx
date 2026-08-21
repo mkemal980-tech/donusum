@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import AppShell from "@/components/ui/app-shell";
 
 /**
- * Hesap ve görünüm.
+ * Hesap.
  *
- * Sayfa eskiden tema ve vurgu rengi seçtiriyordu. Arayüz artık tek koyu
- * temayla geliyor (bkz. DESIGN.md > Theme), o yüzden seçim kalmadı; yerine
- * kullanıcının hangi kayıtla çalıştığını gösteren profil özeti kondu.
- * Alanlar salt okunur: değişiklik yetkisi platform yöneticisinde.
+ * Sayfa eskiden tema ve vurgu rengi seçtiriyordu; tema tercihi artık üst
+ * şeritteki düğmede (bkz. app-shell.tsx), vurgu rengi ise sistemin kendi
+ * kararı. Burada kullanıcının hangi kayıtla çalıştığı duruyor. Alanlar salt
+ * okunur: değişiklik yetkisi platform yöneticisinde.
  */
 
 interface Profile {
@@ -113,7 +113,8 @@ export default function SettingsPage() {
 
         <p className="mt-4 max-w-2xl t-sm" style={{ color: "var(--ink-3)" }}>
           Bu alanları değiştirmek için kuruluşunuzun platform yöneticisiyle görüşün.
-          Arayüz tek koyu temayla gelir, ayrı bir görünüm tercihi tutulmaz.
+          Koyu ve açık tema arasında geçiş üst şeritteki düğmededir; tercih bu
+          cihazda saklanır.
         </p>
       </main>
     </>
