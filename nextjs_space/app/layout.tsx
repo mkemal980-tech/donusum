@@ -71,7 +71,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // Tek tema: koyu. data-theme'i next-themes yazar, forcedTheme ile sabit.
+    // Koyu tema varsayılandır; data-theme'i next-themes kullanıcı tercihine
+    // göre yazar ve seçimi cihazda saklar.
     // Font değişkenleri <html> üzerinde: tema token'ları :root'ta tanımlı ve
     // orada --font-inter'ı okuyabilmeleri gerekiyor. body'ye konulduğunda
     // :root'taki --font-body geçersize düşüp yazı Times'a iniyordu.

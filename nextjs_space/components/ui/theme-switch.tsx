@@ -47,13 +47,14 @@ export default function ThemeSwitch({ compact = false }: { compact?: boolean }) 
             type="button"
             role="radio"
             aria-checked={selected}
+            aria-label={`${label} tema`}
             onClick={() => setTheme(value)}
             title={`${label} tema`}
             className={`inline-flex items-center gap-2 rounded-md transition-colors ${
               compact ? "h-7 px-2 text-xs" : "h-8 px-3 text-sm"
             } ${
               selected
-                ? "bg-[var(--accent)] text-[var(--on-accent)]"
+                ? "bg-[var(--accent-solid)] text-[var(--on-accent)]"
                 : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
             }`}
           >

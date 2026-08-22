@@ -9,7 +9,8 @@
    Değerler ve gerekçeler kök dizindeki DESIGN.md dosyasındadır. Buradaki her
    token orada bir satırla karşılanır; ikisi birlikte değiştirilir.
 
-   Tema tektir: koyu. Açık tema kaldırıldı — tanıtım sayfası kendi kapsamlı
+   Koyu tema varsayılandır; açık tema aynı anlamsal token adlarını aşağıdaki
+   [data-theme="light"] bloğunda değiştirir. Tanıtım sayfası kendi kapsamlı
    sistemini (app/landing.css, .esg-landing) kullandığı için etkilenmez.
 
    Eski token adları (--bg-card, --primary, --text-secondary…) korunuyor:
