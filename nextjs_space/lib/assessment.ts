@@ -23,6 +23,30 @@ import { type AssessmentStatus, isLocked } from "./submission";
 export type DbClient = Prisma.TransactionClient | typeof prisma;
 
 /**
+ * Kullanıcının aktif oda/STK kampanyasındaki alıcı kaydı.
+ *
+ * Aynı anket geçmişte tekrar gönderilmiş olabilir. Bu nedenle kampanya
+ * değerlendirmesi, eski `surveyId + unitId` kaydından önce çözülür. Kampanya
+ * oluşturma API'si aynı üye ve anket için iki aktif kampanyayı engeller.
+ */
+async function getActiveCampaignRecipient(
+  unitId: string | null | undefined,
+  surveyId: string,
+  db: DbClient
+) {
+  if (!unitId) return null;
+
+  return db.campaignRecipient.findFirst({
+    where: {
+      memberUnitId: unitId,
+      campaign: { surveyId, status: "ACTIVE" },
+    },
+    orderBy: { assignedAt: "desc" },
+    select: { id: true, assessment: { select: { id: true } } },
+  });
+}
+
+/**
  * Kullanıcının bir anketteki değerlendirmesini bulur; yoksa oluşturur.
  *
  * Kullanıcı bir kuruluşa bağlıysa değerlendirme o kuruluşa aittir ve aynı
@@ -39,9 +63,33 @@ export async function getOrCreateAssessment(
     select: { unitId: true },
   });
 
+  const campaignRecipient = await getActiveCampaignRecipient(user?.unitId, surveyId, db);
+  if (campaignRecipient?.assessment?.id) return campaignRecipient.assessment.id;
+
+  if (campaignRecipient) {
+    try {
+      const created = await db.assessment.create({
+        data: {
+          surveyId,
+          unitId: user!.unitId,
+          campaignRecipientId: campaignRecipient.id,
+        },
+      });
+      return created.id;
+    } catch {
+      // Eşzamanlı ilk iki cevap aynı değerlendirmeyi açmaya çalışabilir.
+      const wonByOtherRequest = await db.assessment.findUnique({
+        where: { campaignRecipientId: campaignRecipient.id },
+        select: { id: true },
+      });
+      if (wonByOtherRequest) return wonByOtherRequest.id;
+      throw new Error("Kampanya değerlendirmesi oluşturulamadı");
+    }
+  }
+
   const where = user?.unitId
-    ? { surveyId, unitId: user.unitId }
-    : { surveyId, ownerUserId: userId };
+    ? { surveyId, unitId: user.unitId, campaignRecipientId: null }
+    : { surveyId, ownerUserId: userId, campaignRecipientId: null };
 
   const existing = await db.assessment.findFirst({ where });
   if (existing) return existing.id;
@@ -73,11 +121,39 @@ export async function getAssessmentIds(
     select: { unitId: true },
   });
 
+  if (user?.unitId) {
+    const campaignRecipients = await db.campaignRecipient.findMany({
+      where: {
+        memberUnitId: user.unitId,
+        campaign: { surveyId: { in: surveyIds }, status: "ACTIVE" },
+      },
+      select: {
+        campaign: { select: { surveyId: true } },
+        assessment: { select: { id: true } },
+      },
+    });
+
+    const campaignSurveyIds = new Set(campaignRecipients.map((row) => row.campaign.surveyId));
+    const legacySurveyIds = surveyIds.filter((surveyId) => !campaignSurveyIds.has(surveyId));
+    const legacy = legacySurveyIds.length > 0
+      ? await db.assessment.findMany({
+          where: {
+            surveyId: { in: legacySurveyIds },
+            unitId: user.unitId,
+            campaignRecipientId: null,
+          },
+          select: { id: true },
+        })
+      : [];
+
+    return [
+      ...campaignRecipients.flatMap((row) => row.assessment?.id ? [row.assessment.id] : []),
+      ...legacy.map((assessment) => assessment.id),
+    ];
+  }
+
   const assessments = await db.assessment.findMany({
-    where: {
-      surveyId: { in: surveyIds },
-      ...(user?.unitId ? { unitId: user.unitId } : { ownerUserId: userId }),
-    },
+    where: { surveyId: { in: surveyIds }, ownerUserId: userId, campaignRecipientId: null },
     select: { id: true },
   });
 
@@ -155,10 +231,14 @@ export async function getAssessmentContext(
     select: { unitId: true, role: true },
   });
 
+  const campaignRecipient = await getActiveCampaignRecipient(user?.unitId, surveyId, db);
+
   const assessment = await db.assessment.findFirst({
-    where: user?.unitId
-      ? { surveyId, unitId: user.unitId }
-      : { surveyId, ownerUserId: userId },
+    where: campaignRecipient
+      ? { campaignRecipientId: campaignRecipient.id }
+      : user?.unitId
+        ? { surveyId, unitId: user.unitId, campaignRecipientId: null }
+        : { surveyId, ownerUserId: userId, campaignRecipientId: null },
     select: { id: true, unitId: true, status: true, submittedAt: true },
   });
 

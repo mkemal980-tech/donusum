@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { validateSurveyAccess, withAuth } from "@/lib/api-utils";
 import { getAssessmentContext, getOrCreateAssessment } from "@/lib/assessment";
-import { calculateProgressScores } from "@/lib/scoring";
+import { calculateProgressScores, calculateUserScore } from "@/lib/scoring";
 
 /**
  * Değerlendirmenin gönderilmesi ve geri alınması.
@@ -75,7 +75,10 @@ export async function POST(request: NextRequest) {
      * alınsa bile bu kayıt kalır: "o gün ne göndermiştik" sorusunun tek
      * güvenilir cevabı budur.
      */
-    const scores = await calculateProgressScores(auth.userId, { surveyId });
+    const [scores, baselineScores] = await Promise.all([
+      calculateProgressScores(auth.userId, { surveyId }),
+      calculateUserScore(auth.userId, surveyId),
+    ]);
 
     const [submitted] = await prisma.$transaction([
       prisma.assessment.update({
@@ -99,6 +102,7 @@ export async function POST(request: NextRequest) {
           completedQuestions: scores.completedQuestions,
           totalQuestions: scores.totalQuestions,
           completedRecommendations: scores.completedRecommendations,
+          categoryScores: baselineScores.categoryScores,
           triggerType: "SUBMISSION",
         },
       }),

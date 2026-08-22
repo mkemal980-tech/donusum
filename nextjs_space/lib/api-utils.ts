@@ -359,6 +359,42 @@ export async function validateSurveyAccess(
 ): Promise<NextResponse | null> {
   if (role === 'ADMIN') return null;
 
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { unitId: true },
+  });
+
+  // Kullanıcının birimi bu anket için bir oda/STK kampanyasına alındıysa en
+  // yeni kampanya erişimin tek kaynağıdır. Kapanmış kampanyanın eski kullanıcı
+  // ataması, yeni ve sahipsiz bir legacy değerlendirme açmamalı.
+  const latestCampaignRecipient = user?.unitId
+    ? await prisma.campaignRecipient.findFirst({
+        where: { memberUnitId: user.unitId, campaign: { surveyId } },
+        orderBy: { assignedAt: 'desc' },
+        select: {
+          campaign: { select: { status: true, deadline: true } },
+        },
+      })
+    : null;
+
+  if (latestCampaignRecipient) {
+    if (latestCampaignRecipient.campaign.status !== 'ACTIVE') {
+      return NextResponse.json(
+        { error: 'Bu anket kampanyası kapatılmış.' },
+        { status: 403 }
+      );
+    }
+    if (
+      latestCampaignRecipient.campaign.deadline &&
+      latestCampaignRecipient.campaign.deadline < new Date()
+    ) {
+      return NextResponse.json(
+        { error: 'Bu anket kampanyasının süresi dolmuş.' },
+        { status: 403 }
+      );
+    }
+  }
+
   const assignment = await prisma.userSurveyAssignment.findUnique({
     where: { userId_surveyId: { userId, surveyId } },
     include: { survey: { select: { isActive: true } } }

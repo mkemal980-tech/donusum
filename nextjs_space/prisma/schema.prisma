@@ -1,26 +1,28 @@
 generator client {
-    provider = "prisma-client-js"
-    binaryTargets = ["native", "debian-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x"]
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x"]
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Unit {
-  id           String      @id @default(cuid())
-  name         String
-  description  String?
-  organization String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  parentId     String?
-  parent       Unit?       @relation("UnitHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  subUnits     Unit[]      @relation("UnitHierarchy")
-  admins       UnitAdmin[]
-  assessments  Assessment[]
-  users        User[]      @relation("UnitUsers")
+  id                 String              @id @default(cuid())
+  name               String
+  description        String?
+  organization       String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  parentId           String?
+  parent             Unit?               @relation("UnitHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  subUnits           Unit[]              @relation("UnitHierarchy")
+  admins             UnitAdmin[]
+  assessments        Assessment[]
+  users              User[]              @relation("UnitUsers")
+  ownedCampaigns     SurveyCampaign[]    @relation("CampaignTenantUnit")
+  campaignRecipients CampaignRecipient[] @relation("CampaignMemberUnit")
 }
 
 model UnitAdmin {
@@ -35,41 +37,42 @@ model UnitAdmin {
 }
 
 model User {
-  id                        String                         @id @default(cuid())
-  email                     String                         @unique
-  password                  String
-  firstName                 String?
-  lastName                  String?
-  organization              String?
-  createdAt                 DateTime                       @default(now())
-  updatedAt                 DateTime                       @updatedAt
-  sectorId                  String?
-  subSectorId               String?
-  passwordResetExpires      DateTime?
-  passwordResetToken        String?
-  role                      UserRole                       @default(USER)
-  unitId                    String?
-  currentScoreDate          DateTime?
-  region                    String?                        @default("Global")
-  targetDate                DateTime?
-  targetEndurance           Float?
-  targetVelocity            Float?
-  emailVerificationExpires  DateTime?
-  emailVerificationToken    String?
-  emailVerified             Boolean                        @default(false)
-  isActive                  Boolean                        @default(true)
-  assessmentScores          AssessmentScore[]
-  uploadedDocuments         Document[]
-  authoredResponses         SurveyResponse[]               @relation("ResponseAuthor")
-  ownedAssessments          Assessment[]                   @relation("AssessmentOwner")
-  adminOfUnits              UnitAdmin[]
-  sector                    Sector?                        @relation(fields: [sectorId], references: [id])
-  subSector                 SubSector?                     @relation(fields: [subSectorId], references: [id])
-  unit                      Unit?                          @relation("UnitUsers", fields: [unitId], references: [id])
-  surveyAssignments         UserSurveyAssignment[]
-  assignedSections          SectionAssignment[]            @relation("SectionAssignee")
-  distributedSections       SectionAssignment[]            @relation("SectionAssigner")
-  submittedAssessments      Assessment[]                   @relation("AssessmentSubmitter")
+  id                       String                 @id @default(cuid())
+  email                    String                 @unique
+  password                 String
+  firstName                String?
+  lastName                 String?
+  organization             String?
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+  sectorId                 String?
+  subSectorId              String?
+  passwordResetExpires     DateTime?
+  passwordResetToken       String?
+  role                     UserRole               @default(USER)
+  unitId                   String?
+  currentScoreDate         DateTime?
+  region                   String?                @default("Global")
+  targetDate               DateTime?
+  targetEndurance          Float?
+  targetVelocity           Float?
+  emailVerificationExpires DateTime?
+  emailVerificationToken   String?
+  emailVerified            Boolean                @default(false)
+  isActive                 Boolean                @default(true)
+  assessmentScores         AssessmentScore[]
+  uploadedDocuments        Document[]
+  authoredResponses        SurveyResponse[]       @relation("ResponseAuthor")
+  ownedAssessments         Assessment[]           @relation("AssessmentOwner")
+  adminOfUnits             UnitAdmin[]
+  sector                   Sector?                @relation(fields: [sectorId], references: [id])
+  subSector                SubSector?             @relation(fields: [subSectorId], references: [id])
+  unit                     Unit?                  @relation("UnitUsers", fields: [unitId], references: [id])
+  surveyAssignments        UserSurveyAssignment[]
+  assignedSections         SectionAssignment[]    @relation("SectionAssignee")
+  distributedSections      SectionAssignment[]    @relation("SectionAssigner")
+  submittedAssessments     Assessment[]           @relation("AssessmentSubmitter")
+  createdCampaigns         SurveyCampaign[]       @relation("CampaignCreator")
 }
 
 model Sector {
@@ -147,40 +150,85 @@ model SectorScopeRule {
 }
 
 model Survey {
-  id                    String                 @id @default(cuid())
+  id                    String                  @id @default(cuid())
   name                  String
   description           String?
-  isActive              Boolean                @default(true)
+  isActive              Boolean                 @default(true)
   /// Tanıtım anketi: kendi kaydolan kullanıcıya otomatik atanır ve
   /// değerlendirmeleri yönetici raporlarına girmez. Ziyaretçinin rastgele
   /// cevapları sektör ortalamalarını ve kıyas değerlerini bozmasın diye.
-  isDemo                Boolean                @default(false)
-  order                 Int                    @default(0)
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
-  archivedAt            DateTime?              // Soft-delete: doluysa arşivlenmiş sayılır
+  isDemo                Boolean                 @default(false)
+  order                 Int                     @default(0)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  archivedAt            DateTime? // Soft-delete: doluysa arşivlenmiş sayılır
   benchmarks            Benchmark[]
   categories            Category[]
   sectorScopeRules      SectorScopeRule[]
   assessments           Assessment[]
   userAssignments       UserSurveyAssignment[]
   aiRecommendationCache AIRecommendationCache[]
+  campaigns             SurveyCampaign[]
+}
+
+/// Bir oda/STK'nın belirli bir anketi üye kuruluşlarına gönderdiği çalışma.
+///
+/// tenantUnitId alıcı kuruluşun kök birimidir. Üye kuruluşlar ayrı Unit
+/// kayıtları olarak CampaignRecipient üzerinden kampanyaya bağlanır; böylece
+/// aynı odanın üyeleri birbirinin cevaplarını paylaşmaz.
+model SurveyCampaign {
+  id                String              @id @default(cuid())
+  name              String
+  tenantUnitId      String
+  surveyId          String
+  status            CampaignStatus      @default(ACTIVE)
+  privacyMode       CampaignPrivacyMode @default(IDENTIFIED)
+  minimumCohortSize Int                 @default(5)
+  deadline          DateTime?
+  launchedAt        DateTime?           @default(now())
+  closedAt          DateTime?
+  createdById       String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  tenantUnit        Unit                @relation("CampaignTenantUnit", fields: [tenantUnitId], references: [id], onDelete: Cascade)
+  survey            Survey              @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  createdBy         User?               @relation("CampaignCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  recipients        CampaignRecipient[]
+
+  @@index([tenantUnitId, status])
+  @@index([surveyId, status])
+}
+
+/// Kampanyadaki tek bir üye kuruluş. Bir üyenin birden çok çalışanı aynı
+/// değerlendirmeye katkı verebilir; fakat farklı üye kuruluşların sonuçları
+/// kesinlikle ayrı Assessment kayıtlarında tutulur.
+model CampaignRecipient {
+  id           String         @id @default(cuid())
+  campaignId   String
+  memberUnitId String
+  assignedAt   DateTime       @default(now())
+  campaign     SurveyCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  memberUnit   Unit           @relation("CampaignMemberUnit", fields: [memberUnitId], references: [id], onDelete: Cascade)
+  assessment   Assessment?
+
+  @@unique([campaignId, memberUnitId])
+  @@index([memberUnitId])
 }
 
 model UserSurveyAssignment {
-  id                  String    @id @default(cuid())
-  userId              String
-  surveyId            String
-  assignedAt          DateTime  @default(now())
-  assignedBy          String?
-  isActive            Boolean   @default(true)
+  id                 String    @id @default(cuid())
+  userId             String
+  surveyId           String
+  assignedAt         DateTime  @default(now())
+  assignedBy         String?
+  isActive           Boolean   @default(true)
   // Süre sınırı özellikleri
-  hasDeadline         Boolean   @default(false)  // Süre sınırı aktif mi?
-  deadline            DateTime?                   // Bitiş tarihi
-  deadlineExtendedAt  DateTime?                   // Süre uzatma tarihi
-  deadlineExtendedBy  String?                     // Süreyi uzatan admin
-  survey              Survey    @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hasDeadline        Boolean   @default(false) // Süre sınırı aktif mi?
+  deadline           DateTime? // Bitiş tarihi
+  deadlineExtendedAt DateTime? // Süre uzatma tarihi
+  deadlineExtendedBy String? // Süreyi uzatan admin
+  survey             Survey    @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, surveyId])
 }
@@ -191,7 +239,7 @@ model Category {
   description   String?
   order         Int           @default(0)
   createdAt     DateTime      @default(now())
-  archivedAt    DateTime?     // Soft-delete
+  archivedAt    DateTime? // Soft-delete
   surveyId      String?
   survey        Survey?       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   subCategories SubCategory[]
@@ -199,19 +247,19 @@ model Category {
 }
 
 model SubCategory {
-  id              String           @id @default(cuid())
+  id              String              @id @default(cuid())
   name            String
   description     String?
-  order           Int              @default(0)
+  order           Int                 @default(0)
   categoryId      String
-  createdAt       DateTime         @default(now())
-  archivedAt      DateTime?        // Soft-delete
-  hasSubLevels    Boolean          @default(true)
-  questions       Question[]       @relation("SubCategoryQuestions")
+  createdAt       DateTime            @default(now())
+  archivedAt      DateTime? // Soft-delete
+  hasSubLevels    Boolean             @default(true)
+  questions       Question[]          @relation("SubCategoryQuestions")
   recommendations Recommendation[]
   scopeRules      SectorScopeRule[]
   assignments     SectionAssignment[]
-  category        Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  category        Category            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   subLevels       SubLevel[]
 }
 
@@ -222,7 +270,7 @@ model SubLevel {
   order           Int              @default(0)
   subCategoryId   String
   createdAt       DateTime         @default(now())
-  archivedAt      DateTime?        // Soft-delete
+  archivedAt      DateTime? // Soft-delete
   axisType        AxisType         @default(VELOCITY)
   questions       Question[]       @relation("SubLevelQuestions")
   recommendations Recommendation[]
@@ -261,7 +309,7 @@ model Question {
   categoryId         String?
   axisType           AxisType         @default(VELOCITY)
   conditionalOptions Json?
-  archivedAt         DateTime?        // Soft-delete
+  archivedAt         DateTime? // Soft-delete
   category           Category?        @relation("CategoryQuestions", fields: [categoryId], references: [id], onDelete: Cascade)
   subCategory        SubCategory?     @relation("SubCategoryQuestions", fields: [subCategoryId], references: [id], onDelete: Cascade)
   subLevel           SubLevel?        @relation("SubLevelQuestions", fields: [subLevelId], references: [id], onDelete: Cascade)
@@ -278,29 +326,33 @@ model Question {
 /// Kuruluşu olmayan kullanıcı için tek kişilik değerlendirme açılır
 /// (unitId null, ownerUserId dolu); davranış bugünküyle aynı kalır.
 model Assessment {
-  id           String           @id @default(cuid())
-  surveyId     String
-  unitId       String?
-  ownerUserId  String?
+  id                  String              @id @default(cuid())
+  surveyId            String
+  unitId              String?
+  ownerUserId         String?
   /// SUBMITTED ise cevaplar ve görev dağılımı kilitlidir; puan taslak
   /// olmaktan çıkıp kesinleşir. Koordinatör gönderimi geri alabilir.
-  status       AssessmentStatus @default(IN_PROGRESS)
-  submittedAt  DateTime?
+  status              AssessmentStatus    @default(IN_PROGRESS)
+  submittedAt         DateTime?
   /// Denetim izi: gönderen koordinatör.
-  submittedById String?
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  survey       Survey           @relation(fields: [surveyId], references: [id], onDelete: Cascade)
-  unit         Unit?            @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  owner        User?            @relation("AssessmentOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
-  submittedBy  User?            @relation("AssessmentSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
-  responses    SurveyResponse[]
-  roadmapItems RoadmapItem[]
-  scoreHistory ScoreHistory[]
-  sectionAssignments SectionAssignment[]
+  submittedById       String?
+  /// Kampanya değerlendirmelerinde üyeyi ve oda/STK kapsamını sabitler.
+  /// null ise eski/kuruluş içi değerlendirme akışı kullanılır.
+  campaignRecipientId String?             @unique
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  survey              Survey              @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  unit                Unit?               @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  owner               User?               @relation("AssessmentOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  submittedBy         User?               @relation("AssessmentSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
+  campaignRecipient   CampaignRecipient?  @relation(fields: [campaignRecipientId], references: [id], onDelete: SetNull)
+  responses           SurveyResponse[]
+  roadmapItems        RoadmapItem[]
+  scoreHistory        ScoreHistory[]
+  sectionAssignments  SectionAssignment[]
 
-  @@unique([surveyId, unitId])
-  @@unique([surveyId, ownerUserId])
+  @@index([surveyId, unitId])
+  @@index([surveyId, ownerUserId])
 }
 
 /// Bir bölümün (alt kategori) sorumlusu.
@@ -376,41 +428,41 @@ model AssessmentScore {
 }
 
 model Recommendation {
-  id                String                         @id @default(cuid())
-  title             String
-  description       String
-  categoryId        String?
-  costType          CostType                       @default(OPEX)
-  timeframe         Timeframe                      @default(MEDIUM_TERM)
-  strategicType     StrategicType                  @default(PROJECT)
-  estimatedImpact   Float                          @default(0)
-  minScoreThreshold Float                          @default(0)
-  maxScoreThreshold Float                          @default(100)
-  order             Int                            @default(0)
-  createdAt         DateTime                       @default(now())
-  subLevelId        String?
-  capexLevel        Int                            @default(1)
-  opexLevel         Int                            @default(1)
-  xPosition         Float                          @default(5)
-  yPosition         Float                          @default(5)
-  subCategoryId     String?
-  questionId        String?
-  triggerOptions    String?
+  id                    String        @id @default(cuid())
+  title                 String
+  description           String
+  categoryId            String?
+  costType              CostType      @default(OPEX)
+  timeframe             Timeframe     @default(MEDIUM_TERM)
+  strategicType         StrategicType @default(PROJECT)
+  estimatedImpact       Float         @default(0)
+  minScoreThreshold     Float         @default(0)
+  maxScoreThreshold     Float         @default(100)
+  order                 Int           @default(0)
+  createdAt             DateTime      @default(now())
+  subLevelId            String?
+  capexLevel            Int           @default(1)
+  opexLevel             Int           @default(1)
+  xPosition             Float         @default(5)
+  yPosition             Float         @default(5)
+  subCategoryId         String?
+  questionId            String?
+  triggerOptions        String?
   // Kademeli tetikleme: doluysa öneri, kullanıcının bu soruya verdiği cevabın
   // puanı bu değere eşit veya altındaysa gösterilir. Böylece daha düşük
   // basamaktaki kullanıcılar üst basamakların önerilerini de devralır.
   // Null ise `triggerOptions` ile tam eşleşme uygulanır (eski davranış).
   triggerMaxAnswerScore Float?
-  points            Float                          @default(0.5)
-  videoUrl          String?
-  question          Question?                      @relation(fields: [questionId], references: [id])
-  subCategory       SubCategory?                   @relation(fields: [subCategoryId], references: [id])
-  subLevel          SubLevel?                      @relation(fields: [subLevelId], references: [id])
-  roadmapItems      RoadmapItem[]
+  points                Float         @default(0.5)
+  videoUrl              String?
+  question              Question?     @relation(fields: [questionId], references: [id])
+  subCategory           SubCategory?  @relation(fields: [subCategoryId], references: [id])
+  subLevel              SubLevel?     @relation(fields: [subLevelId], references: [id])
+  roadmapItems          RoadmapItem[]
 }
 
 model ScoreHistory {
-  id                       String   @id @default(cuid())
+  id                       String     @id @default(cuid())
   assessmentId             String
   surveyId                 String?
   overallScore             Float
@@ -418,12 +470,15 @@ model ScoreHistory {
   velocityScore            Float?
   enduranceScore           Float?
   quadrant                 String?
-  completedQuestions       Int      @default(0)
-  totalQuestions           Int      @default(0)
-  completedRecommendations Int      @default(0)
+  completedQuestions       Int        @default(0)
+  totalQuestions           Int        @default(0)
+  completedRecommendations Int        @default(0)
+  /// Gönderim anındaki kategori sonuçları. Oda/STK toplu raporu yalnızca
+  /// kesinleşmiş snapshot'ları kullanır; taslak cevapları sonuca karıştırmaz.
+  categoryScores           Json?
   triggerType              String
   triggerEntityId          String?
-  recordedAt               DateTime @default(now())
+  recordedAt               DateTime   @default(now())
   assessment               Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 
   @@index([assessmentId, recordedAt])
@@ -450,6 +505,17 @@ enum UserRole {
   USER
   UNIT_MANAGER
   ADMIN
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+enum CampaignPrivacyMode {
+  IDENTIFIED
+  ANONYMOUS
 }
 
 enum BenchmarkLevel {
@@ -501,27 +567,27 @@ enum RoadmapStatus {
   NOT_STARTED
 }
 
-
 // AI Recommendation Cache - Batch + Cache yaklaşımı için
 model AIRecommendationCache {
   id              String   @id @default(cuid())
-  profileHash     String   @unique  // Sektör + puan profili hash'i
+  profileHash     String   @unique // Sektör + puan profili hash'i
   surveyId        String
-  recommendations Json     // AI sonuçları: [{id, priority, note}]
+  recommendations Json // AI sonuçları: [{id, priority, note}]
   createdAt       DateTime @default(now())
   expiresAt       DateTime // TTL - 24 saat sonra
 
-  survey          Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  survey Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 }
+
 // System Health Monitoring
 model HealthLog {
-  id            String   @id @default(cuid())
-  status        String   // healthy, degraded, unhealthy
-  dbLatency     Int?     // ms
-  memoryUsage   Int?     // percentage
-  responseTime  Int?     // ms
-  errorMessage  String?
-  checkedAt     DateTime @default(now())
+  id           String   @id @default(cuid())
+  status       String // healthy, degraded, unhealthy
+  dbLatency    Int? // ms
+  memoryUsage  Int? // percentage
+  responseTime Int? // ms
+  errorMessage String?
+  checkedAt    DateTime @default(now())
 
   @@index([checkedAt])
   @@index([status])
