@@ -276,7 +276,10 @@ export default function LandingPage() {
         <div className="band-dark on-dark">
           <div className="hero">
             <div>
-              <h1>Kurumsal dönüşüm ölçümü basitleşti</h1>
+              <h1 aria-label="Kurumsal dönüşüm ölçümü basitleşti">
+                <span>Kurumsal dönüşüm</span>
+                <span>ölçümü basitleşti</span>
+              </h1>
               <p className="hero-lede">
                 Sürdürülebilirlik ve dijital olgunluğunuzu tek platformda ölçün, sektörünüzle
                 kıyaslayın ve stratejik önerilerle büyüyün.

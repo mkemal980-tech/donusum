@@ -32,6 +32,8 @@ test("dar ekranda mercek hero metninin altına iner ve azaltılmış harekete uy
   const actions = page.locator(".hero-actions");
   const lens = page.locator(".landing-lens-wrap");
   const card = page.locator(".landing-lens-card");
+  await expect(actions).toBeVisible();
+  await expect(lens).toBeVisible();
   const actionsBox = await actions.boundingBox();
   const lensBox = await lens.boundingBox();
 

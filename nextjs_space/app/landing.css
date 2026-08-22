@@ -222,11 +222,15 @@
   padding: 150px var(--gutter) 140px;
 }
 .esg-landing .hero h1 {
-  font-size: 76px;
+  font-size: 64px;
   line-height: 1.02;
   letter-spacing: -0.04em;
   font-weight: 500;
   color: var(--color-text);
+}
+.esg-landing .hero h1 span {
+  display: block;
+  white-space: nowrap;
 }
 .esg-landing .hero-lede {
   font-size: 18px;
@@ -653,7 +657,7 @@
   .esg-landing .quote-row,
   .esg-landing .split { grid-template-columns: 1fr; gap: 40px; }
   .esg-landing .hero { padding: 88px var(--gutter) 80px; }
-  .esg-landing .hero h1 { font-size: 44px; letter-spacing: -0.03em; }
+  .esg-landing .hero h1 { font-size: clamp(28px, 8.8vw, 44px); letter-spacing: -0.03em; }
   .esg-landing .grid-3,
   .esg-landing .grid-why { grid-template-columns: 1fr; gap: 24px; }
   .esg-landing .stats { grid-template-columns: repeat(2, 1fr); gap: 40px 0; padding: 48px 24px; }
