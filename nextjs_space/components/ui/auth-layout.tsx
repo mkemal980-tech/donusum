@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ThemeSwitch from "./theme-switch";
 
 /**
  * Giriş ve kayıt ekranlarının ortak iskeleti.
@@ -25,17 +26,21 @@ export default function AuthLayout({
     <div className="grid min-h-screen lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       {/* --- Form sütunu --- */}
       <div className="flex flex-col px-6 py-8 sm:px-10">
-        <Link href="/" className="flex items-center gap-2.5 self-start" aria-label="Ana sayfa">
-          <span
-            className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-xs)] text-[13px] font-semibold"
-            style={{ background: "var(--accent-solid)", color: "var(--on-accent)" }}
-          >
-            DP
-          </span>
-          <span className="text-[15px] font-semibold" style={{ color: "var(--ink)" }}>
-            Dönüşüm Platformu
-          </span>
-        </Link>
+        <div className="flex items-center justify-between gap-4">
+          <Link href="/" className="flex items-center gap-2.5" aria-label="Ana sayfa">
+            <span
+              className="flex h-8 w-8 items-center justify-center rounded-[var(--radius-xs)] text-[13px] font-semibold"
+              style={{ background: "var(--accent-solid)", color: "var(--on-accent)" }}
+            >
+              DP
+            </span>
+            <span className="text-[15px] font-semibold" style={{ color: "var(--ink)" }}>
+              Dönüşüm Platformu
+            </span>
+          </Link>
+
+          <ThemeSwitch compact />
+        </div>
 
         <div className="flex flex-1 items-center justify-center py-10">
           <div className="w-full max-w-[400px]">
