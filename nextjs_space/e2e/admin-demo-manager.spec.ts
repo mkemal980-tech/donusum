@@ -68,6 +68,10 @@ test("ADMIN demo dashboardunu ve 2.000 tamamlanmış yanıtı görür", async ({
   await expect(page.getByText("Marmara Ticaret Odası").first()).toBeVisible();
   await expect(page.getByText("2.000 tamamlanmış üye yanıtıyla")).toBeVisible();
   await expect(page.getByText("Tamamlanan yanıt")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "E–S–G değerlendirmesi" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Ironman analizi" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Öneri portföyü" })).toBeVisible();
+  await expect(page.getByText("KOBİ Karbon Envanteri Başlangıç Programı")).toBeVisible();
   await expect(page.getByRole("link", { name: "Demo yönetici" })).toBeVisible();
 });
 

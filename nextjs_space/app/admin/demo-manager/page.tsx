@@ -16,6 +16,11 @@ import { demoChamberDashboard as demo } from "@/lib/demo-chamber-dashboard";
 import PageHeader from "@/components/ui/page-header";
 import Panel from "@/components/ui/panel";
 import StatCard from "@/components/ui/stat-card";
+import {
+  DemoEsgAnalysis,
+  DemoIronmanAnalysis,
+  DemoRecommendationPortfolio,
+} from "./_components/demo-analysis-sections";
 
 export const dynamic = "force-dynamic";
 
@@ -123,6 +128,8 @@ export default async function DemoManagerPage() {
         <StatCard label="Sektör kıyasının üstü" value={`+${decimal.format(demo.results.benchmarkDifference)}`} note="puan" tone="success" />
       </div>
 
+      <DemoEsgAnalysis />
+
       <div className="grid gap-6 xl:grid-cols-5">
         <Panel
           className="xl:col-span-3"
@@ -161,6 +168,8 @@ export default async function DemoManagerPage() {
           </div>
         </Panel>
       </div>
+
+      <DemoIronmanAnalysis />
 
       <div className="grid gap-6 xl:grid-cols-5">
         <Panel
@@ -246,6 +255,8 @@ export default async function DemoManagerPage() {
           </table>
         </div>
       </Panel>
+
+      <DemoRecommendationPortfolio />
 
       <Panel
         title="Yönetici içgörüleri"

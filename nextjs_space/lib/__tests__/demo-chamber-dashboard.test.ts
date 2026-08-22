@@ -33,4 +33,36 @@ describe("süper admin ticaret odası demosu", () => {
       expect(sector.participation).toBeLessThanOrEqual(100);
     }
   });
+
+  it("E-S-G ağırlıklı skoru genel sonuçla aynı tutar", () => {
+    const weightedScore = demo.esgPillars.reduce(
+      (sum, pillar) => sum + pillar.score * (pillar.weight / 100),
+      0
+    );
+    expect(demo.esgPillars.reduce((sum, pillar) => sum + pillar.weight, 0)).toBe(100);
+    expect(weightedScore).toBeCloseTo(demo.results.overallScore, 5);
+  });
+
+  it("Ironman dağılımını 2.000 yanıta kapatır ve kadranı eşikle doğrular", () => {
+    expect(demo.ironman.distribution.reduce((sum, item) => sum + item.count, 0)).toBe(2000);
+    expect(demo.ironman.distribution.reduce((sum, item) => sum + item.percentage, 0)).toBeCloseTo(100);
+    expect(demo.ironman.current.velocity).toBeGreaterThanOrEqual(demo.ironman.threshold);
+    expect(demo.ironman.current.endurance).toBeGreaterThanOrEqual(demo.ironman.threshold);
+    expect(demo.ironman.quadrant).toBe("IRONMAN");
+    expect(demo.ironman.questionMix.velocity + demo.ironman.questionMix.endurance).toBe(
+      demo.campaign.questionCount
+    );
+  });
+
+  it("öneri portföyü sayaçlarını ve erişim sınırlarını tutarlı tutar", () => {
+    const summary = demo.recommendationSummary;
+    expect(summary.byStrategy.quickWins + summary.byStrategy.projects + summary.byStrategy.bigBets).toBe(summary.total);
+    expect(summary.byStatus.ready + summary.byStatus.inProgress + summary.byStatus.planned).toBe(summary.total);
+    expect(new Set(demo.recommendations.map((recommendation) => recommendation.id)).size).toBe(demo.recommendations.length);
+    for (const recommendation of demo.recommendations) {
+      expect(recommendation.memberReach).toBeLessThanOrEqual(demo.participation.submitted);
+      expect(recommendation.impact).toBeGreaterThanOrEqual(0);
+      expect(recommendation.impact).toBeLessThanOrEqual(10);
+    }
+  });
 });
