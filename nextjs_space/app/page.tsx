@@ -2,20 +2,24 @@ import Link from "next/link";
 import "./landing.css";
 
 /**
- * Tanıtım (açılış) sayfası — ESG Akademi "blueprint" tasarım dili.
+ * Tanıtım (açılış) sayfası — monokrom, düz yüzeyli tasarım dili.
  *
- * Görsel dil ve metin, onaylanan tasarım dosyasından birebir taşındı:
- * Barlow Condensed büyük harf başlıklar, ince çizgili blueprint çerçeveler,
- * açık gri zemin ve lacivert bantlar. Stiller app/landing.css'te ve
- * `.esg-landing` altında kapsanmıştır — sınıf adları uygulamanınkilerle
- * çakışıyor, kapsamsız kalsalar panoyu da boyarlardı.
+ * Görsel dil: siyah zemin, beyaz birincil ve gri ikincil metin, Inter,
+ * sıkı harf aralıklı büyük başlıklar, bölümleri ayıran 1px hairline
+ * çizgiler, küçük yarıçap ve bol dikey boşluk. Gölge, degrade ve renkli
+ * vurgu yok. Stiller app/landing.css'te ve `.esg-landing` altında
+ * kapsanmıştır — sınıf adları uygulamanınkilerle çakışıyor, kapsamsız
+ * kalsalar panoyu da boyarlardı.
+ *
+ * Pano (dashboard) bilinçli olarak ayrı bir görsel dil taşır: burada
+ * yapılan hiçbir değişiklik globals.css'e veya components/ui'ye dokunmaz.
  *
  * Sayfa uygulamanın tema token'larını kullanmaz; kendi paletini taşır,
- * böylece koyu tema seçen kullanıcıda da marka görünümüyle açılır.
+ * böylece açık tema seçen kullanıcıda da aynı görünümle açılır.
  */
 
 const featureIcon = {
-  stroke: "var(--color-accent-700)",
+  stroke: "var(--color-text-2)",
   strokeWidth: 1.5,
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
@@ -222,18 +226,6 @@ const footerColumns = [
   },
 ];
 
-/** Blueprint çerçevesinin dört köşe işareti. */
-function Corners() {
-  return (
-    <>
-      <i className="corner tl" aria-hidden />
-      <i className="corner tr" aria-hidden />
-      <i className="corner bl" aria-hidden />
-      <i className="corner br" aria-hidden />
-    </>
-  );
-}
-
 export default function LandingPage() {
   return (
     <div className="esg-landing">
@@ -244,7 +236,7 @@ export default function LandingPage() {
           <a href="#neden">Hakkımızda</a>
           <span>
             <b>TR</b>{" "}
-            <span style={{ color: "color-mix(in srgb, var(--color-text) 45%, transparent)" }}>
+            <span style={{ color: "var(--color-text-3)" }}>
               / EN
             </span>
           </span>
@@ -292,7 +284,6 @@ export default function LandingPage() {
             </div>
 
             <div className="blueprint score-card">
-              <Corners />
               <div className="score-head">
                 <span className="kicker">Olgunluk raporu</span>
                 <span className="tag-outline">Örnek</span>
@@ -302,7 +293,7 @@ export default function LandingPage() {
                 <span
                   style={{
                     fontSize: 13,
-                    color: "color-mix(in srgb, var(--color-text) 70%, transparent)",
+                    color: "var(--color-text-2)",
                   }}
                 >
                   / 5 genel olgunluk · sektör ort. 2.9
@@ -341,12 +332,11 @@ export default function LandingPage() {
 
         {/* ===== Çözümler ===== */}
         <div className="section" id="cozumler">
-          <h2 style={{ fontSize: 40, textAlign: "center" }}>Dönüşümünüzü büyütmek için her şey</h2>
+          <h2 style={{ fontSize: 52, letterSpacing: "-0.03em", textAlign: "center" }}>Dönüşümünüzü büyütmek için her şey</h2>
           <p className="section-lede">Ölçümden yol haritasına, tek hesapta.</p>
           <div className="grid-3">
             {features.map((feature) => (
               <div key={feature.title} className="blueprint feature">
-                <Corners />
                 {feature.icon}
                 <h3>{feature.title}</h3>
                 <p>{feature.text}</p>
@@ -359,15 +349,14 @@ export default function LandingPage() {
         </div>
 
         {/* ===== Tanıtım videosu ===== */}
-        <div style={{ padding: "0 var(--gutter) 72px", textAlign: "center" }}>
+        <div style={{ padding: "0 var(--gutter) var(--section-y)", textAlign: "center" }}>
           <div className="kicker">Platformla tanışın</div>
-          <h2 style={{ fontSize: 36, marginTop: 12 }}>Size sunacak çok şeyimiz var</h2>
-          <figure className="blueprint" style={{ margin: "36px auto 0", maxWidth: 760 }}>
+          <h2 style={{ fontSize: 40, letterSpacing: "-0.03em", marginTop: 12 }}>Size sunacak çok şeyimiz var</h2>
+          <figure className="blueprint" style={{ margin: "56px auto 0", maxWidth: 880 }}>
             <div className="shot shot-16x9">Tanıtım videosu</div>
-            <Corners />
             <span className="play" aria-hidden>
               <span>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--color-bg)">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--color-text)">
                   <polygon points="7,4 20,12 7,20" />
                 </svg>
               </span>
@@ -387,7 +376,7 @@ export default function LandingPage() {
 
         {/* ===== Neden biz ===== */}
         <div className="section" id="neden">
-          <h2 style={{ fontSize: 36, textAlign: "center" }}>Neden ESG Akademi Anket?</h2>
+          <h2 style={{ fontSize: 40, letterSpacing: "-0.03em", textAlign: "center" }}>Neden ESG Akademi Anket?</h2>
           <p className="section-lede">
             Kurumsal dönüşüm ölçümü karmaşıklaşabilir; biz basitleştirmeyi görev edindik.
           </p>
@@ -406,12 +395,11 @@ export default function LandingPage() {
 
         {/* ===== Kimler kullanıyor ===== */}
         <div className="section section-bordered" id="kimler">
-          <h2 style={{ fontSize: 36, textAlign: "center" }}>Kimler kullanıyor?</h2>
+          <h2 style={{ fontSize: 40, letterSpacing: "-0.03em", textAlign: "center" }}>Kimler kullanıyor?</h2>
           {audiences.map((audience) => {
             const image = (
               <figure className="blueprint" style={{ margin: 0 }}>
                 <div className="shot shot-8x5">{audience.caption}</div>
-                <Corners />
               </figure>
             );
             const copy = (
@@ -434,7 +422,7 @@ export default function LandingPage() {
 
         {/* ===== Başarı hikâyesi ===== */}
         <div className="section section-bordered">
-          <h2 style={{ fontSize: 36, textAlign: "center" }}>Başarı hikâyeleri</h2>
+          <h2 style={{ fontSize: 40, letterSpacing: "-0.03em", textAlign: "center" }}>Başarı hikâyeleri</h2>
           <div className="quote-row">
             <div>
               <blockquote>
@@ -443,11 +431,11 @@ export default function LandingPage() {
                 konuşabildik.”
               </blockquote>
               <div style={{ marginTop: 24 }}>
-                <div style={{ fontSize: 15, fontWeight: 700 }}>Elif Demir</div>
+                <div style={{ fontSize: 15, fontWeight: 500 }}>Elif Demir</div>
                 <div
                   style={{
                     fontSize: 14,
-                    color: "color-mix(in srgb, var(--color-text) 70%, transparent)",
+                    color: "var(--color-text-2)",
                   }}
                 >
                   Sürdürülebilirlik Direktörü, Nova Tekstil
@@ -464,7 +452,6 @@ export default function LandingPage() {
             </div>
             <figure className="blueprint" style={{ margin: 0 }}>
               <div className="shot shot-4x3">Müşteri fotoğrafı</div>
-              <Corners />
             </figure>
           </div>
         </div>
@@ -482,19 +469,18 @@ export default function LandingPage() {
           >
             <div>
               <div className="kicker">Kaynak merkezi</div>
-              <h2 style={{ fontSize: 36, marginTop: 12 }}>Kaynak merkezimizi ziyaret edin</h2>
+              <h2 style={{ fontSize: 40, letterSpacing: "-0.03em", marginTop: 12 }}>Kaynak merkezimizi ziyaret edin</h2>
             </div>
             <Link href="/signup" className="btn btn-secondary">
               Keşfetmeye başlayın
             </Link>
           </div>
 
-          <div className="grid-3" style={{ marginTop: 44 }}>
+          <div className="grid-3" style={{ marginTop: 72 }}>
             {resources.map((resource) => (
               <div key={resource.title} className="blueprint resource">
-                <Corners />
                 <div className="shot shot-card">Yazı görseli</div>
-                <div style={{ padding: 20 }}>
+                <div style={{ padding: 24 }}>
                   <h3>{resource.title}</h3>
                   <p>{resource.text}</p>
                   <a className="more" href="#kaynaklar">
@@ -516,16 +502,16 @@ export default function LandingPage() {
         <div className="band-dark on-dark footer">
           <div className="footer-grid">
             <div>
-              <div className="brand" style={{ color: "var(--color-bg)" }}>
+              <div className="brand" style={{ color: "var(--color-text)" }}>
                 ESG Akademi / Anket
               </div>
               <p
                 style={{
-                  fontSize: 13,
-                  lineHeight: "20px",
+                  fontSize: 14,
+                  lineHeight: 1.6,
                   marginTop: 12,
                   maxWidth: "30ch",
-                  color: "color-mix(in srgb, var(--color-bg) 65%, transparent)",
+                  color: "var(--color-text-2)",
                 }}
               >
                 Sürdürülebilirlik ve dijital olgunluk ölçümü, tek platformda.

@@ -55,8 +55,8 @@ test("tanıtım sayfası tema tercihinden bağımsız olarak kendi paletiyle gel
   // Kullanıcının tercihi duruyor...
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
 
-  // ...ama sayfa kendi tasarım sistemini taşıyor: açık gri zemin, mavi vurgu,
-  // Barlow ailesi. Uygulamanın tema token'larına hiç bakmaz.
+  // ...ama sayfa kendi tasarım sistemini taşıyor: siyah zemin, monokrom
+  // palet, Inter ailesi. Uygulamanın tema token'larına hiç bakmaz.
   const brand = await page.evaluate(() => {
     const wrap = document.querySelector(".esg-landing") as HTMLElement;
     const style = getComputedStyle(wrap);
@@ -67,8 +67,8 @@ test("tanıtım sayfası tema tercihinden bağımsız olarak kendi paletiyle gel
       heading: getComputedStyle(document.querySelector(".esg-landing h1")!).fontFamily,
     };
   });
-  expect(brand.accent).toBe("#5980a6");
-  expect(brand.background).toBe("rgb(242, 242, 243)");
-  expect(brand.body).toContain("Barlow");
-  expect(brand.heading).toContain("Barlow_Condensed");
+  expect(brand.accent).toBe("#ffffff");
+  expect(brand.background).toBe("rgb(0, 0, 0)");
+  expect(brand.body).toContain("Inter");
+  expect(brand.heading).toContain("Inter");
 });
