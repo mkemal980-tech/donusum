@@ -14,6 +14,7 @@ import {
   Gauge,
   LayoutDashboard,
   Lightbulb,
+  Presentation,
   Scale,
   UserCheck,
   Users,
@@ -39,6 +40,7 @@ export type AdminNavItem = {
 const ADMIN_NAV: AdminNavItem[] = [
   { href: "/admin", label: "Genel bakış", icon: LayoutDashboard, section: "Yönetim", roles: ["ADMIN", "UNIT_MANAGER"] },
   { href: "/admin/dashboard", label: "Sistem panosu", icon: BarChart3, section: "Yönetim", roles: ["ADMIN"], requiresUnitResponses: true },
+  { href: "/admin/demo-manager", label: "Demo yönetici", icon: Presentation, section: "Yönetim", roles: ["ADMIN"] },
   { href: "/admin/users", label: "Kullanıcılar", icon: Users, section: "Kullanıcı", roles: ["ADMIN"] },
   { href: "/admin/units", label: "Birimler", icon: Building2, section: "Kullanıcı", roles: ["ADMIN"] },
   { href: "/admin/surveys", label: "Anketler", icon: FileText, section: "Anket", roles: ["ADMIN"] },
