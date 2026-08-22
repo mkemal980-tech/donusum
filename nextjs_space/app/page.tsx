@@ -1,3 +1,6 @@
+/* eslint-disable @next/next/no-img-element --
+   next.config.js'te images.unoptimized = true; next/image bu projede
+   optimizasyon yapmıyor, yalnızca fazladan sarmalayıcı ekliyor. */
 import Link from "next/link";
 import "./landing.css";
 
@@ -182,18 +185,24 @@ const audiences = [
     title: "KOBİ'ler",
     text: "Tedarik zincirlerinin ESG beklentileri hızla artıyor. Olgunluğunuzu ölçün, eksiklerinizi önceliklendirin ve müşterilerinize kanıtlanabilir bir dönüşüm hikâyesi sunun.",
     caption: "KOBİ görseli",
+    image: "/images/landing/kobiler.jpg",
+    alt: "Atölyede kaynak yapan usta; koyu zeminde tek ışık kaynağı.",
     imageFirst: true,
   },
   {
     title: "Kurumsal gruplar",
     text: "Birden çok birim ve iştirakte anket atayın, tamamlanmayı tek panelden izleyin. Konsolide skorlar ve birim kıyasları raporlama döneminizi kısaltır.",
     caption: "Kurumsal grup görseli",
+    image: "/images/landing/kurumsal-gruplar.jpg",
+    alt: "Aşağıdan görünen gökdelen cephesi; tekrar eden pencere ızgarası.",
     imageFirst: false,
   },
   {
     title: "Danışmanlar ve eğitmenler",
     text: "Müşterilerinizin mevcut durumunu standart bir metodolojiyle tespit edin; öneri kütüphanesini kendi danışmanlık sürecinize temel yapın.",
     caption: "Danışmanlık görseli",
+    image: "/images/landing/danismanlar.jpg",
+    alt: "Sunum salonunda ön sıradan izleyiciler; sahne ışığı arkadan geliyor.",
     imageFirst: true,
   },
 ];
@@ -202,14 +211,20 @@ const resources = [
   {
     title: "ESG raporlama rehberi: nereden başlamalı?",
     text: "CSRD ve TSRS sonrası raporlama beklentileri ve olgunlukla ilişkisi.",
+    image: "/images/landing/esg-raporlama.jpg",
+    alt: "Rafta sıralanmış klasörler ve ciltli kayıt defterleri.",
   },
   {
     title: "Dijital olgunluk nedir, nasıl ölçülür?",
     text: "Veri, bulut, otomasyon ve siber güvenlik eksenlerinde 5 seviye.",
+    image: "/images/landing/dijital-olgunluk.jpg",
+    alt: "Veri merkezinde ağ kablolarıyla donatılmış sunucu kabinleri.",
   },
   {
     title: "Karbon ayak izi 101: Kapsam 1-2-3",
     text: "Ölçümden doğrulamaya temel kavramlar ve ilk adım planı.",
+    image: "/images/landing/karbon-ayak-izi.jpg",
+    alt: "Sisli dağ sırtında sıralanmış rüzgâr türbinleri.",
   },
 ];
 
@@ -353,7 +368,12 @@ export default function LandingPage() {
           <div className="kicker">Platformla tanışın</div>
           <h2 style={{ fontSize: 40, letterSpacing: "-0.03em", marginTop: 12 }}>Size sunacak çok şeyimiz var</h2>
           <figure className="blueprint" style={{ margin: "56px auto 0", maxWidth: 880 }}>
-            <div className="shot shot-16x9">Tanıtım videosu</div>
+            <div className="shot shot-16x9">
+              <img
+                src="/images/landing/tanitim-videosu.jpg"
+                alt="Çapraz açıyla görünen modern bina cephesi; tekrar eden cam paneller."
+              />
+            </div>
             <span className="play" aria-hidden>
               <span>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--color-text)">
@@ -399,7 +419,9 @@ export default function LandingPage() {
           {audiences.map((audience) => {
             const image = (
               <figure className="blueprint" style={{ margin: 0 }}>
-                <div className="shot shot-8x5">{audience.caption}</div>
+                <div className="shot shot-8x5">
+                  <img src={audience.image} alt={audience.alt} />
+                </div>
               </figure>
             );
             const copy = (
@@ -451,7 +473,12 @@ export default function LandingPage() {
               </div>
             </div>
             <figure className="blueprint" style={{ margin: 0 }}>
-              <div className="shot shot-4x3">Müşteri fotoğrafı</div>
+              <div className="shot shot-4x3">
+                <img
+                  src="/images/landing/musteri-tekstil.jpg"
+                  alt="Karanlık bir atölyede çalışan dikiş makinesi."
+                />
+              </div>
             </figure>
           </div>
         </div>
@@ -479,7 +506,9 @@ export default function LandingPage() {
           <div className="grid-3" style={{ marginTop: 72 }}>
             {resources.map((resource) => (
               <div key={resource.title} className="blueprint resource">
-                <div className="shot shot-card">Yazı görseli</div>
+                <div className="shot shot-card">
+                  <img src={resource.image} alt={resource.alt} />
+                </div>
                 <div style={{ padding: 24 }}>
                   <h3>{resource.title}</h3>
                   <p>{resource.text}</p>

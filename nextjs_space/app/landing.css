@@ -400,6 +400,21 @@
   text-transform: uppercase;
   color: var(--color-text-3);
 }
+/*
+ * Görsel kutuyu tamamen doldurur. `.shot` grid + place-items:center olduğu
+ * için img'yi tek hücreye oturtup %100 veriyoruz; yoksa ortalanıp küçük
+ * kalıyor. Zemin rengi altta duruyor: görsel yüklenene kadar (ya da hiç
+ * yüklenmezse alt metnin arkasında) kutu boş bir delik gibi görünmesin.
+ */
+.esg-landing .shot img {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
+}
+
 .esg-landing .shot-4x3 { aspect-ratio: 4 / 3; }
 .esg-landing .shot-8x5 { aspect-ratio: 8 / 5; }
 .esg-landing .shot-16x9 { aspect-ratio: 16 / 9; }
