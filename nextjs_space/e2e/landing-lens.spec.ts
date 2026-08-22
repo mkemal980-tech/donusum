@@ -13,6 +13,26 @@ test("dönüşüm merceği masaüstü hero alanının sağında görünür", asy
   await expect(lens.getByText("Sürdürülebilirlik", { exact: true }).first()).toBeVisible();
   await expect(lens.getByText("Karbon görünürlüğü", { exact: true }).first()).toBeVisible();
 
+  const palette = await page.evaluate(() => {
+    const landing = document.querySelector<HTMLElement>(".esg-landing");
+    const heading = document.querySelector<HTMLElement>(".hero h1");
+    const primaryAction = document.querySelector<HTMLElement>(".hero-actions .btn-primary");
+
+    if (!landing || !heading || !primaryAction) {
+      throw new Error("Landing renk kontrolü için gerekli öğeler bulunamadı.");
+    }
+
+    return {
+      background: getComputedStyle(landing).backgroundColor,
+      heading: getComputedStyle(heading).color,
+      primaryAction: getComputedStyle(primaryAction).backgroundColor,
+    };
+  });
+
+  expect(palette.background).toBe("rgb(0, 0, 0)");
+  expect(palette.heading).toBe("rgb(255, 255, 255)");
+  expect(palette.primaryAction).not.toBe(palette.heading);
+
   const headingBox = await heading.boundingBox();
   const lensBox = await lens.boundingBox();
   expect(headingBox).not.toBeNull();

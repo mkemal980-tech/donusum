@@ -7,11 +7,10 @@
  * app/page.tsx import eder; pano kendi sistemini (globals.css) kullanır ve
  * buradaki hiçbir kuraldan etkilenmez.
  *
- * Palet tek eksende: siyah zemin, beyaz birincil metin, gri ikincil metin.
- * Vurgu rengi yok — `--color-accent*` adları geriye dönük uyum için duruyor
- * ama hepsi gri tonlarına bakar, böylece mevcut seçiciler renk sızdırmaz.
- * Hero'daki LensCard aynı monokrom tokenları kullanır; mercek parlaması ürün
- * verisini keşfetmeye yarayan tek optik efekt istisnasıdır.
+ * Omurga monokromdur: siyah zemin, beyaz birincil metin, gri ikincil metin.
+ * Uygulama içindeki eylem mavisi yalnızca CTA, küçük etiket, aktif/hover ve
+ * veri vurgularında kullanılır; büyük yüzeylere ya da bütün başlıklara yayılmaz.
+ * Hero'daki LensCard da aynı mavi tokenı optik vurgu olarak kullanır.
  *
  * Yazı ailesi Inter; layout.tsx zaten `--font-inter` olarak sunuyor, bu
  * sayfa için ayrıca font yüklenmez.
@@ -30,13 +29,20 @@
   --color-divider: #1c1c1c;
   --color-divider-strong: #2a2a2a;
 
-  /* Vurgu adları korunuyor, karşılıkları monokrom. */
-  --color-accent: #ffffff;
-  --color-accent-2: #a1a1a1;
-  --color-accent-100: #f5f5f5;
-  --color-accent-600: #e5e5e5;
-  --color-accent-700: #a1a1a1;
-  --color-accent-800: #6e6e6e;
+  /* Uygulamanın koyu temadaki eylem mavisiyle birebir aynı ton ailesi. */
+  --color-brand: oklch(0.635 0.191 258);
+  --color-brand-hover: oklch(0.685 0.181 258);
+  --color-brand-solid: oklch(0.565 0.200 258);
+  --color-brand-press: oklch(0.520 0.185 258);
+  --color-brand-soft: oklch(0.635 0.191 258 / 0.14);
+
+  /* Eski adlar yeni kontrollü vurgu rampasına bağlanır. */
+  --color-accent: var(--color-brand);
+  --color-accent-2: var(--color-brand-hover);
+  --color-accent-100: var(--color-brand-soft);
+  --color-accent-600: var(--color-brand-hover);
+  --color-accent-700: var(--color-brand-solid);
+  --color-accent-800: var(--color-brand-press);
   --color-accent-900: #000000;
 
   --font-heading: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -100,7 +106,7 @@
   transition: color 0.12s linear, border-color 0.12s linear, background-color 0.12s linear;
 }
 .esg-landing a:hover { color: var(--color-text-2); }
-.esg-landing :focus-visible { outline: 1px solid var(--color-text); outline-offset: 3px; }
+.esg-landing :focus-visible { outline: 2px solid var(--color-brand); outline-offset: 3px; }
 
 .esg-landing .shell { max-width: 1280px; margin: 0 auto; }
 
@@ -133,16 +139,20 @@
 }
 .esg-landing .btn:hover { border-color: var(--color-text-3); color: var(--color-text); }
 
-/* Birincil: beyaz dolgu, siyah metin — tek güçlü ton, o da monokrom. */
+/* Birincil eylem: program içindekiyle aynı mavi dolgu ve beyaz metin. */
 .esg-landing .btn-primary {
-  background: var(--color-text);
-  border-color: var(--color-text);
-  color: var(--color-bg);
+  background: var(--color-brand-solid);
+  border-color: var(--color-brand-solid);
+  color: var(--color-text);
 }
 .esg-landing .btn-primary:hover {
-  background: var(--color-accent-600);
-  border-color: var(--color-accent-600);
-  color: var(--color-bg);
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  color: var(--color-text);
+}
+.esg-landing .btn-primary:active {
+  background: var(--color-brand-press);
+  border-color: var(--color-brand-press);
 }
 .esg-landing .btn-secondary:hover { background: var(--color-surface-2); }
 .esg-landing .btn-lg { min-height: 44px; padding: 12px 22px; font-size: 15px; }
@@ -176,6 +186,7 @@
 }
 .esg-landing .topline a { color: var(--color-text-2); }
 .esg-landing .topline a:hover { color: var(--color-text); }
+.esg-landing .topline b { color: var(--color-brand); }
 
 .esg-landing .nav {
   display: flex;
@@ -192,7 +203,16 @@
   text-transform: none;
   color: var(--color-text);
 }
-.esg-landing .brand span { color: var(--color-text-3); }
+.esg-landing .nav .brand { display: inline-flex; align-items: center; gap: 8px; }
+.esg-landing .nav .brand::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 2px;
+  background: var(--color-brand);
+}
+.esg-landing .brand span { color: var(--color-brand); }
 .esg-landing .nav-links {
   display: flex;
   gap: 24px;
@@ -246,12 +266,12 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 500;
-  color: var(--color-text-3);
+  color: var(--color-brand);
 }
 
 /* ===== Hero veri merceği =====
- * Bileşenin kendi Motiq tokenları landing'in monokrom sistemiyle burada
- * eşleştirilir. Böylece hareket yeni bir marka paleti getirmez. */
+ * Bileşenin Motiq tokenları landing yüzeylerine ve uygulamanın eylem mavisine
+ * eşleştirilir; ikincil renk veya ayrı bir palet getirilmez. */
 .esg-landing .landing-lens-wrap {
   align-self: start;
   min-width: 0;
@@ -259,15 +279,15 @@
 }
 
 .esg-landing .landing-lens-card {
-  --motiq-accent: var(--color-text);
-  --motiq-accent-text: var(--color-text);
+  --motiq-accent: var(--color-brand);
+  --motiq-accent-text: var(--color-brand-hover);
   --motiq-bg: var(--color-bg);
   --motiq-border: var(--color-divider);
   --motiq-border-strong: var(--color-divider-strong);
   --motiq-fg: var(--color-text);
   --motiq-fg-secondary: var(--color-text-2);
   --motiq-muted: var(--color-text-3);
-  --motiq-secondary-accent: var(--color-text-2);
+  --motiq-secondary-accent: var(--color-brand-hover);
   --motiq-surface: #050505;
   --motiq-surface-2: var(--color-surface);
 
@@ -292,6 +312,10 @@
   font-size: 25px;
   line-height: 1.1;
   letter-spacing: -0.03em;
+}
+.esg-landing .landing-lens-head .tag-outline {
+  border-color: color-mix(in oklab, var(--color-brand) 45%, transparent);
+  color: var(--color-brand-hover);
 }
 
 .esg-landing .landing-lens-overall {
@@ -330,7 +354,7 @@
 .esg-landing .landing-lens-delta {
   font-size: 11px;
   white-space: nowrap;
-  color: var(--color-text-2);
+  color: var(--color-brand-hover);
 }
 
 .esg-landing .landing-lens-grid {
@@ -466,7 +490,8 @@
   font-weight: 400;
   color: var(--color-text-2);
 }
-.esg-landing .more:hover { color: var(--color-text); }
+.esg-landing .more:hover { color: var(--color-brand-hover); }
+.esg-landing .feature:hover svg { stroke: var(--color-brand); }
 
 /* ===== Sayı bandı ===== */
 .esg-landing .stats {
@@ -580,6 +605,7 @@
   align-items: center;
   justify-content: center;
 }
+.esg-landing .play span svg { fill: var(--color-brand); }
 
 /* ===== Referans ===== */
 .esg-landing .quote-row { display: grid; grid-template-columns: 7fr 5fr; gap: 72px; align-items: center; margin-top: 72px; }
@@ -595,7 +621,7 @@
 }
 .esg-landing .dots { display: flex; gap: 8px; margin-top: 28px; }
 .esg-landing .dots i { width: 24px; height: 1px; background: var(--color-divider-strong); }
-.esg-landing .dots i.on { background: var(--color-text); }
+.esg-landing .dots i.on { background: var(--color-brand); }
 
 /* ===== Kaynaklar ===== */
 .esg-landing .resource h3 { font-size: 18px; line-height: 1.3; }
