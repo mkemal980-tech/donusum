@@ -2,6 +2,7 @@
    next.config.js'te images.unoptimized = true; next/image bu projede
    optimizasyon yapmıyor, yalnızca fazladan sarmalayıcı ekliyor. */
 import Link from "next/link";
+import LandingTransformationLens from "@/components/landing/landing-transformation-lens";
 import "./landing.css";
 
 /**
@@ -10,7 +11,8 @@ import "./landing.css";
  * Görsel dil: siyah zemin, beyaz birincil ve gri ikincil metin, Inter,
  * sıkı harf aralıklı büyük başlıklar, bölümleri ayıran 1px hairline
  * çizgiler, küçük yarıçap ve bol dikey boşluk. Gölge, degrade ve renkli
- * vurgu yok. Stiller app/landing.css'te ve `.esg-landing` altında
+ * vurgu yok; hero'daki optik mercek, ürün verisini keşfetmek için bilinçli
+ * tek hareketli istisnadır. Stiller app/landing.css'te ve `.esg-landing` altında
  * kapsanmıştır — sınıf adları uygulamanınkilerle çakışıyor, kapsamsız
  * kalsalar panoyu da boyarlardı.
  *
@@ -96,13 +98,6 @@ const features = [
       </svg>
     ),
   },
-];
-
-const scores = [
-  { label: "Çevresel", value: "3.8", width: "76%" },
-  { label: "Sosyal", value: "3.1", width: "62%" },
-  { label: "Yönetişim", value: "3.3", width: "66%" },
-  { label: "Dijital", value: "2.7", width: "54%" },
 ];
 
 const stats = [
@@ -298,36 +293,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="blueprint score-card">
-              <div className="score-head">
-                <span className="kicker">Olgunluk raporu</span>
-                <span className="tag-outline">Örnek</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 14 }}>
-                <span className="score-value">3.4</span>
-                <span
-                  style={{
-                    fontSize: 13,
-                    color: "var(--color-text-2)",
-                  }}
-                >
-                  / 5 genel olgunluk · sektör ort. 2.9
-                </span>
-              </div>
-              <div className="bars">
-                {scores.map((score) => (
-                  <div key={score.label}>
-                    <div className="bar-label">
-                      <span>{score.label}</span>
-                      <span>{score.value}</span>
-                    </div>
-                    <div className="bar-track">
-                      <div className="bar-fill" style={{ width: score.width }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <LandingTransformationLens />
           </div>
         </div>
 
