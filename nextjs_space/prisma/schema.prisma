@@ -408,6 +408,10 @@ model Assessment {
 
   @@index([surveyId, unitId])
   @@index([surveyId, ownerUserId])
+  // Tekillik kismi indekslerle kuruluyor (bkz. migration 000013):
+  // kuruluş değerlendirmesi (surveyId, unitId) ve kişisel değerlendirme
+  // (surveyId, ownerUserId) -- ikisi de campaignRecipientId IS NULL koşuluyla.
+  // Prisma şema dilinde kismi indeks yok; kısıt veritabanında tanımlıdır.
 }
 
 /// Bir bölümün (alt kategori) sorumlusu.

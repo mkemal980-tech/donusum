@@ -94,12 +94,24 @@ export async function getOrCreateAssessment(
   const existing = await db.assessment.findFirst({ where });
   if (existing) return existing.id;
 
-  const created = await db.assessment.create({
-    data: user?.unitId
-      ? { surveyId, unitId: user.unitId }
-      : { surveyId, ownerUserId: userId },
-  });
-  return created.id;
+  /**
+   * Oluşturma yarışı: aynı kuruluştan iki kişi ilk cevaplarını aynı anda
+   * kaydedebiliyor. Veritabanında artık kısmi tekil indeks var (bkz.
+   * migration 000013); yarışı kaybeden istek hatayı yakalayıp kazananın
+   * açtığı değerlendirmeyi kullanır. Kampanya yolu bunu zaten böyle yapıyordu.
+   */
+  try {
+    const created = await db.assessment.create({
+      data: user?.unitId
+        ? { surveyId, unitId: user.unitId }
+        : { surveyId, ownerUserId: userId },
+    });
+    return created.id;
+  } catch {
+    const wonByOtherRequest = await db.assessment.findFirst({ where });
+    if (wonByOtherRequest) return wonByOtherRequest.id;
+    throw new Error("Değerlendirme oluşturulamadı");
+  }
 }
 
 /**

@@ -59,13 +59,20 @@ export async function POST(request: NextRequest) {
       .replace(/[^a-zA-Z0-9._-]/g, '_')
       .substring(0, 255);
 
-    const { uploadUrl, cloudStoragePath } = await generatePresignedUploadUrl(
+    /**
+     * Kanıt dosyaları varsayılan olarak özeldir.
+     *
+     * `isPublic ?? true` kurumsal kanıt belgelerini (fatura, izin, denetim
+     * raporu) herkese açık ön ekle yüklüyordu. Açık olması isteniyorsa
+     * çağıran taraf bunu açıkça söylemeli.
+     */
+    const { uploadUrl, cloudStoragePath, pathSignature } = await generatePresignedUploadUrl(
       sanitizedFileName,
       contentType,
-      isPublic ?? true
+      isPublic === true
     );
 
-    return NextResponse.json({ uploadUrl, cloudStoragePath });
+    return NextResponse.json({ uploadUrl, cloudStoragePath, pathSignature });
   } catch (error) {
     console.error("Error generating presigned URL:", error);
     return NextResponse.json(

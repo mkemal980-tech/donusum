@@ -372,7 +372,7 @@ export default function SurveyClient() {
         return;
       }
 
-      const { uploadUrl, cloudStoragePath } = await presignedRes.json();
+      const { uploadUrl, cloudStoragePath, pathSignature } = await presignedRes.json();
 
       const uploadHeaders: Record<string, string> = {
         "Content-Type": file.type
@@ -402,7 +402,10 @@ export default function SurveyClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           cloudStoragePath,
-          isPublic: true,
+          // Yolun sunucu tarafından üretildiğini kanıtlar (bkz. lib/s3).
+          pathSignature,
+          // Kanıt dosyaları kurumsal belge; herkese açık yüklenmez.
+          isPublic: false,
           fileName: file.name,
           fileType: file.type,
           questionId

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
 import { getAccessibleSurveyIds } from "@/lib/scoring";
 import { getAssessmentIds } from "@/lib/assessment";
+import { verifyUploadPath } from "@/lib/s3";
 
 export async function POST(request: NextRequest) {
   const auth = await withAuth(request, { rateLimit: 'upload' });
@@ -13,11 +14,25 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { cloudStoragePath, isPublic, fileName, fileType, responseId, questionId } = body ?? {};
+    const { cloudStoragePath, isPublic, fileName, fileType, responseId, questionId, pathSignature } = body ?? {};
 
     if (!cloudStoragePath || !fileName) {
       return NextResponse.json(
         { error: "Cloud storage path and file name are required" },
+        { status: 400 }
+      );
+    }
+
+    /**
+     * Yol sunucunun ürettiği yol mu?
+     *
+     * Doğrulama yokken istemci buraya herhangi bir nesne anahtarı yazabiliyor,
+     * kendi adına bir Document satırı açıp başka kuruluşun dosyası için imzalı
+     * indirme adresi alabiliyor ve DELETE ile o nesneyi silebiliyordu.
+     */
+    if (!verifyUploadPath(String(cloudStoragePath), pathSignature)) {
+      return NextResponse.json(
+        { error: "Yükleme doğrulanamadı. Lütfen dosyayı yeniden yükleyin." },
         { status: 400 }
       );
     }
@@ -67,7 +82,8 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         cloudStoragePath,
-        isPublic: isPublic ?? true,
+        // Kanıt dosyası varsayılan olarak özeldir (bkz. /api/upload/presigned).
+        isPublic: isPublic === true,
         fileName,
         fileType: fileType ?? 'application/octet-stream',
         responseId: linkedResponseId

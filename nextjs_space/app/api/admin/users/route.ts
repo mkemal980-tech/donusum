@@ -171,21 +171,47 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    const updateData: Record<string, unknown> = {
-      firstName,
-      lastName,
-      organization,
-      role,
-      unitId: unitId || null,
-      sectorId: sectorId || null,
-      subSectorId: subSectorId || null,
-    };
+    /**
+     * Kısmi güncelleme birim ve sektör bağını sessizce koparmasın.
+     *
+     * `unitId: unitId || null` yazıldığı için gövdesinde bu alanları
+     * taşımayan her PUT, kullanıcıyı kuruluşundan ve sektöründen koparıyordu:
+     * kuruluş değerlendirmesine erişimi bitiyor, yerine kişisel bir
+     * değerlendirme açılıyordu. Alan yalnızca gövdede geçiyorsa yazılır.
+     */
+    const updateData: Record<string, unknown> = { firstName, lastName, organization };
+    if ("role" in body) updateData.role = role;
+    if ("unitId" in body) updateData.unitId = unitId || null;
+    if ("sectorId" in body) updateData.sectorId = sectorId || null;
+    if ("subSectorId" in body) updateData.subSectorId = subSectorId || null;
+
+    // Son yöneticinin yetkisini düşürmek platformu yönetilemez hâle getirir.
+    if ("role" in body && role !== "ADMIN") {
+      const current = await prisma.user.findUnique({ where: { id }, select: { role: true } });
+      if (current?.role === "ADMIN") {
+        const otherAdmins = await prisma.user.count({
+          where: { role: "ADMIN", isActive: true, NOT: { id } },
+        });
+        if (otherAdmins === 0) {
+          return NextResponse.json(
+            { error: "Sistemdeki son yöneticinin yetkisini kaldıramazsınız." },
+            { status: 409 }
+          );
+        }
+      }
+    }
 
     if (email) {
       updateData.email = email.toLowerCase();
     }
 
     if (password) {
+      // Yöneticinin belirlediği şifre de kayıt akışıyla aynı kurala tabidir;
+      // burada tek karakterli bir şifre atanabiliyordu.
+      const passwordCheck = validators.password(password);
+      if (!passwordCheck.valid) {
+        return NextResponse.json({ error: passwordCheck.message }, { status: 400 });
+      }
       updateData.password = await bcrypt.hash(password, 10);
     }
 
@@ -230,11 +256,51 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await prisma.user.delete({
-      where: { id },
-    });
+    /**
+     * Kullanıcı silinmez, devre dışı bırakılır.
+     *
+     * `prisma.user.delete()` kalıcı siliyordu ve şemadaki cascade zinciri
+     * kişisel değerlendirmeyi, bütün cevaplarını, puan geçmişini ve yol
+     * haritasını da götürüyordu. Bu, projenin kendi soft-delete ilkesiyle
+     * doğrudan çelişiyordu (bkz. lib/soft-delete: "kullanıcıların
+     * SurveyResponse kayıtları KAYBOLMAZ (denetim/uyumluluk)") ve tek bir
+     * yanlış tıklamayla geri alınamıyordu. Model bu iş için `isActive`
+     * alanını zaten taşıyor.
+     *
+     * Gerçekten kalıcı silme gerekiyorsa (ör. veri silme talebi) bu ayrı ve
+     * bilinçli bir işlemdir; yönetim ekranından tek tıkla yapılmaz.
+     */
+    if (id === auth.userId) {
+      return NextResponse.json(
+        { error: "Kendi hesabınızı devre dışı bırakamazsınız." },
+        { status: 400 }
+      );
+    }
 
-    return NextResponse.json({ success: true });
+    const target = await prisma.user.findUnique({
+      where: { id },
+      select: { role: true, isActive: true },
+    });
+    if (!target) {
+      return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
+    }
+
+    // Son yöneticiyi devre dışı bırakmak platformu yönetilemez hâle getirir.
+    if (target.role === "ADMIN") {
+      const activeAdmins = await prisma.user.count({
+        where: { role: "ADMIN", isActive: true, NOT: { id } },
+      });
+      if (activeAdmins === 0) {
+        return NextResponse.json(
+          { error: "Sistemdeki son yöneticiyi devre dışı bırakamazsınız." },
+          { status: 409 }
+        );
+      }
+    }
+
+    await prisma.user.update({ where: { id }, data: { isActive: false } });
+
+    return NextResponse.json({ success: true, deactivated: true });
   } catch (error) {
     console.error("Kullanıcı silme hatası:", error);
     return NextResponse.json(
