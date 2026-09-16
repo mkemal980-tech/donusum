@@ -241,7 +241,16 @@ export default function OrganizationDashboardPage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Kampanya oluşturulamadı");
-      toast.success("Kampanya açıldı ve anket üyelere atandı");
+      const sent = Number(data.invitation?.sent ?? 0);
+      const undelivered = Number(data.invitation?.failed ?? 0) + Number(data.invitation?.skipped ?? 0);
+      toast.success(
+        sent > 0
+          ? `Kampanya açıldı ve anket üyelere atandı. ${sent} davet gönderildi.`
+          : "Kampanya açıldı ve anket üyelere atandı"
+      );
+      if (undelivered > 0) {
+        toast.warning(`${undelivered} e-posta gönderilemedi; kampanya ekranından yeniden hatırlatabilirsiniz.`);
+      }
       setShowCreate(false);
       setForm((current) => ({ ...current, name: "", deadline: "", memberUnitIds: [] }));
       await loadConfig(data.campaign.id);

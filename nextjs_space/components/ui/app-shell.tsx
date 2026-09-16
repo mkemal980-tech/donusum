@@ -21,6 +21,7 @@ import {
   Settings,
   Shield,
   Sun,
+  UserPlus,
   Users,
   X,
 } from "lucide-react";
@@ -59,6 +60,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
       { href: "/recommendations", label: "Öneriler", icon: Lightbulb, roles: ["USER", "UNIT_MANAGER", "ADMIN"] },
       { href: "/roadmap", label: "Yol haritası", icon: Map, roles: ["USER", "UNIT_MANAGER", "ADMIN"] },
       { href: "/organization", label: "Üye sonuçları", icon: Users, roles: ["UNIT_MANAGER", "ADMIN"] },
+      { href: "/organization/members", label: "Üye yönetimi", icon: UserPlus, roles: ["UNIT_MANAGER", "ADMIN"] },
       { href: "/unit-manager", label: "Birim takibi", icon: Building2, roles: ["UNIT_MANAGER", "ADMIN"], prefix: true },
     ],
   },

@@ -59,6 +59,9 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         passwordResetToken: null,
         passwordResetExpires: null,
+        // Davetle oluşturulan hesaplarda bağlantının kullanılması aynı zamanda
+        // e-posta sahipliğini kanıtlar; ayrı bir doğrulama turu gerekmez.
+        emailVerified: true,
       },
     });
 

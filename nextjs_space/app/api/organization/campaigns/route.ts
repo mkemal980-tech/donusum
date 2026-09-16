@@ -7,6 +7,7 @@ import {
   getDescendantUnitIds,
   getOrganizationRoots,
 } from "@/lib/organization-campaign";
+import { sendCampaignLaunchInvitation } from "@/lib/organization-invitations";
 
 export const dynamic = "force-dynamic";
 
@@ -141,6 +142,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Bu ankete erişiminiz yok." }, { status: 403 });
     }
 
+    const [tenantUnit, selectedSurvey] = await Promise.all([
+      prisma.unit.findUnique({ where: { id: tenantUnitId }, select: { name: true } }),
+      prisma.survey.findUnique({ where: { id: surveyId }, select: { name: true } }),
+    ]);
+    if (!tenantUnit || !selectedSurvey) {
+      return NextResponse.json({ error: "Kuruluş veya anket bulunamadı." }, { status: 404 });
+    }
+
     const descendantIds = new Set(await getDescendantUnitIds(tenantUnitId));
     if (memberUnitIds.some((id) => !descendantIds.has(id))) {
       return NextResponse.json(
@@ -156,7 +165,7 @@ export async function POST(request: NextRequest) {
         name: true,
         users: {
           where: { isActive: true },
-          select: { id: true },
+          select: { id: true, email: true, firstName: true },
         },
       },
     });
@@ -233,7 +242,29 @@ export async function POST(request: NextRequest) {
       return created;
     });
 
-    return NextResponse.json({ success: true, campaign }, { status: 201 });
+    // Kampanya veritabanında başarıyla açıldıktan sonra ilk daveti gönder.
+    // E-posta sağlayıcısı geçici olarak erişilemezse kampanya geri alınmaz;
+    // yönetici "Eksiklere hatırlat" ile güvenle yeniden gönderebilir.
+    const deliveryResults = await Promise.all(
+      memberUnits.flatMap((member) => member.users.map(async (user) =>
+        sendCampaignLaunchInvitation({
+          email: user.email,
+          firstName: user.firstName,
+          tenantName: tenantUnit.name,
+          memberName: member.name,
+          campaignName: name,
+          surveyName: selectedSurvey.name,
+          deadline,
+        })
+      ))
+    );
+    const invitation = {
+      sent: deliveryResults.filter((result) => result.success).length,
+      failed: deliveryResults.filter((result) => !result.success && !result.skipped).length,
+      skipped: deliveryResults.filter((result) => result.skipped).length,
+    };
+
+    return NextResponse.json({ success: true, campaign, invitation }, { status: 201 });
   } catch (error) {
     console.error("Organization campaigns POST error:", error);
     return NextResponse.json({ error: "Kampanya oluşturulamadı" }, { status: 500 });

@@ -7,28 +7,42 @@ const MANAGER = "e2e-oda-yonetici@example.com";
 const MEMBER_A = "e2e-oda-uye-a@example.com";
 const MEMBER_B = "e2e-oda-uye-b@example.com";
 const OUTSIDER = "e2e-baska-oda@example.com";
+const INVITED_MEMBER_USER = "e2e-davetli-uye@example.com";
+const INVITED_MEMBER_COLLEAGUE = "e2e-davetli-ek-kullanici@example.com";
 const ROOT = "E2E Oda";
 const MEMBER_A_UNIT = "E2E Üye A";
 const MEMBER_B_UNIT = "E2E Üye B";
 const OUTSIDE_ROOT = "E2E Başka Oda";
+const INVITED_MEMBER_UNIT = "E2E Davetli Üye";
+const TEST_SECTOR = "E2E Üye Yönetimi Sektörü";
 const SURVEY = "E2E Oda Üye Anketi";
 const CAMPAIGN = "E2E 2026 Üye Araştırması";
 
 let seeded = false;
 let questionId = "";
+let sectorId = "";
 
 async function cleanup() {
   await prisma.survey.deleteMany({ where: { name: SURVEY } });
-  await prisma.user.deleteMany({ where: { email: { in: [MANAGER, MEMBER_A, MEMBER_B, OUTSIDER] } } });
-  await prisma.unit.deleteMany({
-    where: { name: { in: [ROOT, MEMBER_A_UNIT, MEMBER_B_UNIT, OUTSIDE_ROOT] } },
+  await prisma.user.deleteMany({
+    where: {
+      email: {
+        in: [MANAGER, MEMBER_A, MEMBER_B, OUTSIDER, INVITED_MEMBER_USER, INVITED_MEMBER_COLLEAGUE],
+      },
+    },
   });
+  await prisma.unit.deleteMany({
+    where: { name: { in: [ROOT, MEMBER_A_UNIT, MEMBER_B_UNIT, OUTSIDE_ROOT, INVITED_MEMBER_UNIT] } },
+  });
+  await prisma.sector.deleteMany({ where: { name: TEST_SECTOR } });
 }
 
 test.beforeAll(async () => {
   try {
     await cleanup();
     const password = await bcrypt.hash(PASSWORD, 10);
+    const sector = await prisma.sector.create({ data: { name: TEST_SECTOR, naicsCode: "E2E" } });
+    sectorId = sector.id;
     const root = await prisma.unit.create({ data: { name: ROOT } });
     const memberAUnit = await prisma.unit.create({ data: { name: MEMBER_A_UNIT, parentId: root.id } });
     const memberBUnit = await prisma.unit.create({ data: { name: MEMBER_B_UNIT, parentId: root.id } });
@@ -91,6 +105,54 @@ test("oda kampanya açar, üye gönderir ve yalnızca kendi sonuçlarını gör�
   const manager = await login(browser, MANAGER);
   await manager.goto("/organization");
   await expect(manager.getByRole("heading", { name: "Üye anketleri" })).toBeVisible();
+
+  // Birim yöneticisi kendi kökünde üye kuruluş ve kullanıcı oluşturabilir.
+  // Hesap geçici parola ile değil, tek kullanımlık şifre belirleme davetiyle açılır.
+  const rootUnit = await prisma.unit.findFirst({ where: { name: ROOT } });
+  const memberCreate = await manager.request.post("/api/organization/members", {
+    data: {
+      action: "create_member",
+      tenantUnitId: rootUnit!.id,
+      memberName: INVITED_MEMBER_UNIT,
+      firstName: "Davetli",
+      lastName: "Üye",
+      email: INVITED_MEMBER_USER,
+      sectorId,
+    },
+  });
+  expect(memberCreate.status()).toBe(201);
+  const invited = await prisma.user.findUnique({ where: { email: INVITED_MEMBER_USER } });
+  expect(invited).toMatchObject({ role: "USER", sectorId, emailVerified: false, isActive: true });
+  expect(invited?.passwordResetToken).toBeTruthy();
+
+  const activate = await manager.request.post("/api/auth/reset-password", {
+    data: { token: invited!.passwordResetToken, password: PASSWORD },
+  });
+  expect(activate.ok()).toBe(true);
+  expect(await prisma.user.findUnique({ where: { email: INVITED_MEMBER_USER } })).toMatchObject({
+    emailVerified: true,
+    passwordResetToken: null,
+  });
+
+  const invitedUnit = await prisma.unit.findFirst({ where: { name: INVITED_MEMBER_UNIT } });
+  const colleagueCreate = await manager.request.post("/api/organization/members", {
+    data: {
+      action: "invite_user",
+      tenantUnitId: rootUnit!.id,
+      memberUnitId: invitedUnit!.id,
+      firstName: "Ek",
+      lastName: "Kullanıcı",
+      email: INVITED_MEMBER_COLLEAGUE,
+    },
+  });
+  expect(colleagueCreate.status()).toBe(201);
+  expect(await prisma.user.findUnique({ where: { email: INVITED_MEMBER_COLLEAGUE } })).toMatchObject({
+    role: "USER",
+    unitId: invitedUnit!.id,
+    sectorId,
+    emailVerified: false,
+  });
+
   await manager.locator('input[placeholder="2026 Üye Olgunluk Araştırması"]').fill(CAMPAIGN);
   await manager.locator(`label:has-text("${MEMBER_A_UNIT}") input[type="checkbox"]`).check();
   await manager.locator(`label:has-text("${MEMBER_B_UNIT}") input[type="checkbox"]`).check();
@@ -159,6 +221,17 @@ test("oda kampanya açar, üye gönderir ve yalnızca kendi sonuçlarını gör�
   expect(anonymousData.members).toEqual([]);
 
   const outsider = await login(browser, OUTSIDER);
+  const forbiddenMemberCreate = await outsider.request.post("/api/organization/members", {
+    data: {
+      action: "create_member",
+      tenantUnitId: rootUnit!.id,
+      memberName: "Yetkisiz Üye",
+      firstName: "Yetkisiz",
+      email: "e2e-yetkisiz@example.com",
+      sectorId,
+    },
+  });
+  expect(forbiddenMemberCreate.status()).toBe(403);
   const forbidden = await outsider.request.get(
     `/api/organization/dashboard?campaignId=${campaign!.id}`
   );
