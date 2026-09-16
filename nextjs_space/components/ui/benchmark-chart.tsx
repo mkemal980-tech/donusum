@@ -6,8 +6,14 @@ interface BenchmarkItem {
   id?: string;
   name: string;
   userScore: number;
-  bestScore: number;
-  averageScore: number;
+  /**
+   * Kıyas değerleri ölçülmemişse null gelir ve o satırda hiç çizilmez.
+   * Eskiden eksik değer genel ortalamadan türetiliyordu; satır dolu görünüyor
+   * ama gösterdiği sayı ölçüm değildi.
+   */
+  hasBenchmark?: boolean;
+  bestScore: number | null;
+  averageScore: number | null;
 }
 
 interface BenchmarkChartProps {
@@ -28,9 +34,13 @@ export function BenchmarkChart({
   const scaleToPercent = (score: number) => Math.min((score / maxScore) * 100, 100);
 
   const renderRow = (item: BenchmarkItem, isOverall: boolean = false) => {
-    const avgPercent = scaleToPercent(item.averageScore);
+    const hasBenchmark =
+      item.hasBenchmark !== false &&
+      typeof item.averageScore === "number" &&
+      typeof item.bestScore === "number";
+    const avgPercent = hasBenchmark ? scaleToPercent(item.averageScore as number) : 0;
     const userPercent = scaleToPercent(item.userScore);
-    const bestPercent = scaleToPercent(item.bestScore);
+    const bestPercent = hasBenchmark ? scaleToPercent(item.bestScore as number) : 0;
 
     return (
       <div 
@@ -55,26 +65,26 @@ export function BenchmarkChart({
             </div>
           </div>
 
-          {/* Connector line from average to best */}
-          <motion.div
+          {/* Ortalama–en iyi bağlayıcısı: yalnızca ölçülmüş kıyas varsa */}
+          {hasBenchmark && <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${bestPercent - avgPercent}%` }}
             transition={{ duration: 0.8, delay: 0.3 }}
             className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-[var(--surface-3)]"
             style={{ left: `${avgPercent}%` }}
-          />
+          />}
 
-          {/* Average marker */}
-          <motion.div
+          {/* Sektör ortalaması */}
+          {hasBenchmark && <motion.div
             initial={{ scale: 0, left: 0 }}
             animate={{ scale: 1, left: `${avgPercent}%` }}
             transition={{ duration: 0.5, delay: 0.1 }}
             className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center"
           >
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--surface-3)] text-[11px] font-semibold tabular text-[var(--ink)]">
-              {item.averageScore.toFixed(1)}
+              {(item.averageScore as number).toFixed(1)}
             </div>
-          </motion.div>
+          </motion.div>}
 
           {/* User score marker */}
           <motion.div
@@ -88,17 +98,25 @@ export function BenchmarkChart({
             </div>
           </motion.div>
 
-          {/* Best score marker */}
-          <motion.div
+          {/* Sektörün en iyisi */}
+          {hasBenchmark && <motion.div
             initial={{ scale: 0, left: 0 }}
             animate={{ scale: 1, left: `${bestPercent}%` }}
             transition={{ duration: 0.5, delay: 0.5 }}
             className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center"
           >
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--series-4)] text-[11px] font-semibold tabular text-[var(--canvas)]">
-              {item.bestScore.toFixed(1)}
+              {(item.bestScore as number).toFixed(1)}
             </div>
-          </motion.div>
+          </motion.div>}
+          {!hasBenchmark && (
+            <span
+              className="absolute right-0 top-1/2 -translate-y-1/2 text-[11px]"
+              style={{ color: "var(--ink-3)" }}
+            >
+              kıyas verisi yok
+            </span>
+          )}
         </div>
       </div>
     );

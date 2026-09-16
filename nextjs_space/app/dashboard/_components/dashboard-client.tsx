@@ -1467,7 +1467,7 @@ export default function DashboardClient() {
 
           <SectionErrorBoundary label="Kıyaslama grafiği yüklenemedi.">
             <Suspense fallback={<ComponentSkeleton height="400px" />}>
-              <BenchmarkSection />
+              <BenchmarkSection surveyId={selectedSurveyId} />
             </Suspense>
           </SectionErrorBoundary>
 

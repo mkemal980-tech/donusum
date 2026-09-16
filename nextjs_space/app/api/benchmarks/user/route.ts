@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
-import { calculateUserScore } from "@/lib/scoring";
+import { calculateUserScore, percentageToScore } from "@/lib/scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -30,8 +30,14 @@ export async function GET(request: NextRequest) {
       }, { status: 200 });
     }
 
-    // Get user's scores
-    const userScores = await calculateUserScore(userId);
+    /**
+     * Puan da seçili anketle sınırlanır.
+     *
+     * Eskiden `calculateUserScore(userId)` çağrılıyordu: kategoriler tek
+     * ankete göre süzülürken kullanıcının puanı bütün anketlerin birleşimi
+     * üzerinden hesaplanıyordu. Aynı ekranda iki farklı puan çıkıyordu.
+     */
+    const userScores = await calculateUserScore(userId, surveyId ?? undefined);
 
     // Build benchmark query - include surveyId filter if provided
     const benchmarkWhere: any = {
@@ -86,8 +92,10 @@ function buildResponse(user: any, userScores: any, sectorBenchmarks: any[], subS
     const overallBenchmark = benchmarks.find((b: any) => b.level === "OVERALL");
     const categoryBenchmarks = benchmarks.filter((b: any) => b.level === "CATEGORY");
 
-    // Convert userScores.totalScore (percentage 0-100) to 5-point scale
-    const userOverallScore = (userScores.totalScore / 100) * 5;
+    // Uygulamanın tek ölçek dönüşümü: %0 → 1.0, %100 → 5.0.
+    // Eskiden burada `/100*5` vardı ve %50 alan kuruluş ana kartta 3.0,
+    // bu kartta 2.5 görüyordu.
+    const userOverallScore = percentageToScore(userScores.totalScore);
     
     // Genel benchmark değerleri (kategori için yoksa kullanılacak)
     const overallAverage = overallBenchmark?.averageScore || 0;
@@ -97,8 +105,9 @@ function buildResponse(user: any, userScores: any, sectorBenchmarks: any[], subS
       overall: {
         name: "Genel",
         userScore: Math.round(userOverallScore * 10) / 10,
-        bestScore: overallBest,
-        averageScore: overallAverage
+        hasBenchmark: Boolean(overallBenchmark),
+        bestScore: overallBenchmark ? overallBest : null,
+        averageScore: overallBenchmark ? overallAverage : null
       },
       categories: categories.map((cat: any) => {
         // categoryScores is an object where key is categoryId
@@ -108,22 +117,23 @@ function buildResponse(user: any, userScores: any, sectorBenchmarks: any[], subS
         // Convert percentage (0-100) to 5-point scale
         const userCatScore = catScore ? (catScore.percentage / 100) * 5 : 0;
         
-        // Kategori benchmark yoksa, genel benchmark'tan tahmin et
-        // Rastgele varyasyon ekleyerek daha gerçekçi görünmesini sağla
-        const categoryIndex = categories.indexOf(cat);
-        const variance = (categoryIndex % 3 - 1) * 0.2; // -0.2, 0, 0.2 varyasyonu
-        
-        const estimatedAverage = catBenchmark?.averageScore || 
-          (overallAverage > 0 ? Math.max(1, Math.min(5, overallAverage + variance)) : 0);
-        const estimatedBest = catBenchmark?.bestScore || 
-          (overallBest > 0 ? Math.max(1, Math.min(5, overallBest + variance)) : 0);
-        
+        /**
+         * Kategori kıyası yoksa gösterilmez.
+         *
+         * Burada eskiden genel kıyasa `(index % 3 - 1) * 0.2` varyansı
+         * eklenip kategori ortalaması üretiliyordu; koddaki yorum amacı
+         * açıkça "daha gerçekçi görünmesini sağla" diye yazıyordu. Ölçülmemiş
+         * sayı, ölçülmüş gibi gösterilemez.
+         */
+        const hasBenchmark = Boolean(catBenchmark);
+
         return {
           id: cat.id,
           name: cat.name,
           userScore: Math.round(userCatScore * 10) / 10,
-          bestScore: Math.round(estimatedBest * 10) / 10,
-          averageScore: Math.round(estimatedAverage * 10) / 10
+          hasBenchmark,
+          bestScore: hasBenchmark ? Math.round((catBenchmark!.bestScore ?? 0) * 10) / 10 : null,
+          averageScore: hasBenchmark ? Math.round((catBenchmark!.averageScore ?? 0) * 10) / 10 : null
         };
       })
     };
@@ -131,15 +141,16 @@ function buildResponse(user: any, userScores: any, sectorBenchmarks: any[], subS
 
   // Alt sektör benchmark verisi
   // Alt sektör için özel benchmark yoksa, sektör benchmarkını kullan
+  /**
+   * Alt sektör kıyası yoksa sekme açılmaz.
+   *
+   * Eskiden sektör verisi alt sektör sekmesine kopyalanıyordu; koddaki yorum
+   * "ama kaynak belirt" diyordu ama hiçbir kaynak alanı dönmüyordu. Kullanıcı
+   * iki sekmede aynı sayıları görüp aradaki farkı arıyordu.
+   */
   let subSectorBenchmarkData = null;
-  if (user.subSectorId) {
-    const hasSubSectorData = subSectorBenchmarks.length > 0;
-    if (hasSubSectorData) {
-      subSectorBenchmarkData = buildBenchmarkData(subSectorBenchmarks);
-    } else {
-      // Alt sektör benchmarkı yoksa sektör benchmarkını kullan (ama kaynak belirt)
-      subSectorBenchmarkData = buildBenchmarkData(sectorBenchmarks);
-    }
+  if (user.subSectorId && subSectorBenchmarks.length > 0) {
+    subSectorBenchmarkData = buildBenchmarkData(subSectorBenchmarks);
   }
 
   return NextResponse.json({

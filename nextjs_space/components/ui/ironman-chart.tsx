@@ -64,24 +64,11 @@ interface ComparisonData {
   targetEndurance: number;
 }
 
-// Simulated other companies data for visualization
-const generateOtherCompanies = () => {
-  const companies = [];
-  for (let i = 0; i < 25; i++) {
-    companies.push({
-      velocity: 1 + Math.random() * 4,
-      endurance: 1 + Math.random() * 4,
-    });
-  }
-  return companies;
-};
-
 export function IronmanChart() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [data, setData] = useState<IronmanData | null>(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [otherCompanies] = useState(generateOtherCompanies);
   
   // Karşılaştırma state'leri
   const [showCompareModal, setShowCompareModal] = useState(false);
@@ -90,6 +77,7 @@ export function IronmanChart() {
   const [selectedSubSector, setSelectedSubSector] = useState<string>('');
   const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
   const [loadingComparison, setLoadingComparison] = useState(false);
+  const [comparisonError, setComparisonError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -132,43 +120,52 @@ export function IronmanChart() {
   // Karşılaştırma verisini getir
   const fetchComparisonData = async (sectorId: string, subSectorId?: string) => {
     setLoadingComparison(true);
+    setComparisonError(null);
+    setComparisonData(null);
     try {
       const params = new URLSearchParams({ sectorId });
       if (subSectorId) {
         params.append('subSectorId', subSectorId);
       }
       const res = await fetch(`/api/ironman/benchmark?${params.toString()}`);
-      if (res.ok) {
-        const benchmarkData = await res.json();
-        const sector = sectors.find(s => s.id === sectorId);
-        const subSector = sector?.subSectors?.find(ss => ss.id === subSectorId);
-        
-        setComparisonData({
-          sectorId,
-          sectorName: sector?.name || 'Bilinmeyen Sektör',
-          subSectorId,
-          subSectorName: subSector?.name,
-          velocity: benchmarkData.current?.velocity || 2.5,
-          endurance: benchmarkData.current?.endurance || 2.5,
-          targetVelocity: benchmarkData.target?.velocity || 3.5,
-          targetEndurance: benchmarkData.target?.endurance || 3.5,
-        });
+      if (!res.ok) {
+        setComparisonError('Kıyaslama verisi alınamadı.');
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching comparison data:', error);
-      // Fallback: rastgele değerler
+      const benchmarkData = await res.json();
       const sector = sectors.find(s => s.id === sectorId);
       const subSector = sector?.subSectors?.find(ss => ss.id === subSectorId);
+
+      // Kıyas kaydı yoksa API `hasBenchmark: false` döner; sayı uydurulmaz.
+      if (!benchmarkData?.hasBenchmark) {
+        setComparisonError(
+          `${sector?.name ?? 'Bu sektör'} için henüz kıyaslama verisi girilmemiş.`
+        );
+        return;
+      }
+
       setComparisonData({
         sectorId,
         sectorName: sector?.name || 'Bilinmeyen Sektör',
         subSectorId,
         subSectorName: subSector?.name,
-        velocity: 2.0 + Math.random() * 1.5,
-        endurance: 2.0 + Math.random() * 1.5,
-        targetVelocity: 3.0 + Math.random() * 1.0,
-        targetEndurance: 3.0 + Math.random() * 1.0,
+        velocity: benchmarkData.current.velocity,
+        endurance: benchmarkData.current.endurance,
+        targetVelocity: benchmarkData.target.velocity,
+        targetEndurance: benchmarkData.target.endurance,
       });
+    } catch (error) {
+      console.error('Error fetching comparison data:', error);
+      /**
+       * Kıyas verisi alınamadıysa hiçbir şey gösterilmez.
+       *
+       * Burada eskiden `Math.random()` ile değer üretiliyordu: ekran, gerçek
+       * sektör ortalamasından ayırt edilemeyen sayılar gösteriyordu ve bu
+       * sayılar yönetim kurulu sunumuna giriyordu. Boş kalmak yanlış sayı
+       * göstermekten iyidir.
+       */
+      setComparisonData(null);
+      setComparisonError('Kıyaslama verisi alınamadı.');
     } finally {
       setLoadingComparison(false);
     }
@@ -334,16 +331,6 @@ export function IronmanChart() {
       }
     };
 
-    // Draw other companies as small blue dots
-    ctx.fillStyle = token('--chart-peer', 'rgba(96, 165, 250, 0.6)');
-    otherCompanies.forEach(company => {
-      const x = scoreToPos(company.velocity, 'x');
-      const y = scoreToPos(company.endurance, 'y');
-      ctx.beginPath();
-      ctx.arc(x, y, 5, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
     // Draw line from current to target
     const currentX = scoreToPos(data.current.velocity, 'x');
     const currentY = scoreToPos(data.current.endurance, 'y');
@@ -393,7 +380,7 @@ export function IronmanChart() {
     // `theme` kodda geçmiyor ama bağımlılık: renkler CSS'ten okunuyor, tema
     // değişince aynı veriyle yeniden çizilmesi gerekiyor.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, mounted, otherCompanies, theme]);
+  }, [data, mounted, theme]);
 
   useEffect(() => {
     drawChart();
@@ -447,10 +434,6 @@ export function IronmanChart() {
                 <span>Hedefiniz ({data.target?.date || '-'})</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full bg-[var(--chart-peer)]" />
-                <span>Diğer şirketler (mevcut - {data.current?.date || '-'})</span>
-              </div>
-              <div className="flex items-center gap-1.5">
                 <span className="w-6 border-t-2 border-dashed border-[var(--chart-ref)]" />
                 <span>Referans çizgisi (Iron Man)</span>
               </div>
@@ -487,23 +470,26 @@ export function IronmanChart() {
                       {(data.target?.velocity ?? 3).toFixed(1)}
                     </div>
                   </div>
-                  {/* Industry Avg - Purple & Orange */}
-                  {data.benchmark && (
+                  {/* Sektör ortalaması ve hedefi — yalnızca gerçek kıyas verisi varsa.
+                       Eskiden değer yoksa 2.5/3.0 çiziliyordu; kullanıcı bunu
+                       sektör ortalaması sanıyordu. */}
+                  {typeof data.benchmark?.current?.velocity === 'number' &&
+                    typeof data.benchmark?.target?.velocity === 'number' && (
                     <>
                       <div 
                         className="absolute h-6 flex items-center z-10"
-                        style={{ left: `${((data.benchmark.current?.velocity ?? 2.5) / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                        style={{ left: `${(data.benchmark.current.velocity / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
                         <div className="bg-[var(--series-sector-current)] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
-                          {(data.benchmark.current?.velocity ?? 2.5).toFixed(1)}
+                          {data.benchmark.current.velocity.toFixed(1)}
                         </div>
                       </div>
                       <div 
                         className="absolute h-6 flex items-center z-10"
-                        style={{ left: `${((data.benchmark.target?.velocity ?? 3.0) / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                        style={{ left: `${(data.benchmark.target.velocity / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
                         <div className="bg-[var(--series-sector-target)] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
-                          {(data.benchmark.target?.velocity ?? 3.0).toFixed(1)}
+                          {data.benchmark.target.velocity.toFixed(1)}
                         </div>
                       </div>
                     </>
@@ -535,23 +521,26 @@ export function IronmanChart() {
                       {(data.target?.endurance ?? 3).toFixed(1)}
                     </div>
                   </div>
-                  {/* Industry Avg - Purple & Orange */}
-                  {data.benchmark && (
+                  {/* Sektör ortalaması ve hedefi — yalnızca gerçek kıyas verisi varsa.
+                       Eskiden değer yoksa 2.5/3.0 çiziliyordu; kullanıcı bunu
+                       sektör ortalaması sanıyordu. */}
+                  {typeof data.benchmark?.current?.endurance === 'number' &&
+                    typeof data.benchmark?.target?.endurance === 'number' && (
                     <>
                       <div 
                         className="absolute h-6 flex items-center z-10"
-                        style={{ left: `${((data.benchmark.current?.endurance ?? 2.5) / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                        style={{ left: `${(data.benchmark.current.endurance / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
                         <div className="bg-[var(--series-sector-current)] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
-                          {(data.benchmark.current?.endurance ?? 2.5).toFixed(1)}
+                          {data.benchmark.current.endurance.toFixed(1)}
                         </div>
                       </div>
                       <div 
                         className="absolute h-6 flex items-center z-10"
-                        style={{ left: `${((data.benchmark.target?.endurance ?? 3.0) / 5) * 100}%`, transform: 'translateX(-50%)' }}
+                        style={{ left: `${(data.benchmark.target.endurance / 5) * 100}%`, transform: 'translateX(-50%)' }}
                       >
                         <div className="bg-[var(--series-sector-target)] h-5 w-8 rounded-full flex items-center justify-center text-[10px] text-white font-medium">
-                          {(data.benchmark.target?.endurance ?? 3.0).toFixed(1)}
+                          {data.benchmark.target.endurance.toFixed(1)}
                         </div>
                       </div>
                     </>

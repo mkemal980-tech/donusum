@@ -3,21 +3,33 @@
 import { useState, useEffect } from "react";
 import { BenchmarkChart } from "@/components/ui/benchmark-chart";
 
+interface BenchmarkBlock {
+  overall: {
+    name: string;
+    userScore: number;
+    hasBenchmark: boolean;
+    bestScore: number | null;
+    averageScore: number | null;
+  };
+  categories: Array<{
+    id: string;
+    name: string;
+    userScore: number;
+    hasBenchmark: boolean;
+    bestScore: number | null;
+    averageScore: number | null;
+  }>;
+}
+
 interface BenchmarkData {
   hasSector: boolean;
   sector?: { id: string; name: string };
   subSector?: { id: string; name: string } | null;
-  sectorBenchmark?: {
-    overall: { name: string; userScore: number; bestScore: number; averageScore: number };
-    categories: Array<{ id: string; name: string; userScore: number; bestScore: number; averageScore: number }>;
-  };
-  subSectorBenchmark?: {
-    overall: { name: string; userScore: number; bestScore: number; averageScore: number };
-    categories: Array<{ id: string; name: string; userScore: number; bestScore: number; averageScore: number }>;
-  } | null;
+  sectorBenchmark?: BenchmarkBlock;
+  subSectorBenchmark?: BenchmarkBlock | null;
 }
 
-export function BenchmarkSection() {
+export function BenchmarkSection({ surveyId }: { surveyId?: string }) {
   const [data, setData] = useState<BenchmarkData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"sector" | "subsector">("sector");
@@ -25,7 +37,9 @@ export function BenchmarkSection() {
   useEffect(() => {
     const fetchBenchmark = async () => {
       try {
-        const res = await fetch("/api/benchmarks/user");
+        const res = await fetch(
+          surveyId ? `/api/benchmarks/user?surveyId=${surveyId}` : "/api/benchmarks/user"
+        );
         const result = await res.json();
         setData(result);
       } catch (error) {
@@ -35,7 +49,7 @@ export function BenchmarkSection() {
       }
     };
     fetchBenchmark();
-  }, []);
+  }, [surveyId]);
 
   if (loading) {
     return <div className="skeleton h-[360px]" />;
@@ -44,7 +58,10 @@ export function BenchmarkSection() {
   /* Boş durum: tek cümle ne eksik, tek yol nereden tamamlanır. */
   if (!data?.hasSector) {
     return (
-      <BenchmarkEmpty message="Kıyaslama için profilinizde sektör tanımlı olmalı. Sektör atamasını platform yöneticiniz yapar." />
+      <BenchmarkEmpty
+        message="Kıyaslama için profilinizde sektör tanımlı olmalı."
+        action={{ href: "/settings", label: "Profilinizden sektör seçin" }}
+      />
     );
   }
 
@@ -54,10 +71,20 @@ export function BenchmarkSection() {
     ? data.subSectorBenchmark 
     : data.sectorBenchmark;
 
-  if (!currentBenchmark) {
+  /**
+   * Kıyas kaydı yoksa grafik çizilmez.
+   *
+   * API artık eksik veriyi genel ortalamadan türetmiyor (bkz.
+   * /api/benchmarks/user); `hasBenchmark` false ise gösterilecek ölçüm yok.
+   */
+  const hasAnyBenchmark =
+    currentBenchmark?.overall?.hasBenchmark ||
+    currentBenchmark?.categories?.some((category) => category.hasBenchmark);
+
+  if (!currentBenchmark || !hasAnyBenchmark) {
     return (
       <BenchmarkEmpty
-        message={`${data.sector?.name} sektörü için henüz kıyaslama verisi girilmemiş.`}
+        message={`${data.sector?.name} sektörü için henüz kıyaslama verisi girilmemiş. Kıyaslama, yeterli sayıda kuruluş değerlendirmesini gönderdiğinde açılır.`}
       />
     );
   }

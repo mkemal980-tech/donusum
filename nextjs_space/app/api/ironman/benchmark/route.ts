@@ -38,37 +38,38 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Sektör benchmark'ı da yoksa tahmini değerler döndür
+    /**
+     * Kıyas kaydı yoksa sayı uydurulmaz.
+     *
+     * Burada eskiden sektör kimliğinin karakter kodları toplanıp ondan bir
+     * "tahmin" türetiliyordu ve `isEstimated: true` ile dönüyordu; o alanı
+     * arayüz hiç okumadığı için uydurma sayılar gerçek sektör ortalamasıyla
+     * aynı yerde gösteriliyordu. Ürünün vaadi ölçüm; ölçülmemiş şey için
+     * doğru cevap "veri yok"tur.
+     */
     if (!benchmark) {
-      // Sektör adını al
       const sector = await prisma.sector.findUnique({
         where: { id: sectorId },
         select: { name: true },
       });
 
-      // Tahmini değerler - sektöre göre küçük varyasyonlar
-      const sectorHash = sectorId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const variance = (sectorHash % 10) / 10; // 0-0.9 arası varyans
-      
       return NextResponse.json({
+        hasBenchmark: false,
         sectorId,
-        sectorName: sector?.name || 'Bilinmeyen Sektör',
+        sectorName: sector?.name ?? null,
         subSectorId: subSectorId || null,
-        current: {
-          velocity: 2.0 + variance * 0.8,
-          endurance: 2.2 + variance * 0.7,
-        },
-        target: {
-          velocity: 3.2 + variance * 0.6,
-          endurance: 3.4 + variance * 0.5,
-        },
-        isEstimated: true,
+        current: null,
+        target: null,
+        best: null,
       });
     }
 
     return NextResponse.json({
+      hasBenchmark: true,
       sectorId: benchmark.sectorId,
       subSectorId: benchmark.subSectorId,
+      /** Alt sektör kaydı yoksa sektör geneline düşüldüğü açıkça bildirilir. */
+      source: benchmark.subSectorId ? 'subSector' : 'sector',
       current: {
         velocity: benchmark.velocityAverage,
         endurance: benchmark.enduranceAverage,
@@ -81,7 +82,6 @@ export async function GET(req: NextRequest) {
         velocity: benchmark.velocityBest,
         endurance: benchmark.enduranceBest,
       },
-      isEstimated: false,
     });
   } catch (error) {
     console.error('Error fetching ironman benchmark:', error);
