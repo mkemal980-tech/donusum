@@ -1,55 +1,86 @@
 import { describe, expect, it } from "vitest";
+import * as XLSX from "xlsx";
 import {
-  MEMBER_IMPORT_TEMPLATE,
-  parseMemberImportCsv,
+  MEMBER_IMPORT_EXAMPLE_EMAIL,
+  buildMemberImportWorkbook,
+  parseMemberImportExcel,
 } from "@/lib/organization-member-import";
 
-describe("organization member CSV import", () => {
-  it("Türkçe şablonu ve NACE kodlarını ayrıştırır", () => {
-    const result = parseMemberImportCsv(`\uFEFF${MEMBER_IMPORT_TEMPLATE}`);
+function workbookFromRows(rows: unknown[][]) {
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(rows), "Üye Aktarımı");
+  return new Uint8Array(XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }));
+}
 
-    expect(result.errors).toEqual([]);
-    expect(result.rows).toEqual([
-      {
-        rowNumber: 2,
-        memberName: "Örnek Tersane",
-        firstName: "Ayşe",
-        lastName: "Yılmaz",
-        email: "ayse@example.com",
-        sectorCode: "C",
-        subSectorCode: "30.1",
-      },
+describe("organization member Excel import", () => {
+  it("iki sayfalı şablon, tek örnek satır ve doldurma rehberi üretir", () => {
+    const buffer = buildMemberImportWorkbook([
+      { naicsCode: "C", name: "İmalat", subSectors: [{ name: "[30.1] Gemi, tekne ve yüzer yapı inşası" }] },
     ]);
+    const workbook = XLSX.read(buffer, { type: "buffer" });
+
+    expect(workbook.SheetNames).toEqual(["Üye Aktarımı", "Doldurma Rehberi"]);
+    const importRows = XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets["Üye Aktarımı"], { header: 1 });
+    expect(importRows).toHaveLength(2);
+    expect(importRows[0]).toEqual([
+      "uye_kurulus",
+      "ad",
+      "soyad",
+      "e_posta",
+      "sektor_kodu",
+      "alt_sektor_kodu",
+    ]);
+    expect(importRows[1]).toContain(MEMBER_IMPORT_EXAMPLE_EMAIL);
+
+    const guide = XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets["Doldurma Rehberi"], { header: 1 });
+    expect(guide.flat()).toContain("ÜYE AKTARIM ŞABLONU — DOLDURMA REHBERİ");
+    expect(guide.flat()).toContain("30.1");
+    expect(guide.flat()).toContain("[30.1] Gemi, tekne ve yüzer yapı inşası");
   });
 
-  it("Türkçe Excel çıktısındaki noktalı virgülü destekler", () => {
-    const result = parseMemberImportCsv(
-      "üye kuruluş;ad;soyad;e-posta;sektör kodu;alt sektör kodu\n" +
-      "Mavi Deniz;Mehmet;Kaya;MEHMET@EXAMPLE.COM;C;30.1"
-    );
+  it("Türkçe başlıkları ve NACE kodlarını ayrıştırır", () => {
+    const result = parseMemberImportExcel(workbookFromRows([
+      ["üye kuruluş", "ad", "soyad", "e-posta", "sektör kodu", "alt sektör kodu"],
+      ["Mavi Deniz", "Mehmet", "Kaya", "MEHMET@EXAMPLE.COM", "C", "30.1"],
+    ]));
 
     expect(result.errors).toEqual([]);
-    expect(result.rows[0]).toMatchObject({
+    expect(result.rows[0]).toEqual({
+      rowNumber: 2,
       memberName: "Mavi Deniz",
+      firstName: "Mehmet",
+      lastName: "Kaya",
       email: "mehmet@example.com",
       sectorCode: "C",
       subSectorCode: "30.1",
     });
   });
 
-  it("aynı e-postayı ve eksik zorunlu alanları reddeder", () => {
-    const result = parseMemberImportCsv(
-      "uye_kurulus,ad,soyad,e_posta,sektor_kodu,alt_sektor_kodu\n" +
-      "Birinci,Ali,,ortak@example.com,C,30.1\n" +
-      ",Veli,,ortak@example.com,,"
-    );
+  it("örnek satırı, aynı e-postayı ve eksik zorunlu alanları reddeder", () => {
+    const result = parseMemberImportExcel(workbookFromRows([
+      ["uye_kurulus", "ad", "soyad", "e_posta", "sektor_kodu", "alt_sektor_kodu"],
+      ["Örnek Tersane", "Ayşe", "Yılmaz", MEMBER_IMPORT_EXAMPLE_EMAIL, "C", "30.1"],
+      ["Birinci", "Ali", "", "ortak@example.com", "C", "30.1"],
+      ["", "Veli", "", "ortak@example.com", "", ""],
+    ]));
 
-    expect(result.errors).toContain("3. satır: Üye kuruluş adı gerekli.");
-    expect(result.errors).toContain("3. satır: Sektör kodu gerekli.");
-    expect(result.errors).toContain("3. satır: E-posta CSV içinde tekrar ediyor.");
+    expect(result.errors).toContain("2. satır: Örnek satırı silin veya gerçek bilgilerle değiştirin.");
+    expect(result.errors).toContain("4. satır: Üye kuruluş adı gerekli.");
+    expect(result.errors).toContain("4. satır: Sektör kodu gerekli.");
+    expect(result.errors).toContain("4. satır: E-posta Excel içinde tekrar ediyor.");
+  });
+
+  it("değiştirilmiş başlıkları reddeder", () => {
+    const result = parseMemberImportExcel(workbookFromRows([
+      ["uye_kurulus", "ad", "e_posta", "sektor_kodu"],
+      ["Mavi Deniz", "Mehmet", "mehmet@example.com", "C"],
+    ]));
+
+    expect(result.errors[0]).toContain("soyad");
+    expect(result.errors[0]).toContain("alt_sektor_kodu");
   });
 
   it("boş dosyayı reddeder", () => {
-    expect(parseMemberImportCsv("  ").errors).toEqual(["CSV dosyası boş."]);
+    expect(parseMemberImportExcel(new Uint8Array()).errors).toEqual(["Excel dosyası boş."]);
   });
 });

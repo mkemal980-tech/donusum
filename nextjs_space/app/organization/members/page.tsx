@@ -85,11 +85,11 @@ export default function OrganizationMembersPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [resendingUserId, setResendingUserId] = useState("");
-  const [mode, setMode] = useState<"member" | "user" | "csv" | null>(null);
+  const [mode, setMode] = useState<"member" | "user" | "excel" | null>(null);
   const [memberForm, setMemberForm] = useState(EMPTY_MEMBER_FORM);
   const [userForm, setUserForm] = useState(EMPTY_USER_FORM);
-  const [csvText, setCsvText] = useState("");
-  const [csvName, setCsvName] = useState("");
+  const [excelFile, setExcelFile] = useState<File | null>(null);
+  const [excelName, setExcelName] = useState("");
   const [importErrors, setImportErrors] = useState<string[]>([]);
 
   useEffect(() => {
@@ -200,34 +200,49 @@ export default function OrganizationMembersPage() {
     }
   };
 
-  const importCsv = async (event: React.FormEvent) => {
+  const importExcel = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!excelFile) return;
     setBusy(true);
     setImportErrors([]);
     try {
-      const data = await postAction({ action: "import_csv", csv: csvText });
+      const formData = new FormData();
+      formData.append("action", "import_excel");
+      formData.append("tenantUnitId", tenantUnitId);
+      formData.append("file", excelFile);
+      const response = await fetch("/api/organization/members", { method: "POST", body: formData });
+      const data = await response.json();
+      if (!response.ok) {
+        const error = new Error(data.error || "İşlem tamamlanamadı.") as Error & { details?: string[] };
+        error.details = data.errors;
+        throw error;
+      }
       toast.success(`${data.importedUsers} kullanıcı aktarıldı. ${invitationMessage(data.invitation)}`);
-      setCsvText("");
-      setCsvName("");
+      setExcelFile(null);
+      setExcelName("");
       setMode(null);
       await loadData();
     } catch (error) {
       const typed = error as Error & { details?: string[] };
       setImportErrors(typed.details ?? []);
-      toast.error(typed.message || "CSV aktarılamadı.");
+      toast.error(typed.message || "Excel aktarılamadı.");
     } finally {
       setBusy(false);
     }
   };
 
-  const chooseCsv = async (file?: File) => {
+  const chooseExcel = (file?: File) => {
     if (!file) return;
-    if (file.size > 1024 * 1024) {
-      toast.error("CSV dosyası en fazla 1 MB olabilir.");
+    if (!file.name.toLocaleLowerCase("tr-TR").endsWith(".xlsx")) {
+      toast.error("Yalnızca .xlsx Excel dosyası seçebilirsiniz.");
       return;
     }
-    setCsvName(file.name);
-    setCsvText(await file.text());
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Excel dosyası en fazla 2 MB olabilir.");
+      return;
+    }
+    setExcelFile(file);
+    setExcelName(file.name);
     setImportErrors([]);
   };
 
@@ -263,8 +278,8 @@ export default function OrganizationMembersPage() {
           subtitle="Üye kuruluşları ve kullanıcılarını ekleyin, güvenli hesap davetlerini yönetin."
           actions={
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={() => setMode(mode === "csv" ? null : "csv")} disabled={!selectedRoot}>
-                <FileUp size={16} /> CSV ile aktar
+              <Button variant="outline" onClick={() => setMode(mode === "excel" ? null : "excel")} disabled={!selectedRoot}>
+                <FileUp size={16} /> Excel ile aktar
               </Button>
               <Button variant="outline" onClick={() => setMode(mode === "user" ? null : "user")} disabled={!members.length}>
                 <UserPlus size={16} /> Kullanıcı ekle
@@ -353,18 +368,18 @@ export default function OrganizationMembersPage() {
           </FormPanel>
         )}
 
-        {mode === "csv" && (
-          <FormPanel title="CSV ile toplu aktarım" description="Aynı kuruluş adına sahip satırlar tek üye kuruluş altında toplanır. Tek seferde en fazla 500 kullanıcı eklenir.">
-            <form onSubmit={importCsv}>
+        {mode === "excel" && (
+          <FormPanel title="Excel ile toplu aktarım" description="İki sayfalı şablonun ilk sayfasını doldurun; ikinci sayfadaki rehberde alan açıklamaları ve geçerli sektör kodları bulunur.">
+            <form onSubmit={importExcel}>
               <div className="flex flex-wrap items-center gap-3">
                 <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-[var(--line-strong)] px-4 py-2 t-sm" style={{ color: "var(--ink)" }}>
-                  <FileUp size={16} /> {csvName || "CSV dosyası seç"}
-                  <input type="file" accept=".csv,text/csv" className="sr-only" onChange={(event) => chooseCsv(event.target.files?.[0])} />
+                  <FileUp size={16} /> {excelName || "Excel dosyası seç"}
+                  <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="sr-only" onChange={(event) => chooseExcel(event.target.files?.[0])} />
                 </label>
-                <Button type="button" variant="ghost" onClick={() => window.open("/api/organization/members?template=csv", "_blank")}>
-                  <Download size={16} /> Şablonu indir
+                <Button type="button" variant="ghost" onClick={() => window.open("/api/organization/members?template=excel", "_blank")}>
+                  <Download size={16} /> Excel şablonunu indir
                 </Button>
-                <Button type="submit" loading={busy} disabled={!csvText}>Aktarımı başlat</Button>
+                <Button type="submit" loading={busy} disabled={!excelFile}>Aktarımı başlat</Button>
               </div>
               {importErrors.length > 0 && (
                 <ul className="mt-4 list-disc rounded-[var(--radius-md)] py-3 pl-8 pr-4 t-sm" style={{ background: "var(--error-bg)", color: "var(--error)" }}>

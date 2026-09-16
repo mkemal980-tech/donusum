@@ -9,8 +9,8 @@ import {
   getOrganizationRoots,
 } from "@/lib/organization-campaign";
 import {
-  MEMBER_IMPORT_TEMPLATE,
-  parseMemberImportCsv,
+  buildMemberImportWorkbook,
+  parseMemberImportExcel,
   type MemberImportRow,
 } from "@/lib/organization-member-import";
 import { sendMemberAccountInvitation } from "@/lib/organization-invitations";
@@ -94,11 +94,21 @@ export async function GET(request: NextRequest) {
   if (!auth.success) return auth.response;
 
   try {
-    if (request.nextUrl.searchParams.get("template") === "csv") {
-      return new NextResponse(`\uFEFF${MEMBER_IMPORT_TEMPLATE}`, {
+    if (request.nextUrl.searchParams.get("template") === "excel") {
+      const sectors = await prisma.sector.findMany({
+        select: {
+          name: true,
+          naicsCode: true,
+          subSectors: { select: { name: true }, orderBy: { order: "asc" } },
+        },
+        orderBy: { order: "asc" },
+      });
+      const workbook = buildMemberImportWorkbook(sectors);
+      return new NextResponse(workbook, {
         headers: {
-          "Content-Type": "text/csv; charset=utf-8",
-          "Content-Disposition": 'attachment; filename="uye-aktarma-sablonu.csv"',
+          "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "Content-Disposition": 'attachment; filename="uye-aktarma-sablonu.xlsx"',
+          "Content-Length": workbook.length.toString(),
           "Cache-Control": "private, no-store",
         },
       });
@@ -168,7 +178,20 @@ export async function POST(request: NextRequest) {
   if (!auth.success) return auth.response;
 
   try {
-    const body = (await request.json()) ?? {};
+    const contentType = request.headers.get("content-type") ?? "";
+    let body: Record<string, unknown>;
+    let importFile: File | null = null;
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      body = {
+        action: formData.get("action"),
+        tenantUnitId: formData.get("tenantUnitId"),
+      };
+      const candidate = formData.get("file");
+      importFile = candidate instanceof File ? candidate : null;
+    } else {
+      body = ((await request.json()) ?? {}) as Record<string, unknown>;
+    }
     const action = clean(body.action, 40);
     const tenantUnitId = clean(body.tenantUnitId, 64);
     const tenant = await managedTenant(auth.userId, auth.user.role, tenantUnitId);
@@ -185,8 +208,8 @@ export async function POST(request: NextRequest) {
     if (action === "invite_user") {
       return await inviteUser(body, tenant, auth.userId);
     }
-    if (action === "import_csv") {
-      return await importMembers(body, tenant);
+    if (action === "import_excel") {
+      return await importMembers(importFile, tenant);
     }
     if (action === "resend_invitation") {
       return await resendInvitation(body, tenant);
@@ -420,13 +443,19 @@ async function inviteUser(
   }, { status: 201 });
 }
 
-async function importMembers(body: Record<string, unknown>, tenant: { id: string; name: string }) {
-  const parsed = parseMemberImportCsv(String(body.csv ?? ""));
+async function importMembers(file: File | null, tenant: { id: string; name: string }) {
+  if (!file) {
+    return NextResponse.json({ error: "Excel dosyası gerekli." }, { status: 400 });
+  }
+  if (!file.name.toLocaleLowerCase("tr-TR").endsWith(".xlsx")) {
+    return NextResponse.json({ error: "Yalnızca .xlsx Excel dosyası yükleyebilirsiniz." }, { status: 400 });
+  }
+  const parsed = parseMemberImportExcel(new Uint8Array(await file.arrayBuffer()));
   if (parsed.errors.length > 0) {
-    return NextResponse.json({ error: "CSV doğrulanamadı.", errors: parsed.errors }, { status: 400 });
+    return NextResponse.json({ error: "Excel doğrulanamadı.", errors: parsed.errors }, { status: 400 });
   }
   if (parsed.rows.length === 0) {
-    return NextResponse.json({ error: "CSV içinde aktarılacak satır yok." }, { status: 400 });
+    return NextResponse.json({ error: "Excel içinde aktarılacak satır yok." }, { status: 400 });
   }
 
   const emails = parsed.rows.map((row) => row.email);
@@ -464,7 +493,7 @@ async function importMembers(body: Record<string, unknown>, tenant: { id: string
   });
   validateMemberProfiles(resolvedRows, validationErrors);
   if (validationErrors.length > 0) {
-    return NextResponse.json({ error: "CSV doğrulanamadı.", errors: validationErrors }, { status: 400 });
+    return NextResponse.json({ error: "Excel doğrulanamadı.", errors: validationErrors }, { status: 400 });
   }
 
   const existingMembers = await prisma.unit.findMany({
@@ -489,7 +518,7 @@ async function importMembers(body: Record<string, unknown>, tenant: { id: string
     }
   }
   if (validationErrors.length > 0) {
-    return NextResponse.json({ error: "CSV doğrulanamadı.", errors: validationErrors }, { status: 400 });
+    return NextResponse.json({ error: "Excel doğrulanamadı.", errors: validationErrors }, { status: 400 });
   }
 
   const password = await placeholderPassword();
