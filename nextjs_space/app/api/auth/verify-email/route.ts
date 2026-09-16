@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { logDevEmailLink, sendEmail } from "@/lib/email";
+import { enforcePublicRateLimit } from "@/lib/api-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,9 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const { token } = await request.json();
+
+    const throttled = await enforcePublicRateLimit(request, 'verify-email');
+    if (throttled) return throttled;
 
     if (!token) {
       return NextResponse.json(
@@ -68,6 +72,11 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const { email } = await request.json();
+
+    // Yeniden gönderim: hedef adres başına da sınırlanır, aksi hâlde uç nokta
+    // sınırsız e-posta bombardımanına açık kalıyordu.
+    const throttled = await enforcePublicRateLimit(request, 'verify-email-resend', email);
+    if (throttled) return throttled;
 
     if (!email) {
       return NextResponse.json(

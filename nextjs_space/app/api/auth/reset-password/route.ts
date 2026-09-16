@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { validators } from "@/lib/api-utils";
+import { enforcePublicRateLimit, validators } from "@/lib/api-utils";
 import { sendEmail } from "@/lib/email";
 import bcrypt from "bcryptjs";
 
@@ -9,6 +9,10 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const { token, password } = await request.json();
+
+    // Token tahmini denemelerini de sınırlar.
+    const throttled = await enforcePublicRateLimit(request, 'reset-password');
+    if (throttled) return throttled;
 
     if (!token || !password) {
       return NextResponse.json(

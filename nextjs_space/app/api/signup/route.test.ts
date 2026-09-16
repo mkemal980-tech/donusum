@@ -26,6 +26,8 @@ vi.mock("@/lib/db", () => ({
   withRetry: (operation: () => Promise<unknown>) => operation(),
 }));
 vi.mock("@/lib/api-utils", () => ({
+  // Kota kontrolü ayrı test ediliyor; burada hep geçirir (null = sınır aşılmadı).
+  enforcePublicRateLimit: vi.fn(async () => null),
   checkRateLimit: vi.fn(() => ({ allowed: true, resetIn: 0 })),
   getClientIP: vi.fn(() => "127.0.0.1"),
   validators: {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, withRetry } from "@/lib/db";
-import { checkRateLimit, getClientIP, validators } from "@/lib/api-utils";
+import { enforcePublicRateLimit, validators } from "@/lib/api-utils";
 import { logDevEmailLink, sendEmail } from "@/lib/email";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
@@ -10,15 +10,10 @@ import { resolveJoinCodeProfile } from "@/lib/organization-join-code-server";
 class JoinCodeConsumptionError extends Error {}
 
 export async function POST(request: NextRequest) {
-  // Rate limit for signup (prevent abuse)
-  const ip = getClientIP(request);
-  const rateLimit = checkRateLimit(ip, 'auth');
-  if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: "Çok fazla kayıt denemesi. Lütfen biraz bekleyin." },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil(rateLimit.resetIn / 1000)) } }
-    );
-  }
+  // Kota dağıtık sayaçtan okunur; tek instance varsayımı çok-instance
+  // dağıtımda sınırı instance sayısıyla çarpıyordu.
+  const throttled = await enforcePublicRateLimit(request, 'signup');
+  if (throttled) return throttled;
 
   try {
     const { email, password, firstName, lastName, organization, sectorId, subSectorId, joinCode } = await request.json();

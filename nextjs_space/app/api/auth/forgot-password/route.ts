@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { logDevEmailLink, sendEmail } from "@/lib/email";
+import { enforcePublicRateLimit } from "@/lib/api-utils";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +9,9 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
+
+    const throttled = await enforcePublicRateLimit(request, 'forgot-password', email);
+    if (throttled) return throttled;
 
     if (!email) {
       return NextResponse.json(

@@ -159,6 +159,43 @@ export function getClientIP(request: NextRequest): string {
 }
 
 /**
+ * Kimlik doğrulaması gerektirmeyen uç noktalar için kota.
+ *
+ * Şifre sıfırlama, doğrulama ve yeniden gönderme uçları hiç kota taşımıyordu:
+ * aynı adrese sınırsız e-posta gönderilebiliyor, sağlayıcı kotası
+ * yakılabiliyor ve her çağrı kullanıcının elindeki sıfırlama bağlantısını
+ * geçersizleştiriyordu. Sağlayıcının kötüye kullanım eşiğini aşmak gönderen
+ * alan adını karalisteye düşürür ve bütün kayıt akışını durdurur.
+ *
+ * Yalnızca IP yetmiyor: aynı hedefe farklı IP'lerden gelen istekler de
+ * sınırlanmalı. Bu yüzden IP ve konu (genelde e-posta) ayrı ayrı sayılır.
+ */
+export async function enforcePublicRateLimit(
+  request: NextRequest,
+  scope: string,
+  subject?: string | null,
+  type: RateLimitType = 'auth'
+): Promise<NextResponse | null> {
+  const keys = [`${scope}:ip:${getClientIP(request)}`];
+  const normalizedSubject = subject?.trim().toLowerCase();
+  if (normalizedSubject) keys.push(`${scope}:subject:${normalizedSubject}`);
+
+  for (const key of keys) {
+    const result = await checkRateLimitDistributed(key, type);
+    if (!result.allowed) {
+      return NextResponse.json(
+        { error: 'Çok fazla deneme. Lütfen biraz bekleyin.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(Math.ceil(result.resetIn / 1000)) },
+        }
+      );
+    }
+  }
+  return null;
+}
+
+/**
  * Authentication wrapper with admin check
  */
 export async function withAuth(

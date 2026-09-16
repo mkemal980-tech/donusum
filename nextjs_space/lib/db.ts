@@ -27,15 +27,15 @@ export async function withRetry<T>(
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      // Before each attempt, try to reconnect if needed
-      if (attempt > 1) {
-        try {
-          await prisma.$disconnect();
-          await prisma.$connect();
-        } catch {
-          // Ignore reconnection errors, the operation itself will fail if connection is broken
-        }
-      }
+      /**
+       * Yeniden denerken bağlantı havuzuna dokunulmaz.
+       *
+       * Burada eskiden `$disconnect()` + `$connect()` çağrılıyordu. İstemci
+       * global ve paylaşımlı olduğu için bu, yalnızca hata alan isteğin değil
+       * o anda uçuşta olan **bütün** isteklerin havuzunu yıkıyordu: geçici bir
+       * veritabanı dalgalanması zincirleme hataya dönüşüyordu. Prisma kopan
+       * bağlantıyı zaten kendi havuzunda yeniliyor; tek gereken beklemek.
+       */
       return await operation();
     } catch (error: unknown) {
       lastError = error as Error;
@@ -73,8 +73,17 @@ export async function withRetry<T>(
   throw lastError;
 }
 
-// Graceful shutdown handler
-if (typeof process !== 'undefined') {
+/**
+ * Kapanışta bağlantıları bırak — ama dinleyiciyi bir kez ekle.
+ *
+ * Modül her değerlendirildiğinde yeni bir `beforeExit` dinleyicisi
+ * ekleniyordu; geliştirme sunucusunda birikip
+ * `MaxListenersExceededWarning: 11 beforeExit listeners` uyarısı üretiyordu.
+ */
+const globalForShutdown = globalThis as unknown as { prismaShutdownHooked?: boolean }
+
+if (typeof process !== 'undefined' && !globalForShutdown.prismaShutdownHooked) {
+  globalForShutdown.prismaShutdownHooked = true
   process.on('beforeExit', async () => {
     await prisma.$disconnect()
   })

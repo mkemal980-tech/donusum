@@ -14,7 +14,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'json';
     const tables = searchParams.get('tables')?.split(',') || ['all'];
-    const includePasswords = searchParams.get('includePasswords') === 'true';
+    /**
+     * Parola özeti hiçbir koşulda dışa aktarılmaz.
+     *
+     * Burada `?includePasswords=true` ile bütün bcrypt özetleri düz bir CSV/JSON
+     * olarak indirilebiliyordu: denetim kaydı yok, ikinci onay yok, meşru
+     * kullanımı da yok. Komşu dosya (/api/admin/users) aynı kuralı zaten
+     * yazmıştı: "listeyi gören herkesin eline kırılmaya hazır bir özet geçer".
+     */
 
     // Tüm verileri paralel olarak çek
     const [
@@ -41,7 +48,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             select: {
               id: true,
               email: true,
-              password: includePasswords,
               firstName: true,
               lastName: true,
               organization: true,

@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkRateLimit, getClientIP } from "@/lib/api-utils";
+import { enforcePublicRateLimit } from "@/lib/api-utils";
 import { resolveJoinCodeProfile } from "@/lib/organization-join-code-server";
 
 export async function POST(request: NextRequest) {
-  const ip = getClientIP(request);
-  const rateLimit = checkRateLimit(`${ip}:join-code`, "auth");
-  if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: "Çok fazla kod doğrulama denemesi. Lütfen biraz bekleyin." },
-      { status: 429, headers: { "Retry-After": String(Math.ceil(rateLimit.resetIn / 1000)) } }
-    );
-  }
+  const throttled = await enforcePublicRateLimit(request, 'join-code');
+  if (throttled) return throttled;
 
   try {
     const { joinCode } = await request.json();
