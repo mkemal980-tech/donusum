@@ -9,6 +9,7 @@ import {
   getRecommendationsForUser
 } from "@/lib/scoring";
 import { getAssessmentContext, getAssessmentIds } from "@/lib/assessment";
+import { countStructureQuestions, loadVisibleSurveyStructure } from "@/lib/survey-structure";
 
 /**
  * Unified Dashboard API - Tüm dashboard verilerini tek seferde döndürür
@@ -27,14 +28,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "surveyId gerekli" }, { status: 400 });
     }
 
+    /**
+     * Erişim kontrolü.
+     *
+     * Bu rota `surveyId`'yi doğrudan sorguya koyuyor ve hiç doğrulamıyordu:
+     * herhangi bir oturum sahibi, başka bir kiracıya ait özel anketin
+     * kategori/bölüm adlarını ve açıklamalarını okuyabiliyordu.
+     */
+    const surveyStructure = await loadVisibleSurveyStructure(userId, auth.user.role, surveyId);
+    if (surveyStructure === null) {
+      return NextResponse.json({ error: "Bu ankete erişiminiz yok" }, { status: 403 });
+    }
+
     // PARALEL FETCH - Tüm veriler aynı anda çekilir
+    // Puan bir kez hesaplanır ve önerilere de o sonuç verilir.
+    const scoreData = await calculateUserScore(userId, surveyId);
+
     const [
       userProfile,
       userResponses,
-      surveyStructure,
-      recommendations,
-      categoryScores,
-      scoreData
+      recommendations
     ] = await Promise.all([
       // 1. User Profile
       prisma.user.findUnique({
@@ -75,36 +88,6 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      // 3. Survey Structure
-      prisma.category.findMany({
-        where: { surveyId },
-        orderBy: { order: 'asc' },
-        include: {
-          questions: {
-            orderBy: { order: 'asc' },
-            select: { id: true }
-          },
-          subCategories: {
-            orderBy: { order: 'asc' },
-            include: {
-              questions: {
-                orderBy: { order: 'asc' },
-                select: { id: true }
-              },
-              subLevels: {
-                orderBy: { order: 'asc' },
-                include: {
-                  questions: {
-                    orderBy: { order: 'asc' },
-                    select: { id: true }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }),
-
       /**
        * 4. Öneriler — ankette tanımlı olanlar değil, kullanıcıya gösterilenler.
        *
@@ -112,40 +95,23 @@ export async function GET(request: NextRequest) {
        * göstermek, kullanıcıyı Öneriler ekranında bulamayacağı önerileri
        * aramaya iter (bkz. /api/dashboard/kpi'deki aynı düzeltme).
        */
-      getRecommendationsForUser(userId, { surveyId }),
+      getRecommendationsForUser(userId, { surveyId, scores: scoreData }),
 
-      // 5. Category Scores - Bu hesaplama zaten var, kullanıyoruz
-      fetchCategoryScores(userId, surveyId),
-
-      // 6. Authoritative score calculation
-      calculateUserScore(userId, surveyId)
     ]);
 
-    // Question counts
-    let totalQuestions = 0;
+    const categoryScores = toCategoryScores(scoreData);
+
+    // Soru sayımı görünür yapıdan gelir: arşivlenmiş ve kapsam dışı sorular
+    // toplamda görünmez, böylece tamamlanma yüzdesi %100'e ulaşabilir.
     const answeredQuestionIds = new Set(userResponses.map(r => r.questionId));
-    
-    const categoryStats = surveyStructure.map(cat => {
-      let catTotalQuestions = cat.questions.length;
-      let catAnsweredQuestions = cat.questions.filter(q => answeredQuestionIds.has(q.id)).length;
+    const perCategory = countStructureQuestions(surveyStructure);
+    const visibleQuestionIds = new Set(perCategory.flatMap((c) => c.questionIds));
+    const totalQuestions = visibleQuestionIds.size;
+    const answeredVisible = [...visibleQuestionIds].filter((id) => answeredQuestionIds.has(id)).length;
 
-      cat.subCategories.forEach(sub => {
-        if (!sub.hasSubLevels) {
-          catTotalQuestions += sub.questions.length;
-          sub.questions.forEach(q => {
-            if (answeredQuestionIds.has(q.id)) catAnsweredQuestions++;
-          });
-        } else {
-          sub.subLevels.forEach(level => {
-            catTotalQuestions += level.questions.length;
-            level.questions.forEach(q => {
-              if (answeredQuestionIds.has(q.id)) catAnsweredQuestions++;
-            });
-          });
-        }
-      });
-
-      totalQuestions += catTotalQuestions;
+    const categoryStats = perCategory.map(cat => {
+      const catTotalQuestions = cat.questionIds.length;
+      const catAnsweredQuestions = cat.questionIds.filter(id => answeredQuestionIds.has(id)).length;
 
       // Öneri sayısını 3 yol ile hesapla (categoryId, subCategoryId, subLevelId)
       const catRecommendationCount = recommendations.filter((rec: any) => {
@@ -167,8 +133,10 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // Payda ile pay aynı kümeden: görünür sorular. Eskiden pay bütün
+    // cevaplardı, payda ise filtresiz soru sayısıydı.
     const completionPercentage = totalQuestions > 0
-      ? Math.round((userResponses.length / totalQuestions) * 100)
+      ? Math.round((answeredVisible / totalQuestions) * 100)
       : 0;
 
     // Response hazırla
@@ -187,7 +155,7 @@ export async function GET(request: NextRequest) {
       },
       score: {
         totalScore: scoreData.totalScore,
-        answeredQuestions: userResponses.length,
+        answeredQuestions: answeredVisible,
         totalQuestions,
         completionPercentage
       },
@@ -207,32 +175,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Category scores hesaplama fonksiyonu
-async function fetchCategoryScores(userId: string, surveyId: string) {
-  try {
-    const scoreData = await calculateUserScore(userId, surveyId);
-    const categories = Object.entries(scoreData.categoryScores).map(([id, data]) => ({
+/** Hesaplanmış puanı ekranın beklediği şekle çevirir — yeni sorgu yapmaz. */
+function toCategoryScores(scoreData: Awaited<ReturnType<typeof calculateUserScore>>) {
+  return {
+    overallScore: scoreData.totalScoreOn5,
+    overallPercentage: scoreData.totalScore,
+    categories: Object.entries(scoreData.categoryScores).map(([id, data]) => ({
       id,
       name: data.name,
       score: data.scoreOn5,
       percentage: data.percentage
-    }));
-
-    return {
-      overallScore: scoreData.totalScoreOn5,
-      overallPercentage: scoreData.totalScore,
-      categories,
-      subCategories: Object.entries(scoreData.subCategoryScores).map(([id, data]) => ({ id, ...data })),
-      subLevels: Object.entries(scoreData.subLevelScores).map(([id, data]) => ({ id, ...data }))
-    };
-  } catch (error) {
-    console.error("Category scores error:", error);
-    return {
-      overallScore: 1,
-      overallPercentage: 0,
-      categories: [],
-      subCategories: [],
-      subLevels: []
-    };
-  }
+    })),
+    subCategories: Object.entries(scoreData.subCategoryScores).map(([id, data]) => ({ id, ...data })),
+    subLevels: Object.entries(scoreData.subLevelScores).map(([id, data]) => ({ id, ...data }))
+  };
 }

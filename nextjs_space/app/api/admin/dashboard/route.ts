@@ -116,6 +116,10 @@ export async function GET(req: NextRequest) {
         // Bu anketi tamamlayan kullanıcı sayısı
         const completedUsers = await prisma.assessment.count({
           where: {
+            // Aynı işleyicinin geri kalanı `realAssessment` uyguluyor, bu iki
+            // sorgu uygulamıyordu: ziyaretçilerin rastgele tanıtım cevapları
+            // tamamlama sayısına ve kategori ortalamalarına giriyordu.
+            ...realAssessment,
             responses: {
               some: {
                 question: {
@@ -155,6 +159,7 @@ export async function GET(req: NextRequest) {
           const responses = await prisma.surveyResponse.findMany({
             where: {
               questionId: { in: questionIds },
+              assessment: realAssessment,
             },
             select: { score: true, assessmentId: true },
           });

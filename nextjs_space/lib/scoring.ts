@@ -786,7 +786,17 @@ function parseTriggerOptions(raw: string): string[] | null {
 
 export async function getRecommendationsForUser(
   userId: string,
-  options: { surveyId?: string } = {}
+  options: {
+    surveyId?: string;
+    /**
+     * Hazır hesaplanmış puan.
+     *
+     * Pano bu fonksiyonu `calculateUserScore` ile aynı istekte çağırıyordu ve
+     * fonksiyon içeride aynı ağır hesabı bir kez daha yapıyordu. Çağıran taraf
+     * zaten hesapladıysa geçirebilir.
+     */
+    scores?: Awaited<ReturnType<typeof calculateUserScore>>;
+  } = {}
 ) {
   // Kullanıcının tüm anket cevaplarını getir
   const recSurveyIds = await getAccessibleSurveyIds(userId, options.surveyId);
@@ -811,10 +821,8 @@ export async function getRecommendationsForUser(
   const surveyIds = recSurveyIds;
   const surveyWhere = await buildRecommendationSurveyWhere(surveyIds);
 
-  const { categoryScores, subLevelScores, subCategoryScores } = await calculateUserScore(
-    userId,
-    options.surveyId
-  );
+  const { categoryScores, subLevelScores, subCategoryScores } =
+    options.scores ?? (await calculateUserScore(userId, options.surveyId));
   const categoryPercentages = Object.fromEntries(
     Object.entries(categoryScores).map(([id, data]) => [id, data?.percentage ?? 0])
   );

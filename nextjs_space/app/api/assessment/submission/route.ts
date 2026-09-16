@@ -80,14 +80,33 @@ export async function POST(request: NextRequest) {
       calculateUserScore(auth.userId, surveyId),
     ]);
 
+    /**
+     * Çift tık koruması.
+     *
+     * Kilit kontrolü ile yazma arasında iki ağır hesap var; iki eşzamanlı
+     * "gönder" isteği ikisi de kontrolü geçip iki SUBMISSION kaydı
+     * üretebiliyordu. "O gün ne göndermiştik" sorusunun iki cevabı oluyordu.
+     * Güncelleme artık yalnızca kayıt hâlâ IN_PROGRESS ise etki eder.
+     */
+    const claimed = await prisma.assessment.updateMany({
+      where: { id: assessmentId, status: "IN_PROGRESS" },
+      data: {
+        status: "SUBMITTED",
+        submittedAt: new Date(),
+        submittedById: auth.userId,
+      },
+    });
+
+    if (claimed.count === 0) {
+      return NextResponse.json(
+        { error: "Bu değerlendirme zaten gönderilmiş." },
+        { status: 409 }
+      );
+    }
+
     const [submitted] = await prisma.$transaction([
-      prisma.assessment.update({
+      prisma.assessment.findUniqueOrThrow({
         where: { id: assessmentId },
-        data: {
-          status: "SUBMITTED",
-          submittedAt: new Date(),
-          submittedById: auth.userId,
-        },
         select: { status: true, submittedAt: true },
       }),
       prisma.scoreHistory.create({

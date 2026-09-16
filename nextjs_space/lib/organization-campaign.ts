@@ -239,7 +239,13 @@ export async function loadCampaignDashboard(
                 where: { triggerType: "SUBMISSION" },
                 orderBy: { recordedAt: "desc" },
                 take: 1,
-                select: { velocityScore: true, enduranceScore: true, quadrant: true },
+                select: {
+                  velocityScore: true,
+                  enduranceScore: true,
+                  quadrant: true,
+                  completedQuestions: true,
+                  totalQuestions: true,
+                },
               },
             },
           },
@@ -318,6 +324,19 @@ export async function loadCampaignDashboard(
       endurance: status === "SUBMITTED" ? (snapshot?.enduranceScore ?? calculated.endurance) : null,
       quadrant: status === "SUBMITTED" ? (snapshot?.quadrant ?? calculated.quadrant) : null,
       submittedAt: assessment?.submittedAt ?? null,
+      /**
+       * Gönderim ne kadar doluydu?
+       *
+       * Sunucu tarafında asgari tamamlanma zorunluluğu yok — bu bilinçli bir
+       * karar (bkz. lib/submission). Ama gönderim anındaki doluluk hiçbir
+       * yerde gösterilmiyordu: %0 dolu bir gönderim oda ortalamasını aşağı
+       * çekiyor ve diğerlerinden ayırt edilemiyordu. Veri zaten
+       * ScoreHistory'de duruyordu.
+       */
+      submittedCompletion:
+        status === "SUBMITTED" && snapshot?.totalQuestions
+          ? Math.round((snapshot.completedQuestions / snapshot.totalQuestions) * 100)
+          : null,
       lastActivityAt: calculated.lastActivityAt,
       categoryPercentages: calculated.categoryPercentages,
     };
