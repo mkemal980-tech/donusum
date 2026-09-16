@@ -50,6 +50,8 @@ import {
   maxScoreForQuestion,
   rawAverageToScaledScore,
   scoreConditionalChoice,
+  scoreResponse,
+  MAX_RESPONSE_VALUE_LENGTH,
   classifyQuadrant,
   MAX_QUESTION_SCORE,
 } from "../scoring";
@@ -810,5 +812,85 @@ describe("calculateProgressScores", () => {
     const scores = await calculateProgressScores("user-1");
     expect(scores.overallScore).toBe(0);
     expect(scores.overallPercentage).toBe(0);
+  });
+});
+
+describe("scoreResponse — yazma yolunun doğrulaması", () => {
+  const scale = { type: "SCALE" };
+  const yesNo = {
+    type: "YES_NO",
+    options: [
+      { value: "yes", score: 5 },
+      { value: "no", score: 1 },
+    ],
+  };
+  const choice = {
+    type: "MULTIPLE_CHOICE",
+    options: [
+      { value: "a", score: 4 },
+      { value: "b", score: 2 },
+    ],
+  };
+
+  it("ölçek cevabını aralıkta kabul eder", () => {
+    expect(scoreResponse(scale, "4")).toEqual({ ok: true, score: 4, value: "4" });
+    expect(scoreResponse(scale, "0")).toEqual({ ok: true, score: 0, value: "0" });
+    expect(scoreResponse(scale, "5")).toEqual({ ok: true, score: 5, value: "5" });
+  });
+
+  it("aralık dışı ölçek cevabını reddeder — puan şişirmenin kapandığı yer", () => {
+    expect(scoreResponse(scale, "999").ok).toBe(false);
+    expect(scoreResponse(scale, "5.1").ok).toBe(false);
+    expect(scoreResponse(scale, "-5").ok).toBe(false);
+    expect(scoreResponse(scale, "abc").ok).toBe(false);
+  });
+
+  it("nesne ve boş değeri reddeder", () => {
+    expect(scoreResponse(scale, {}).ok).toBe(false);
+    expect(scoreResponse(scale, null).ok).toBe(false);
+    expect(scoreResponse(scale, undefined).ok).toBe(false);
+  });
+
+  it("çok uzun değeri reddeder", () => {
+    expect(scoreResponse(scale, "1".repeat(MAX_RESPONSE_VALUE_LENGTH + 1)).ok).toBe(false);
+  });
+
+  it("evet/hayır şık puanını kullanır, tanımsız değeri reddeder", () => {
+    expect(scoreResponse(yesNo, "yes")).toEqual({ ok: true, score: 5, value: "yes" });
+    expect(scoreResponse(yesNo, "no")).toEqual({ ok: true, score: 1, value: "no" });
+    // Eskiden "evet" sessizce 1 puan alıyordu.
+    expect(scoreResponse(yesNo, "evet").ok).toBe(false);
+  });
+
+  it("şıkkı olmayan eski evet/hayır sorusunda 5/1'e düşer", () => {
+    expect(scoreResponse({ type: "YES_NO" }, "yes")).toEqual({ ok: true, score: 5, value: "yes" });
+    expect(scoreResponse({ type: "YES_NO" }, "no")).toEqual({ ok: true, score: 1, value: "no" });
+    expect(scoreResponse({ type: "YES_NO" }, "belki").ok).toBe(false);
+  });
+
+  it("çoktan seçmelide tanımsız şıkkı reddeder", () => {
+    expect(scoreResponse(choice, "a")).toEqual({ ok: true, score: 4, value: "a" });
+    // Eskiden sessizce 0 puan yazılıyordu.
+    expect(scoreResponse(choice, "z").ok).toBe(false);
+  });
+
+  it("şık puanı tavanı aşarsa sınırlar", () => {
+    const abusive = { type: "MULTIPLE_CHOICE", options: [{ value: "a", score: 99 }] };
+    expect(scoreResponse(abusive, "a")).toEqual({ ok: true, score: MAX_QUESTION_SCORE, value: "a" });
+  });
+
+  it("koşullu cevabı doğrular", () => {
+    const conditional = {
+      type: "CONDITIONAL_CHOICE",
+      conditionalOptions: { options: [{ value: "x", score: 3 }] },
+    };
+    const value = JSON.stringify({ threshold: "yes", selected: ["x"] });
+    expect(scoreResponse(conditional, value)).toEqual({ ok: true, score: 3, value });
+    expect(scoreResponse(conditional, "{bozuk").ok).toBe(false);
+    expect(scoreResponse(conditional, JSON.stringify({ threshold: "belki" })).ok).toBe(false);
+  });
+
+  it("bilinmeyen soru tipini reddeder", () => {
+    expect(scoreResponse({ type: "GARIP" }, "1").ok).toBe(false);
   });
 });

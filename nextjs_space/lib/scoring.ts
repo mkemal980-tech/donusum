@@ -28,8 +28,14 @@ export type DbClient = Prisma.TransactionClient | typeof prisma;
  *    - %100 başarı → 5.0 puan
  */
 
-// Yüzdeden 1-5 puana dönüştürme
-function percentageToScore(percentage: number): number {
+/**
+ * Yüzdeden 1-5 puana dönüştürme — uygulamanın **tek** ölçek dönüşümü.
+ *
+ * %0 → 1.0, %100 → 5.0. Dışa açık olmasının nedeni: /api/benchmarks/user
+ * kendi başına `(yüzde/100)*5` kullanıyordu ve aynı veri için ana puan
+ * kartında 3.0, kıyaslama kartında 2.5 görünüyordu. Tek kaynak burasıdır.
+ */
+export function percentageToScore(percentage: number): number {
   return (percentage / 100) * 4 + 1;
 }
 
@@ -146,6 +152,113 @@ export function scoreConditionalChoice(
     return total + (option?.score ?? 0);
   }, 0);
   return clampScore(rawSum);
+}
+
+/** Cevap değerinin saklanabileceği en uzun metin. */
+export const MAX_RESPONSE_VALUE_LENGTH = 4000;
+
+export type ResponseScoring =
+  | { ok: true; score: number; value: string }
+  | { ok: false; error: string };
+
+/**
+ * Bir cevabı doğrular ve puana çevirir — yazma yolunun tek kaynağı.
+ *
+ * Önceden puan, rotanın içinde hesaplanıyordu ve SCALE dalı gelen değeri hiç
+ * sınırlamıyordu: `parseFloat(value) || 0` istemcinin gönderdiği 999'u olduğu
+ * gibi kaydediyordu. Tek bir cevap kuruluşun yüzdesini %19980'e çıkarabiliyor,
+ * puan oradan sektör ortalamalarına ve oda raporlarına sızıyordu. Tanımsız bir
+ * şık değeri de sessizce kabul ediliyordu (YES_NO'da 1, MULTIPLE_CHOICE'ta 0).
+ *
+ * Kural artık tek yerde: değer sorunun tanımıyla uyuşmalı, puan da sorunun
+ * kendi tavanını aşmamalı. Uymayan istek 400 alır; sessizce yanlış puan yazılmaz.
+ */
+export function scoreResponse(
+  question: {
+    type?: string | null;
+    options?: unknown;
+    conditionalOptions?: unknown;
+  },
+  rawValue: unknown
+): ResponseScoring {
+  if (rawValue === null || rawValue === undefined) {
+    return { ok: false, error: "Cevap değeri gerekli." };
+  }
+  if (typeof rawValue === "object") {
+    return { ok: false, error: "Cevap değeri metin ya da sayı olmalı." };
+  }
+
+  const value = String(rawValue);
+  if (value.length > MAX_RESPONSE_VALUE_LENGTH) {
+    return { ok: false, error: "Cevap değeri çok uzun." };
+  }
+
+  const options = Array.isArray(question.options)
+    ? (question.options as Array<Record<string, unknown>>)
+    : null;
+
+  const fromOptions = (fallback?: () => number | null): ResponseScoring => {
+    const selected = options?.find((option) => option?.value === value);
+    if (selected) {
+      const score = Number(selected.score);
+      if (!Number.isFinite(score)) {
+        return { ok: false, error: "Bu şıkkın puanı tanımsız." };
+      }
+      return { ok: true, score: clampScore(score), value };
+    }
+    const fallbackScore = fallback?.() ?? null;
+    if (fallbackScore === null) {
+      return { ok: false, error: "Geçersiz şık." };
+    }
+    return { ok: true, score: clampScore(fallbackScore), value };
+  };
+
+  switch (question.type) {
+    case "SCALE": {
+      const parsed = Number(value.trim());
+      if (!Number.isFinite(parsed)) {
+        return { ok: false, error: "Ölçek cevabı sayı olmalı." };
+      }
+      if (parsed < 0 || parsed > MAX_QUESTION_SCORE) {
+        return {
+          ok: false,
+          error: `Ölçek cevabı 0 ile ${MAX_QUESTION_SCORE} arasında olmalı.`,
+        };
+      }
+      return { ok: true, score: clampScore(parsed), value };
+    }
+
+    case "YES_NO":
+      // Şık tanımı olmayan eski sorular için evet/hayır yine 5/1 sayılır;
+      // ama "evet"/"hayir" gibi eşleşmeyen bir değer artık sessizce geçmez.
+      return fromOptions(() =>
+        value === "yes" ? MAX_QUESTION_SCORE : value === "no" ? 1 : null
+      );
+
+    case "MULTIPLE_CHOICE":
+      return fromOptions();
+
+    case "CONDITIONAL_CHOICE": {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(value);
+      } catch {
+        return { ok: false, error: "Koşullu cevap geçerli JSON olmalı." };
+      }
+      const threshold = (parsed as { threshold?: unknown } | null)?.threshold;
+      if (threshold !== "yes" && threshold !== "no") {
+        return { ok: false, error: "Koşullu cevapta 'threshold' evet/hayır olmalı." };
+      }
+      return {
+        ok: true,
+        score: scoreConditionalChoice(value, question.conditionalOptions as any),
+        value,
+      };
+    }
+
+    default:
+      return { ok: false, error: "Bu soru tipi puanlanamıyor." };
+  }
 }
 
 // Ironman kadran eşiği (Velocity/Endurance ekseni)

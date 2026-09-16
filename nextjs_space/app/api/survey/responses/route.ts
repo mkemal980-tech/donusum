@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { validateSurveyAccess, withAuth } from "@/lib/api-utils";
-import { buildSurveyQuestionWhere, getAccessibleSurveyIds, scoreConditionalChoice } from "@/lib/scoring";
+import { buildSurveyQuestionWhere, getAccessibleSurveyIds, scoreResponse } from "@/lib/scoring";
 import {
   getAssessmentIds,
   getOrCreateAssessment,
@@ -137,24 +137,13 @@ export async function POST(request: NextRequest) {
       if (accessError) return accessError;
     }
 
-    let score = 0;
-    if (question?.type === 'SCALE') {
-      score = parseFloat(value) || 0;
-    } else if (question?.type === 'YES_NO') {
-      const options = question?.options as any[];
-      const selected = options?.find((o: any) => o?.value === value);
-      score = selected?.score ?? (value === 'yes' ? 5 : 1);
-    } else if (question?.type === 'MULTIPLE_CHOICE') {
-      const options = question?.options as any[];
-      const selected = options?.find((o: any) => o?.value === value);
-      score = selected?.score ?? 0;
-    } else if (question?.type === 'CONDITIONAL_CHOICE') {
-      // { threshold: 'yes'|'no', selected: string[] } → puan (5 ile sınırlı)
-      score = scoreConditionalChoice(
-        String(value),
-        question?.conditionalOptions as any
-      );
+    // Doğrulama ve puanlama tek kaynakta (bkz. lib/scoring > scoreResponse):
+    // aralık dışı ölçek değeri ya da tanımsız şık artık sessizce kaydedilmez.
+    const scored = scoreResponse(question, value);
+    if (!scored.ok) {
+      return NextResponse.json({ error: scored.error }, { status: 400 });
     }
+    const score = scored.score;
 
     if (!surveyId) {
       return NextResponse.json(
@@ -196,7 +185,7 @@ export async function POST(request: NextRequest) {
         assessmentId_questionId: { assessmentId, questionId }
       },
       update: {
-        value: String(value),
+        value: scored.value,
         score,
         // Cevabı en son kimin güncellediği denetim izi olarak tutulur.
         answeredById: userId
@@ -204,7 +193,7 @@ export async function POST(request: NextRequest) {
       create: {
         assessmentId,
         questionId,
-        value: String(value),
+        value: scored.value,
         score,
         answeredById: userId
       }
