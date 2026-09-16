@@ -64,7 +64,10 @@ describe("organization pending invitations", () => {
       .mockResolvedValueOnce({
         id: "member-2",
         name: "Yeni Tersane",
-        users: [{ sectorId: "sector-c", subSectorId: "sub-30-1" }],
+        // Sektör profili artık kuruluşun kendi alanı (bkz. migration 000014);
+        // eskiden "birimdeki en eski aktif kullanıcı"dan türetiliyordu.
+        sectorId: "sector-c",
+        subSectorId: "sub-30-1",
       });
     mocks.prisma.user.findFirst
       .mockResolvedValueOnce({
