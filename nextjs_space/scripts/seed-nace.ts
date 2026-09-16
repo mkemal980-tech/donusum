@@ -39,6 +39,26 @@ type Section = {
   divisions: { code: string; name: string }[];
 };
 
+type DirectSubSectorOption = {
+  sectorCode: string;
+  afterDivisionCode: string;
+  code: string;
+  name: string;
+};
+
+/**
+ * Kullanıcının doğrudan seçmesi gereken, NACE bölümünden daha ayrıntılı
+ * faaliyetler. Ana NACE listesini ve 87 bölüm doğrulamasını değiştirmez.
+ */
+export const DIRECT_SUBSECTOR_OPTIONS: DirectSubSectorOption[] = [
+  {
+    sectorCode: "C",
+    afterDivisionCode: "30",
+    code: "30.1",
+    name: "Gemi, tekne ve yüzer yapı inşası",
+  },
+];
+
 /**
  * Bölüm ve alt bölüm adları NACE Rev. 2.1 resmî başlıklarının Türkçe
  * karşılıklarıdır. Yönetim panelinden düzenlenebilir; kurum diline göre
@@ -268,6 +288,15 @@ export const NACE_SECTIONS: Section[] = [
 const EXPECTED_SECTIONS = 22;
 const EXPECTED_DIVISIONS = 87;
 
+function subSectorOptions(section: Section) {
+  return section.divisions.flatMap((division) => [
+    division,
+    ...DIRECT_SUBSECTOR_OPTIONS.filter(
+      (option) => option.sectorCode === section.code && option.afterDivisionCode === division.code
+    ).map(({ code, name }) => ({ code, name })),
+  ]);
+}
+
 async function main() {
   const dryRun = process.argv.includes("--dry-run");
   const fixNames = process.argv.includes("--fix-names");
@@ -281,11 +310,15 @@ async function main() {
     );
   }
 
-  console.log(`\n🇪🇺 NACE Rev. 2.1 — ${NACE_SECTIONS.length} sektör · ${divisionCount} alt sektör`);
+  const selectableSubSectorCount = divisionCount + DIRECT_SUBSECTOR_OPTIONS.length;
+  console.log(
+    `\n🇪🇺 NACE Rev. 2.1 — ${NACE_SECTIONS.length} sektör · ` +
+      `${selectableSubSectorCount} seçilebilir alt sektör (${DIRECT_SUBSECTOR_OPTIONS.length} doğrudan faaliyet)`
+  );
 
   if (dryRun) {
     for (const section of NACE_SECTIONS) {
-      console.log(`  [${section.code}] ${section.name}  (${section.divisions.length} alt sektör)`);
+      console.log(`  [${section.code}] ${section.name}  (${subSectorOptions(section).length} alt sektör)`);
     }
     console.log("\nÖn izleme bitti. Kurmak için --dry-run olmadan çalıştırın.\n");
     return;
@@ -321,7 +354,7 @@ async function main() {
 
     const subSectors = await prisma.subSector.findMany({ where: { sectorId: sector.id } });
 
-    for (const [subIndex, division] of section.divisions.entries()) {
+    for (const [subIndex, division] of subSectorOptions(section).entries()) {
       const subName = `[${division.code}] ${division.name}`;
       // Alt bölümde de anahtar kod: "[46] " ile başlayan kayıt aynı bölümdür.
       const existingSub = subSectors.find((row) => row.name.startsWith(`[${division.code}] `));
