@@ -548,8 +548,19 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
     if (!scope.applicable) continue;
 
     const weight = (question?.weight ?? 1) * scope.weight;
-    const score = (response?.score ?? 0) * weight;
-    const maxScore = maxScoreForQuestion(question ?? {}) * weight;
+    /**
+     * Saklanan puan burada da sınırlanır.
+     *
+     * Yazma yolu artık doğruluyor (bkz. scoreResponse), ama bu fonksiyon eski
+     * kayıtları da okuyor ve kampanya panosundaki ikiz hesap (bkz.
+     * organization-campaign > scoreAssessment) zaten sınırlıyordu. İki motorun
+     * aynı veriden farklı yüzde üretmesi, üyenin kendi panosunda gördüğü puan
+     * ile odanın gördüğü puanın ayrışması demekti.
+     */
+    const questionMax = maxScoreForQuestion(question ?? {});
+    const bounded = Math.min(questionMax, Math.max(0, response?.score ?? 0));
+    const score = bounded * weight;
+    const maxScore = questionMax * weight;
 
     let category = null;
     let subLevel = question?.subLevel;
@@ -620,8 +631,11 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
   const normalizedSubCategoryScores: Record<string, { score: number; scoreOn5: number; percentage: number; name: string; categoryName: string }> = {};
   
   for (const [catId, data] of Object.entries(categoryScores)) {
-    const percentage = data?.maxScore > 0 ? Math.round((data.score / data.maxScore) * 100) : 0;
-    const scoreOn5 = percentageToScore(percentage);
+    // 1-5 puanı ham yüzdeden çevrilir; yuvarlanmış yüzdeden çevirmek kampanya
+    // panosundaki ikiz hesapla arada sistematik fark bırakıyordu.
+    const rawPercentage = data?.maxScore > 0 ? (data.score / data.maxScore) * 100 : 0;
+    const percentage = Math.round(rawPercentage);
+    const scoreOn5 = percentageToScore(rawPercentage);
     normalizedCategoryScores[catId] = {
       score: Math.round(data?.score ?? 0),
       scoreOn5: Math.round(scoreOn5 * 10) / 10,
@@ -631,8 +645,9 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
   }
 
   for (const [subLevelId, data] of Object.entries(subLevelScores)) {
-    const percentage = data?.maxScore > 0 ? Math.round((data.score / data.maxScore) * 100) : 0;
-    const scoreOn5 = percentageToScore(percentage);
+    const rawPercentage = data?.maxScore > 0 ? (data.score / data.maxScore) * 100 : 0;
+    const percentage = Math.round(rawPercentage);
+    const scoreOn5 = percentageToScore(rawPercentage);
     normalizedSubLevelScores[subLevelId] = {
       score: Math.round(data?.score ?? 0),
       scoreOn5: Math.round(scoreOn5 * 10) / 10,
@@ -643,8 +658,9 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
   }
 
   for (const [subCatId, data] of Object.entries(subCategoryScores)) {
-    const percentage = data?.maxScore > 0 ? Math.round((data.score / data.maxScore) * 100) : 0;
-    const scoreOn5 = percentageToScore(percentage);
+    const rawPercentage = data?.maxScore > 0 ? (data.score / data.maxScore) * 100 : 0;
+    const percentage = Math.round(rawPercentage);
+    const scoreOn5 = percentageToScore(rawPercentage);
     normalizedSubCategoryScores[subCatId] = {
       score: Math.round(data?.score ?? 0),
       scoreOn5: Math.round(scoreOn5 * 10) / 10,
@@ -655,8 +671,9 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
   }
 
   const totalMaxScore = Object.values(categoryScores).reduce((sum, data) => sum + data.maxScore, 0);
-  const totalPercentage = totalMaxScore > 0 ? Math.round((totalWeightedScore / totalMaxScore) * 100) : 0;
-  const totalScoreOn5 = percentageToScore(totalPercentage);
+  const rawTotalPercentage = totalMaxScore > 0 ? (totalWeightedScore / totalMaxScore) * 100 : 0;
+  const totalPercentage = Math.round(rawTotalPercentage);
+  const totalScoreOn5 = percentageToScore(rawTotalPercentage);
 
   return {
     totalScore: totalPercentage,

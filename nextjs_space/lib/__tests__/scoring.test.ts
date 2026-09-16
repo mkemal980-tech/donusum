@@ -894,3 +894,65 @@ describe("scoreResponse — yazma yolunun doğrulaması", () => {
     expect(scoreResponse({ type: "GARIP" }, "1").ok).toBe(false);
   });
 });
+
+describe("calculateUserScore — kampanya motoruyla hizalanma", () => {
+  it("saklanmış bozuk puanı sınırlar (eski kayıtlar için savunma)", async () => {
+    findManyCategory.mockResolvedValue([
+      {
+        id: "cat-1",
+        name: "Kategori A",
+        order: 0,
+        questions: [{ id: "q1", weight: 1 }],
+        subCategories: [],
+      },
+    ]);
+    // Doğrulama öncesi yazılmış bir kayıt: puan 999.
+    findManySurveyResponse.mockResolvedValue([
+      { score: 999, question: { weight: 1, category: { id: "cat-1", name: "Kategori A" } } },
+    ]);
+
+    const result = await calculateUserScore("user-1", "survey-1");
+
+    // Eskiden %19980 çıkıyordu; artık tavanla sınırlı: %100.
+    expect(result.totalScore).toBe(100);
+    expect(result.totalScoreOn5).toBe(5);
+  });
+
+  it("negatif saklanmış puanı sıfıra çeker", async () => {
+    findManyCategory.mockResolvedValue([
+      { id: "cat-1", name: "Kategori A", order: 0, questions: [{ id: "q1", weight: 1 }], subCategories: [] },
+    ]);
+    findManySurveyResponse.mockResolvedValue([
+      { score: -5, question: { weight: 1, category: { id: "cat-1", name: "Kategori A" } } },
+    ]);
+
+    const result = await calculateUserScore("user-1", "survey-1");
+    expect(result.totalScore).toBe(0);
+    expect(result.totalScoreOn5).toBe(1);
+  });
+
+  it("1-5 puanı ham yüzdeden çevrilir (yuvarlanmış yüzdeden değil)", async () => {
+    findManyCategory.mockResolvedValue([
+      {
+        id: "cat-1",
+        name: "Kategori A",
+        order: 0,
+        questions: [{ id: "q1", weight: 1 }, { id: "q2", weight: 1 }, { id: "q3", weight: 1 }],
+        subCategories: [],
+      },
+    ]);
+    // 5 + 5 + 0 = 10 / 15 = %66.666...
+    findManySurveyResponse.mockResolvedValue([
+      { score: 5, question: { weight: 1, category: { id: "cat-1", name: "Kategori A" } } },
+      { score: 5, question: { weight: 1, category: { id: "cat-1", name: "Kategori A" } } },
+      { score: 0, question: { weight: 1, category: { id: "cat-1", name: "Kategori A" } } },
+    ]);
+
+    const result = await calculateUserScore("user-1", "survey-1");
+
+    expect(result.totalScore).toBe(67); // sunum için yuvarlanır
+    // 66.666/100*4+1 = 3.666 -> 3.7 (yuvarlanmış 67'den çevrilseydi 3.7 yine
+    // çıkardı; fark sistematik olarak diğer değerlerde birikiyordu)
+    expect(result.totalScoreOn5).toBeCloseTo(3.7, 1);
+  });
+});

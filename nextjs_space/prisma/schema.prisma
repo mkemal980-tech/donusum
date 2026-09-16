@@ -16,6 +16,18 @@ model Unit {
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   parentId           String?
+  /// Kuruluşun sektör profili.
+  ///
+  /// Önceden bu bilgi "birimdeki en eski aktif kullanıcı"dan türetiliyordu
+  /// (katılım kodu ve kampanya panosu aynı varsayımı paylaşıyordu). O kişi
+  /// başka sektörden bir danışmansa kodla katılan herkes yanlış sektöre
+  /// bağlanıyor, yanlış kapsam kuralları ve yanlış kıyas alıyordu; kişi devre
+  /// dışı kalınca da profil kendiliğinden değişiyordu. Sektör artık kuruluşun
+  /// kendi alanı.
+  sectorId           String?
+  subSectorId        String?
+  sector             Sector?             @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+  subSector          SubSector?          @relation(fields: [subSectorId], references: [id], onDelete: SetNull)
   parent             Unit?               @relation("UnitHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   subUnits           Unit[]              @relation("UnitHierarchy")
   admins             UnitAdmin[]
@@ -90,6 +102,7 @@ model Sector {
   ironmanBenchmarks IronmanBenchmark[]
   subSectors        SubSector[]
   users             User[]
+  units             Unit[]
   scopeRules        SectorScopeRule[]
 }
 
@@ -103,6 +116,7 @@ model SubSector {
   ironmanBenchmarks IronmanBenchmark[]
   sector            Sector             @relation(fields: [sectorId], references: [id], onDelete: Cascade)
   users             User[]
+  units             Unit[]
   scopeRules        SectorScopeRule[]
 
   @@unique([sectorId, name])

@@ -29,17 +29,10 @@ export async function resolveJoinCodeProfile(rawCode: unknown, db: DbClient = pr
         select: {
           id: true,
           name: true,
-          users: {
-            where: { isActive: true, sectorId: { not: null } },
-            select: {
-              sectorId: true,
-              subSectorId: true,
-              sector: { select: { name: true } },
-              subSector: { select: { name: true } },
-            },
-            orderBy: { createdAt: "asc" },
-            take: 1,
-          },
+          sectorId: true,
+          subSectorId: true,
+          sector: { select: { name: true } },
+          subSector: { select: { name: true } },
         },
       },
     },
@@ -49,8 +42,23 @@ export async function resolveJoinCodeProfile(rawCode: unknown, db: DbClient = pr
   const unavailableReason = joinCodeUnavailableReason(code);
   if (unavailableReason) return { code, profile: null, error: unavailableReason };
 
-  const profile = code.unit.users[0];
-  if (!profile?.sectorId) {
+  /**
+   * Sektör profili kuruluşun kendi alanından okunur.
+   *
+   * Önceden "birimdeki en eski aktif kullanıcı" üzerinden türetiliyordu: o
+   * kişi başka sektörden bir danışmansa kodla katılan herkes yanlış sektöre
+   * bağlanıyordu (bkz. migration 000014).
+   */
+  const profile = code.unit.sectorId
+    ? {
+        sectorId: code.unit.sectorId,
+        subSectorId: code.unit.subSectorId,
+        sector: code.unit.sector,
+        subSector: code.unit.subSector,
+      }
+    : null;
+
+  if (!profile) {
     return { code, profile: null, error: "Bu birimin sektör profili eksik. Birim yöneticinizle görüşün." };
   }
 

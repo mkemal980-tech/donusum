@@ -299,7 +299,15 @@ async function createMember(
   const expires = new Date(Date.now() + INVITATION_TTL_MS);
   const created = await prisma.$transaction(async (tx) => {
     const member = await tx.unit.create({
-      data: { name: memberName, description, organization: memberName, parentId: tenant.id },
+      // Sektör kuruluşun kendi alanı; artık ilk kullanıcıdan türetilmiyor.
+      data: {
+        name: memberName,
+        description,
+        organization: memberName,
+        parentId: tenant.id,
+        sectorId,
+        subSectorId,
+      },
       select: { id: true, name: true },
     });
     const user = await tx.user.create({
@@ -380,16 +388,7 @@ async function inviteUser(
   const [member, duplicateUser] = await Promise.all([
     prisma.unit.findUnique({
       where: { id: memberUnitId },
-      select: {
-        id: true,
-        name: true,
-        users: {
-          where: { isActive: true },
-          select: { sectorId: true, subSectorId: true },
-          orderBy: { createdAt: "asc" },
-          take: 1,
-        },
-      },
+      select: { id: true, name: true, sectorId: true, subSectorId: true },
     }),
     prisma.user.findUnique({ where: { email }, select: { id: true } }),
   ]);
@@ -397,8 +396,8 @@ async function inviteUser(
   if (duplicateUser) {
     return NextResponse.json({ error: "Bu e-posta adresiyle bir hesap zaten mevcut." }, { status: 409 });
   }
-  const profile = member.users[0];
-  if (!profile?.sectorId) {
+  const profile = { sectorId: member.sectorId, subSectorId: member.subSectorId };
+  if (!profile.sectorId) {
     return NextResponse.json(
       { error: "Üye kuruluşun sektör profili eksik; önce platform yöneticisi profili düzeltmeli." },
       { status: 409 }
@@ -509,22 +508,12 @@ async function importMembers(file: File | null, tenant: { id: string; name: stri
 
   const existingMembers = await prisma.unit.findMany({
     where: { parentId: tenant.id },
-    select: {
-      id: true,
-      name: true,
-      users: {
-        where: { isActive: true },
-        select: { sectorId: true, subSectorId: true },
-        orderBy: { createdAt: "asc" },
-        take: 1,
-      },
-    },
+    select: { id: true, name: true, sectorId: true, subSectorId: true },
   });
   const existingByName = new Map(existingMembers.map((member) => [member.name.toLocaleLowerCase("tr-TR"), member]));
   for (const row of resolvedRows) {
     const existing = existingByName.get(row.memberName.toLocaleLowerCase("tr-TR"));
-    const profile = existing?.users[0];
-    if (profile?.sectorId && (profile.sectorId !== row.sectorId || profile.subSectorId !== row.subSectorId)) {
+    if (existing?.sectorId && (existing.sectorId !== row.sectorId || existing.subSectorId !== row.subSectorId)) {
       validationErrors.push(`${row.rowNumber}. satır: Üye kuruluşun mevcut sektör profiliyle uyuşmuyor.`);
     }
   }
@@ -546,10 +535,14 @@ async function importMembers(file: File | null, tenant: { id: string; name: stri
       let member = units.get(key);
       if (!member) {
         member = await tx.unit.create({
+          // Sektör profili kuruluşa yazılır; satırlar aynı kuruluş için zaten
+          // tek profilde birleşiyor (yukarıdaki doğrulama).
           data: {
             name: row.memberName,
             organization: row.memberName,
             parentId: tenant.id,
+            sectorId: row.sectorId,
+            subSectorId: row.subSectorId,
           },
           select: { id: true, name: true },
         });
@@ -706,16 +699,7 @@ async function updateInvitation(
   const [member, duplicateUser] = await Promise.all([
     prisma.unit.findUnique({
       where: { id: memberUnitId },
-      select: {
-        id: true,
-        name: true,
-        users: {
-          where: { isActive: true, id: { not: userId }, sectorId: { not: null } },
-          select: { sectorId: true, subSectorId: true },
-          orderBy: { createdAt: "asc" },
-          take: 1,
-        },
-      },
+      select: { id: true, name: true, sectorId: true, subSectorId: true },
     }),
     prisma.user.findFirst({
       where: { email, id: { not: userId } },
@@ -727,7 +711,9 @@ async function updateInvitation(
     return NextResponse.json({ error: "Bu e-posta adresiyle bir hesap zaten mevcut." }, { status: 409 });
   }
 
-  const inheritedProfile = member.users[0];
+  const inheritedProfile = member.sectorId
+    ? { sectorId: member.sectorId, subSectorId: member.subSectorId }
+    : null;
   const profile = inheritedProfile ??
     (pendingUser.unitId === member.id && pendingUser.sectorId
       ? { sectorId: pendingUser.sectorId, subSectorId: pendingUser.subSectorId }

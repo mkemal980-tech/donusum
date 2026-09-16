@@ -125,21 +125,12 @@ export async function POST(request: NextRequest) {
     const [member, surveyResolution] = await Promise.all([
       prisma.unit.findUnique({
         where: { id: memberUnitId },
-        select: {
-          id: true,
-          name: true,
-          users: {
-            where: { isActive: true, sectorId: { not: null } },
-            select: { sectorId: true, subSectorId: true },
-            orderBy: { createdAt: "asc" },
-            take: 1,
-          },
-        },
+        select: { id: true, name: true, sectorId: true },
       }),
       resolveSurvey(auth.userId, tenant.id, surveyId),
     ]);
     if (!member) return NextResponse.json({ error: "Üye kuruluş bulunamadı." }, { status: 404 });
-    if (!member.users[0]?.sectorId) {
+    if (!member.sectorId) {
       return NextResponse.json({ error: "Üye kuruluşun sektör profili olmadan katılım kodu oluşturulamaz." }, { status: 409 });
     }
     if (surveyResolution.error) {

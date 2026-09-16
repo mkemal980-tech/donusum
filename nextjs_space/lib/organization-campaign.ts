@@ -217,16 +217,9 @@ export async function loadCampaignDashboard(
         orderBy: { memberUnit: { name: "asc" } },
         include: {
           memberUnit: {
-            select: {
-              id: true,
-              name: true,
-              users: {
-                where: { isActive: true },
-                select: { sectorId: true, subSectorId: true },
-                orderBy: { createdAt: "asc" },
-                take: 1,
-              },
-            },
+            // Sektör profili kuruluşun kendi alanından; "en eski kullanıcı"
+            // varsayımı kaldırıldı (bkz. migration 000014).
+            select: { id: true, name: true, sectorId: true, subSectorId: true },
           },
           assessment: {
             select: {
@@ -296,7 +289,10 @@ export async function loadCampaignDashboard(
 
   const rows = campaign.recipients.map((recipient) => {
     const assessment = recipient.assessment;
-    const profile = recipient.memberUnit.users[0] ?? { sectorId: null, subSectorId: null };
+    const profile = {
+      sectorId: recipient.memberUnit.sectorId,
+      subSectorId: recipient.memberUnit.subSectorId,
+    };
     const calculated = scoreAssessment(
       questions as QuestionShape[],
       assessment?.responses ?? [],
