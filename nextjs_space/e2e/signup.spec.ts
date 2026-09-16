@@ -97,7 +97,7 @@ test("aynı e-posta ile ikinci kayıt sebebini ve çözümünü söyler", async 
   await page.locator('select[name="sectorId"]').selectOption(sectorId!);
   await page.locator('input[name="password"]').fill(PASSWORD);
   await page.locator('input[name="confirmPassword"]').fill(PASSWORD);
-  await page.getByRole("button", { name: "Kayıt Ol" }).click();
+  await page.getByRole("button", { name: "Hesap oluştur" }).click();
 
   // Next'in yönlendirme duyurucusu da role="alert" taşıyor; form içindekini al.
   const alert = page.locator('form [role="alert"]');

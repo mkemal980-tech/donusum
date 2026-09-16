@@ -15,7 +15,10 @@ test("ana sayfa yüklenir ve iki çağrıyı da gösterir", async ({ page }) => 
 });
 
 test("giriş sayfası e-posta ve şifre alanları içerir", async ({ page }) => {
-  await page.goto("/login");
+  // Form React tarafından çiziliyor; hidrasyon bitmeden alanlar ölçüsüz
+  // görünüp testi rastgele düşürüyordu. Önce formun kendisi beklenir.
+  await page.goto("/login", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("form").first()).toBeVisible();
   await expect(page.locator('input[type="email"], input[name="email"]').first()).toBeVisible();
   await expect(page.locator('input[type="password"]').first()).toBeVisible();
 });

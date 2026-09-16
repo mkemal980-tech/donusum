@@ -12,7 +12,12 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./e2e",
-  timeout: 30_000,
+  /**
+   * Dev sunucusu rotaları ilk istekte derliyor; ısınma (globalSetup) bunu
+   * büyük ölçüde alsa da ağır admin ekranları için pay bırakılır.
+   */
+  timeout: 60_000,
+  globalSetup: "./e2e/global-setup.ts",
   /**
    * Tek işçi: testler tek bir veritabanını ve tek bir sunucuyu paylaşıyor,
    * fikstürler de sabit adlarla kuruluyor. Bu boyuttaki bir süitte
@@ -21,7 +26,12 @@ export default defineConfig({
    */
   fullyParallel: false,
   workers: 1,
-  retries: 0,
+  /**
+   * Yerelde sıfır: kararsızlık gizlenmesin, görülsün. CI'da bir tekrar,
+   * altyapı kaynaklı tek seferlik hataların dalı kırmızıya düşürmemesi için —
+   * tekrar edilen test raporda yine işaretlenir.
+   */
+  retries: process.env.CI ? 1 : 0,
   reporter: "list",
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",

@@ -125,7 +125,7 @@ test("önizleme satırları parça parça açılır, görünmeyenler de kaydedil
 
   await login(page);
   await page.goto("/admin/recommendations");
-  await page.getByRole("heading", { name: "Öneri Yönetimi" }).waitFor();
+  await page.getByRole("heading", { name: "Öneriler", exact: true }).waitFor();
   await page.getByRole("button", { name: "Toplu Kurulum" }).click();
   await page.locator("select").first().selectOption({ label: SURVEY });
   await page.locator('input[type="file"]').setInputFiles(filePath);
@@ -166,7 +166,7 @@ test("yanlış ankete yüklenen dosyada sebep en üstte yazar", async ({ page })
 
   await login(page);
   await page.goto("/admin/recommendations");
-  await page.getByRole("heading", { name: "Öneri Yönetimi" }).waitFor();
+  await page.getByRole("heading", { name: "Öneriler", exact: true }).waitFor();
   await page.getByRole("button", { name: "Toplu Kurulum" }).click();
   await page.locator("select").first().selectOption({ label: OTHER_SURVEY });
   await page.locator('input[type="file"]').setInputFiles(filePath);
