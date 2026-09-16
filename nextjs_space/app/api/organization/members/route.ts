@@ -14,6 +14,7 @@ import {
   type MemberImportRow,
 } from "@/lib/organization-member-import";
 import { sendMemberAccountInvitation } from "@/lib/organization-invitations";
+import { getAccessibleSurveyIds } from "@/lib/scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ type InvitationTarget = {
   firstName: string | null;
   token: string;
   memberName: string;
+  surveyName?: string | null;
 };
 
 const clean = (value: unknown, maxLength: number) =>
@@ -76,6 +78,7 @@ async function deliverInvitations(tenantName: string, targets: InvitationTarget[
         tenantName,
         memberName: target.memberName,
         token: target.token,
+        surveyName: target.surveyName,
       }),
     }))
   );
@@ -102,6 +105,20 @@ export async function GET(request: NextRequest) {
     }
 
     const roots = await getOrganizationRoots(auth.userId, auth.user.role);
+    const accessibleSurveyIds = await getAccessibleSurveyIds(auth.userId);
+    const accessibleSurveyIdSet = new Set(accessibleSurveyIds);
+    const surveys = await prisma.survey.findMany({
+      where: {
+        isActive: true,
+        archivedAt: null,
+        OR: [
+          { id: { in: accessibleSurveyIds } },
+          { ownerUnitId: { in: roots.map((root) => root.id) } },
+        ],
+      },
+      select: { id: true, name: true, description: true, ownerUnitId: true },
+      orderBy: [{ order: "asc" }, { name: "asc" }],
+    });
     const memberGroups = await Promise.all(
       roots.map(async (root) => {
         const descendantIds = await getDescendantUnitIds(root.id);
@@ -129,7 +146,13 @@ export async function GET(request: NextRequest) {
           },
           orderBy: { name: "asc" },
         });
-        return { ...root, members };
+        return {
+          ...root,
+          members,
+          surveys: surveys.filter(
+            (survey) => accessibleSurveyIdSet.has(survey.id) || survey.ownerUnitId === root.id
+          ),
+        };
       })
     );
 
@@ -157,10 +180,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "create_member") {
-      return await createMember(body, tenant);
+      return await createMember(body, tenant, auth.userId);
     }
     if (action === "invite_user") {
-      return await inviteUser(body, tenant);
+      return await inviteUser(body, tenant, auth.userId);
     }
     if (action === "import_csv") {
       return await importMembers(body, tenant);
@@ -176,7 +199,29 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function createMember(body: Record<string, unknown>, tenant: { id: string; name: string }) {
+async function resolveAssignableSurvey(userId: string, tenantUnitId: string, surveyId: string) {
+  if (!surveyId) return { survey: null, error: null };
+
+  const survey = await prisma.survey.findUnique({
+    where: { id: surveyId },
+    select: { id: true, name: true, ownerUnitId: true, isActive: true, archivedAt: true },
+  });
+  if (!survey || !survey.isActive || survey.archivedAt) {
+    return { survey: null, error: "Seçilen anket aktif değil veya bulunamadı." };
+  }
+
+  const accessibleSurveyIds = await getAccessibleSurveyIds(userId, surveyId);
+  if (survey.ownerUnitId !== tenantUnitId && !accessibleSurveyIds.includes(surveyId)) {
+    return { survey: null, error: "Bu anketi üyelere atama yetkiniz yok." };
+  }
+  return { survey, error: null };
+}
+
+async function createMember(
+  body: Record<string, unknown>,
+  tenant: { id: string; name: string },
+  assignedBy: string
+) {
   const memberName = clean(body.memberName, 160);
   const description = clean(body.description, 500) || null;
   const firstName = clean(body.firstName, 80);
@@ -184,6 +229,7 @@ async function createMember(body: Record<string, unknown>, tenant: { id: string;
   const email = clean(body.email, 254).toLowerCase();
   const sectorId = clean(body.sectorId, 64);
   const subSectorId = clean(body.subSectorId, 64) || null;
+  const surveyId = clean(body.surveyId, 64);
   const makeUnitManager = body.makeUnitManager === true;
 
   if (!memberName || !firstName || !validators.email(email)) {
@@ -194,6 +240,11 @@ async function createMember(body: Record<string, unknown>, tenant: { id: string;
   }
   const sectorError = await validateSectorProfile(sectorId, subSectorId);
   if (sectorError) return NextResponse.json({ error: sectorError }, { status: 400 });
+  const surveyResolution = await resolveAssignableSurvey(assignedBy, tenant.id, surveyId);
+  if (surveyResolution.error) {
+    return NextResponse.json({ error: surveyResolution.error }, { status: 403 });
+  }
+  const assignedSurvey = surveyResolution.survey;
 
   const [duplicateMember, duplicateUser] = await Promise.all([
     prisma.unit.findFirst({
@@ -240,22 +291,45 @@ async function createMember(body: Record<string, unknown>, tenant: { id: string;
         data: { unitId: member.id, userId: user.id },
       });
     }
-    return { member, user };
+    const assignment = assignedSurvey
+      ? await tx.userSurveyAssignment.create({
+          data: {
+            userId: user.id,
+            surveyId: assignedSurvey.id,
+            assignedBy,
+          },
+          select: { id: true, surveyId: true },
+        })
+      : null;
+    return { member, user, assignment };
   });
 
   const invitation = await deliverInvitations(tenant.name, [{
     ...created.user,
     token,
     memberName: created.member.name,
+    surveyName: assignedSurvey?.name,
   }]);
-  return NextResponse.json({ success: true, ...created, invitation }, { status: 201 });
+  return NextResponse.json({
+    success: true,
+    ...created,
+    assignedSurvey: assignedSurvey
+      ? { id: assignedSurvey.id, name: assignedSurvey.name }
+      : null,
+    invitation,
+  }, { status: 201 });
 }
 
-async function inviteUser(body: Record<string, unknown>, tenant: { id: string; name: string }) {
+async function inviteUser(
+  body: Record<string, unknown>,
+  tenant: { id: string; name: string },
+  assignedBy: string
+) {
   const memberUnitId = clean(body.memberUnitId, 64);
   const firstName = clean(body.firstName, 80);
   const lastName = clean(body.lastName, 80) || null;
   const email = clean(body.email, 254).toLowerCase();
+  const surveyId = clean(body.surveyId, 64);
   const descendantIds = new Set(await getDescendantUnitIds(tenant.id));
   if (!memberUnitId || !descendantIds.has(memberUnitId)) {
     return NextResponse.json({ error: "Üye kuruluş bu STK kapsamına ait değil." }, { status: 403 });
@@ -263,6 +337,11 @@ async function inviteUser(body: Record<string, unknown>, tenant: { id: string; n
   if (!firstName || !validators.email(email)) {
     return NextResponse.json({ error: "Yetkili adı ve geçerli e-posta gerekli." }, { status: 400 });
   }
+  const surveyResolution = await resolveAssignableSurvey(assignedBy, tenant.id, surveyId);
+  if (surveyResolution.error) {
+    return NextResponse.json({ error: surveyResolution.error }, { status: 403 });
+  }
+  const assignedSurvey = surveyResolution.survey;
 
   const [member, duplicateUser] = await Promise.all([
     prisma.unit.findUnique({
@@ -293,26 +372,52 @@ async function inviteUser(body: Record<string, unknown>, tenant: { id: string; n
   }
 
   const token = invitationToken();
-  const user = await prisma.user.create({
-    data: {
-      email,
-      password: await placeholderPassword(),
-      firstName,
-      lastName,
-      organization: member.name,
-      role: "USER",
-      unitId: member.id,
-      sectorId: profile.sectorId,
-      subSectorId: profile.subSectorId,
-      emailVerified: false,
-      isActive: true,
-      passwordResetToken: token,
-      passwordResetExpires: new Date(Date.now() + INVITATION_TTL_MS),
-    },
-    select: { id: true, email: true, firstName: true },
+  const password = await placeholderPassword();
+  const created = await prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: {
+        email,
+        password,
+        firstName,
+        lastName,
+        organization: member.name,
+        role: "USER",
+        unitId: member.id,
+        sectorId: profile.sectorId,
+        subSectorId: profile.subSectorId,
+        emailVerified: false,
+        isActive: true,
+        passwordResetToken: token,
+        passwordResetExpires: new Date(Date.now() + INVITATION_TTL_MS),
+      },
+      select: { id: true, email: true, firstName: true },
+    });
+    const assignment = assignedSurvey
+      ? await tx.userSurveyAssignment.create({
+          data: {
+            userId: user.id,
+            surveyId: assignedSurvey.id,
+            assignedBy,
+          },
+          select: { id: true, surveyId: true },
+        })
+      : null;
+    return { user, assignment };
   });
-  const invitation = await deliverInvitations(tenant.name, [{ ...user, token, memberName: member.name }]);
-  return NextResponse.json({ success: true, user, invitation }, { status: 201 });
+  const invitation = await deliverInvitations(tenant.name, [{
+    ...created.user,
+    token,
+    memberName: member.name,
+    surveyName: assignedSurvey?.name,
+  }]);
+  return NextResponse.json({
+    success: true,
+    ...created,
+    assignedSurvey: assignedSurvey
+      ? { id: assignedSurvey.id, name: assignedSurvey.name }
+      : null,
+    invitation,
+  }, { status: 201 });
 }
 
 async function importMembers(body: Record<string, unknown>, tenant: { id: string; name: string }) {

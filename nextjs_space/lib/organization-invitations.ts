@@ -29,11 +29,13 @@ export async function sendMemberAccountInvitation(input: {
   tenantName: string;
   memberName: string;
   token: string;
+  surveyName?: string | null;
 }): Promise<SendEmailResult> {
   const invitationUrl = `${appUrl()}/reset-password?token=${encodeURIComponent(input.token)}`;
   const name = escapeHtml(input.firstName || "Merhaba");
   const tenantName = escapeHtml(input.tenantName);
   const memberName = escapeHtml(input.memberName);
+  const surveyName = input.surveyName ? escapeHtml(input.surveyName) : null;
   logDevEmailLink("Member invitation", invitationUrl);
 
   return safelySend({
@@ -46,6 +48,7 @@ export async function sendMemberAccountInvitation(input: {
         <p style="color:#c9d1d9;line-height:1.6;">
           <strong>${tenantName}</strong>, <strong>${memberName}</strong> adına anketlere katılmanız için hesabınızı oluşturdu.
         </p>
+        ${surveyName ? `<p style="color:#c9d1d9;line-height:1.6;">Hesabınıza <strong>${surveyName}</strong> anketi atanmıştır.</p>` : ""}
         <p style="margin:26px 0;">
           <a href="${invitationUrl}" style="background:#0cc1c3;color:#0d1117;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold;">
             Şifremi belirle ve hesabı aç
@@ -56,6 +59,7 @@ export async function sendMemberAccountInvitation(input: {
     `,
     text:
       `${input.tenantName}, ${input.memberName} adına Dönüşüm Platformu hesabınızı oluşturdu. ` +
+      (input.surveyName ? `${input.surveyName} anketi hesabınıza atandı. ` : "") +
       `Şifrenizi belirlemek için: ${invitationUrl}`,
   });
 }

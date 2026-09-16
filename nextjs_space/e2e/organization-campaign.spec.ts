@@ -23,6 +23,7 @@ const CAMPAIGN = "E2E 2026 Üye Araştırması";
 let seeded = false;
 let questionId = "";
 let sectorId = "";
+let surveyId = "";
 
 async function cleanup() {
   await prisma.survey.deleteMany({ where: { name: { in: [SURVEY, OWN_SURVEY, COPIED_SURVEY] } } });
@@ -72,6 +73,7 @@ test.beforeAll(async () => {
     });
 
     const survey = await prisma.survey.create({ data: { name: SURVEY } });
+    surveyId = survey.id;
     const category = await prisma.category.create({ data: { name: "Kurumsal Yönetim", surveyId: survey.id } });
     const question = await prisma.question.create({
       data: { text: "Stratejik plan düzenli izleniyor mu?", type: "SCALE", categoryId: category.id },
@@ -120,6 +122,7 @@ test("oda kampanya açar, üye gönderir ve yalnızca kendi sonuçlarını gör�
       lastName: "Üye",
       email: INVITED_MEMBER_USER,
       sectorId,
+      surveyId,
       makeUnitManager: true,
     },
   });
@@ -128,6 +131,9 @@ test("oda kampanya açar, üye gönderir ve yalnızca kendi sonuçlarını gör�
   expect(invited).toMatchObject({ role: "UNIT_MANAGER", sectorId, emailVerified: false, isActive: true });
   expect(invited?.passwordResetToken).toBeTruthy();
   expect(await prisma.unitAdmin.count({ where: { userId: invited!.id } })).toBe(1);
+  expect(await prisma.userSurveyAssignment.findUnique({
+    where: { userId_surveyId: { userId: invited!.id, surveyId } },
+  })).toMatchObject({ isActive: true, assignedBy: expect.any(String) });
 
   const activate = await manager.request.post("/api/auth/reset-password", {
     data: { token: invited!.passwordResetToken, password: PASSWORD },
@@ -147,6 +153,7 @@ test("oda kampanya açar, üye gönderir ve yalnızca kendi sonuçlarını gör�
       firstName: "Ek",
       lastName: "Kullanıcı",
       email: INVITED_MEMBER_COLLEAGUE,
+      surveyId,
     },
   });
   expect(colleagueCreate.status()).toBe(201);
@@ -156,6 +163,10 @@ test("oda kampanya açar, üye gönderir ve yalnızca kendi sonuçlarını gör�
     sectorId,
     emailVerified: false,
   });
+  const colleague = await prisma.user.findUnique({ where: { email: INVITED_MEMBER_COLLEAGUE } });
+  expect(await prisma.userSurveyAssignment.findUnique({
+    where: { userId_surveyId: { userId: colleague!.id, surveyId } },
+  })).toMatchObject({ isActive: true, assignedBy: expect.any(String) });
 
   await manager.locator('input[placeholder="2026 Üye Olgunluk Araştırması"]').fill(CAMPAIGN);
   await manager.locator(`label:has-text("${MEMBER_A_UNIT}") input[type="checkbox"]`).check();

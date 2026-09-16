@@ -41,11 +41,14 @@ type MemberUnit = {
   users: MemberUser[];
 };
 
+type Survey = { id: string; name: string; description: string | null; ownerUnitId: string | null };
+
 type RootUnit = {
   id: string;
   name: string;
   description: string | null;
   members: MemberUnit[];
+  surveys: Survey[];
 };
 
 type SubSector = { id: string; name: string };
@@ -60,10 +63,11 @@ const EMPTY_MEMBER_FORM = {
   email: "",
   sectorId: "",
   subSectorId: "",
+  surveyId: "",
   makeUnitManager: false,
 };
 
-const EMPTY_USER_FORM = { memberUnitId: "", firstName: "", lastName: "", email: "" };
+const EMPTY_USER_FORM = { memberUnitId: "", firstName: "", lastName: "", email: "", surveyId: "" };
 
 function invitationMessage(invitation?: InvitationSummary) {
   if (!invitation) return "İşlem tamamlandı.";
@@ -125,6 +129,7 @@ export default function OrganizationMembersPage() {
 
   const selectedRoot = roots.find((root) => root.id === tenantUnitId);
   const members = useMemo(() => selectedRoot?.members ?? [], [selectedRoot]);
+  const surveys = useMemo(() => selectedRoot?.surveys ?? [], [selectedRoot]);
   const selectedSector = sectors.find((sector) => sector.id === memberForm.sectorId);
   const sectorById = useMemo(() => new Map(sectors.map((sector) => [sector.id, sector])), [sectors]);
   const subSectorById = useMemo(
@@ -133,13 +138,18 @@ export default function OrganizationMembersPage() {
   );
 
   useEffect(() => {
+    setMemberForm((current) => ({
+      ...current,
+      surveyId: surveys.some((survey) => survey.id === current.surveyId) ? current.surveyId : "",
+    }));
     setUserForm((current) => ({
       ...current,
       memberUnitId: members.some((member) => member.id === current.memberUnitId)
         ? current.memberUnitId
         : members[0]?.id ?? "",
+      surveyId: surveys.some((survey) => survey.id === current.surveyId) ? current.surveyId : "",
     }));
-  }, [members]);
+  }, [members, surveys]);
 
   const postAction = async (payload: Record<string, unknown>) => {
     const response = await fetch("/api/organization/members", {
@@ -161,7 +171,8 @@ export default function OrganizationMembersPage() {
     setBusy(true);
     try {
       const data = await postAction({ action: "create_member", ...memberForm });
-      toast.success(`Üye kuruluş oluşturuldu. ${invitationMessage(data.invitation)}`);
+      const assignmentMessage = data.assignedSurvey?.name ? ` ${data.assignedSurvey.name} anketi atandı.` : "";
+      toast.success(`Üye kuruluş oluşturuldu.${assignmentMessage} ${invitationMessage(data.invitation)}`);
       setMemberForm(EMPTY_MEMBER_FORM);
       setMode(null);
       await loadData();
@@ -177,7 +188,8 @@ export default function OrganizationMembersPage() {
     setBusy(true);
     try {
       const data = await postAction({ action: "invite_user", ...userForm });
-      toast.success(`Kullanıcı eklendi. ${invitationMessage(data.invitation)}`);
+      const assignmentMessage = data.assignedSurvey?.name ? ` ${data.assignedSurvey.name} anketi atandı.` : "";
+      toast.success(`Kullanıcı eklendi.${assignmentMessage} ${invitationMessage(data.invitation)}`);
       setUserForm((current) => ({ ...EMPTY_USER_FORM, memberUnitId: current.memberUnitId }));
       setMode(null);
       await loadData();
@@ -294,6 +306,12 @@ export default function OrganizationMembersPage() {
                   {selectedSector?.subSectors.map((subSector) => <option key={subSector.id} value={subSector.id}>{subSector.name}</option>)}
                 </select>
               </Field>
+              <Field label="Atanacak anket (isteğe bağlı)">
+                <select className="theme-select mt-1.5 w-full" value={memberForm.surveyId} onChange={(event) => setMemberForm({ ...memberForm, surveyId: event.target.value })}>
+                  <option value="">Anket atamadan davet et</option>
+                  {surveys.map((survey) => <option key={survey.id} value={survey.id}>{survey.name}</option>)}
+                </select>
+              </Field>
               <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] p-4 md:col-span-2" style={{ background: "var(--surface-2)", border: "1px solid var(--line)" }}>
                 <input
                   type="checkbox"
@@ -324,6 +342,12 @@ export default function OrganizationMembersPage() {
               <Field label="E-posta"><input required type="email" maxLength={254} className="theme-input mt-1.5 w-full" value={userForm.email} onChange={(event) => setUserForm({ ...userForm, email: event.target.value })} /></Field>
               <Field label="Ad"><input required maxLength={80} className="theme-input mt-1.5 w-full" value={userForm.firstName} onChange={(event) => setUserForm({ ...userForm, firstName: event.target.value })} /></Field>
               <Field label="Soyad"><input maxLength={80} className="theme-input mt-1.5 w-full" value={userForm.lastName} onChange={(event) => setUserForm({ ...userForm, lastName: event.target.value })} /></Field>
+              <Field label="Atanacak anket (isteğe bağlı)">
+                <select className="theme-select mt-1.5 w-full" value={userForm.surveyId} onChange={(event) => setUserForm({ ...userForm, surveyId: event.target.value })}>
+                  <option value="">Anket atamadan davet et</option>
+                  {surveys.map((survey) => <option key={survey.id} value={survey.id}>{survey.name}</option>)}
+                </select>
+              </Field>
               <div className="flex items-end justify-end md:col-span-2"><Button type="submit" loading={busy}>Kullanıcıyı ekle ve davet et</Button></div>
             </form>
           </FormPanel>
