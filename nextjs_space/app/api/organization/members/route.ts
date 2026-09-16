@@ -118,6 +118,7 @@ export async function GET(request: NextRequest) {
                 email: true,
                 firstName: true,
                 lastName: true,
+                role: true,
                 emailVerified: true,
                 isActive: true,
                 sectorId: true,
@@ -183,6 +184,7 @@ async function createMember(body: Record<string, unknown>, tenant: { id: string;
   const email = clean(body.email, 254).toLowerCase();
   const sectorId = clean(body.sectorId, 64);
   const subSectorId = clean(body.subSectorId, 64) || null;
+  const makeUnitManager = body.makeUnitManager === true;
 
   if (!memberName || !firstName || !validators.email(email)) {
     return NextResponse.json(
@@ -222,7 +224,7 @@ async function createMember(body: Record<string, unknown>, tenant: { id: string;
         firstName,
         lastName,
         organization: memberName,
-        role: "USER",
+        role: makeUnitManager ? "UNIT_MANAGER" : "USER",
         unitId: member.id,
         sectorId,
         subSectorId,
@@ -231,8 +233,13 @@ async function createMember(body: Record<string, unknown>, tenant: { id: string;
         passwordResetToken: token,
         passwordResetExpires: expires,
       },
-      select: { id: true, email: true, firstName: true },
+      select: { id: true, email: true, firstName: true, role: true },
     });
+    if (makeUnitManager) {
+      await tx.unitAdmin.create({
+        data: { unitId: member.id, userId: user.id },
+      });
+    }
     return { member, user };
   });
 

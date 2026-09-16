@@ -118,12 +118,14 @@ test("oda kampanya açar, üye gönderir ve yalnızca kendi sonuçlarını gör�
       lastName: "Üye",
       email: INVITED_MEMBER_USER,
       sectorId,
+      makeUnitManager: true,
     },
   });
   expect(memberCreate.status()).toBe(201);
   const invited = await prisma.user.findUnique({ where: { email: INVITED_MEMBER_USER } });
-  expect(invited).toMatchObject({ role: "USER", sectorId, emailVerified: false, isActive: true });
+  expect(invited).toMatchObject({ role: "UNIT_MANAGER", sectorId, emailVerified: false, isActive: true });
   expect(invited?.passwordResetToken).toBeTruthy();
+  expect(await prisma.unitAdmin.count({ where: { userId: invited!.id } })).toBe(1);
 
   const activate = await manager.request.post("/api/auth/reset-password", {
     data: { token: invited!.passwordResetToken, password: PASSWORD },

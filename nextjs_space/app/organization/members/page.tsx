@@ -26,6 +26,7 @@ type MemberUser = {
   email: string;
   firstName: string | null;
   lastName: string | null;
+  role: "USER" | "UNIT_MANAGER" | "ADMIN";
   emailVerified: boolean;
   isActive: boolean;
   sectorId: string | null;
@@ -59,6 +60,7 @@ const EMPTY_MEMBER_FORM = {
   email: "",
   sectorId: "",
   subSectorId: "",
+  makeUnitManager: false,
 };
 
 const EMPTY_USER_FORM = { memberUnitId: "", firstName: "", lastName: "", email: "" };
@@ -292,6 +294,20 @@ export default function OrganizationMembersPage() {
                   {selectedSector?.subSectors.map((subSector) => <option key={subSector.id} value={subSector.id}>{subSector.name}</option>)}
                 </select>
               </Field>
+              <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] p-4 md:col-span-2" style={{ background: "var(--surface-2)", border: "1px solid var(--line)" }}>
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4"
+                  checked={memberForm.makeUnitManager}
+                  onChange={(event) => setMemberForm({ ...memberForm, makeUnitManager: event.target.checked })}
+                />
+                <span>
+                  <span className="block font-medium" style={{ color: "var(--ink)" }}>Bu kullanıcı üye kuruluş yöneticisi olsun</span>
+                  <span className="mt-1 block t-caption" style={{ color: "var(--ink-3)" }}>
+                    Kullanıcı bu birimi ve alt birimlerini yönetebilir. Seçilmezse yalnızca anketleri dolduran standart kullanıcı olur.
+                  </span>
+                </span>
+              </label>
               <div className="flex items-end justify-end md:col-span-2"><Button type="submit" loading={busy}>Kuruluşu oluştur ve davet et</Button></div>
             </form>
           </FormPanel>
@@ -363,7 +379,7 @@ export default function OrganizationMembersPage() {
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="theme-table">
-                        <thead><tr><th>Kullanıcı</th><th>E-posta</th><th>Sektör</th><th>Durum</th><th className="text-right">İşlem</th></tr></thead>
+                        <thead><tr><th>Kullanıcı</th><th>E-posta</th><th>Sektör</th><th>Yetki</th><th>Durum</th><th className="text-right">İşlem</th></tr></thead>
                         <tbody>
                           {member.users.map((user) => {
                             const sector = user.sectorId ? sectorById.get(user.sectorId) : null;
@@ -373,6 +389,7 @@ export default function OrganizationMembersPage() {
                                 <td className="font-medium">{[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}</td>
                                 <td>{user.email}</td>
                                 <td>{subSector?.name || sector?.name || "—"}</td>
+                                <td>{user.role === "UNIT_MANAGER" ? <span className="badge badge-neutral">Birim yöneticisi</span> : "Kullanıcı"}</td>
                                 <td>
                                   <span className={!user.isActive ? "badge badge-neutral" : user.emailVerified ? "badge badge-success" : "badge badge-warning"}>
                                     {!user.isActive ? "Devre dışı" : user.emailVerified ? "Hesap aktif" : "Davet bekliyor"}
