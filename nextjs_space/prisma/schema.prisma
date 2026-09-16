@@ -23,7 +23,8 @@ model Unit {
   users              User[]              @relation("UnitUsers")
   ownedCampaigns     SurveyCampaign[]    @relation("CampaignTenantUnit")
   campaignRecipients CampaignRecipient[] @relation("CampaignMemberUnit")
-  ownedSurveys       Survey[]             @relation("SurveyOwnerUnit")
+  ownedSurveys       Survey[]            @relation("SurveyOwnerUnit")
+  joinCodes          UnitJoinCode[]
 }
 
 model UnitAdmin {
@@ -75,6 +76,8 @@ model User {
   submittedAssessments     Assessment[]           @relation("AssessmentSubmitter")
   createdCampaigns         SurveyCampaign[]       @relation("CampaignCreator")
   createdSurveys           Survey[]               @relation("SurveyCreator")
+  createdJoinCodes         UnitJoinCode[]         @relation("JoinCodeCreator")
+  joinCodeUses             UnitJoinCodeUse[]      @relation("JoinCodeUser")
 }
 
 model Sector {
@@ -180,6 +183,7 @@ model Survey {
   userAssignments       UserSurveyAssignment[]
   aiRecommendationCache AIRecommendationCache[]
   campaigns             SurveyCampaign[]
+  joinCodes             UnitJoinCode[]
 
   @@index([ownerUnitId, archivedAt])
   @@index([sourceSurveyId])
@@ -245,6 +249,43 @@ model UserSurveyAssignment {
   user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, surveyId])
+}
+
+/// Birim yöneticisinin paylaştığı, kendi kendine kayıt sırasında kullanıcıyı
+/// doğrudan belirli bir üye kuruluşa bağlayan süreli katılım kodu.
+model UnitJoinCode {
+  id          String            @id @default(cuid())
+  unitId      String
+  label       String?
+  codeHash    String            @unique
+  codePreview String
+  expiresAt   DateTime?
+  maxUses     Int?
+  useCount    Int               @default(0)
+  isActive    Boolean           @default(true)
+  surveyId    String?
+  createdById String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  unit        Unit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  survey      Survey?           @relation(fields: [surveyId], references: [id], onDelete: SetNull)
+  createdBy   User?             @relation("JoinCodeCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  uses        UnitJoinCodeUse[]
+
+  @@index([unitId, isActive])
+  @@index([expiresAt])
+}
+
+/// Katılım kodunun kim tarafından ve ne zaman kullanıldığının denetim izi.
+model UnitJoinCodeUse {
+  id         String       @id @default(cuid())
+  joinCodeId String
+  userId     String?      @unique
+  usedAt     DateTime     @default(now())
+  joinCode   UnitJoinCode @relation(fields: [joinCodeId], references: [id], onDelete: Cascade)
+  user       User?        @relation("JoinCodeUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([joinCodeId, usedAt])
 }
 
 model Category {

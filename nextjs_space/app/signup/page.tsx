@@ -29,7 +29,8 @@ export default function SignupPage() {
     lastName: "",
     organization: "",
     sectorId: "",
-    subSectorId: ""
+    subSectorId: "",
+    joinCode: ""
   });
   const [error, setError] = useState("");
   /** Hatanın türü — ekran buna göre çözüm önerir. */
@@ -39,6 +40,13 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loadingSectors, setLoadingSectors] = useState(true);
+  const [checkingJoinCode, setCheckingJoinCode] = useState(false);
+  const [joinCodeInfo, setJoinCodeInfo] = useState<{
+    unitName: string;
+    sectorName: string | null;
+    subSectorName: string | null;
+    surveyName: string | null;
+  } | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -62,6 +70,7 @@ export default function SignupPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target ?? {};
+    if (name === "joinCode") setJoinCodeInfo(null);
     setFormData(prev => {
       const newData = { ...(prev ?? {}), [name ?? '']: value ?? '' };
       if (name === 'sectorId') {
@@ -72,6 +81,39 @@ export default function SignupPage() {
   };
 
   const selectedSector = sectors.find(s => s.id === formData.sectorId);
+
+  const verifyJoinCode = async () => {
+    if (!formData.joinCode.trim()) {
+      setError("Doğrulanacak katılım kodunu girin.");
+      return;
+    }
+    setCheckingJoinCode(true);
+    setError("");
+    try {
+      const response = await fetch("/api/signup/join-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ joinCode: formData.joinCode }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setJoinCodeInfo(null);
+        setError(data.error || "Katılım kodu doğrulanamadı.");
+        return;
+      }
+      setJoinCodeInfo({
+        unitName: data.unitName,
+        sectorName: data.sectorName ?? null,
+        subSectorName: data.subSectorName ?? null,
+        surveyName: data.surveyName ?? null,
+      });
+    } catch {
+      setJoinCodeInfo(null);
+      setError("Katılım kodu doğrulanamadı. Lütfen tekrar deneyin.");
+    } finally {
+      setCheckingJoinCode(false);
+    }
+  };
 
   /** Kayıtlı ama doğrulanmamış hesap için doğrulama postasını yeniden ister. */
   const handleResendVerification = async () => {
@@ -109,7 +151,7 @@ export default function SignupPage() {
       return;
     }
 
-    if (!formData?.sectorId) {
+    if (!formData?.joinCode.trim() && !formData?.sectorId) {
       setError("Sektör seçilmeden kayıt tamamlanamıyor.");
       return;
     }
@@ -136,7 +178,8 @@ export default function SignupPage() {
           lastName: formData?.lastName,
           organization: formData?.organization,
           sectorId: formData?.sectorId,
-          subSectorId: formData?.subSectorId || null
+          subSectorId: formData?.subSectorId || null,
+          joinCode: formData?.joinCode || null,
         })
       });
 
@@ -150,7 +193,8 @@ export default function SignupPage() {
       }
 
       // Kayıt başarılı - email doğrulama mesajı göster
-      setSuccess(`${formData.email} adresine doğrulama bağlantısı gönderildi. Bağlantıya tıkladıktan sonra giriş yapabilirsiniz.`);
+      const membershipMessage = data.joinedUnit?.name ? ` ${data.joinedUnit.name} birimine dahil edildiniz.` : "";
+      setSuccess(`${formData.email} adresine doğrulama bağlantısı gönderildi.${membershipMessage} Bağlantıya tıkladıktan sonra giriş yapabilirsiniz.`);
       setLoading(false);
       
       // 5 saniye sonra login sayfasına yönlendir
@@ -309,23 +353,58 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label htmlFor="organization" className={groupLabel} style={{ color: "var(--ink-2)" }}>
-              Kuruluş
+            <label htmlFor="joinCode" className={groupLabel} style={{ color: "var(--ink-2)" }}>
+              Birim katılım kodu <span className="font-normal" style={{ color: "var(--ink-3)" }}>(isteğe bağlı)</span>
             </label>
-            <input
-              id="organization"
-              type="text"
-              name="organization"
-              autoComplete="organization"
-              value={formData.organization}
-              onChange={handleChange}
-              className="theme-input"
-              placeholder="Şirket adı"
-              required
-            />
+            <div className="flex gap-2">
+              <input
+                id="joinCode"
+                type="text"
+                name="joinCode"
+                autoComplete="off"
+                value={formData.joinCode}
+                onChange={handleChange}
+                className="theme-input uppercase"
+                placeholder="BRM-ABCD-2345"
+                maxLength={32}
+              />
+              <Button type="button" variant="outline" loading={checkingJoinCode} onClick={verifyJoinCode} disabled={!formData.joinCode.trim()}>
+                Doğrula
+              </Button>
+            </div>
+            <p className="mt-1.5 t-sm" style={{ color: "var(--ink-3)" }}>
+              Birim yöneticiniz kod verdiyse girin; kuruluş ve sektör bilgileriniz otomatik atanır.
+            </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          {joinCodeInfo ? (
+            <div className="rounded-[var(--radius-xs)] p-3 t-sm" style={{ background: "var(--success-bg)", color: "var(--success)" }}>
+              <p className="font-medium">Kod doğrulandı · {joinCodeInfo.unitName}</p>
+              <p className="mt-1">
+                {[joinCodeInfo.sectorName, joinCodeInfo.subSectorName].filter(Boolean).join(" · ")}
+                {joinCodeInfo.surveyName ? ` · ${joinCodeInfo.surveyName} anketi atanacak` : ""}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label htmlFor="organization" className={groupLabel} style={{ color: "var(--ink-2)" }}>
+                  Kuruluş
+                </label>
+                <input
+                  id="organization"
+                  type="text"
+                  name="organization"
+                  autoComplete="organization"
+                  value={formData.organization}
+                  onChange={handleChange}
+                  className="theme-input"
+                  placeholder="Şirket adı"
+                  required={!formData.joinCode.trim()}
+                />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label htmlFor="sectorId" className={groupLabel} style={{ color: "var(--ink-2)" }}>
                 Sektör
@@ -337,7 +416,7 @@ export default function SignupPage() {
                 onChange={handleChange}
                 className="theme-select"
                 disabled={loadingSectors}
-                required
+                required={!formData.joinCode.trim()}
               >
                 <option value="">{loadingSectors ? "Yükleniyor" : "Sektör seçin"}</option>
                 {sectors.map((sector) => (
@@ -378,7 +457,9 @@ export default function SignupPage() {
                 ))}
               </select>
             </div>
-          </div>
+              </div>
+            </>
+          )}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>

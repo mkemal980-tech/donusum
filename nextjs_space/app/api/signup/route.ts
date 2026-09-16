@@ -4,6 +4,10 @@ import { checkRateLimit, getClientIP, validators } from "@/lib/api-utils";
 import { logDevEmailLink, sendEmail } from "@/lib/email";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { normalizeJoinCode } from "@/lib/organization-join-code";
+import { resolveJoinCodeProfile } from "@/lib/organization-join-code-server";
+
+class JoinCodeConsumptionError extends Error {}
 
 export async function POST(request: NextRequest) {
   // Rate limit for signup (prevent abuse)
@@ -17,7 +21,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { email, password, firstName, lastName, organization, sectorId, subSectorId } = await request.json();
+    const { email, password, firstName, lastName, organization, sectorId, subSectorId, joinCode } = await request.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -32,7 +36,16 @@ export async function POST(request: NextRequest) {
      * devreye girmiyor — yani anketi doldurup eksik bir sonuç alıyor.
      * Sonradan yöneticiden düzeltmesini istemek yerine baştan sorulur.
      */
-    if (!sectorId) {
+    const hasJoinCode = normalizeJoinCode(joinCode).length > 0;
+    const joinResolution = hasJoinCode ? await resolveJoinCodeProfile(joinCode) : null;
+    if (joinResolution?.error || (hasJoinCode && (!joinResolution?.code || !joinResolution.profile))) {
+      return NextResponse.json(
+        { error: joinResolution?.error ?? "Katılım kodu geçersiz." },
+        { status: 400 }
+      );
+    }
+
+    if (!hasJoinCode && !sectorId) {
       return NextResponse.json(
         { error: "Sektör seçimi gerekli" },
         { status: 400 }
@@ -84,21 +97,70 @@ export async function POST(request: NextRequest) {
     const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 saat
 
     // Create user (with retry for connection issues)
-    const user = await withRetry(() => prisma.user.create({
-      data: {
-        email: email.toLowerCase(),
-        password: hashedPassword,
-        firstName: firstName || null,
-        lastName: lastName || null,
-        organization: organization || null,
-        sectorId: sectorId || null,
-        subSectorId: subSectorId || null,
-        emailVerified: false,
-        emailVerificationToken,
-        emailVerificationExpires,
-        isActive: true
-      }
-    }));
+    const user = hasJoinCode && joinResolution?.code && joinResolution.profile
+      ? await withRetry(() => prisma.$transaction(async (tx) => {
+          const now = new Date();
+          const consumed = await tx.unitJoinCode.updateMany({
+            where: {
+              id: joinResolution.code!.id,
+              isActive: true,
+              OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+              ...(joinResolution.code!.maxUses !== null
+                ? { useCount: { lt: joinResolution.code!.maxUses } }
+                : {}),
+            },
+            data: { useCount: { increment: 1 } },
+          });
+          if (consumed.count !== 1) {
+            throw new JoinCodeConsumptionError("Katılım kodu artık kullanılamıyor. Lütfen yöneticinizden yeni kod isteyin.");
+          }
+
+          const created = await tx.user.create({
+            data: {
+              email: email.toLowerCase(),
+              password: hashedPassword,
+              firstName: firstName || null,
+              lastName: lastName || null,
+              organization: joinResolution.code!.unit.name,
+              role: "USER",
+              unitId: joinResolution.code!.unit.id,
+              sectorId: joinResolution.profile!.sectorId,
+              subSectorId: joinResolution.profile!.subSectorId,
+              emailVerified: false,
+              emailVerificationToken,
+              emailVerificationExpires,
+              isActive: true,
+            },
+          });
+          await tx.unitJoinCodeUse.create({
+            data: { joinCodeId: joinResolution.code!.id, userId: created.id },
+          });
+          if (joinResolution.survey) {
+            await tx.userSurveyAssignment.create({
+              data: {
+                userId: created.id,
+                surveyId: joinResolution.survey.id,
+                assignedBy: joinResolution.code!.createdById,
+              },
+            });
+          }
+          return created;
+        }))
+      : await withRetry(() => prisma.user.create({
+          data: {
+            email: email.toLowerCase(),
+            password: hashedPassword,
+            firstName: firstName || null,
+            lastName: lastName || null,
+            organization: organization || null,
+            sectorId: sectorId || null,
+            subSectorId: subSectorId || null,
+            emailVerified: false,
+            emailVerificationToken,
+            emailVerificationExpires,
+            isActive: true,
+          },
+        }));
 
     /**
      * Tanıtım anketini otomatik ata.
@@ -112,7 +174,7 @@ export async function POST(request: NextRequest) {
      * ziyaretçinin rastgele cevapları sektör ortalamalarını bozmamalı.
      * Kayıt bu yüzden başarısız sayılmaz: atama yapılamazsa hesap yine açılır.
      */
-    try {
+    if (!hasJoinCode) try {
       const demoSurveys = await prisma.survey.findMany({
         where: { isDemo: true, isActive: true, archivedAt: null },
         select: { id: true },
@@ -198,10 +260,16 @@ export async function POST(request: NextRequest) {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      joinedUnit: hasJoinCode && joinResolution?.code
+        ? { id: joinResolution.code.unit.id, name: joinResolution.code.unit.name }
+        : null,
       message: "Kayıt başarılı! Lütfen email adresinizi doğrulayın."
     });
   } catch (error: unknown) {
     const err = error as Error;
+    if (err instanceof JoinCodeConsumptionError) {
+      return NextResponse.json({ error: err.message }, { status: 409 });
+    }
     console.error("Signup error:", err.message, err.stack);
     
     // Daha açıklayıcı hata mesajları

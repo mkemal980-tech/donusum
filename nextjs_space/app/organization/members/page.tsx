@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   Building2,
+  Copy,
   Download,
   FileUp,
+  KeyRound,
   Loader2,
   Mail,
   Pencil,
@@ -57,6 +59,19 @@ type RootUnit = {
 type SubSector = { id: string; name: string };
 type Sector = { id: string; name: string; naicsCode: string | null; subSectors: SubSector[] };
 type InvitationSummary = { sent?: number; failed?: number; skipped?: number };
+type JoinCodeRecord = {
+  id: string;
+  label: string | null;
+  codePreview: string;
+  expiresAt: string | null;
+  maxUses: number | null;
+  useCount: number;
+  isActive: boolean;
+  createdAt: string;
+  unavailableReason: string | null;
+  unit: { id: string; name: string };
+  survey: { id: string; name: string } | null;
+};
 
 const EMPTY_MEMBER_FORM = {
   memberName: "",
@@ -71,6 +86,13 @@ const EMPTY_MEMBER_FORM = {
 };
 
 const EMPTY_USER_FORM = { memberUnitId: "", firstName: "", lastName: "", email: "", surveyId: "" };
+const EMPTY_JOIN_CODE_FORM = {
+  memberUnitId: "",
+  label: "",
+  expiresInDays: "30",
+  maxUses: "",
+  surveyId: "",
+};
 
 type EditInvitationForm = {
   userId: string;
@@ -101,12 +123,17 @@ export default function OrganizationMembersPage() {
   const [savingInvitationId, setSavingInvitationId] = useState("");
   const [deletingInvitationId, setDeletingInvitationId] = useState("");
   const [editInvitationForm, setEditInvitationForm] = useState<EditInvitationForm | null>(null);
-  const [mode, setMode] = useState<"member" | "user" | "excel" | null>(null);
+  const [mode, setMode] = useState<"member" | "user" | "excel" | "codes" | null>(null);
   const [memberForm, setMemberForm] = useState(EMPTY_MEMBER_FORM);
   const [userForm, setUserForm] = useState(EMPTY_USER_FORM);
   const [excelFile, setExcelFile] = useState<File | null>(null);
   const [excelName, setExcelName] = useState("");
   const [importErrors, setImportErrors] = useState<string[]>([]);
+  const [joinCodes, setJoinCodes] = useState<JoinCodeRecord[]>([]);
+  const [joinCodesLoading, setJoinCodesLoading] = useState(false);
+  const [joinCodeForm, setJoinCodeForm] = useState(EMPTY_JOIN_CODE_FORM);
+  const [createdJoinCode, setCreatedJoinCode] = useState("");
+  const [revokingJoinCodeId, setRevokingJoinCodeId] = useState("");
 
   useEffect(() => {
     if (sessionStatus === "unauthenticated") router.push("/login");
@@ -166,10 +193,19 @@ export default function OrganizationMembersPage() {
         : members[0]?.id ?? "",
       surveyId: surveys.some((survey) => survey.id === current.surveyId) ? current.surveyId : "",
     }));
+    setJoinCodeForm((current) => ({
+      ...current,
+      memberUnitId: members.some((member) => member.id === current.memberUnitId)
+        ? current.memberUnitId
+        : members[0]?.id ?? "",
+      surveyId: surveys.some((survey) => survey.id === current.surveyId) ? current.surveyId : "",
+    }));
   }, [members, surveys]);
 
   useEffect(() => {
     setEditInvitationForm(null);
+    setJoinCodes([]);
+    setCreatedJoinCode("");
   }, [tenantUnitId]);
 
   const postAction = async (payload: Record<string, unknown>) => {
@@ -332,6 +368,88 @@ export default function OrganizationMembersPage() {
     }
   };
 
+  const loadJoinCodes = async () => {
+    if (!tenantUnitId) return;
+    setJoinCodesLoading(true);
+    try {
+      const response = await fetch(`/api/organization/join-codes?tenantUnitId=${encodeURIComponent(tenantUnitId)}`, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Katılım kodları yüklenemedi.");
+      setJoinCodes(data.codes ?? []);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Katılım kodları yüklenemedi.");
+    } finally {
+      setJoinCodesLoading(false);
+    }
+  };
+
+  const openJoinCodes = async () => {
+    setEditInvitationForm(null);
+    setCreatedJoinCode("");
+    if (mode === "codes") {
+      setMode(null);
+      return;
+    }
+    setMode("codes");
+    await loadJoinCodes();
+  };
+
+  const createJoinCode = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setBusy(true);
+    setCreatedJoinCode("");
+    try {
+      const response = await fetch("/api/organization/join-codes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create",
+          tenantUnitId,
+          ...joinCodeForm,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Katılım kodu oluşturulamadı.");
+      setCreatedJoinCode(data.code);
+      setJoinCodeForm((current) => ({ ...EMPTY_JOIN_CODE_FORM, memberUnitId: current.memberUnitId }));
+      toast.success("Katılım kodu oluşturuldu. Kodu güvenli şekilde paylaşın.");
+      await loadJoinCodes();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Katılım kodu oluşturulamadı.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyJoinCode = async () => {
+    try {
+      await navigator.clipboard.writeText(createdJoinCode);
+      toast.success("Katılım kodu kopyalandı.");
+    } catch {
+      toast.error("Kod kopyalanamadı; kodu seçerek kopyalayın.");
+    }
+  };
+
+  const revokeJoinCode = async (code: JoinCodeRecord) => {
+    if (!window.confirm(`${code.codePreview} katılım kodu iptal edilecek. Bu işlem geri alınamaz. Devam edilsin mi?`)) return;
+    setRevokingJoinCodeId(code.id);
+    try {
+      const response = await fetch("/api/organization/join-codes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "revoke", tenantUnitId, codeId: code.id }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Katılım kodu iptal edilemedi.");
+      toast.success("Katılım kodu iptal edildi.");
+      await loadJoinCodes();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Katılım kodu iptal edilemedi.");
+    } finally {
+      setRevokingJoinCodeId("");
+    }
+  };
+
   if (loading || sessionStatus === "loading") {
     return (
       <>
@@ -350,6 +468,9 @@ export default function OrganizationMembersPage() {
           subtitle="Üye kuruluşları ve kullanıcılarını ekleyin, güvenli hesap davetlerini yönetin."
           actions={
             <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={openJoinCodes} disabled={!members.length}>
+                <KeyRound size={16} /> Katılım kodları
+              </Button>
               <Button variant="outline" onClick={() => { setEditInvitationForm(null); setMode(mode === "excel" ? null : "excel"); }} disabled={!selectedRoot}>
                 <FileUp size={16} /> Excel ile aktar
               </Button>
@@ -371,6 +492,117 @@ export default function OrganizationMembersPage() {
               {roots.map((root) => <option key={root.id} value={root.id}>{root.name}</option>)}
             </select>
           </label>
+        )}
+
+        {mode === "codes" && (
+          <FormPanel
+            title="Birim katılım kodları"
+            description="Kodu kullanan yeni hesap seçilen üye kuruluşa standart kullanıcı olarak bağlanır; kuruluş ve sektör profili otomatik devralınır."
+          >
+            <form onSubmit={createJoinCode} className="grid gap-4 md:grid-cols-2">
+              <Field label="Üye kuruluş / birim">
+                <select
+                  required
+                  className="theme-select mt-1.5 w-full"
+                  value={joinCodeForm.memberUnitId}
+                  onChange={(event) => setJoinCodeForm({ ...joinCodeForm, memberUnitId: event.target.value })}
+                >
+                  {members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+                </select>
+              </Field>
+              <Field label="Kod açıklaması (isteğe bağlı)">
+                <input
+                  maxLength={100}
+                  className="theme-input mt-1.5 w-full"
+                  value={joinCodeForm.label}
+                  onChange={(event) => setJoinCodeForm({ ...joinCodeForm, label: event.target.value })}
+                  placeholder="Örn. Eylül üye kaydı"
+                />
+              </Field>
+              <Field label="Geçerlilik süresi">
+                <select
+                  className="theme-select mt-1.5 w-full"
+                  value={joinCodeForm.expiresInDays}
+                  onChange={(event) => setJoinCodeForm({ ...joinCodeForm, expiresInDays: event.target.value })}
+                >
+                  <option value="7">7 gün</option>
+                  <option value="30">30 gün</option>
+                  <option value="90">90 gün</option>
+                  <option value="365">1 yıl</option>
+                  <option value="">Süresiz</option>
+                </select>
+              </Field>
+              <Field label="Kullanım sınırı (isteğe bağlı)">
+                <input
+                  type="number"
+                  min={1}
+                  max={10000}
+                  className="theme-input mt-1.5 w-full"
+                  value={joinCodeForm.maxUses}
+                  onChange={(event) => setJoinCodeForm({ ...joinCodeForm, maxUses: event.target.value })}
+                  placeholder="Sınırsız"
+                />
+              </Field>
+              <Field label="Kayıtta atanacak anket (isteğe bağlı)">
+                <select
+                  className="theme-select mt-1.5 w-full"
+                  value={joinCodeForm.surveyId}
+                  onChange={(event) => setJoinCodeForm({ ...joinCodeForm, surveyId: event.target.value })}
+                >
+                  <option value="">Anket atama</option>
+                  {surveys.map((survey) => <option key={survey.id} value={survey.id}>{survey.name}</option>)}
+                </select>
+              </Field>
+              <div className="flex items-end justify-end"><Button type="submit" loading={busy}>Katılım kodu oluştur</Button></div>
+            </form>
+
+            {createdJoinCode && (
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] p-4" style={{ background: "var(--success-bg)", border: "1px solid var(--success)", color: "var(--success)" }}>
+                <div>
+                  <p className="font-medium">Yeni kod hazır</p>
+                  <code className="mt-1 block text-lg font-semibold tracking-wider">{createdJoinCode}</code>
+                  <p className="mt-1 t-caption">Güvenlik nedeniyle tam kod yalnızca şimdi gösterilir.</p>
+                </div>
+                <Button type="button" variant="outline" onClick={copyJoinCode}><Copy size={15} /> Kopyala</Button>
+              </div>
+            )}
+
+            <div className="mt-6">
+              <h3 className="font-semibold" style={{ color: "var(--ink)" }}>Oluşturulan kodlar</h3>
+              {joinCodesLoading ? (
+                <div className="flex justify-center py-8"><Loader2 className="animate-spin" /></div>
+              ) : joinCodes.length === 0 ? (
+                <p className="mt-3 t-sm" style={{ color: "var(--ink-3)" }}>Henüz katılım kodu oluşturulmadı.</p>
+              ) : (
+                <div className="mt-3 overflow-x-auto">
+                  <table className="theme-table">
+                    <thead><tr><th>Kod</th><th>Birim</th><th>Anket</th><th>Kullanım</th><th>Son tarih</th><th>Durum</th><th className="text-right">İşlem</th></tr></thead>
+                    <tbody>
+                      {joinCodes.map((code) => (
+                        <tr key={code.id}>
+                          <td><span className="font-mono font-medium">{code.codePreview}</span>{code.label && <span className="mt-0.5 block t-caption">{code.label}</span>}</td>
+                          <td>{code.unit.name}</td>
+                          <td>{code.survey?.name || "—"}</td>
+                          <td>{code.useCount}{code.maxUses !== null ? ` / ${code.maxUses}` : " / sınırsız"}</td>
+                          <td>{code.expiresAt ? new Date(code.expiresAt).toLocaleDateString("tr-TR") : "Süresiz"}</td>
+                          <td><span className={code.unavailableReason ? "badge badge-neutral" : "badge badge-success"}>{code.unavailableReason || "Aktif"}</span></td>
+                          <td>
+                            <div className="flex justify-end">
+                              {code.isActive && (
+                                <Button size="sm" variant="ghost" loading={revokingJoinCodeId === code.id} onClick={() => revokeJoinCode(code)} className="text-[var(--error)]">
+                                  İptal et
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </FormPanel>
         )}
 
         {mode === "member" && (
