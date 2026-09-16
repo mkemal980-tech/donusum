@@ -2,21 +2,27 @@ import { withAuth } from "@/lib/api-utils";
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { archiveSurvey } from "@/lib/soft-delete";
+import { canEditSurvey, getManagedSurveyRootIds } from "@/lib/survey-management";
+import { canManageTenantUnit } from "@/lib/organization-campaign";
 
 export const dynamic = 'force-dynamic';
 
 // GET - Tüm anketleri getir veya silme öncesi etki analizi
 export async function GET(request: Request) {
-  const auth = await withAuth(request as any, { requireAdmin: true, rateLimit: 'admin' });
+  const auth = await withAuth(request as any, { requireUnitManager: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
 
   try {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
     const id = searchParams.get('id');
+    const managedRootIds = await getManagedSurveyRootIds(auth.userId, auth.user.role);
     
     // Silme öncesi etki analizi - bağlı kayıtları say
     if (action === 'delete-impact' && id) {
+      if (!(await canEditSurvey(auth.userId, auth.user.role, id))) {
+        return NextResponse.json({ error: 'Bu anketi yönetme yetkiniz yok' }, { status: 403 });
+      }
       const survey = await prisma.survey.findUnique({
         where: { id },
         select: { name: true }
@@ -97,7 +103,15 @@ export async function GET(request: Request) {
     
     // Normal liste (arşivlenmemiş)
     const surveys = await prisma.survey.findMany({
-      where: { archivedAt: null },
+      where: {
+        archivedAt: null,
+        ...(auth.user.role === 'ADMIN' ? {} : {
+          OR: [
+            { ownerUnitId: { in: managedRootIds } },
+            { userAssignments: { some: { userId: auth.userId, isActive: true } } },
+          ],
+        }),
+      },
       orderBy: { order: 'asc' },
       include: {
         categories: {
@@ -114,7 +128,11 @@ export async function GET(request: Request) {
         }
       }
     });
-    return NextResponse.json(surveys);
+    return NextResponse.json(surveys.map((survey) => ({
+      ...survey,
+      canEdit: auth.user.role === 'ADMIN' || Boolean(survey.ownerUnitId && managedRootIds.includes(survey.ownerUnitId)),
+      isAssignedTemplate: auth.user.role !== 'ADMIN' && !survey.ownerUnitId,
+    })));
   } catch (error) {
     console.error('Error fetching surveys:', error);
     return NextResponse.json({ error: 'Failed to fetch surveys' }, { status: 500 });
@@ -123,20 +141,39 @@ export async function GET(request: Request) {
 
 // POST - Yeni anket oluştur
 export async function POST(request: Request) {
-  const auth = await withAuth(request as any, { requireAdmin: true, rateLimit: 'admin' });
+  const auth = await withAuth(request as any, { requireUnitManager: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
 
   try {
-    const { name, description, isActive, isDemo, order } = await request.json();
-    
-    const survey = await prisma.survey.create({
-      data: {
-        name,
-        description,
-        isActive: isActive ?? true,
-        isDemo: isDemo ?? false,
-        order: order || 0
+    const { name, description, isActive, isDemo, order, ownerUnitId } = await request.json();
+    const normalizedName = String(name ?? '').trim().slice(0, 160);
+    if (!normalizedName) {
+      return NextResponse.json({ error: 'Anket adı gerekli' }, { status: 400 });
+    }
+    if (auth.user.role !== 'ADMIN') {
+      if (!ownerUnitId || !(await canManageTenantUnit(auth.userId, auth.user.role, ownerUnitId))) {
+        return NextResponse.json({ error: 'Bu kuruluş için anket oluşturamazsınız' }, { status: 403 });
       }
+    }
+    
+    const survey = await prisma.$transaction(async (tx) => {
+      const created = await tx.survey.create({
+        data: {
+          name: normalizedName,
+          description,
+          isActive: auth.user.role === 'ADMIN' ? isActive ?? true : false,
+          isDemo: auth.user.role === 'ADMIN' ? isDemo ?? false : false,
+          order: order || 0,
+          ownerUnitId: ownerUnitId || null,
+          createdById: auth.userId,
+        }
+      });
+      if (auth.user.role !== 'ADMIN') {
+        await tx.userSurveyAssignment.create({
+          data: { userId: auth.userId, surveyId: created.id, assignedBy: auth.userId },
+        });
+      }
+      return created;
     });
     
     return NextResponse.json(survey);
@@ -148,11 +185,16 @@ export async function POST(request: Request) {
 
 // PUT - Anket güncelle
 export async function PUT(request: Request) {
-  const auth = await withAuth(request as any, { requireAdmin: true, rateLimit: 'admin' });
+  const auth = await withAuth(request as any, { requireUnitManager: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
 
   try {
     const { id, name, description, isActive, isDemo, order } = await request.json();
+    if (!id || !(await canEditSurvey(auth.userId, auth.user.role, id))) {
+      return NextResponse.json({ error: 'Bu anketi düzenleme yetkiniz yok' }, { status: 403 });
+    }
+    const normalizedName = String(name ?? '').trim().slice(0, 160);
+    if (!normalizedName) return NextResponse.json({ error: 'Anket adı gerekli' }, { status: 400 });
     
     // Eğer anket aktif edilmeye çalışılıyorsa, içeriğini kontrol et
     if (isActive === true) {
@@ -212,10 +254,10 @@ export async function PUT(request: Request) {
     const survey = await prisma.survey.update({
       where: { id },
       data: {
-        name,
+        name: normalizedName,
         description,
         isActive,
-        ...(typeof isDemo === 'boolean' ? { isDemo } : {}),
+        ...(auth.user.role === 'ADMIN' && typeof isDemo === 'boolean' ? { isDemo } : {}),
         order
       }
     });
@@ -229,7 +271,7 @@ export async function PUT(request: Request) {
 
 // DELETE - Anket sil
 export async function DELETE(request: Request) {
-  const auth = await withAuth(request as any, { requireAdmin: true, rateLimit: 'admin' });
+  const auth = await withAuth(request as any, { requireUnitManager: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
 
   try {
@@ -238,6 +280,9 @@ export async function DELETE(request: Request) {
     
     if (!id) {
       return NextResponse.json({ error: 'Survey ID required' }, { status: 400 });
+    }
+    if (!(await canEditSurvey(auth.userId, auth.user.role, id))) {
+      return NextResponse.json({ error: 'Bu anketi silme yetkiniz yok' }, { status: 403 });
     }
     
     await archiveSurvey(id);

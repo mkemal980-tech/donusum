@@ -16,6 +16,8 @@ const OUTSIDE_ROOT = "E2E Başka Oda";
 const INVITED_MEMBER_UNIT = "E2E Davetli Üye";
 const TEST_SECTOR = "E2E Üye Yönetimi Sektörü";
 const SURVEY = "E2E Oda Üye Anketi";
+const OWN_SURVEY = "E2E Oda Özel Anketi";
+const COPIED_SURVEY = "E2E Oda Üye Anketi (kuruluş kopyası)";
 const CAMPAIGN = "E2E 2026 Üye Araştırması";
 
 let seeded = false;
@@ -23,7 +25,7 @@ let questionId = "";
 let sectorId = "";
 
 async function cleanup() {
-  await prisma.survey.deleteMany({ where: { name: SURVEY } });
+  await prisma.survey.deleteMany({ where: { name: { in: [SURVEY, OWN_SURVEY, COPIED_SURVEY] } } });
   await prisma.user.deleteMany({
     where: {
       email: {
@@ -222,7 +224,60 @@ test("oda kampanya açar, üye gönderir ve yalnızca kendi sonuçlarını gör�
   expect(anonymousData.results.visible).toBe(false);
   expect(anonymousData.members).toEqual([]);
 
+  // Yönetici kendi tenant anketini oluşturup tüm soru özelliklerini yönetir.
+  const ownSurveyCreate = await manager.request.post("/api/admin/surveys", {
+    data: {
+      name: OWN_SURVEY,
+      description: "Kuruluşa özel anket",
+      ownerUnitId: rootUnit!.id,
+      order: 999,
+      isActive: true,
+    },
+  });
+  expect(ownSurveyCreate.status()).toBe(200);
+  const ownSurvey = await ownSurveyCreate.json();
+  expect(ownSurvey.ownerUnitId).toBe(rootUnit!.id);
+
+  const ownCategoryCreate = await manager.request.post("/api/admin/categories", {
+    data: { name: "Özel kategori", surveyId: ownSurvey.id, order: 1 },
+  });
+  expect(ownCategoryCreate.status()).toBe(200);
+  const ownCategory = await ownCategoryCreate.json();
+  const ownQuestionCreate = await manager.request.post("/api/admin/questions", {
+    data: {
+      text: "Kuruluşa özel soru",
+      type: "MULTIPLE_CHOICE",
+      categoryId: ownCategory.id,
+      options: [
+        { label: "Evet", value: "yes", score: 5 },
+        { label: "Hayır", value: "no", score: 0 },
+      ],
+      weight: 2.5,
+      axisType: "ENDURANCE",
+      requiresEvidence: true,
+    },
+  });
+  expect(ownQuestionCreate.status()).toBe(200);
+  expect(await ownQuestionCreate.json()).toMatchObject({
+    weight: 2.5,
+    axisType: "ENDURANCE",
+    requiresEvidence: true,
+  });
+
+  const tenantCopy = await manager.request.post("/api/admin/surveys/duplicate", {
+    data: { surveyId: campaign!.surveyId, ownerUnitId: rootUnit!.id, name: COPIED_SURVEY },
+  });
+  expect(tenantCopy.status()).toBe(200);
+  expect(await prisma.survey.findFirst({ where: { name: COPIED_SURVEY } })).toMatchObject({
+    ownerUnitId: rootUnit!.id,
+    sourceSurveyId: campaign!.surveyId,
+  });
+
   const outsider = await login(browser, OUTSIDER);
+  const forbiddenSurveyEdit = await outsider.request.put("/api/admin/surveys", {
+    data: { id: ownSurvey.id, name: "Yetkisiz değişiklik", isActive: true, order: 1 },
+  });
+  expect(forbiddenSurveyEdit.status()).toBe(403);
   const forbiddenMemberCreate = await outsider.request.post("/api/organization/members", {
     data: {
       action: "create_member",

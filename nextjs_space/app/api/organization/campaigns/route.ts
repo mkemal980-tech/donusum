@@ -22,7 +22,14 @@ export async function GET(request: NextRequest) {
 
     const [surveys, campaigns, allUnits] = await Promise.all([
       prisma.survey.findMany({
-        where: { id: { in: surveyIds }, isActive: true, archivedAt: null },
+        where: {
+          isActive: true,
+          archivedAt: null,
+          OR: [
+            { id: { in: surveyIds } },
+            { ownerUnitId: { in: rootIds } },
+          ],
+        },
         select: { id: true, name: true, description: true },
         orderBy: { order: "asc" },
       }),
@@ -137,17 +144,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Bu kuruluş için kampanya açamazsınız." }, { status: 403 });
     }
 
-    const accessibleSurveyIds = await getAccessibleSurveyIds(auth.userId, surveyId);
-    if (!accessibleSurveyIds.includes(surveyId)) {
-      return NextResponse.json({ error: "Bu ankete erişiminiz yok." }, { status: 403 });
-    }
-
     const [tenantUnit, selectedSurvey] = await Promise.all([
       prisma.unit.findUnique({ where: { id: tenantUnitId }, select: { name: true } }),
-      prisma.survey.findUnique({ where: { id: surveyId }, select: { name: true } }),
+      prisma.survey.findUnique({ where: { id: surveyId }, select: { name: true, ownerUnitId: true, isActive: true, archivedAt: true } }),
     ]);
     if (!tenantUnit || !selectedSurvey) {
       return NextResponse.json({ error: "Kuruluş veya anket bulunamadı." }, { status: 404 });
+    }
+    const accessibleSurveyIds = await getAccessibleSurveyIds(auth.userId, surveyId);
+    const ownsSurveyForTenant = selectedSurvey.ownerUnitId === tenantUnitId;
+    if (
+      selectedSurvey.archivedAt ||
+      !selectedSurvey.isActive ||
+      (!accessibleSurveyIds.includes(surveyId) && !ownsSurveyForTenant)
+    ) {
+      return NextResponse.json({ error: "Bu ankete erişiminiz yok." }, { status: 403 });
     }
 
     const descendantIds = new Set(await getDescendantUnitIds(tenantUnitId));

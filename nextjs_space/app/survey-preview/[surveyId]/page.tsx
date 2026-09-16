@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth-options";
 import SurveyPreviewClient from "./_components/survey-preview-client";
+import { canReadSurveyTemplate } from "@/lib/survey-management";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +16,16 @@ export const dynamic = "force-dynamic";
 export default async function SurveyPreviewPage({ params }: { params: { surveyId: string } }) {
   const session = await getServerSession(authOptions);
   const role = (session?.user as { role?: string } | undefined)?.role;
+  const userId = (session?.user as { id?: string } | undefined)?.id;
 
   if (!session) {
     redirect(`/login?callbackUrl=/survey-preview/${params.surveyId}`);
   }
-  if (role !== "ADMIN") {
+  if (
+    !userId ||
+    (role !== "ADMIN" && role !== "UNIT_MANAGER") ||
+    !(await canReadSurveyTemplate(userId, role, params.surveyId))
+  ) {
     redirect("/dashboard");
   }
 

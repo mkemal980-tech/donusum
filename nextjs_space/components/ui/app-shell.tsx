@@ -61,6 +61,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
       { href: "/roadmap", label: "Yol haritası", icon: Map, roles: ["USER", "UNIT_MANAGER", "ADMIN"] },
       { href: "/organization", label: "Üye sonuçları", icon: Users, roles: ["UNIT_MANAGER", "ADMIN"] },
       { href: "/organization/members", label: "Üye yönetimi", icon: UserPlus, roles: ["UNIT_MANAGER", "ADMIN"] },
+      { href: "/admin/surveys", label: "Anket tasarımı", icon: ClipboardList, roles: ["UNIT_MANAGER", "ADMIN"] },
       { href: "/unit-manager", label: "Birim takibi", icon: Building2, roles: ["UNIT_MANAGER", "ADMIN"], prefix: true },
     ],
   },

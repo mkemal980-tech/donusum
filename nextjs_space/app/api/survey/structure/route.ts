@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
 import { getScopeResolver } from "@/lib/scoring";
 import { getSectionVisibility } from "@/lib/assessment";
+import { canReadSurveyTemplate } from "@/lib/survey-management";
 
 export async function GET(request: NextRequest) {
   // Daha önce tamamen kimlik doğrulamasız erişilebilen anket yapısı uç noktası korundu.
@@ -14,6 +15,13 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const surveyId = searchParams.get('surveyId');
+    if (surveyId) {
+      if (!(await canReadSurveyTemplate(auth.userId, auth.user.role, surveyId))) {
+        return NextResponse.json({ error: "Bu ankete erişiminiz yok" }, { status: 403 });
+      }
+    } else if (auth.user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Anket seçimi gerekli" }, { status: 400 });
+    }
 
     // Anket ID varsa sadece o ankete ait (arşivlenmemiş) kategorileri getir
     const whereClause = { archivedAt: null, ...(surveyId ? { surveyId } : {}) };

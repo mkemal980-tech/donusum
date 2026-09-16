@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
 import { nextCopyName, type DuplicateSummary } from "@/lib/survey-duplicate";
+import { canReadSurveyTemplate } from "@/lib/survey-management";
+import { canManageTenantUnit } from "@/lib/organization-campaign";
 
 /**
  * Anketi her şeyiyle çoğaltır (bkz. lib/survey-duplicate — ne kopyalanır,
@@ -22,16 +24,25 @@ import { nextCopyName, type DuplicateSummary } from "@/lib/survey-duplicate";
  * öneriler ve kapsam kuralları yeni kimliklere bu tablodan bağlanıyor.
  */
 export async function POST(request: NextRequest) {
-  const auth = await withAuth(request, { requireAdmin: true, rateLimit: "admin" });
+  const auth = await withAuth(request, { requireUnitManager: true, rateLimit: "admin" });
   if (!auth.success) return auth.response;
 
   try {
     const body = await request.json();
     const surveyId: string | undefined = body?.surveyId;
     const requestedName: string | undefined = body?.name?.trim() || undefined;
+    const ownerUnitId: string | undefined = body?.ownerUnitId || undefined;
 
     if (!surveyId) {
       return NextResponse.json({ error: "surveyId gerekli" }, { status: 400 });
+    }
+    if (!(await canReadSurveyTemplate(auth.userId, auth.user.role, surveyId))) {
+      return NextResponse.json({ error: "Bu anketi kopyalama yetkiniz yok" }, { status: 403 });
+    }
+    if (auth.user.role !== "ADMIN") {
+      if (!ownerUnitId || !(await canManageTenantUnit(auth.userId, auth.user.role, ownerUnitId))) {
+        return NextResponse.json({ error: "Hedef kuruluşu yönetme yetkiniz yok" }, { status: 403 });
+      }
     }
 
     const source = await prisma.survey.findUnique({
@@ -237,8 +248,17 @@ export async function POST(request: NextRequest) {
             // Kopya pasif başlar: gözden geçirilmeden kullanıcıların ekranında
             // belirmemeli.
             isActive: false,
+            ownerUnitId: ownerUnitId ?? null,
+            createdById: auth.userId,
+            sourceSurveyId: source.id,
           },
         });
+
+        if (auth.user.role !== "ADMIN") {
+          await tx.userSurveyAssignment.create({
+            data: { userId: auth.userId, surveyId: newSurveyId, assignedBy: auth.userId },
+          });
+        }
 
         if (categoryRows.length) await tx.category.createMany({ data: categoryRows });
         if (subCategoryRows.length) await tx.subCategory.createMany({ data: subCategoryRows });

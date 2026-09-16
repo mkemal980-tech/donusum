@@ -23,6 +23,7 @@ model Unit {
   users              User[]              @relation("UnitUsers")
   ownedCampaigns     SurveyCampaign[]    @relation("CampaignTenantUnit")
   campaignRecipients CampaignRecipient[] @relation("CampaignMemberUnit")
+  ownedSurveys       Survey[]             @relation("SurveyOwnerUnit")
 }
 
 model UnitAdmin {
@@ -73,6 +74,7 @@ model User {
   distributedSections      SectionAssignment[]    @relation("SectionAssigner")
   submittedAssessments     Assessment[]           @relation("AssessmentSubmitter")
   createdCampaigns         SurveyCampaign[]       @relation("CampaignCreator")
+  createdSurveys           Survey[]               @relation("SurveyCreator")
 }
 
 model Sector {
@@ -162,6 +164,15 @@ model Survey {
   createdAt             DateTime                @default(now())
   updatedAt             DateTime                @updatedAt
   archivedAt            DateTime? // Soft-delete: doluysa arşivlenmiş sayılır
+  /// null ise platform anketi; doluysa yalnızca bu kuruluşun yöneticileri düzenler.
+  ownerUnitId           String?
+  createdById           String?
+  /// Platform anketinden ya da başka bir tenant anketinden türetilen güvenli kopya.
+  sourceSurveyId        String?
+  ownerUnit             Unit?                   @relation("SurveyOwnerUnit", fields: [ownerUnitId], references: [id], onDelete: SetNull)
+  createdBy             User?                   @relation("SurveyCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  sourceSurvey          Survey?                 @relation("SurveyCopies", fields: [sourceSurveyId], references: [id], onDelete: SetNull)
+  copies                Survey[]                @relation("SurveyCopies")
   benchmarks            Benchmark[]
   categories            Category[]
   sectorScopeRules      SectorScopeRule[]
@@ -169,6 +180,9 @@ model Survey {
   userAssignments       UserSurveyAssignment[]
   aiRecommendationCache AIRecommendationCache[]
   campaigns             SurveyCampaign[]
+
+  @@index([ownerUnitId, archivedAt])
+  @@index([sourceSurveyId])
 }
 
 /// Bir oda/STK'nın belirli bir anketi üye kuruluşlarına gönderdiği çalışma.

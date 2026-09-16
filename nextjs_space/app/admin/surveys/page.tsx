@@ -5,6 +5,7 @@ import { Plus, Edit, Trash2, FileText, X, Save, CheckCircle, XCircle, AlertTrian
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useSession } from "next-auth/react";
 
 interface Survey {
   id: string;
@@ -13,6 +14,9 @@ interface Survey {
   isActive: boolean;
   isDemo: boolean;
   order: number;
+  ownerUnitId: string | null;
+  canEdit: boolean;
+  isAssignedTemplate: boolean;
   _count: {
     categories: number;
   };
@@ -47,7 +51,12 @@ interface DeleteConfirmState {
 }
 
 export default function SurveysPage() {
+  const { data: session } = useSession() || {};
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const isAdmin = role === "ADMIN";
   const [surveys, setSurveys] = useState<Survey[]>([]);
+  const [roots, setRoots] = useState<{ id: string; name: string }[]>([]);
+  const [selectedOwnerUnitId, setSelectedOwnerUnitId] = useState("");
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<Survey | null>(null);
@@ -70,7 +79,8 @@ export default function SurveysPage() {
     try {
       const res = await fetch('/api/admin/surveys');
       const data = await res.json();
-      setSurveys(data || []);
+      if (!res.ok) throw new Error(data.error || 'Anketler yüklenemedi');
+      setSurveys(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -80,12 +90,27 @@ export default function SurveysPage() {
 
   useEffect(() => { fetchSurveys(); }, []);
 
+  useEffect(() => {
+    if (!role || isAdmin) return;
+    fetch("/api/organization/members", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((data) => {
+        const nextRoots = data.roots ?? [];
+        setRoots(nextRoots);
+        setSelectedOwnerUnitId((current) => current || nextRoots[0]?.id || "");
+      })
+      .catch(() => toast.error("Yönetilen kuruluşlar yüklenemedi"));
+  }, [isAdmin, role]);
+
   const handleSave = async () => {
     try {
       const res = await fetch('/api/admin/surveys', {
         method: formData.id ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          ...(!formData.id && !isAdmin ? { ownerUnitId: selectedOwnerUnitId } : {}),
+        })
       });
       
       const data = await res.json();
@@ -131,7 +156,10 @@ export default function SurveysPage() {
       const res = await fetch('/api/admin/surveys/duplicate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ surveyId: survey.id }),
+        body: JSON.stringify({
+          surveyId: survey.id,
+          ...(!isAdmin ? { ownerUnitId: selectedOwnerUnitId } : {}),
+        }),
       });
       const data = await res.json();
 
@@ -241,7 +269,7 @@ export default function SurveysPage() {
       setFormData(survey);
     } else {
       setEditItem(null);
-      setFormData({ order: surveys.length + 1, isActive: true });
+      setFormData({ order: surveys.length + 1, isActive: isAdmin, ownerUnitId: selectedOwnerUnitId || null });
     }
     setShowModal(true);
   };
@@ -257,9 +285,18 @@ export default function SurveysPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="t-display" style={{ color: "var(--ink)" }}>Anketler</h1>
+        <div>
+          <h1 className="t-display" style={{ color: "var(--ink)" }}>Anketler</h1>
+          {!isAdmin && <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>Standart anketleri kuruluşunuza kopyalayın veya kendi anketinizi oluşturun.</p>}
+        </div>
+        {!isAdmin && roots.length > 1 && (
+          <select className="theme-select w-auto" value={selectedOwnerUnitId} onChange={(event) => setSelectedOwnerUnitId(event.target.value)}>
+            {roots.map((root) => <option key={root.id} value={root.id}>{root.name}</option>)}
+          </select>
+        )}
         <Button
           onClick={() => openModal()}
+          disabled={!isAdmin && !selectedOwnerUnitId}
         >
           <Plus size={20} /> Yeni Anket
         </Button>
@@ -294,6 +331,9 @@ export default function SurveysPage() {
                         Tanıtım
                       </span>
                     )}
+                    {!isAdmin && (
+                      <span className="badge badge-neutral">{survey.canEdit ? "Kuruluş anketi" : "Standart şablon"}</span>
+                    )}
                     {/* Boş anket uyarısı */}
                     {survey._count.categories === 0 && (
                       <span className="flex items-center gap-1 px-2 py-0.5 bg-[var(--warning)]/15 text-[var(--warning)] rounded text-xs" title="Bu ankette kategori veya soru bulunmuyor">
@@ -320,46 +360,44 @@ export default function SurveysPage() {
                   >
                     <Eye size={18} />
                   </Link>
-                  <Link
-                    href={`/admin/categories?surveyId=${survey.id}`}
-                    className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]"
-                    title="Kategorileri Yönet"
-                  >
-                    <FileText size={18} />
-                  </Link>
-                  <Button
-                    onClick={() => openModal(survey)} 
-                    title="Düzenle"
-                    variant="ghost"
-                    size="icon"
-                    className="text-[var(--blue-main)]"
-                  >
-                    <Edit size={18} />
-                  </Button>
+                  {survey.canEdit && (
+                    <>
+                      <Link
+                        href={`/admin/categories?surveyId=${survey.id}`}
+                        className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]"
+                        title="Kategorileri Yönet"
+                      >
+                        <FileText size={18} />
+                      </Link>
+                      <Button onClick={() => openModal(survey)} title="Düzenle" variant="ghost" size="icon" className="text-[var(--blue-main)]">
+                        <Edit size={18} />
+                      </Button>
+                    </>
+                  )}
                   {/* Kategori/soru tanımı bitince öneri yazma sırası gelir;
                       şablon o anketin soru ve şıklarıyla hazır iner. */}
-                  <a
+                  {isAdmin && <a
                     href={`/api/admin/recommendations/template?surveyId=${survey.id}`}
                     className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--warning)]"
                     title={`"${survey.name}" için öneri şablonu indir — her soru ve şık için hazır satır`}
                   >
                     <Download size={18} />
-                  </a>
+                  </a>}
                   <Button
                     onClick={() => duplicateSurvey(survey)}
-                    disabled={duplicatingId === survey.id}
-                    title={`"${survey.name}" anketini her şeyiyle kopyala — sorular, öneriler, kapsam kuralları`}
-                    variant="ghost"
-                    size="icon"
+                    disabled={duplicatingId === survey.id || (!isAdmin && !selectedOwnerUnitId)}
+                    title={!isAdmin && !survey.canEdit ? "Düzenlemek için kuruluşunuza kopyala" : `"${survey.name}" anketini her şeyiyle kopyala`}
+                    variant={!isAdmin && !survey.canEdit ? "outline" : "ghost"}
+                    size={!isAdmin && !survey.canEdit ? "sm" : "icon"}
                     className="text-[var(--accent)]"
                   >
                     {duplicatingId === survey.id ? (
                       <Loader2 size={18} className="animate-spin" />
                     ) : (
-                      <Copy size={18} />
+                      <><Copy size={18} />{!isAdmin && !survey.canEdit && "Kuruluşuma kopyala"}</>
                     )}
                   </Button>
-                  <Button
+                  {survey.canEdit && <Button
                     onClick={() => initiateDelete(survey)} 
                     title="Sil"
                     variant="ghost"
@@ -367,7 +405,7 @@ export default function SurveysPage() {
                     className="hover:bg-[var(--error-bg)] text-[var(--error-ink)]"
                   >
                     <Trash2 size={18} />
-                  </Button>
+                  </Button>}
                 </div>
               </div>
             </div>
@@ -455,6 +493,7 @@ export default function SurveysPage() {
                   </label>
                 </div>
 
+                {isAdmin && <>
                 {/* Tanıtım anketi: yeni kayıtlara otomatik atanır ve
                     raporlardan dışlanır. İkisi de aynı işaretten geliyor. */}
                 <div className="col-span-2">
@@ -474,6 +513,7 @@ export default function SurveysPage() {
                     </span>
                   </label>
                 </div>
+                </>}
               </div>
             </div>
             

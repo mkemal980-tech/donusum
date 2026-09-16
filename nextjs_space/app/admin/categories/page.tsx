@@ -13,6 +13,7 @@ import type { ImportRow } from "@/lib/question-import";
 import QuestionImportPreview, { type PreviewPayload } from "@/components/admin/question-import-preview";
 import QuestionRecommendationsModal, { type RecommendationTarget } from "@/components/admin/question-recommendations-modal";
 import { Button } from "@/components/ui/button";
+import { useSession } from "next-auth/react";
 
 interface Question {
   id: string;
@@ -57,6 +58,7 @@ interface Category {
 interface Survey {
   id: string;
   name: string;
+  canEdit?: boolean;
 }
 
 const questionTypes = [
@@ -98,6 +100,9 @@ const parseConditionalOptions = (conditionalOptions: any): any => {
 };
 
 export default function CategoriesPage() {
+  const { data: session } = useSession() || {};
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const isAdmin = role === 'ADMIN';
   const searchParams = useSearchParams();
   const surveyIdFromUrl = searchParams.get('surveyId');
   
@@ -152,26 +157,39 @@ export default function CategoriesPage() {
     try {
       const res = await fetch('/api/admin/surveys');
       const data = await res.json();
-      setSurveys(data || []);
+      if (!res.ok) throw new Error(data.error || 'Anketler yüklenemedi');
+      const editableSurveys = (data || []).filter((survey: Survey) => survey.canEdit !== false);
+      setSurveys(editableSurveys);
+      setSelectedSurveyId((current) =>
+        editableSurveys.some((survey: Survey) => survey.id === current)
+          ? current
+          : editableSurveys[0]?.id ?? ''
+      );
     } catch (error) {
       console.error('Error:', error);
     }
   }, []);
 
   const fetchCategories = useCallback(async () => {
+    if (!role || (role === 'UNIT_MANAGER' && !selectedSurveyId)) {
+      setCategories([]);
+      setLoading(false);
+      return;
+    }
     try {
       const url = selectedSurveyId 
         ? `/api/admin/categories?surveyId=${selectedSurveyId}` 
         : '/api/admin/categories';
       const res = await fetch(url);
       const data = await res.json();
-      setCategories(data || []);
+      if (!res.ok) throw new Error(data.error || 'Kategoriler yüklenemedi');
+      setCategories(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error:', error);
     } finally {
       setLoading(false);
     }
-  }, [selectedSurveyId]);
+  }, [role, selectedSurveyId]);
 
   useEffect(() => { 
     fetchSurveys(); 
@@ -183,8 +201,8 @@ export default function CategoriesPage() {
   }, [fetchCategories]);
 
   useEffect(() => {
-    fetchRecommendationCounts();
-  }, [fetchRecommendationCounts]);
+    if (isAdmin) fetchRecommendationCounts();
+  }, [fetchRecommendationCounts, isAdmin]);
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
@@ -665,7 +683,7 @@ export default function CategoriesPage() {
         })()}
       </div>
       <div className="flex items-center gap-1 ml-2">
-        <button
+        {isAdmin && <button
           onClick={() => setRecommendationModal({
             question,
             // Öneri, sorunun bulunduğu yere bağlanır; yönetici ayrıca
@@ -685,7 +703,7 @@ export default function CategoriesPage() {
               {recommendationCounts[question.id]}
             </span>
           )}
-        </button>
+        </button>}
         <button
           onClick={() => openModal('question', parentId, question, parentData)}
           className="p-1.5 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]"
@@ -718,6 +736,7 @@ export default function CategoriesPage() {
         <h1 className="t-display" style={{ color: "var(--ink)" }}>Kategori ve sorular</h1>
         <Button
           onClick={() => openModal('category')}
+          disabled={!isAdmin && !selectedSurveyId}
         >
           <Plus size={20} /> Yeni Kategori
         </Button>
@@ -733,7 +752,7 @@ export default function CategoriesPage() {
             onChange={(e) => setSelectedSurveyId(e.target.value)}
             className="flex-1 max-w-md p-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
           >
-            <option value="">Tüm Kategoriler (Anketsiz)</option>
+            {isAdmin && <option value="">Tüm Kategoriler (Anketsiz)</option>}
             {surveys.map(s => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
@@ -752,14 +771,14 @@ export default function CategoriesPage() {
                   <Eye size={16} />
                   Anketi Önizle
                 </Link>
-                <button
+                {isAdmin && <button
                   onClick={() => { setShowSurveyBulkUpload(true); setSurveyBulkPreview(null); setSurveyBulkUploadResult(null); }}
                   className="flex items-center gap-2 px-3 py-2 bg-[var(--accent-solid)] text-[var(--on-accent)] rounded-lg hover:bg-[var(--accent-dark)] text-sm"
                   title="Tüm kategorilere toplu soru yükle"
                 >
                   <Upload size={16} />
                   Toplu Soru Yükle
-                </button>
+                </button>}
               </div>
             </>
           )}
@@ -892,20 +911,20 @@ export default function CategoriesPage() {
                           </button>
                         ) : (
                           <>
-                            <button 
+                            <button
                               onClick={() => openModal('question', subCat.id, undefined, { isSubCategory: true })} 
                               className="p-1.5 hover:bg-[var(--bg-card-2)] rounded text-[var(--text-muted)]" 
                               title="Soru Ekle"
                             >
                               <Plus size={16} />
                             </button>
-                            <button 
+                            {isAdmin && <button
                               onClick={() => openBulkUploadModal(subCat.id, true)} 
                               className="p-1.5 hover:bg-[var(--success-bg)] rounded text-[var(--accent-ink)]" 
                               title="Excel'den Toplu Yükle"
                             >
                               <Upload size={16} />
-                            </button>
+                            </button>}
                           </>
                         )}
                         <button 
@@ -947,20 +966,20 @@ export default function CategoriesPage() {
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <button 
+                                    <button
                                       onClick={() => openModal('question', subLevel.id, undefined, { isSubCategory: false })} 
                                       className="p-1.5 hover:bg-[var(--blue-main)]/15 rounded text-[var(--blue-main)]" 
                                       title="Soru Ekle"
                                     >
                                       <Plus size={16} />
                                     </button>
-                                    <button 
+                                    {isAdmin && <button
                                       onClick={() => openBulkUploadModal(subLevel.id, false)} 
                                       className="p-1.5 hover:bg-[var(--accent-soft)] rounded text-[var(--accent-ink)]" 
                                       title="Excel'den Toplu Yükle"
                                     >
                                       <Upload size={16} />
-                                    </button>
+                                    </button>}
                                     <button 
                                       onClick={() => openModal('sublevel', subCat.id, subLevel)} 
                                       className="p-1.5 hover:bg-[var(--blue-main)]/15 rounded text-[var(--blue-main)]" 
@@ -1382,7 +1401,7 @@ export default function CategoriesPage() {
       )}
 
       {/* Bulk Upload Modal */}
-      {showBulkUpload && (
+      {isAdmin && showBulkUpload && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className={`theme-card p-6 w-full max-h-[90vh] overflow-y-auto ${bulkPreview ? 'max-w-7xl' : 'max-w-lg'}`}>
             <div className="flex justify-between items-center mb-4">
@@ -1530,7 +1549,7 @@ export default function CategoriesPage() {
       )}
 
       {/* Survey-Level Bulk Upload Modal */}
-      {showSurveyBulkUpload && selectedSurveyId && (
+      {isAdmin && showSurveyBulkUpload && selectedSurveyId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className={`theme-card p-6 w-full max-h-[90vh] overflow-y-auto ${surveyBulkPreview ? 'max-w-[95vw]' : 'max-w-2xl'}`}>
             <div className="flex justify-between items-center mb-4">
@@ -1688,7 +1707,7 @@ export default function CategoriesPage() {
         </div>
       )}
 
-      {recommendationModal && (
+      {isAdmin && recommendationModal && (
         <QuestionRecommendationsModal
           question={recommendationModal.question}
           target={recommendationModal.target}

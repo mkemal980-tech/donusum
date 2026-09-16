@@ -4,9 +4,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
 import { archiveQuestion } from "@/lib/soft-delete";
+import {
+  canEditSurvey,
+  surveyIdForCategory,
+  surveyIdForQuestion,
+  surveyIdForSubCategory,
+  surveyIdForSubLevel,
+} from "@/lib/survey-management";
 
 export async function POST(request: NextRequest) {
-  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  const auth = await withAuth(request, { requireUnitManager: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
 
   try {
@@ -16,6 +23,14 @@ export async function POST(request: NextRequest) {
     // En az biri gerekli: categoryId, subCategoryId veya subLevelId
     if (!categoryId && !subLevelId && !subCategoryId) {
       return NextResponse.json({ error: "categoryId, subCategoryId veya subLevelId gerekli" }, { status: 400 });
+    }
+    const surveyId = categoryId
+      ? await surveyIdForCategory(categoryId)
+      : subCategoryId
+        ? await surveyIdForSubCategory(subCategoryId)
+        : await surveyIdForSubLevel(subLevelId);
+    if (auth.user.role !== 'ADMIN' && (!surveyId || !(await canEditSurvey(auth.userId, auth.user.role, surveyId)))) {
+      return NextResponse.json({ error: 'Bu ankete soru ekleme yetkiniz yok' }, { status: 403 });
     }
 
     const question = await prisma.question.create({
@@ -41,12 +56,16 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  const auth = await withAuth(request, { requireUnitManager: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
 
   try {
     const body = await request.json();
     const { id, text, type, options, conditionalOptions, order, requiresEvidence, weight, axisType } = body;
+    const surveyId = await surveyIdForQuestion(id);
+    if (auth.user.role !== 'ADMIN' && (!surveyId || !(await canEditSurvey(auth.userId, auth.user.role, surveyId)))) {
+      return NextResponse.json({ error: 'Bu soruyu düzenleme yetkiniz yok' }, { status: 403 });
+    }
 
     const question = await prisma.question.update({
       where: { id },
@@ -69,13 +88,17 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  const auth = await withAuth(request, { requireUnitManager: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
 
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
+    const surveyId = await surveyIdForQuestion(id);
+    if (auth.user.role !== 'ADMIN' && (!surveyId || !(await canEditSurvey(auth.userId, auth.user.role, surveyId)))) {
+      return NextResponse.json({ error: 'Bu soruyu silme yetkiniz yok' }, { status: 403 });
+    }
 
     await archiveQuestion(id);
     return NextResponse.json({ success: true });

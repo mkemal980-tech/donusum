@@ -4,14 +4,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
 import { archiveCategory } from "@/lib/soft-delete";
+import { canEditSurvey, surveyIdForCategory } from "@/lib/survey-management";
 
 export async function GET(request: NextRequest) {
-  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  const auth = await withAuth(request, { requireUnitManager: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
 
   try {
     const { searchParams } = new URL(request.url);
     const surveyId = searchParams.get('surveyId');
+    if (auth.user.role !== 'ADMIN' && (!surveyId || !(await canEditSurvey(auth.userId, auth.user.role, surveyId)))) {
+      return NextResponse.json({ error: 'Bu anketin yapısını görme yetkiniz yok' }, { status: 403 });
+    }
 
     const whereClause = { archivedAt: null, ...(surveyId ? { surveyId } : {}) };
 
@@ -62,12 +66,15 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  const auth = await withAuth(request, { requireUnitManager: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
 
   try {
     const body = await request.json();
     const { name, description, order, surveyId } = body;
+    if (auth.user.role !== 'ADMIN' && (!surveyId || !(await canEditSurvey(auth.userId, auth.user.role, surveyId)))) {
+      return NextResponse.json({ error: 'Bu ankete kategori ekleme yetkiniz yok' }, { status: 403 });
+    }
 
     const category = await prisma.category.create({
       data: { 
@@ -85,12 +92,19 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  const auth = await withAuth(request, { requireUnitManager: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
 
   try {
     const body = await request.json();
     const { id, name, description, order, surveyId } = body;
+    const currentSurveyId = id ? await surveyIdForCategory(id) : null;
+    if (auth.user.role !== 'ADMIN' && (!currentSurveyId || !(await canEditSurvey(auth.userId, auth.user.role, currentSurveyId)))) {
+      return NextResponse.json({ error: 'Bu kategoriyi düzenleme yetkiniz yok' }, { status: 403 });
+    }
+    if (surveyId && surveyId !== currentSurveyId && !(await canEditSurvey(auth.userId, auth.user.role, surveyId))) {
+      return NextResponse.json({ error: 'Hedef anketi yönetme yetkiniz yok' }, { status: 403 });
+    }
 
     const category = await prisma.category.update({
       where: { id },
@@ -104,13 +118,17 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  const auth = await withAuth(request, { requireUnitManager: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
 
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
+    const surveyId = await surveyIdForCategory(id);
+    if (auth.user.role !== 'ADMIN' && (!surveyId || !(await canEditSurvey(auth.userId, auth.user.role, surveyId)))) {
+      return NextResponse.json({ error: 'Bu kategoriyi silme yetkiniz yok' }, { status: 403 });
+    }
 
     await archiveCategory(id);
     return NextResponse.json({ success: true });

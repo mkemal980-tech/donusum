@@ -4,14 +4,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
 import { archiveSubCategory } from "@/lib/soft-delete";
+import { canEditSurvey, surveyIdForCategory, surveyIdForSubCategory } from "@/lib/survey-management";
 
 export async function POST(request: NextRequest) {
-  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  const auth = await withAuth(request, { requireUnitManager: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
 
   try {
     const body = await request.json();
     const { name, description, order, categoryId, hasSubLevels } = body;
+    const surveyId = await surveyIdForCategory(categoryId);
+    if (auth.user.role !== 'ADMIN' && (!surveyId || !(await canEditSurvey(auth.userId, auth.user.role, surveyId)))) {
+      return NextResponse.json({ error: 'Bu ankete bölüm ekleme yetkiniz yok' }, { status: 403 });
+    }
 
     const subCategory = await prisma.subCategory.create({
       data: { 
@@ -30,12 +35,16 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  const auth = await withAuth(request, { requireUnitManager: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
 
   try {
     const body = await request.json();
     const { id, name, description, order, hasSubLevels } = body;
+    const surveyId = await surveyIdForSubCategory(id);
+    if (auth.user.role !== 'ADMIN' && (!surveyId || !(await canEditSurvey(auth.userId, auth.user.role, surveyId)))) {
+      return NextResponse.json({ error: 'Bu bölümü düzenleme yetkiniz yok' }, { status: 403 });
+    }
 
     const subCategory = await prisma.subCategory.update({
       where: { id },
@@ -49,13 +58,17 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
+  const auth = await withAuth(request, { requireUnitManager: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
 
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
+    const surveyId = await surveyIdForSubCategory(id);
+    if (auth.user.role !== 'ADMIN' && (!surveyId || !(await canEditSurvey(auth.userId, auth.user.role, surveyId)))) {
+      return NextResponse.json({ error: 'Bu bölümü silme yetkiniz yok' }, { status: 403 });
+    }
 
     await archiveSubCategory(id);
     return NextResponse.json({ success: true });
