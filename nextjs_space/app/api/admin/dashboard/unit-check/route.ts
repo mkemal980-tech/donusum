@@ -1,31 +1,23 @@
-import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { withAuth } from "@/lib/api-utils";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ hasResponses: false }, { status: 401 });
-    }
+export async function GET(request: NextRequest) {
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
 
-    const user = session.user as { id?: string; role?: string; unitId?: string };
-    
+  try {
+    // Rol ve birim taze okunur; token'daki değer eskimiş olabiliyordu.
+    const user = auth.user;
+
     // Only UNIT_MANAGER needs this check
     if (user.role !== "UNIT_MANAGER") {
       return NextResponse.json({ hasResponses: user.role === "ADMIN" });
     }
 
-    // Get the unit manager's unit
-    const unitManager = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { unitId: true },
-    });
-
-    if (!unitManager?.unitId) {
+    if (!user.unitId) {
       return NextResponse.json({ hasResponses: false });
     }
 
@@ -33,7 +25,7 @@ export async function GET() {
     // üzerinde çalışılmış mı diye bakılır.
     const usersWithResponses = await prisma.assessment.findFirst({
       where: {
-        unitId: unitManager.unitId,
+        unitId: user.unitId,
         responses: { some: {} },
       },
     });

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/db";
+import { withAuth } from "@/lib/api-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -12,12 +11,12 @@ interface CategoryType {
 }
 
 export async function GET(req: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as { role?: string }).role !== "ADMIN") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
+  // Rol token'dan değil veritabanından okunur: yetkisi alınan yönetici
+  // eski oturumuyla bu panoyu görmeye devam ediyordu.
+  const auth = await withAuth(req, { requireAdmin: true, rateLimit: "admin" });
+  if (!auth.success) return auth.response;
 
+  try {
     const { searchParams } = new URL(req.url);
     const surveyId = searchParams.get("surveyId");
 

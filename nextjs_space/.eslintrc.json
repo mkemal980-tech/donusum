@@ -1,7 +1,32 @@
 {
-  "extends": ["next/core-web-vitals"],
+  "extends": [
+    "next/core-web-vitals"
+  ],
   "rules": {
     "react/no-unescaped-entities": "off",
     "@next/next/no-sync-scripts": "off"
-  }
+  },
+  "overrides": [
+    {
+      "files": [
+        "app/api/**/*.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "next-auth",
+                "importNames": [
+                  "getServerSession"
+                ],
+                "message": "API rotalarinda getServerSession kullanmayin: JWT'deki rol/birim 30 gune kadar eskimis olabiliyor. lib/api-utils > withAuth her istekte veritabanindan taze kullanici okur."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

@@ -1,25 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/db";
+import { withAuth } from "@/lib/api-utils";
 // Yönetilen birim hiyerarşisi görev dağılımıyla ortak; tek yerde durur.
 import { getManagedUnitIds } from "@/lib/assessment";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: "Yetkilendirme gerekli" },
-        { status: 401 }
-      );
-    }
+  const auth = await withAuth(request, { requireUnitManager: true });
+  if (!auth.success) return auth.response;
 
-    const userId = (session.user as any).id;
-    const userRole = (session.user as any).role;
+  try {
+    const userId = auth.userId;
+    const userRole = auth.user.role;
 
     // Kullanıcının yönettiği birimlerin ID'lerini bul
     const managedUnitIds = await getManagedUnitIds(userId);
@@ -39,8 +32,18 @@ export async function GET(request: NextRequest) {
      * Kişi düzeyindeki soru ("kim ne kadar doldurdu") görev dağılımı
      * ekranında cevaplanıyor; burada tekrarlanmıyor.
      */
+    /**
+     * Yönetici hiçbir birimin `UnitAdmin` kaydına sahip olmayabilir; o durumda
+     * `in: []` sessizce boş bir ekran veriyordu. Yönetici için kapsam
+     * daraltılmaz.
+     */
+    const unitScope =
+      userRole === "ADMIN" && managedUnitIds.length === 0
+        ? { not: null }
+        : { in: managedUnitIds };
+
     const assessments = await prisma.assessment.findMany({
-      where: { unitId: { in: managedUnitIds } },
+      where: { unitId: unitScope },
       include: {
         unit: { select: { id: true, name: true, description: true } },
         survey: { select: { id: true, name: true } },

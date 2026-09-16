@@ -1,19 +1,17 @@
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
+import { withAuth } from "@/lib/api-utils";
 
 // Kullanıcıya atanan anketleri getir
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await withAuth(request);
+  if (!auth.success) return auth.response;
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const userId = session.user.id;
-    const userRole = (session.user as any)?.role || "USER";
+    const userId = auth.userId;
+    const userRole = auth.user.role;
 
     // Admin ise tüm aktif anketleri gör (süre sınırı yok)
     if (userRole === "ADMIN") {
@@ -43,13 +41,9 @@ export async function GET() {
       orderBy: { assignedAt: 'desc' }
     });
 
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { unitId: true },
-    });
-    const campaignRecipients = currentUser?.unitId
+    const campaignRecipients = auth.user.unitId
       ? await prisma.campaignRecipient.findMany({
-          where: { memberUnitId: currentUser.unitId },
+          where: { memberUnitId: auth.user.unitId },
           orderBy: { assignedAt: "desc" },
           select: {
             campaign: {

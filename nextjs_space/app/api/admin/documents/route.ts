@@ -1,18 +1,15 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/db";
+import { withAuth } from "@/lib/api-utils";
 import { getFileUrl } from "@/lib/s3";
 
 export async function GET(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: "admin" });
+  if (!auth.success) return auth.response;
 
+  try {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId");
     const unitId = searchParams.get("unitId");
@@ -108,12 +105,10 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  const auth = await withAuth(request, { requireAdmin: true, rateLimit: "admin" });
+  if (!auth.success) return auth.response;
 
+  try {
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get("id");
 

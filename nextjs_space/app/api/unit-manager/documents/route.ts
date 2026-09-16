@@ -1,38 +1,40 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/db";
 import { getFileUrl } from "@/lib/s3";
+import { withAuth } from "@/lib/api-utils";
+import { getManagedUnitIds } from "@/lib/assessment";
 
 export async function GET(request: NextRequest) {
+  const auth = await withAuth(request, { requireUnitManager: true });
+  if (!auth.success) return auth.response;
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    /**
+     * Kapsam açıkça çözülür; boş bırakılmaz.
+     *
+     * Burada eskiden `whereClause` yalnızca "rol UNIT_MANAGER **ve** birimi
+     * var" koşulunda doldurulduğu için, birimi atanmamış bir birim yöneticisi
+     * `where: {}` ile sistemdeki **bütün** kuruluşların belgelerini çalışan
+     * imzalı indirme adresleriyle birlikte alıyordu. Bu durum olağandışı da
+     * değildi: rolü verilip birimi sonra atanan ya da kısmi bir güncellemeyle
+     * birimi düşen her kullanıcı oraya düşüyordu.
+     *
+     * Kapsam artık diğer ekranlarla aynı kaynaktan geliyor: yönetilen birimler
+     * hiyerarşiyle birlikte (bkz. lib/assessment > getManagedUnitIds), ayrıca
+     * kullanıcının kendi birimi. Yönetilen birim yoksa liste boştur.
+     */
+    const whereClause: { user?: { unitId: { in: string[] } } } = {};
 
-    const userId = (session.user as any)?.id;
-    const userRole = (session.user as any)?.role;
+    if (auth.user.role !== "ADMIN") {
+      const managedUnitIds = new Set(await getManagedUnitIds(auth.userId));
+      if (auth.user.unitId) managedUnitIds.add(auth.user.unitId);
 
-    // Get current user with their unit
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { unitId: true, role: true }
-    });
-
-    // Only allow UNIT_MANAGER or ADMIN
-    if (userRole !== "UNIT_MANAGER" && userRole !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
-
-    // Unit managers can only see documents from their unit
-    const whereClause: any = {};
-    if (userRole === "UNIT_MANAGER" && currentUser?.unitId) {
-      whereClause.user = {
-        unitId: currentUser.unitId
-      };
+      if (managedUnitIds.size === 0) {
+        return NextResponse.json([]);
+      }
+      whereClause.user = { unitId: { in: [...managedUnitIds] } };
     }
 
     const documents = await prisma.document.findMany({
@@ -92,10 +94,12 @@ export async function GET(request: NextRequest) {
     });
 
     // Generate signed URLs for each document
+    // `cloudStoragePath` yanıtta dönmez: istemciye sızan nesne anahtarı,
+    // yükleme tamamlama uç noktasında sahte yol üretmeyi kolaylaştırıyordu.
     const documentsWithUrls = await Promise.all(
-      documents.map(async (doc) => {
+      documents.map(async ({ cloudStoragePath, ...doc }) => {
         try {
-          const downloadUrl = await getFileUrl(doc.cloudStoragePath, doc.isPublic);
+          const downloadUrl = await getFileUrl(cloudStoragePath, doc.isPublic);
           return { ...doc, downloadUrl };
         } catch {
           return { ...doc, downloadUrl: null };

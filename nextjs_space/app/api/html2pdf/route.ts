@@ -2,10 +2,9 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { existsSync } from 'fs';
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { NextRequest, NextResponse } from 'next/server';
 import puppeteer, { type PDFOptions } from 'puppeteer-core';
-import { authOptions } from '@/lib/auth-options';
+import { withAuth } from '@/lib/api-utils';
 
 interface PdfRequestOptions {
   format?: PDFOptions['format'];
@@ -14,6 +13,19 @@ interface PdfRequestOptions {
   printBackground?: boolean;
   landscape?: boolean;
 }
+
+/**
+ * Aynı anda kaç PDF üretilebilir.
+ *
+ * Her istek tam bir Chromium süreci başlatıyor. Uç nokta hız sınırsızken
+ * birkaç eşzamanlı istek sunucunun belleğini bitiriyor, sağlık kontrolü
+ * düşüyor ve Railway konteyneri yeniden başlatıyordu.
+ */
+const MAX_CONCURRENT_RENDERS = 2;
+let activeRenders = 0;
+
+/** Şablon büyüdükçe büyüyor; yine de sınırsız gövde kabul edilmez. */
+const MAX_HTML_BYTES = 2 * 1024 * 1024;
 
 function resolveChromiumExecutablePath(): string {
   const candidates = [
@@ -59,25 +71,38 @@ function withBaseUrl(html: string): string {
   return `<!doctype html><html><head>${baseTag}</head><body>${html}</body></html>`;
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // Kimlik ve hız sınırı tek kapıda. Uç nokta daha önce `withAuth`
+  // kullanmadığı için hiç hız sınırı taşımıyordu.
+  const auth = await withAuth(request, { rateLimit: 'ai' });
+  if (!auth.success) return auth.response;
+
   let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
 
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  if (activeRenders >= MAX_CONCURRENT_RENDERS) {
+    return NextResponse.json(
+      { error: 'Rapor üretimi meşgul, birkaç saniye sonra tekrar deneyin.' },
+      { status: 503, headers: { 'Retry-After': '5' } }
+    );
+  }
+  activeRenders += 1;
 
+  try {
     const { html, options } = await request.json();
 
     if (!html || typeof html !== 'string') {
       return NextResponse.json({ error: 'HTML content is required' }, { status: 400 });
+    }
+    if (Buffer.byteLength(html, 'utf8') > MAX_HTML_BYTES) {
+      return NextResponse.json({ error: 'Rapor içeriği çok büyük.' }, { status: 413 });
     }
 
     browser = await puppeteer.launch({
       executablePath: resolveChromiumExecutablePath(),
       headless: true,
       args: [
+        // Konteynerde root olarak çalışıldığı için sandbox kapalı; bu yüzden
+        // sayfanın ağ ve dosya erişimi aşağıda tamamen kesiliyor.
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
@@ -86,6 +111,26 @@ export async function POST(request: Request) {
     });
 
     const page = await browser.newPage();
+
+    /**
+     * Sayfa hiçbir yere bağlanamaz.
+     *
+     * Gövdedeki HTML istemciden geliyor. Engel olmadan `<iframe src="http://
+     * dahili-servis/">` ya da `<img src="http://169.254.169.254/...">` ile
+     * sunucunun ulaşabildiği her adres PDF'e basılıp indirilebiliyordu (SSRF).
+     * Rapor şablonu zaten kendi kendine yeten HTML+CSS; dış kaynağa ihtiyacı
+     * yok. `data:` ve `blob:` gömülü görseller için açık bırakıldı.
+     */
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      const url = req.url();
+      if (url.startsWith('data:') || url.startsWith('blob:') || url === 'about:blank') {
+        void req.continue();
+        return;
+      }
+      void req.abort();
+    });
+
     await page.setContent(withBaseUrl(html), {
       waitUntil: 'domcontentloaded',
       timeout: 30000
@@ -104,6 +149,7 @@ export async function POST(request: Request) {
     console.error('Error generating PDF:', error);
     return NextResponse.json({ success: false, error: 'Failed to generate PDF' }, { status: 500 });
   } finally {
+    activeRenders -= 1;
     if (browser) {
       await browser.close();
     }

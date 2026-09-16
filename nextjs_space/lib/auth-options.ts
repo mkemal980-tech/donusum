@@ -99,7 +99,19 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
+    /**
+     * JWT içeriği giriş anında donuyor: rol, birim ve aktiflik bilgisi token'da
+     * taşınıyor. NextAuth varsayılanı 30 gün olduğu için yetkisi alınan ya da
+     * devre dışı bırakılan bir hesap, token'ı doğrudan okuyan yerlerde bir ay
+     * boyunca eski yetkisini koruyordu.
+     *
+     * API rotaları artık `withAuth` ile her istekte veritabanından taze
+     * kullanıcı okuyor; bu sınır ikinci savunma hattıdır ve sunucu
+     * bileşenlerinde okunan oturumu da tazeler.
+     */
+    maxAge: 8 * 60 * 60,
+    updateAge: 30 * 60,
   },
   callbacks: {
     async jwt({ token, user }) {

@@ -1,10 +1,8 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
 import { generatePresignedUploadUrl } from "@/lib/s3";
-import { checkRateLimit, getClientIP, validators } from "@/lib/api-utils";
+import { validators, withAuth } from "@/lib/api-utils";
 
 // Allowed file types for upload
 const ALLOWED_FILE_TYPES = [
@@ -24,22 +22,12 @@ const ALLOWED_FILE_TYPES = [
 const MAX_FILE_SIZE_MB = 10; // Maximum 10MB
 
 export async function POST(request: NextRequest) {
-  // Rate limiting for uploads
-  const ip = getClientIP(request);
-  const rateLimit = checkRateLimit(ip, 'upload');
-  if (!rateLimit.allowed) {
-    return NextResponse.json(
-      { error: "Çok fazla yükleme denemesi. Lütfen bekleyin." },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil(rateLimit.resetIn / 1000)) } }
-    );
-  }
+  // Hız sınırı ve kimlik tek kapıda; devre dışı bırakılan hesap artık
+  // eski oturumuyla yükleme adresi alamıyor.
+  const auth = await withAuth(request, { rateLimit: 'upload' });
+  if (!auth.success) return auth.response;
 
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await request.json();
     const { fileName, contentType, isPublic, fileSize } = body ?? {};
 
