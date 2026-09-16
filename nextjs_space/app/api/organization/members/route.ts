@@ -150,6 +150,11 @@ export async function GET(request: NextRequest) {
                 isActive: true,
                 sectorId: true,
                 subSectorId: true,
+                surveyAssignments: {
+                  where: { isActive: true },
+                  select: { surveyId: true },
+                  orderBy: { assignedAt: "asc" },
+                },
               },
               orderBy: { createdAt: "asc" },
             },
@@ -213,6 +218,12 @@ export async function POST(request: NextRequest) {
     }
     if (action === "resend_invitation") {
       return await resendInvitation(body, tenant);
+    }
+    if (action === "update_invitation") {
+      return await updateInvitation(body, tenant, auth.userId);
+    }
+    if (action === "delete_invitation") {
+      return await deleteInvitation(body, tenant);
     }
 
     return NextResponse.json({ error: "Geçersiz üye yönetimi işlemi." }, { status: 400 });
@@ -630,4 +641,178 @@ async function resendInvitation(body: Record<string, unknown>, tenant: { id: str
     memberName: user.unit.name,
   }]);
   return NextResponse.json({ success: true, invitation });
+}
+
+async function updateInvitation(
+  body: Record<string, unknown>,
+  tenant: { id: string; name: string },
+  assignedBy: string
+) {
+  const userId = clean(body.userId, 64);
+  const memberUnitId = clean(body.memberUnitId, 64);
+  const firstName = clean(body.firstName, 80);
+  const lastName = clean(body.lastName, 80) || null;
+  const email = clean(body.email, 254).toLowerCase();
+  const surveyId = clean(body.surveyId, 64);
+  const makeUnitManager = body.makeUnitManager === true;
+
+  if (!userId || !memberUnitId || !firstName || !validators.email(email)) {
+    return NextResponse.json(
+      { error: "Üye kuruluş, ad ve geçerli e-posta gerekli." },
+      { status: 400 }
+    );
+  }
+
+  const descendantIds = await getDescendantUnitIds(tenant.id);
+  const descendantIdSet = new Set(descendantIds);
+  if (!descendantIdSet.has(memberUnitId)) {
+    return NextResponse.json({ error: "Üye kuruluş bu STK kapsamına ait değil." }, { status: 403 });
+  }
+
+  const pendingUser = await prisma.user.findFirst({
+    where: { id: userId, unitId: { in: descendantIds }, isActive: true },
+    select: {
+      id: true,
+      email: true,
+      emailVerified: true,
+      role: true,
+      unitId: true,
+      sectorId: true,
+      subSectorId: true,
+    },
+  });
+  if (!pendingUser) {
+    return NextResponse.json({ error: "Düzenlenecek davet bulunamadı." }, { status: 404 });
+  }
+  if (pendingUser.emailVerified) {
+    return NextResponse.json(
+      { error: "Hesabını etkinleştirmiş kullanıcıların davet bilgileri değiştirilemez." },
+      { status: 409 }
+    );
+  }
+  if (pendingUser.role === "ADMIN") {
+    return NextResponse.json(
+      { error: "Platform yöneticisi davetleri bu ekrandan değiştirilemez." },
+      { status: 403 }
+    );
+  }
+
+  const surveyResolution = await resolveAssignableSurvey(assignedBy, tenant.id, surveyId);
+  if (surveyResolution.error) {
+    return NextResponse.json({ error: surveyResolution.error }, { status: 403 });
+  }
+  const assignedSurvey = surveyResolution.survey;
+
+  const [member, duplicateUser] = await Promise.all([
+    prisma.unit.findUnique({
+      where: { id: memberUnitId },
+      select: {
+        id: true,
+        name: true,
+        users: {
+          where: { isActive: true, id: { not: userId }, sectorId: { not: null } },
+          select: { sectorId: true, subSectorId: true },
+          orderBy: { createdAt: "asc" },
+          take: 1,
+        },
+      },
+    }),
+    prisma.user.findFirst({
+      where: { email, id: { not: userId } },
+      select: { id: true },
+    }),
+  ]);
+  if (!member) return NextResponse.json({ error: "Üye kuruluş bulunamadı." }, { status: 404 });
+  if (duplicateUser) {
+    return NextResponse.json({ error: "Bu e-posta adresiyle bir hesap zaten mevcut." }, { status: 409 });
+  }
+
+  const inheritedProfile = member.users[0];
+  const profile = inheritedProfile ??
+    (pendingUser.unitId === member.id && pendingUser.sectorId
+      ? { sectorId: pendingUser.sectorId, subSectorId: pendingUser.subSectorId }
+      : null);
+  if (!profile?.sectorId) {
+    return NextResponse.json(
+      { error: "Üye kuruluşun sektör profili eksik; davet bu kuruluşa taşınamaz." },
+      { status: 409 }
+    );
+  }
+
+  const token = invitationToken();
+  await prisma.$transaction(async (tx) => {
+    await tx.unitAdmin.deleteMany({
+      where: { userId, unitId: { in: descendantIds } },
+    });
+    await tx.userSurveyAssignment.deleteMany({ where: { userId } });
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        email,
+        firstName,
+        lastName,
+        organization: member.name,
+        role: makeUnitManager ? "UNIT_MANAGER" : "USER",
+        unitId: member.id,
+        sectorId: profile.sectorId,
+        subSectorId: profile.subSectorId,
+        passwordResetToken: token,
+        passwordResetExpires: new Date(Date.now() + INVITATION_TTL_MS),
+      },
+    });
+    if (makeUnitManager) {
+      await tx.unitAdmin.create({ data: { unitId: member.id, userId } });
+    }
+    if (assignedSurvey) {
+      await tx.userSurveyAssignment.create({
+        data: { userId, surveyId: assignedSurvey.id, assignedBy },
+      });
+    }
+  });
+
+  const invitation = await deliverInvitations(tenant.name, [{
+    id: userId,
+    email,
+    firstName,
+    token,
+    memberName: member.name,
+    surveyName: assignedSurvey?.name,
+  }]);
+  return NextResponse.json({
+    success: true,
+    assignedSurvey: assignedSurvey
+      ? { id: assignedSurvey.id, name: assignedSurvey.name }
+      : null,
+    invitation,
+  });
+}
+
+async function deleteInvitation(
+  body: Record<string, unknown>,
+  tenant: { id: string; name: string }
+) {
+  const userId = clean(body.userId, 64);
+  const descendantIds = await getDescendantUnitIds(tenant.id);
+  const pendingUser = await prisma.user.findFirst({
+    where: { id: userId, unitId: { in: descendantIds }, isActive: true },
+    select: { id: true, emailVerified: true, role: true },
+  });
+  if (!pendingUser) {
+    return NextResponse.json({ error: "Silinecek davet bulunamadı." }, { status: 404 });
+  }
+  if (pendingUser.emailVerified) {
+    return NextResponse.json(
+      { error: "Hesabını etkinleştirmiş kullanıcıların daveti silinemez." },
+      { status: 409 }
+    );
+  }
+  if (pendingUser.role === "ADMIN") {
+    return NextResponse.json(
+      { error: "Platform yöneticisi davetleri bu ekrandan silinemez." },
+      { status: 403 }
+    );
+  }
+
+  await prisma.user.delete({ where: { id: pendingUser.id } });
+  return NextResponse.json({ success: true });
 }

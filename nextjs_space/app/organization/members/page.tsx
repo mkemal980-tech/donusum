@@ -9,8 +9,10 @@ import {
   FileUp,
   Loader2,
   Mail,
+  Pencil,
   Plus,
   RefreshCw,
+  Trash2,
   UserPlus,
   Users,
   X,
@@ -31,6 +33,7 @@ type MemberUser = {
   isActive: boolean;
   sectorId: string | null;
   subSectorId: string | null;
+  surveyAssignments: { surveyId: string }[];
 };
 
 type MemberUnit = {
@@ -69,6 +72,16 @@ const EMPTY_MEMBER_FORM = {
 
 const EMPTY_USER_FORM = { memberUnitId: "", firstName: "", lastName: "", email: "", surveyId: "" };
 
+type EditInvitationForm = {
+  userId: string;
+  memberUnitId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  surveyId: string;
+  makeUnitManager: boolean;
+};
+
 function invitationMessage(invitation?: InvitationSummary) {
   if (!invitation) return "İşlem tamamlandı.";
   if ((invitation.sent ?? 0) > 0) return "Davet e-postası gönderildi.";
@@ -85,6 +98,9 @@ export default function OrganizationMembersPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [resendingUserId, setResendingUserId] = useState("");
+  const [savingInvitationId, setSavingInvitationId] = useState("");
+  const [deletingInvitationId, setDeletingInvitationId] = useState("");
+  const [editInvitationForm, setEditInvitationForm] = useState<EditInvitationForm | null>(null);
   const [mode, setMode] = useState<"member" | "user" | "excel" | null>(null);
   const [memberForm, setMemberForm] = useState(EMPTY_MEMBER_FORM);
   const [userForm, setUserForm] = useState(EMPTY_USER_FORM);
@@ -130,6 +146,7 @@ export default function OrganizationMembersPage() {
   const selectedRoot = roots.find((root) => root.id === tenantUnitId);
   const members = useMemo(() => selectedRoot?.members ?? [], [selectedRoot]);
   const surveys = useMemo(() => selectedRoot?.surveys ?? [], [selectedRoot]);
+  const surveyById = useMemo(() => new Map(surveys.map((survey) => [survey.id, survey])), [surveys]);
   const selectedSector = sectors.find((sector) => sector.id === memberForm.sectorId);
   const sectorById = useMemo(() => new Map(sectors.map((sector) => [sector.id, sector])), [sectors]);
   const subSectorById = useMemo(
@@ -150,6 +167,10 @@ export default function OrganizationMembersPage() {
       surveyId: surveys.some((survey) => survey.id === current.surveyId) ? current.surveyId : "",
     }));
   }, [members, surveys]);
+
+  useEffect(() => {
+    setEditInvitationForm(null);
+  }, [tenantUnitId]);
 
   const postAction = async (payload: Record<string, unknown>) => {
     const response = await fetch("/api/organization/members", {
@@ -260,6 +281,57 @@ export default function OrganizationMembersPage() {
     }
   };
 
+  const startEditingInvitation = (user: MemberUser, memberUnitId: string) => {
+    setMode(null);
+    setEditInvitationForm({
+      userId: user.id,
+      memberUnitId,
+      firstName: user.firstName ?? "",
+      lastName: user.lastName ?? "",
+      email: user.email,
+      surveyId: user.surveyAssignments[0]?.surveyId ?? "",
+      makeUnitManager: user.role === "UNIT_MANAGER",
+    });
+    window.requestAnimationFrame(() => {
+      document.getElementById("edit-invitation-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const updateInvitation = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editInvitationForm) return;
+    setSavingInvitationId(editInvitationForm.userId);
+    try {
+      const data = await postAction({ action: "update_invitation", ...editInvitationForm });
+      const assignmentMessage = data.assignedSurvey?.name
+        ? ` ${data.assignedSurvey.name} anketi atandı.`
+        : " Anket ataması kaldırıldı.";
+      toast.success(`Davet güncellendi.${assignmentMessage} ${invitationMessage(data.invitation)}`);
+      setEditInvitationForm(null);
+      await loadData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Davet güncellenemedi.");
+    } finally {
+      setSavingInvitationId("");
+    }
+  };
+
+  const deleteInvitation = async (user: MemberUser) => {
+    const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
+    if (!window.confirm(`${fullName} için bekleyen davet ve kullanıcı kaydı silinecek. Üye kuruluş korunacak. Devam edilsin mi?`)) return;
+    setDeletingInvitationId(user.id);
+    try {
+      await postAction({ action: "delete_invitation", userId: user.id });
+      if (editInvitationForm?.userId === user.id) setEditInvitationForm(null);
+      toast.success("Bekleyen davet silindi.");
+      await loadData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Davet silinemedi.");
+    } finally {
+      setDeletingInvitationId("");
+    }
+  };
+
   if (loading || sessionStatus === "loading") {
     return (
       <>
@@ -278,13 +350,13 @@ export default function OrganizationMembersPage() {
           subtitle="Üye kuruluşları ve kullanıcılarını ekleyin, güvenli hesap davetlerini yönetin."
           actions={
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={() => setMode(mode === "excel" ? null : "excel")} disabled={!selectedRoot}>
+              <Button variant="outline" onClick={() => { setEditInvitationForm(null); setMode(mode === "excel" ? null : "excel"); }} disabled={!selectedRoot}>
                 <FileUp size={16} /> Excel ile aktar
               </Button>
-              <Button variant="outline" onClick={() => setMode(mode === "user" ? null : "user")} disabled={!members.length}>
+              <Button variant="outline" onClick={() => { setEditInvitationForm(null); setMode(mode === "user" ? null : "user"); }} disabled={!members.length}>
                 <UserPlus size={16} /> Kullanıcı ekle
               </Button>
-              <Button onClick={() => setMode(mode === "member" ? null : "member")} disabled={!selectedRoot}>
+              <Button onClick={() => { setEditInvitationForm(null); setMode(mode === "member" ? null : "member"); }} disabled={!selectedRoot}>
                 {mode === "member" ? <X size={16} /> : <Plus size={16} />}
                 {mode === "member" ? "Kapat" : "Yeni üye kuruluş"}
               </Button>
@@ -390,6 +462,81 @@ export default function OrganizationMembersPage() {
           </FormPanel>
         )}
 
+        {editInvitationForm && (
+          <div id="edit-invitation-panel">
+            <FormPanel
+              title="Bekleyen daveti düzenle"
+              description="Davet bilgileri güncellenir, eski bağlantı geçersiz olur ve yeni davet seçilen e-posta adresine gönderilir."
+            >
+            <form onSubmit={updateInvitation} className="grid gap-4 md:grid-cols-2">
+              <Field label="Üye kuruluş">
+                <select
+                  required
+                  className="theme-select mt-1.5 w-full"
+                  value={editInvitationForm.memberUnitId}
+                  onChange={(event) => setEditInvitationForm({ ...editInvitationForm, memberUnitId: event.target.value })}
+                >
+                  {members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+                </select>
+              </Field>
+              <Field label="E-posta">
+                <input
+                  required
+                  type="email"
+                  maxLength={254}
+                  className="theme-input mt-1.5 w-full"
+                  value={editInvitationForm.email}
+                  onChange={(event) => setEditInvitationForm({ ...editInvitationForm, email: event.target.value })}
+                />
+              </Field>
+              <Field label="Ad">
+                <input
+                  required
+                  maxLength={80}
+                  className="theme-input mt-1.5 w-full"
+                  value={editInvitationForm.firstName}
+                  onChange={(event) => setEditInvitationForm({ ...editInvitationForm, firstName: event.target.value })}
+                />
+              </Field>
+              <Field label="Soyad">
+                <input
+                  maxLength={80}
+                  className="theme-input mt-1.5 w-full"
+                  value={editInvitationForm.lastName}
+                  onChange={(event) => setEditInvitationForm({ ...editInvitationForm, lastName: event.target.value })}
+                />
+              </Field>
+              <Field label="Atanacak anket (isteğe bağlı)">
+                <select
+                  className="theme-select mt-1.5 w-full"
+                  value={editInvitationForm.surveyId}
+                  onChange={(event) => setEditInvitationForm({ ...editInvitationForm, surveyId: event.target.value })}
+                >
+                  <option value="">Anket atamadan davet et</option>
+                  {surveys.map((survey) => <option key={survey.id} value={survey.id}>{survey.name}</option>)}
+                </select>
+              </Field>
+              <label className="flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] p-4" style={{ background: "var(--surface-2)", border: "1px solid var(--line)" }}>
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4"
+                  checked={editInvitationForm.makeUnitManager}
+                  onChange={(event) => setEditInvitationForm({ ...editInvitationForm, makeUnitManager: event.target.checked })}
+                />
+                <span>
+                  <span className="block font-medium" style={{ color: "var(--ink)" }}>Üye kuruluş yöneticisi olsun</span>
+                  <span className="mt-1 block t-caption" style={{ color: "var(--ink-3)" }}>Bu birimi ve alt birimlerini yönetebilir.</span>
+                </span>
+              </label>
+              <div className="flex items-end justify-end gap-2 md:col-span-2">
+                <Button type="button" variant="ghost" onClick={() => setEditInvitationForm(null)}>Vazgeç</Button>
+                <Button type="submit" loading={savingInvitationId === editInvitationForm.userId}>Değişiklikleri kaydet ve daveti yenile</Button>
+              </div>
+            </form>
+            </FormPanel>
+          </div>
+        )}
+
         {!selectedRoot ? (
           <EmptyState title="Yönetilen kuruluş bulunamadı" description="Bu hesabın yönettiği bir oda/STK atanmadığı için üye eklenemez." />
         ) : members.length === 0 ? (
@@ -418,16 +565,20 @@ export default function OrganizationMembersPage() {
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="theme-table">
-                        <thead><tr><th>Kullanıcı</th><th>E-posta</th><th>Sektör</th><th>Yetki</th><th>Durum</th><th className="text-right">İşlem</th></tr></thead>
+                        <thead><tr><th>Kullanıcı</th><th>E-posta</th><th>Sektör</th><th>Anket</th><th>Yetki</th><th>Durum</th><th className="text-right">İşlem</th></tr></thead>
                         <tbody>
                           {member.users.map((user) => {
                             const sector = user.sectorId ? sectorById.get(user.sectorId) : null;
                             const subSector = user.subSectorId ? subSectorById.get(user.subSectorId) : null;
+                            const assignedSurvey = user.surveyAssignments[0]
+                              ? surveyById.get(user.surveyAssignments[0].surveyId)
+                              : null;
                             return (
                               <tr key={user.id}>
                                 <td className="font-medium">{[user.firstName, user.lastName].filter(Boolean).join(" ") || "—"}</td>
                                 <td>{user.email}</td>
                                 <td>{subSector?.name || sector?.name || "—"}</td>
+                                <td>{assignedSurvey?.name || "—"}</td>
                                 <td>{user.role === "UNIT_MANAGER" ? <span className="badge badge-neutral">Birim yöneticisi</span> : "Kullanıcı"}</td>
                                 <td>
                                   <span className={!user.isActive ? "badge badge-neutral" : user.emailVerified ? "badge badge-success" : "badge badge-warning"}>
@@ -435,11 +586,25 @@ export default function OrganizationMembersPage() {
                                   </span>
                                 </td>
                                 <td>
-                                  <div className="flex justify-end">
+                                  <div className="flex flex-wrap justify-end gap-1">
                                     {user.isActive && !user.emailVerified && (
-                                      <Button size="sm" variant="ghost" loading={resendingUserId === user.id} onClick={() => resendInvitation(user.id)}>
-                                        {resendingUserId !== user.id && <RefreshCw size={14} />} Daveti yenile
-                                      </Button>
+                                      <>
+                                        <Button size="sm" variant="ghost" onClick={() => startEditingInvitation(user, member.id)}>
+                                          <Pencil size={14} /> Düzenle
+                                        </Button>
+                                        <Button size="sm" variant="ghost" loading={resendingUserId === user.id} onClick={() => resendInvitation(user.id)}>
+                                          {resendingUserId !== user.id && <RefreshCw size={14} />} Daveti yenile
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          loading={deletingInvitationId === user.id}
+                                          onClick={() => deleteInvitation(user)}
+                                          className="text-[var(--error)]"
+                                        >
+                                          {deletingInvitationId !== user.id && <Trash2 size={14} />} Sil
+                                        </Button>
+                                      </>
                                     )}
                                   </div>
                                 </td>
