@@ -83,6 +83,8 @@ export async function GET(req: NextRequest) {
     let categoryStats: { categoryId: string; categoryName: string; average: number; best: number; lowest: number; userCount: number }[] = [];
     let userScores: { userId: string; name: string; email: string; organization: string | null; sector: string; subSector: string; percentage: number; maturityScore: number; responseCount: number }[] = [];
     let sectorStats: { sector: string; average: number; best: number; lowest: number; userCount: number }[] = [];
+    /** Liste sınıra takıldıysa ekran bunu söylemeli. */
+    let userScoresTruncated = false;
 
     if (surveyId) {
       // Anket bazlı istatistikler
@@ -141,39 +143,66 @@ export async function GET(req: NextRequest) {
           categoryCount: survey.categories.length,
         };
 
-        // Kategori bazlı istatistikler
-        for (const category of survey.categories) {
-          const categoryQuestionIds = await prisma.question.findMany({
-            where: {
-              OR: [
-                { categoryId: category.id },
-                { subCategory: { categoryId: category.id } },
-                { subLevel: { subCategory: { categoryId: category.id } } },
-              ],
-            },
-            select: { id: true },
-          });
+        /**
+         * Kategori istatistikleri iki sorguyla çıkar.
+         *
+         * Burada kategori başına iki sorgu atılıyordu (soru kimlikleri + o
+         * kimliklere ait bütün cevaplar); 12 kategorili bir ankette 24 sorgu
+         * ediyordu ve cevap tablosu büyüdükçe her biri ağırlaşıyordu. Soruların
+         * kategori eşlemesi ve cevaplar tek seferde çekilip bellekte gruplanıyor.
+         */
+        const questionsWithCategory = await prisma.question.findMany({
+          where: {
+            OR: [
+              { categoryId: { in: categoryIds } },
+              { subCategory: { categoryId: { in: categoryIds } } },
+              { subLevel: { subCategory: { categoryId: { in: categoryIds } } } },
+            ],
+          },
+          select: {
+            id: true,
+            categoryId: true,
+            subCategory: { select: { categoryId: true } },
+            subLevel: { select: { subCategory: { select: { categoryId: true } } } },
+          },
+        });
 
-          const questionIds = categoryQuestionIds.map((q: { id: string }) => q.id);
+        const categoryOfQuestion = new Map<string, string>();
+        for (const question of questionsWithCategory) {
+          const owner =
+            question.categoryId ??
+            question.subCategory?.categoryId ??
+            question.subLevel?.subCategory.categoryId ??
+            null;
+          if (owner) categoryOfQuestion.set(question.id, owner);
+        }
 
-          const responses = await prisma.surveyResponse.findMany({
-            where: {
-              questionId: { in: questionIds },
-              assessment: realAssessment,
-            },
-            select: { score: true, assessmentId: true },
-          });
+        const allResponses = await prisma.surveyResponse.findMany({
+          where: {
+            questionId: { in: [...categoryOfQuestion.keys()] },
+            assessment: realAssessment,
+          },
+          select: { score: true, assessmentId: true, questionId: true },
+        });
 
-          // Puanlar değerlendirme bazında toplanır: aynı kuruluşun farklı
-          // departmanlarının verdiği cevaplar tek bir puanda birleşir.
-          const userScoresMap = new Map<string, number[]>();
-          for (const resp of responses) {
-            const userId = resp.assessmentId;
-            if (!userScoresMap.has(userId)) {
-              userScoresMap.set(userId, []);
-            }
-            userScoresMap.get(userId)!.push(resp.score);
+        // Puanlar değerlendirme bazında toplanır: aynı kuruluşun farklı
+        // departmanlarının verdiği cevaplar tek bir puanda birleşir.
+        const scoresByCategory = new Map<string, Map<string, number[]>>();
+        for (const response of allResponses) {
+          const categoryId = categoryOfQuestion.get(response.questionId);
+          if (!categoryId) continue;
+          let perAssessment = scoresByCategory.get(categoryId);
+          if (!perAssessment) {
+            perAssessment = new Map<string, number[]>();
+            scoresByCategory.set(categoryId, perAssessment);
           }
+          const scores = perAssessment.get(response.assessmentId) ?? [];
+          scores.push(response.score);
+          perAssessment.set(response.assessmentId, scores);
+        }
+
+        for (const category of survey.categories) {
+          const userScoresMap = scoresByCategory.get(category.id) ?? new Map<string, number[]>();
 
           const userAverages: number[] = [];
           userScoresMap.forEach((scores) => {
@@ -205,7 +234,19 @@ export async function GET(req: NextRequest) {
         }
 
         // Kullanıcı puanları
+        /**
+         * Puan tablosu sayfalanır.
+         *
+         * Bütün değerlendirmeler bütün cevaplarıyla belleğe alınıyordu:
+         * sayfalama yoktu ve veri büyüdükçe yönetici panosu önce yavaşlıyor,
+         * sonra hiç açılmıyordu. Tablo zaten puana göre sıralı ilk N satırı
+         * gösteriyor; sınır açıkça konur ve toplam sayı ayrıca bildirilir.
+         */
+        const USER_SCORE_LIMIT = 200;
+
         const usersWithResponses = await prisma.assessment.findMany({
+          take: USER_SCORE_LIMIT,
+          orderBy: { updatedAt: "desc" },
           where: {
             ...realAssessment,
             responses: {
@@ -313,6 +354,7 @@ export async function GET(req: NextRequest) {
 
         // Kullanıcıları puana göre sırala
         userScores.sort((a, b) => b.maturityScore - a.maturityScore);
+        userScoresTruncated = usersWithResponses.length === USER_SCORE_LIMIT;
       }
     }
 
@@ -330,6 +372,7 @@ export async function GET(req: NextRequest) {
       surveyStats,
       categoryStats,
       userScores,
+      userScoresTruncated,
       sectorStats,
       recentActivities: recentActivities.map((a) => ({
         id: a.id,

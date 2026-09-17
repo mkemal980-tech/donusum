@@ -104,10 +104,10 @@ test("aynı e-posta ile ikinci kayıt sebebini ve çözümünü söyler", async 
   await expect(alert).toContainText("Bu e-posta adresi zaten kayıtlı", { timeout: 20_000 });
   // Çözüm aynı kutuda: giriş, şifre sıfırlama ve doğrulamayı yeniden gönderme.
   await expect(alert.getByRole("link", { name: "giriş yapın" })).toBeVisible();
-  await expect(alert.getByRole("link", { name: "şifrenizi sıfırlayın" })).toBeVisible();
+  await expect(alert.getByRole("link", { name: "sıfırlayın" })).toBeVisible();
   await expect(alert.getByRole("button", { name: "yeniden gönderin" })).toBeVisible();
 
   // Sayfa ayakta: hata sınırına düşülmedi, form hâlâ doldurulabilir.
-  await expect(page.getByRole("heading", { name: "Hesap Oluşturun" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Hesap oluştur" })).toBeVisible();
   expect(pageErrors).toEqual([]);
 });

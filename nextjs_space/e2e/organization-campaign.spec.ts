@@ -38,6 +38,9 @@ async function cleanup() {
     where: { name: { in: [ROOT, MEMBER_A_UNIT, MEMBER_B_UNIT, OUTSIDE_ROOT, INVITED_MEMBER_UNIT] } },
   });
   await prisma.sector.deleteMany({ where: { name: TEST_SECTOR } });
+  // Kuyruğa yazılan davet e-postaları da temizlenir; yoksa testler arası
+  // kalıntı sonraki koşuda yanlış token bulunmasına yol açar.
+  await prisma.emailOutbox.deleteMany({ where: { to: { endsWith: "@example.com" } } });
 }
 
 test.beforeAll(async () => {
@@ -129,19 +132,40 @@ test("oda kampanya açar, üye gönderir ve yalnızca kendi sonuçlarını gör�
   expect(memberCreate.status()).toBe(201);
   const invited = await prisma.user.findUnique({ where: { email: INVITED_MEMBER_USER } });
   expect(invited).toMatchObject({ role: "UNIT_MANAGER", sectorId, emailVerified: false, isActive: true });
-  expect(invited?.passwordResetToken).toBeTruthy();
+  // Davet artık kendi alanını kullanıyor ve özetlenerek saklanıyor; şifre
+  // sıfırlama alanını ödünç aldığı için "şifremi unuttum" daveti öldürüyordu.
+  expect(invited?.invitationTokenHash).toBeTruthy();
+  expect(invited?.invitationExpires).toBeTruthy();
+  expect(invited?.passwordResetToken).toBeNull();
   expect(await prisma.unitAdmin.count({ where: { userId: invited!.id } })).toBe(1);
   expect(await prisma.userSurveyAssignment.findUnique({
     where: { userId_surveyId: { userId: invited!.id, surveyId } },
   })).toMatchObject({ isActive: true, assignedBy: expect.any(String) });
 
+  /**
+   * Token artık veritabanından okunamaz — yalnızca özeti saklanıyor.
+   *
+   * Bu bilinçli: düz metin token, bir yedek sızıntısını doğrudan hesap
+   * devralmaya çeviriyordu. Test de gerçek kullanıcı gibi davranır ve
+   * bağlantıyı gönderilen e-postadan alır; bu arada kuyruğun da çalıştığını
+   * doğrulamış olur.
+   */
+  const queuedInvitation = await prisma.emailOutbox.findFirst({
+    where: { to: INVITED_MEMBER_USER },
+    orderBy: { createdAt: "desc" },
+  });
+  expect(queuedInvitation).not.toBeNull();
+  const rawToken = queuedInvitation!.html.match(/reset-password\?token=([a-f0-9]+)/)?.[1];
+  expect(rawToken).toBeTruthy();
+
   const activate = await manager.request.post("/api/auth/reset-password", {
-    data: { token: invited!.passwordResetToken, password: PASSWORD },
+    data: { token: rawToken, password: PASSWORD },
   });
   expect(activate.ok()).toBe(true);
   expect(await prisma.user.findUnique({ where: { email: INVITED_MEMBER_USER } })).toMatchObject({
     emailVerified: true,
     passwordResetToken: null,
+    invitationTokenHash: null,
   });
 
   const invitedUnit = await prisma.unit.findFirst({ where: { name: INVITED_MEMBER_UNIT } });

@@ -171,7 +171,12 @@ test("dağıt, doldur, gönder: çok kullanıcılı değerlendirmenin tam turu",
 
   // Ölçek düğmeleri role="radio" taşıyor.
   await contributor.getByRole("radio", { name: /Seviye 4/ }).first().click();
-  await expect(contributor.getByText("Cevap kaydedildi")).toBeVisible({ timeout: 10_000 });
+  /**
+   * Kaydetme artık cevap başına bildirimle değil, üst şeritteki kalıcı
+   * göstergeyle söyleniyor: 200 soruluk bir ankette 200 bildirim çıkıyordu.
+   * Gösterge `aria-live` taşıyor, yani ekran okuyucuya da duyuruluyor.
+   */
+  await expect(contributor.getByText("Otomatik kaydedildi")).toBeVisible({ timeout: 10_000 });
 
   // --- kendine atanmayan bölüme cevap yazamaz (asıl yaptırım sunucuda) ---
   const assigned = await (await coordinator.request.get("/api/survey/assigned")).json();

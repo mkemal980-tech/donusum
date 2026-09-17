@@ -356,12 +356,22 @@ export async function loadCampaignDashboard(
         const values = submitted
           .map((row) => row.categoryPercentages[category.id])
           .filter((value): value is number => typeof value === "number");
+        /**
+         * Anonim kampanyada uç değer gösterilmez.
+         *
+         * `best` ve `lowest` tek bir üyenin gerçek puanıdır. Kohort eşiği
+         * aşılsa bile bunları göstermek, anonimlik sözünü kısmen boşa
+         * çıkarıyordu: koordinatör en yüksek ve en düşük puanı kimin aldığını
+         * daraltabiliyordu. İsimli kampanyada zaten üye bazlı liste var.
+         */
+        const showExtremes = campaign.privacyMode === "IDENTIFIED";
+
         return {
           id: category.id,
           name: category.name,
           average: average(values),
-          best: values.length > 0 ? Math.max(...values) : null,
-          lowest: values.length > 0 ? Math.min(...values) : null,
+          best: showExtremes && values.length > 0 ? Math.max(...values) : null,
+          lowest: showExtremes && values.length > 0 ? Math.min(...values) : null,
           assessmentCount: values.length,
         };
       })
