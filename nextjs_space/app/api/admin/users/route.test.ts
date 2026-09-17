@@ -5,7 +5,13 @@ const mocks = vi.hoisted(() => ({
   prisma: {
     user: { findUnique: vi.fn(), findMany: vi.fn(), count: vi.fn(), update: vi.fn(), delete: vi.fn() },
     surveyResponse: { count: vi.fn() },
+    /**
+     * Kalıcı silme artık bağımlılıkları kendisi temizliyor (cascade kurallarına
+     * güvenmiyor), bu yüzden işlem içindeki istemci de taklit edilir.
+     */
+    $transaction: vi.fn(async (callback: (client: unknown) => unknown) => callback(mocks.tx)),
   },
+  tx: {} as Record<string, { deleteMany: ReturnType<typeof vi.fn>; updateMany: ReturnType<typeof vi.fn>; findMany: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn> }>,
   withAuth: vi.fn(),
 }));
 
@@ -29,6 +35,19 @@ describe("DELETE /api/admin/users", () => {
     mocks.prisma.user.count.mockResolvedValue(1);
     mocks.prisma.user.update.mockResolvedValue({});
     mocks.prisma.user.delete.mockResolvedValue({});
+
+    for (const model of [
+      "assessment", "surveyResponse", "sectionAssignment", "unitJoinCodeUse",
+      "unitJoinCode", "surveyCampaign", "survey", "scoreHistory", "roadmapItem",
+      "document", "assessmentScore", "userSurveyAssignment", "unitAdmin", "user",
+    ]) {
+      mocks.tx[model] = {
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+        updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+        findMany: vi.fn().mockResolvedValue([]),
+        delete: vi.fn().mockResolvedValue({}),
+      };
+    }
   });
 
   it("varsayılan olarak siler değil, devre dışı bırakır", async () => {
@@ -63,7 +82,14 @@ describe("DELETE /api/admin/users", () => {
     const body = await (await del("id=u1&permanent=true")).json();
 
     expect(body).toMatchObject({ success: true, deleted: true });
-    expect(mocks.prisma.user.delete).toHaveBeenCalledWith({ where: { id: "u1" } });
+    // Kullanıcı işlem içinde siliniyor; bağımlılıklar önce temizleniyor.
+    expect(mocks.tx.user.delete).toHaveBeenCalledWith({ where: { id: "u1" } });
+    expect(mocks.tx.unitAdmin.deleteMany).toHaveBeenCalledWith({ where: { userId: "u1" } });
+    // Başkasının değerlendirmesindeki cevaplar silinmez, yazar izi kopar.
+    expect(mocks.tx.surveyResponse.updateMany).toHaveBeenCalledWith({
+      where: { answeredById: "u1" },
+      data: { answeredById: null },
+    });
   });
 
   it("kendi hesabını kapatamaz", async () => {

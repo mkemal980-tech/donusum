@@ -91,6 +91,8 @@ export default function UsersPage() {
     loading: boolean;
   } | null>(null);
   const [deleting, setDeleting] = useState(false);
+  /** Silme hatası kutunun içinde kalır; bildirim gibi kaybolmaz. */
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState("");
   const [formData, setFormData] = useState({
     email: "",
@@ -226,6 +228,7 @@ export default function UsersPage() {
   };
 
   const openPermanentDelete = async (user: UserType) => {
+    setDeleteError(null);
     setDeleteTarget({ user, impact: null, loading: true });
     try {
       const res = await fetch(`/api/admin/users?action=delete-impact&id=${user.id}`);
@@ -241,20 +244,31 @@ export default function UsersPage() {
   const confirmPermanentDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
+    setDeleteError(null);
     try {
       const res = await fetch(`/api/admin/users?id=${deleteTarget.user.id}&permanent=true`, {
         method: "DELETE",
+        cache: "no-store",
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         toast.success("Kullanıcı kalıcı olarak silindi");
         setDeleteTarget(null);
-        fetchData();
+        await fetchData();
       } else {
-        toast.error(data.error || "Kullanıcı silinemedi");
+        /**
+         * Hata kutunun içinde kalır.
+         *
+         * Eskiden yalnızca bildirim çıkıyordu: kutu kapanmıyor, kullanıcı
+         * listede duruyor ve sebep birkaç saniyede kayboluyordu. "Bastım ama
+         * olmadı" hissinin kaynağı buydu.
+         */
+        setDeleteError(data.error || `Silinemedi (HTTP ${res.status}).`);
       }
-    } catch {
-      toast.error("Bir hata oluştu");
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error ? `Bağlantı hatası: ${error.message}` : "Bağlantı hatası."
+      );
     } finally {
       setDeleting(false);
     }
@@ -900,6 +914,16 @@ export default function UsersPage() {
                 )}
               </div>
             ) : null}
+
+            {deleteError && (
+              <p
+                className="mt-4 rounded-[var(--radius-md)] p-3 t-sm"
+                style={{ background: "var(--error-bg)", color: "var(--error)" }}
+                role="alert"
+              >
+                {deleteError}
+              </p>
+            )}
 
             <div className="mt-5 flex justify-end gap-2">
               <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>

@@ -142,3 +142,62 @@ test("API yanıtları önbelleğe alınmaz", async ({ request }) => {
     expect(response.headers()["cache-control"], path).toContain("no-store");
   }
 });
+
+test("bağlı kayıtları olan kullanıcı da kalıcı silinir", async ({ browser }) => {
+  test.skip(!seeded, "Fikstür kurulamadı");
+  test.setTimeout(120_000);
+
+  /**
+   * Önceki test verisi olmayan bir hesabı siliyordu; asıl risk bağımlılıklarda.
+   * `prisma.user.delete()` veritabanındaki cascade kurallarına güveniyordu ve
+   * o kurallardan biri beklenenden farklıysa silme yabancı anahtar hatasıyla
+   * düşüyor, dışarıdan "hiçbir şey olmadı" gibi görünüyordu. Silme artık
+   * bağımlılıkları kendisi temizliyor; bu test onu gerçek veriyle bağlar.
+   */
+  const admin = await loginAdmin(browser);
+  const id = await createVictim(admin);
+
+  const survey = await prisma.survey.findFirst({ where: { isActive: true }, select: { id: true } });
+  const question = await prisma.question.findFirst({ select: { id: true, subCategoryId: true } });
+  const unit = await prisma.unit.create({ data: { name: `E2E Silme Birim ${Date.now()}` } });
+
+  await prisma.user.update({ where: { id }, data: { unitId: unit.id } });
+  await prisma.unitAdmin.create({ data: { unitId: unit.id, userId: id } });
+  await prisma.userSurveyAssignment.create({ data: { userId: id, surveyId: survey!.id } });
+
+  const assessment = await prisma.assessment.create({
+    data: { surveyId: survey!.id, ownerUserId: id },
+  });
+  if (question) {
+    await prisma.surveyResponse.create({
+      data: { assessmentId: assessment.id, questionId: question.id, value: "3", score: 3, answeredById: id },
+    });
+  }
+  await prisma.scoreHistory.create({
+    data: { assessmentId: assessment.id, overallScore: 3, overallPercentage: 50, triggerType: "E2E" },
+  });
+  await prisma.document.create({
+    data: { userId: id, fileName: "e2e.pdf", fileType: "application/pdf", cloudStoragePath: `e2e/${id}.pdf` },
+  });
+  if (question?.subCategoryId) {
+    await prisma.sectionAssignment.create({
+      data: { assessmentId: assessment.id, subCategoryId: question.subCategoryId, assigneeId: id, assignedById: id },
+    });
+  }
+
+  // Etki ekranı boş değil artık: silinecek şeyler sayılıyor.
+  const impact = await (await admin.request.get(`/api/admin/users?action=delete-impact&id=${id}`)).json();
+  expect(impact.impact.assessments).toBeGreaterThan(0);
+
+  const removed = await admin.request.delete(`/api/admin/users?id=${id}&permanent=true`);
+  const body = await removed.json();
+  expect(removed.ok(), JSON.stringify(body)).toBeTruthy();
+  expect(body).toMatchObject({ deleted: true });
+
+  // Kullanıcı ve kendi değerlendirmesi gitti.
+  expect(await prisma.user.findUnique({ where: { id } })).toBeNull();
+  expect(await prisma.assessment.findUnique({ where: { id: assessment.id } })).toBeNull();
+
+  await prisma.unit.delete({ where: { id: unit.id } }).catch(() => undefined);
+  await admin.close();
+});

@@ -358,8 +358,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     if (permanent) {
-      await prisma.user.delete({ where: { id } });
-      return NextResponse.json({ success: true, deleted: true });
+      const removed = await deleteUserCompletely(id);
+      return NextResponse.json({ success: true, deleted: true, removed });
     }
 
     if (!target.isActive) {
@@ -373,10 +373,89 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true, deactivated: true });
   } catch (error) {
+    /**
+     * Gerçek sebep ekrana taşınır.
+     *
+     * Burada her hata "Kullanıcı silinemedi" olarak yutuluyordu. Yönetici
+     * silme düğmesine basıyor, kırmızı bir bildirim görüyor (ya da görmüyor)
+     * ve neyin engellediğini asla öğrenemiyordu -- ekranda kullanıcı duruyor,
+     * sebep yok. Prisma'nın hata kodu ve kısa mesajı yanıta konur.
+     */
     console.error("Kullanıcı silme hatası:", error);
+    const code = (error as { code?: string })?.code;
+    const detail = error instanceof Error ? error.message.split("\n").filter(Boolean).pop() : null;
     return NextResponse.json(
-      { error: "Kullanıcı silinemedi" },
+      {
+        error: code
+          ? `Kullanıcı silinemedi (${code}). ${detail ?? ""}`.trim()
+          : `Kullanıcı silinemedi. ${detail ?? ""}`.trim(),
+        code,
+      },
       { status: 500 }
     );
   }
+}
+
+/**
+ * Kullanıcıyı ve ona bağlı her şeyi tek işlemde siler.
+ *
+ * `prisma.user.delete()` tek başına veritabanındaki cascade kurallarına
+ * güveniyordu. O kurallar migration'larla kuruluyor; şema bir noktada
+ * `db push` ile senkronlandıysa ya da bir kısıt beklenenden farklıysa silme
+ * yabancı anahtar hatasıyla düşüyor ve dışarıdan "hiçbir şey olmadı" gibi
+ * görünüyor. Bağımlılıklar artık açıkça, doğru sırayla temizleniyor; sonuç
+ * veritabanının kurallarına bağlı değil.
+ *
+ * Silinen ile kopan ayrımı korunur: kişisel değerlendirme ve içindekiler
+ * silinir, kuruluş değerlendirmelerine girilen cevaplar durur ve yalnızca
+ * "kim yazdı" izi kopar.
+ */
+async function deleteUserCompletely(id: string) {
+  return prisma.$transaction(async (tx) => {
+    const ownAssessments = await tx.assessment.findMany({
+      where: { ownerUserId: id },
+      select: { id: true },
+    });
+    const assessmentIds = ownAssessments.map((assessment) => assessment.id);
+
+    // Başkasının değerlendirmesine girdiği cevaplar silinmez; yazar izi kopar.
+    await tx.surveyResponse.updateMany({
+      where: { answeredById: id },
+      data: { answeredById: null },
+    });
+    await tx.assessment.updateMany({
+      where: { submittedById: id },
+      data: { submittedById: null },
+    });
+    await tx.sectionAssignment.updateMany({
+      where: { assignedById: id },
+      data: { assignedById: null },
+    });
+    await tx.unitJoinCodeUse.updateMany({ where: { userId: id }, data: { userId: null } });
+    await tx.unitJoinCode.updateMany({ where: { createdById: id }, data: { createdById: null } });
+    await tx.surveyCampaign.updateMany({ where: { createdById: id }, data: { createdById: null } });
+    await tx.survey.updateMany({ where: { createdById: id }, data: { createdById: null } });
+
+    // Kendi değerlendirmesi ve içindekiler gider.
+    if (assessmentIds.length > 0) {
+      await tx.surveyResponse.deleteMany({ where: { assessmentId: { in: assessmentIds } } });
+      await tx.scoreHistory.deleteMany({ where: { assessmentId: { in: assessmentIds } } });
+      await tx.roadmapItem.deleteMany({ where: { assessmentId: { in: assessmentIds } } });
+      await tx.sectionAssignment.deleteMany({ where: { assessmentId: { in: assessmentIds } } });
+    }
+
+    await tx.sectionAssignment.deleteMany({ where: { assigneeId: id } });
+    await tx.document.deleteMany({ where: { userId: id } });
+    await tx.assessmentScore.deleteMany({ where: { userId: id } });
+    await tx.userSurveyAssignment.deleteMany({ where: { userId: id } });
+    await tx.unitAdmin.deleteMany({ where: { userId: id } });
+
+    if (assessmentIds.length > 0) {
+      await tx.assessment.deleteMany({ where: { id: { in: assessmentIds } } });
+    }
+
+    await tx.user.delete({ where: { id } });
+
+    return { assessments: assessmentIds.length };
+  });
 }
