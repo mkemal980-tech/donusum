@@ -96,6 +96,14 @@ export default function UnitManagerPage() {
   const [activeTab, setActiveTab] = useState<"team" | "documents">("team");
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
+  /**
+   * Yükleme hatası boş durumdan ayrılır.
+   *
+   * Her başarısızlık aynı "Yönettiğiniz birim yok" kutusuna düşüyordu: ağ
+   * hatası, sunucu hatası ve gerçekten birimi olmama hâli ekranda birbirinden
+   * ayırt edilemiyordu. Kullanıcı yetki sorunu sanıp yöneticiye gidiyordu.
+   */
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -122,9 +130,21 @@ export default function UnitManagerPage() {
         setUnits(data.units || []);
         setAssessments(data.assessments || []);
         setExpandedUnits(new Set(data.units?.map((u: UnitSummary) => u.id) || []));
+        setLoadError(null);
+        return;
       }
+
+      // 403: gerçekten yönetilen birim yok — boş durum doğru cevap.
+      if (res.status === 403) {
+        setUnits([]);
+        setLoadError(null);
+        return;
+      }
+
+      setLoadError("Birim verileri getirilemedi. Lütfen sayfayı yenileyin.");
     } catch (error) {
       console.error("Veri çekme hatası:", error);
+      setLoadError("Bağlantı kurulamadı. Lütfen sayfayı yenileyin.");
     } finally {
       setLoading(false);
     }
@@ -413,11 +433,15 @@ export default function UnitManagerPage() {
             );
           })}
 
-          {units.length === 0 && (
-            <EmptyState
-              title="Yönettiğiniz birim yok"
-              description="Bir birime yönetici olarak atandığınızda o birimin değerlendirmeleri burada listelenir."
-            />
+          {loadError ? (
+            <EmptyState title="Veriler yüklenemedi" description={loadError} />
+          ) : (
+            units.length === 0 && (
+              <EmptyState
+                title="Yönettiğiniz birim yok"
+                description="Bir birime yönetici olarak atandığınızda o birimin değerlendirmeleri burada listelenir."
+              />
+            )
           )}
         </div>
         ) : (

@@ -93,28 +93,42 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Birim özeti: her birim bir kez: bir birimin birden çok anketi olabilir.
-    const unitSummaries = managedUnitIds
-      .map((unitId) => {
-        const unitRows = rows.filter((row) => row.unitId === unitId);
-        if (unitRows.length === 0) return null;
+    /**
+     * Birim özeti: yönetilen **her** birim listelenir.
+     *
+     * Burada `unitRows.length === 0` olan birimler eleniyordu; yani henüz
+     * değerlendirmesi başlamamış bir birim listeden tamamen düşüyordu. Yeni
+     * kurulmuş bir kuruluşun yöneticisi ekranda "Yönettiğiniz birim yok"
+     * görüyordu — oysa birimi vardı, sadece içi boştu. Yönetici panosunda ise
+     * aynı kişi o birimin yöneticisi olarak görünüyordu; iki ekran birbirini
+     * yalanlıyordu.
+     *
+     * Ad ve açıklama artık Unit kaydından okunuyor; önceden ilk değerlendirme
+     * satırından türetiliyordu ve satır yoksa ad da yoktu.
+     */
+    const managedUnits = await prisma.unit.findMany({
+      where: { id: { in: managedUnitIds } },
+      select: { id: true, name: true, description: true },
+      orderBy: { name: "asc" },
+    });
 
-        const started = unitRows.filter((row) => row.responseCount > 0);
-        const averageScore =
-          started.length > 0
-            ? started.reduce((sum, row) => sum + row.score, 0) / started.length
-            : 0;
+    const unitSummaries = managedUnits.map((unit) => {
+      const unitRows = rows.filter((row) => row.unitId === unit.id);
+      const started = unitRows.filter((row) => row.responseCount > 0);
+      const averageScore =
+        started.length > 0
+          ? started.reduce((sum, row) => sum + row.score, 0) / started.length
+          : 0;
 
-        return {
-          id: unitId,
-          name: unitRows[0].unitName,
-          description: null as string | null,
-          assessmentCount: unitRows.length,
-          startedCount: started.length,
-          averageScore: Math.round(averageScore * 10) / 10,
-        };
-      })
-      .filter((summary): summary is NonNullable<typeof summary> => summary !== null);
+      return {
+        id: unit.id,
+        name: unit.name,
+        description: unit.description,
+        assessmentCount: unitRows.length,
+        startedCount: started.length,
+        averageScore: Math.round(averageScore * 10) / 10,
+      };
+    });
 
     return NextResponse.json({
       units: unitSummaries,
