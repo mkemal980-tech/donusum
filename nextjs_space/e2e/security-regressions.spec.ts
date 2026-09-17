@@ -200,3 +200,25 @@ test("kimlik doğrulama uçları hız sınırına takılır", async ({ request }
   // Kota yoksa 15 istek de 200 dönerdi.
   expect(statuses).toContain(429);
 });
+
+test("birim yöneticisi yalnızca yöneticiye açık ekranda çökmez", async ({ browser }) => {
+  test.skip(!seeded, "Fikstür kurulamadı");
+
+  /**
+   * Menü bu ekranı birim yöneticisine göstermiyor ama adres elle yazılabiliyor.
+   * Sayfa içerideki 403 yanıtını diziymiş gibi kullanınca çöküyordu
+   * ("y.filter is not a function"): kullanıcı beyaz bir hata ekranı görüyor,
+   * neden olduğunu anlamıyordu. Sunucu tarafı zaten korunuyordu; eksik olan
+   * kullanıcıya doğru şeyi söylemekti.
+   */
+  const page = await login(browser, MANAGER_NO_UNIT);
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+
+  await page.goto("/admin/survey-assignments", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByText("Bu ekran platform yöneticisine özel")).toBeVisible();
+  expect(pageErrors).toEqual([]);
+
+  await page.close();
+});

@@ -18,6 +18,21 @@ export function middleware(request: NextRequest) {
     response.headers.set(key, value);
   });
 
+  /**
+   * API yanıtları önbelleğe alınmaz.
+   *
+   * Bu uçların hiçbiri `cache-control` göndermiyordu; başlık yokken tarayıcı
+   * sezgisel önbellekleme yapabiliyor ve kimliğe bağlı, sürekli değişen
+   * listeleri eski hâliyle geri verebiliyor. Somut sonucu: yönetici bir
+   * kullanıcıyı siliyor, istek başarılı dönüyor, liste yenileniyor ama ekranda
+   * silinmiş kullanıcı duruyordu -- çünkü tarayıcı silme öncesi yanıtı
+   * veriyordu. Aynı tuzak her mutasyon-sonrası tazelemede var.
+   */
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    response.headers.set('Cache-Control', 'no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+  }
+
   // Log API requests in production for monitoring
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const logData = {

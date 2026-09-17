@@ -82,3 +82,21 @@ export function useAdminNavGroups() {
     items: items.filter((item) => item.section === title),
   })).filter((group) => group.items.length > 0);
 }
+
+/**
+ * Bir yönetim yolunu hangi roller açabilir?
+ *
+ * Menü rolü zaten süzüyordu ama sayfanın kendisinde kontrol yoktu: adresi elle
+ * yazan bir birim yöneticisi yalnızca yöneticiye açık bir ekranı açıyor,
+ * içerideki istekler 403 dönüyor ve sayfa hata nesnesini diziymiş gibi
+ * kullanınca çöküyordu ("y.filter is not a function"). Kural tek yerde
+ * tanımlıydı; kontrol de oradan okunur.
+ *
+ * En uzun eşleşen ön ek kazanır: /admin/surveys/123 de /admin/surveys sayılır.
+ */
+export function rolesForAdminPath(pathname: string): string[] | null {
+  const match = ADMIN_NAV
+    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+    .sort((a, b) => b.href.length - a.href.length)[0];
+  return match?.roles ?? null;
+}

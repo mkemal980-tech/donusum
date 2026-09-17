@@ -108,11 +108,12 @@ export default function UsersPage() {
 
   const fetchData = async () => {
     try {
+      // Silme/güncelleme sonrası tazeleme eski yanıtı almasın (bkz. middleware).
       const [usersRes, unitsRes, sectorsRes, surveysRes] = await Promise.all([
-        fetch("/api/admin/users"),
-        fetch("/api/admin/units"),
-        fetch("/api/admin/sectors"),
-        fetch("/api/admin/surveys"),
+        fetch("/api/admin/users", { cache: "no-store" }),
+        fetch("/api/admin/units", { cache: "no-store" }),
+        fetch("/api/admin/sectors", { cache: "no-store" }),
+        fetch("/api/admin/surveys", { cache: "no-store" }),
       ]);
 
       if (usersRes.ok) setUsers(await usersRes.json());

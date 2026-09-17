@@ -129,3 +129,16 @@ test("kalıcı silme hesabı gerçekten siler ve e-postayı serbest bırakır", 
 
   await admin.close();
 });
+
+test("API yanıtları önbelleğe alınmaz", async ({ request }) => {
+  /**
+   * Bu başlık yokken tarayıcı sezgisel önbellekleme yapabiliyor ve kimliğe
+   * bağlı listeleri eski hâliyle geri veriyordu. Somut sonucu: yönetici bir
+   * kullanıcıyı siliyor, istek başarılı dönüyor, liste yenileniyor ama ekranda
+   * silinmiş kullanıcı duruyordu -- silme öncesi yanıt önbellekten geliyordu.
+   */
+  for (const path of ["/api/admin/users", "/api/organization/members", "/api/health/ready"]) {
+    const response = await request.get(path);
+    expect(response.headers()["cache-control"], path).toContain("no-store");
+  }
+});

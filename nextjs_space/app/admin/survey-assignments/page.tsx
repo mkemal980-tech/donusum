@@ -60,15 +60,41 @@ export default function SurveyAssignmentsPage() {
     setLoading(true);
     try {
       const [usersRes, surveysRes, assignmentsRes] = await Promise.all([
-        fetch("/api/admin/users"),
-        fetch("/api/admin/surveys"),
-        fetch("/api/admin/survey-assignments")
+        fetch("/api/admin/users", { cache: "no-store" }),
+        fetch("/api/admin/surveys", { cache: "no-store" }),
+        fetch("/api/admin/survey-assignments", { cache: "no-store" })
       ]);
-      
-      const usersData = await usersRes.json();
-      const surveysData = await surveysRes.json();
-      const assignmentsData = await assignmentsRes.json();
-      
+
+      /**
+       * Yanıt gövdesi diziymiş gibi kullanılmaz.
+       *
+       * Bu uçlar yalnızca platform yöneticisine açık; birim yöneticisi 403 ve
+       * `{ error: ... }` alıyordu. Gövde doğrudan state'e konduğu için sayfa
+       * `users.filter(...)` derken çöküyordu ("y.filter is not a function").
+       */
+      const asArray = async (response: Response) => {
+        if (!response.ok) return null;
+        const data = await response.json();
+        return Array.isArray(data) ? data : null;
+      };
+
+      const [usersData, surveysData, assignmentsData] = await Promise.all([
+        asArray(usersRes),
+        asArray(surveysRes),
+        asArray(assignmentsRes),
+      ]);
+
+      if (!usersData || !surveysData || !assignmentsData) {
+        setMessage({
+          type: "error",
+          text:
+            usersRes.status === 403 || assignmentsRes.status === 403
+              ? "Bu ekran platform yöneticisine özeldir."
+              : "Veri yüklenirken hata oluştu",
+        });
+        return;
+      }
+
       setUsers(usersData);
       setSurveys(surveysData);
       setAssignments(assignmentsData);
