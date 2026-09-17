@@ -13,6 +13,8 @@ import { prisma } from "@/lib/db";
 
 const PASSWORD = "E2eKatilim!123";
 const MANAGER = "e2e-katilim-yonetici@example.com";
+const ADMIN = "e2e-katilim-admin@example.com";
+const SURVEY = "E2E Devir Anketi";
 const ROOT = "E2E Katılım Yapısı";
 const FIRST_COMPANY = "E2E Alfa Tersanesi";
 const SECOND_COMPANY = "E2E Beta Tersanesi";
@@ -23,7 +25,8 @@ let sectorId = "";
 
 async function removeFixture() {
   await prisma.user.deleteMany({ where: { email: { endsWith: "@e2e-katilim.test" } } });
-  await prisma.user.deleteMany({ where: { email: MANAGER } });
+  await prisma.survey.deleteMany({ where: { name: SURVEY } });
+  await prisma.user.deleteMany({ where: { email: { in: [MANAGER, ADMIN] } } });
   await prisma.unit.deleteMany({ where: { name: { in: [FIRST_COMPANY, SECOND_COMPANY] } } });
   await prisma.unit.deleteMany({ where: { name: ROOT } });
 }
@@ -56,6 +59,35 @@ test.beforeAll(async () => {
     },
   });
   await prisma.unitAdmin.create({ data: { unitId: root.id, userId: manager.id } });
+
+  await prisma.user.create({
+    data: {
+      email: ADMIN,
+      password: await bcrypt.hash(PASSWORD, 10),
+      firstName: "Platform",
+      role: "ADMIN",
+      emailVerified: true,
+    },
+  });
+
+  /**
+   * Platform anketi: sahibi yok, yöneticiye de atanmadı.
+   *
+   * İçerik gerçek: anketi aktif tutmak için en az bir kategori ve soru
+   * gerekiyor (PUT aktifleştirmede içeriği doğruluyor).
+   */
+  const platformSurvey = await prisma.survey.create({ data: { name: SURVEY, isActive: true } });
+  const platformCategory = await prisma.category.create({
+    data: { name: "E2E Devir Kategori", surveyId: platformSurvey.id },
+  });
+  await prisma.question.create({
+    data: {
+      text: "E2E devir sorusu",
+      type: "SCALE",
+      categoryId: platformCategory.id,
+      weight: 1,
+    },
+  });
 
   seeded = true;
 });
@@ -200,4 +232,61 @@ test("üye kuruluşu olmayan yönetici katılım kodu ekranını açabilir", asy
   await expect(manager.getByRole("button", { name: "Katılım kodu oluştur" })).toBeVisible();
 
   await manager.close();
+});
+
+test("platform anketi bir yapıya devredilince yönetici onu dağıtabilir", async ({ browser }) => {
+  test.skip(!seeded, "Fikstür kurulamadı");
+  test.setTimeout(120_000);
+
+  /**
+   * Anket sahipliği yalnızca oluşturma anında belirlenebiliyordu ve admin
+   * ekranı hiç göndermiyordu: admin'in açtığı her anket kalıcı olarak
+   * "platform anketi" kalıyordu. Yapının yöneticisi, adı o yapıyı işaret eden
+   * anketi bile üyelerine dağıtamıyordu -- tek yol anketi ona *kişisel olarak*
+   * atamaktı, yani dağıtma yetkisi doldurma yükümlülüğüne bağlanıyordu.
+   */
+  const survey = await prisma.survey.findFirstOrThrow({ where: { name: SURVEY } });
+
+  // --- Devirden önce: yönetici anketi göremiyor ---
+  const manager = await login(browser, MANAGER);
+  const before = await (await manager.request.get("/api/organization/members")).json();
+  const visibleBefore = (before.roots ?? []).flatMap((root: any) => root.surveys ?? []);
+  expect(visibleBefore.map((item: any) => item.id)).not.toContain(survey.id);
+
+  // --- Admin anketi yapıya devrediyor ---
+  const admin = await login(browser, ADMIN);
+  const transfer = await admin.request.put("/api/admin/surveys", {
+    data: { id: survey.id, name: SURVEY, isActive: true, ownerUnitId: rootId },
+  });
+  expect(transfer.ok()).toBeTruthy();
+  expect(await prisma.survey.findUnique({ where: { id: survey.id } })).toMatchObject({
+    ownerUnitId: rootId,
+  });
+
+  // --- Devirden sonra: yönetici anketi görüyor ve koda bağlayabiliyor ---
+  const after = await (await manager.request.get("/api/organization/members")).json();
+  const visibleAfter = (after.roots ?? []).flatMap((root: any) => root.surveys ?? []);
+  expect(visibleAfter.map((item: any) => item.id)).toContain(survey.id);
+
+  const created = await manager.request.post("/api/organization/join-codes", {
+    data: {
+      tenantUnitId: rootId,
+      action: "create",
+      memberUnitId: rootId,
+      createsMemberUnit: true,
+      sectorId,
+      surveyId: survey.id,
+    },
+  });
+  expect(created.status()).toBe(201);
+  expect((await created.json()).record.survey.id).toBe(survey.id);
+
+  // --- Yönetici sahipliği kendi başına değiştiremez ---
+  const escalation = await manager.request.put("/api/admin/surveys", {
+    data: { id: survey.id, name: SURVEY, isActive: true, ownerUnitId: null },
+  });
+  expect(escalation.status()).toBe(403);
+
+  await manager.close();
+  await admin.close();
 });

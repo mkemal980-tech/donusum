@@ -15,6 +15,7 @@ interface Survey {
   isDemo: boolean;
   order: number;
   ownerUnitId: string | null;
+  ownerUnit?: { id: string; name: string } | null;
   canEdit: boolean;
   isAssignedTemplate: boolean;
   _count: {
@@ -90,14 +91,22 @@ export default function SurveysPage() {
 
   useEffect(() => { fetchSurveys(); }, []);
 
+  /**
+   * Kök birimler admin için de yüklenir.
+   *
+   * Eskiden yalnızca birim yöneticisi yüklüyordu; admin'in anketi bir yapıya
+   * devredebilmesi için listeye ihtiyacı var.
+   */
   useEffect(() => {
-    if (!role || isAdmin) return;
+    if (!role) return;
     fetch("/api/organization/members", { cache: "no-store" })
       .then((response) => response.json())
       .then((data) => {
         const nextRoots = data.roots ?? [];
         setRoots(nextRoots);
-        setSelectedOwnerUnitId((current) => current || nextRoots[0]?.id || "");
+        if (!isAdmin) {
+          setSelectedOwnerUnitId((current) => current || nextRoots[0]?.id || "");
+        }
       })
       .catch(() => toast.error("Yönetilen kuruluşlar yüklenemedi"));
   }, [isAdmin, role]);
@@ -110,6 +119,8 @@ export default function SurveysPage() {
         body: JSON.stringify({
           ...formData,
           ...(!formData.id && !isAdmin ? { ownerUnitId: selectedOwnerUnitId } : {}),
+          // Admin mevcut anketin sahibini değiştirebilir; boş dize = platform anketi.
+          ...(formData.id && isAdmin ? { ownerUnitId: formData.ownerUnitId || null } : {}),
         })
       });
       
@@ -331,6 +342,13 @@ export default function SurveysPage() {
                         Tanıtım
                       </span>
                     )}
+                    {/* Sahibi olan anket yönetici listesinde de belli olsun;
+                        devir kör bir işlem olmamalı. */}
+                    {isAdmin && survey.ownerUnit && (
+                      <span className="badge badge-neutral" title="Bu anketi sahibi kuruluş düzenleyip dağıtabilir">
+                        {survey.ownerUnit.name}
+                      </span>
+                    )}
                     {!isAdmin && (
                       <span className="badge badge-neutral">{survey.canEdit ? "Kuruluş anketi" : "Standart şablon"}</span>
                     )}
@@ -492,6 +510,28 @@ export default function SurveysPage() {
                     <span className="text-sm text-[var(--text-muted)]">Aktif</span>
                   </label>
                 </div>
+
+                {isAdmin && (
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-[var(--text-muted)] mb-1">
+                      Sahip kuruluş
+                    </label>
+                    <select
+                      value={formData.ownerUnitId ?? ""}
+                      onChange={(e) => setFormData({ ...formData, ownerUnitId: e.target.value || null })}
+                      className="theme-select w-full"
+                    >
+                      <option value="">Platform anketi (sahipsiz)</option>
+                      {roots.map((root) => (
+                        <option key={root.id} value={root.id}>{root.name}</option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-xs text-[var(--text-dim)]">
+                      Sahip seçilen anketi o kuruluşun yöneticisi düzenleyebilir ve üyelerine
+                      dağıtabilir. Mevcut atamalara, cevaplara ve değerlendirmelere dokunulmaz.
+                    </p>
+                  </div>
+                )}
 
                 {isAdmin && <>
                 {/* Tanıtım anketi: yeni kayıtlara otomatik atanır ve

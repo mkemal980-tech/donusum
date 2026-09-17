@@ -114,6 +114,9 @@ export async function GET(request: Request) {
       },
       orderBy: { order: 'asc' },
       include: {
+        // Sahibin adı listede gösterilir: hangi anketin hangi yapıya ait
+        // olduğu ekranda görünmeden devir kör bir işlem olurdu.
+        ownerUnit: { select: { id: true, name: true } },
         categories: {
           where: { archivedAt: null },
           orderBy: { order: 'asc' },
@@ -189,12 +192,48 @@ export async function PUT(request: Request) {
   if (!auth.success) return auth.response;
 
   try {
-    const { id, name, description, isActive, isDemo, order } = await request.json();
+    const body = await request.json();
+    const { id, name, description, isActive, isDemo, order } = body;
     if (!id || !(await canEditSurvey(auth.userId, auth.user.role, id))) {
       return NextResponse.json({ error: 'Bu anketi düzenleme yetkiniz yok' }, { status: 403 });
     }
     const normalizedName = String(name ?? '').trim().slice(0, 160);
     if (!normalizedName) return NextResponse.json({ error: 'Anket adı gerekli' }, { status: 400 });
+
+    /**
+     * Anket sahipliği devredilebilir — yalnızca platform yöneticisi tarafından.
+     *
+     * Sahiplik yalnızca oluşturma anında belirlenebiliyordu ve admin ekranı
+     * hiç göndermiyordu; yani admin'in açtığı her anket kalıcı olarak
+     * "platform anketi" kalıyordu. Sonucu: bir yapının yöneticisi, adı o yapıyı
+     * işaret eden anketi bile üyelerine dağıtamıyordu. Tek yol anketi
+     * yöneticiye *kişisel olarak atamaktı* — yani dağıtma yetkisi doldurma
+     * yükümlülüğüne bağlanıyor, yönetici kendi panosunda katılımcı olarak
+     * beliriyordu.
+     *
+     * Devir yalnızca kimin düzenleyip dağıtabileceğini değiştirir; mevcut
+     * atamalara, cevaplara ve değerlendirmelere dokunmaz.
+     */
+    let ownerUnitUpdate: { ownerUnitId: string | null } | Record<string, never> = {};
+    if ('ownerUnitId' in body) {
+      if (auth.user.role !== 'ADMIN') {
+        return NextResponse.json(
+          { error: 'Anket sahipliğini yalnızca platform yöneticisi değiştirebilir' },
+          { status: 403 }
+        );
+      }
+      const nextOwnerUnitId = body.ownerUnitId ? String(body.ownerUnitId) : null;
+      if (nextOwnerUnitId) {
+        const owner = await prisma.unit.findUnique({
+          where: { id: nextOwnerUnitId },
+          select: { id: true },
+        });
+        if (!owner) {
+          return NextResponse.json({ error: 'Seçilen kuruluş bulunamadı' }, { status: 400 });
+        }
+      }
+      ownerUnitUpdate = { ownerUnitId: nextOwnerUnitId };
+    }
     
     // Eğer anket aktif edilmeye çalışılıyorsa, içeriğini kontrol et
     if (isActive === true) {
@@ -258,6 +297,7 @@ export async function PUT(request: Request) {
         description,
         isActive,
         ...(auth.user.role === 'ADMIN' && typeof isDemo === 'boolean' ? { isDemo } : {}),
+        ...ownerUnitUpdate,
         order
       }
     });
