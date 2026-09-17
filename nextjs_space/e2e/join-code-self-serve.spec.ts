@@ -172,3 +172,32 @@ test("yapı seviyesinde kod: üye kuruluş kaydolanın adından açılır", asyn
 
   await manager.close();
 });
+
+test("üye kuruluşu olmayan yönetici katılım kodu ekranını açabilir", async ({ browser }) => {
+  test.skip(!seeded, "Fikstür kurulamadı");
+
+  /**
+   * Asıl çıkmaz buydu: form yapı seviyesini destekliyordu ama formu açan
+   * "Katılım kodları" düğmesi `members.length` koşuluna bağlıydı. Üye kuruluşu
+   * olmayan yönetici -- yani özelliğin tam olarak çözdüğü durumdaki kişi --
+   * ekrana hiç ulaşamıyordu.
+   */
+  const manager = await login(browser, MANAGER);
+  await manager.goto("/organization/members", { waitUntil: "domcontentloaded" });
+
+  const button = manager.getByRole("button", { name: "Katılım kodları" });
+  await expect(button).toBeEnabled();
+
+  await button.click();
+  await expect(manager.getByText("Birim katılım kodları")).toBeVisible();
+
+  // Varsayılan hedef yapının kendisi: üye kuruluş seçmeden kod açılabilmeli.
+  await expect(
+    manager.getByRole("option", { name: new RegExp(`${ROOT} — kaydolan kendi şirketini yazsın`) })
+  ).toBeAttached();
+
+  // Boş durumda da kod yolu sunuluyor.
+  await expect(manager.getByRole("button", { name: "Katılım kodu oluştur" })).toBeVisible();
+
+  await manager.close();
+});

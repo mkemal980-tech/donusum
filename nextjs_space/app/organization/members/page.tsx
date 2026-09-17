@@ -487,13 +487,30 @@ export default function OrganizationMembersPage() {
           subtitle="Üye kuruluşları ve kullanıcılarını ekleyin, güvenli hesap davetlerini yönetin."
           actions={
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={openJoinCodes} disabled={!members.length}>
+              {/*
+                Katılım kodu artık üye kuruluş gerektirmiyor: yapı seviyesinde
+                kod açılabiliyor ve kaydolan kişi şirketini kendi getiriyor.
+                Düğme `members.length` koşuluna bağlı kaldığı için, üye
+                kuruluşu olmayan yönetici formu hiç açamıyordu -- özelliğin
+                tam olarak çözdüğü durumda kapalı kalıyordu.
+              */}
+              <Button variant="outline" onClick={openJoinCodes} disabled={!selectedRoot}>
                 <KeyRound size={16} /> Katılım kodları
               </Button>
               <Button variant="outline" onClick={() => { setEditInvitationForm(null); setMode(mode === "excel" ? null : "excel"); }} disabled={!selectedRoot}>
                 <FileUp size={16} /> Excel ile aktar
               </Button>
-              <Button variant="outline" onClick={() => { setEditInvitationForm(null); setMode(mode === "user" ? null : "user"); }} disabled={!members.length}>
+              {/*
+                "Kullanıcı ekle" mevcut bir üye kuruluşa kişi ekliyor; kuruluş
+                yoksa gerçekten yapacak bir şey yok. Ama neden kapalı olduğu
+                söylenmeliydi.
+              */}
+              <Button
+                variant="outline"
+                onClick={() => { setEditInvitationForm(null); setMode(mode === "user" ? null : "user"); }}
+                disabled={!members.length}
+                title={members.length ? undefined : "Önce bir üye kuruluş ekleyin ya da katılım kodu dağıtın."}
+              >
                 <UserPlus size={16} /> Kullanıcı ekle
               </Button>
               <Button onClick={() => { setEditInvitationForm(null); setMode(mode === "member" ? null : "member"); }} disabled={!selectedRoot}>
@@ -852,7 +869,27 @@ export default function OrganizationMembersPage() {
         {!selectedRoot ? (
           <EmptyState title="Yönetilen kuruluş bulunamadı" description="Bu hesabın yönettiği bir oda/STK atanmadığı için üye eklenemez." />
         ) : members.length === 0 ? (
-          <EmptyState title="Henüz üye kuruluş yok" description="İlk üye kuruluşu ekleyip yetkili kullanıcıya güvenli davet gönderebilirsiniz." action={<Button onClick={() => setMode("member")}>İlk üyeyi ekle</Button>} />
+          /*
+            İki yol da buradan görünür.
+
+            Boş durum yalnızca "elle üye ekle" yolunu sunuyordu; oysa üyesi
+            kendi başvuran bir yapıda asıl yol katılım kodu. Yönetici kodu
+            görebilmek için önce elle bir kuruluş açmak zorunda kalıyordu.
+          */
+          <EmptyState
+            title="Henüz üye kuruluş yok"
+            description="İki yol var: katılım kodu dağıtıp üyelerin kendi şirket adlarıyla kaydolmasını sağlayabilir ya da ilk üye kuruluşu elle ekleyip davet gönderebilirsiniz."
+            action={
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={openJoinCodes}>
+                  <KeyRound size={16} /> Katılım kodu oluştur
+                </Button>
+                <Button variant="outline" onClick={() => setMode("member")}>
+                  İlk üyeyi elle ekle
+                </Button>
+              </div>
+            }
+          />
         ) : (
           <section className="rounded-[var(--radius-lg)] p-6" style={{ background: "var(--surface)", border: "1px solid var(--line)" }}>
             <div className="mb-5 flex items-center justify-between gap-3">
