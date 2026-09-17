@@ -1,10 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import RecommendationBulkPanel from "@/components/admin/recommendation-bulk-panel";
-import { Plus, Edit, Trash2, X, Search, FileText, DollarSign, Target, FolderTree, HelpCircle, CheckSquare, TrendingUp, FileSpreadsheet } from "lucide-react";
+import RecommendationScopeNav from "@/components/admin/recommendation-scope-nav";
+import { Plus, Edit, Trash2, X, Search, FileText, DollarSign, Target, FolderTree, HelpCircle, CheckSquare, TrendingUp, FileSpreadsheet, ListTree } from "lucide-react";
 import { derivePosition } from "@/lib/recommendation-position";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+// Önerinin ankette nereye düştüğü tek yerde çözülüyor; ekran üç ayrı yerde
+// elle zincir kuruyordu ve zincirler birbirini tutmuyordu.
+import {
+  buildScopeIndex,
+  buildScopeTree,
+  describeScope,
+  matchesScope,
+  resolvePaths,
+  type Scope,
+} from "@/lib/recommendation-scope";
 
 interface Survey {
   id: string;
@@ -204,7 +216,14 @@ export default function RecommendationsPage() {
   const [formData, setFormData] = useState<Partial<Recommendation>>({});
   const [search, setSearch] = useState('');
   const [filterSurvey, setFilterSurvey] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
+  /**
+   * Kapsam ağacındaki seçim, eski kategori süzgecinin yerini aldı.
+   * İkisini birlikte tutmak aynı iş için iki doğruluk kaynağı demekti;
+   * ağaç kategoriyi de kapsıyor ve altına bölüm ile soruyu ekliyor.
+   */
+  const [scope, setScope] = useState<Scope>({ kind: 'all' });
+  /** Dar ekranda ağacın çekmecesi. */
+  const [scopeOpen, setScopeOpen] = useState(false);
 
   // Modal için ek state'ler
   const [modalSurveyId, setModalSurveyId] = useState('');
@@ -413,11 +432,6 @@ export default function RecommendationsPage() {
     setShowModal(true);
   };
 
-  // Ankete göre filtrelenmiş kategoriler
-  const filteredCategories = filterSurvey 
-    ? categories.filter(c => c.surveyId === filterSurvey)
-    : categories;
-
   // Modal için filtrelenmiş veriler
   const modalCategories = modalSurveyId 
     ? categories.filter(c => c.surveyId === modalSurveyId)
@@ -451,45 +465,65 @@ export default function RecommendationsPage() {
   const selectedQuestion = modalQuestionId ? availableQuestions.find(q => q.id === modalQuestionId) : null;
   const questionOptions = selectedQuestion ? parseQuestionOptions(selectedQuestion) : [];
 
+  /**
+   * Önerinin ankette bulunduğu yer bir kez çözülür; süzgeç, sayım ve ağaç
+   * aynı sonucu kullanır. Önceden bu zincir üç ayrı yerde elle yazılıydı ve
+   * anket süzgeci soruya bağlı yolları hiç saymıyordu.
+   */
+  const scopeIndex = useMemo(() => buildScopeIndex(categories), [categories]);
+  const scopePaths = useMemo(
+    () => resolvePaths(recommendations, scopeIndex),
+    [recommendations, scopeIndex]
+  );
+
+  /* Anket seçimi ağacın kökü: ağaçtaki sayılar da bu süzgeçten sonra. */
+  const surveyPaths = useMemo(() => {
+    if (!filterSurvey) return scopePaths;
+    const scoped = new Map(
+      [...scopePaths].filter(([, path]) => path.surveyId === filterSurvey)
+    );
+    return scoped;
+  }, [scopePaths, filterSurvey]);
+
+  const scopeNodes = useMemo(
+    () => buildScopeTree(categories, surveyPaths, filterSurvey || null),
+    [categories, surveyPaths, filterSurvey]
+  );
+
+  const scopeSummary = useMemo(() => {
+    let questionBound = 0;
+    let unplaced = 0;
+    for (const path of surveyPaths.values()) {
+      if (path.questionId) questionBound++;
+      if (!path.categoryId) unplaced++;
+    }
+    return { total: surveyPaths.size, questionBound, unplaced };
+  }, [surveyPaths]);
+
+  const scopeLabel = useMemo(() => describeScope(scope, scopeNodes), [scope, scopeNodes]);
+
+  /* Anket değişince ağaç baştan kuruluyor; eski seçim artık orada değil. */
+  useEffect(() => {
+    setScope({ kind: 'all' });
+  }, [filterSurvey]);
+
   // Önerileri filtrele
-  const filteredRecs = recommendations.filter(rec => {
-    const matchSearch = rec.title.toLowerCase().includes(search.toLowerCase()) || 
-                        rec.description.toLowerCase().includes(search.toLowerCase());
-    
-    // Kategori filtreleme - öneri hangi yoldan kategoriye bağlı olursa olsun kontrol et
-    let matchCategory = true;
-    if (filterCategory) {
-      if (rec.subLevel?.subCategory?.category?.id) {
-        matchCategory = rec.subLevel.subCategory.category.id === filterCategory;
-      } else if (rec.subCategory?.category?.id) {
-        matchCategory = rec.subCategory.category.id === filterCategory;
-      } else if (rec.question?.subLevel?.subCategory?.category?.id) {
-        matchCategory = rec.question.subLevel.subCategory.category.id === filterCategory;
-      } else if (rec.question?.subCategory?.category?.id) {
-        matchCategory = rec.question.subCategory.category.id === filterCategory;
-      } else if (rec.categoryId) {
-        matchCategory = rec.categoryId === filterCategory;
-      } else {
-        matchCategory = false;
-      }
-    }
-    
-    let matchSurvey = true;
-    if (filterSurvey) {
-      if (rec.subLevel?.subCategory?.category?.surveyId) {
-        matchSurvey = rec.subLevel.subCategory.category.surveyId === filterSurvey;
-      } else if (rec.subCategory?.category?.surveyId) {
-        matchSurvey = rec.subCategory.category.surveyId === filterSurvey;
-      } else if (rec.categoryId) {
-        const cat = categories.find(c => c.id === rec.categoryId);
-        matchSurvey = cat?.surveyId === filterSurvey;
-      } else {
-        matchSurvey = false;
-      }
-    }
-    
-    return matchSearch && matchCategory && matchSurvey;
-  });
+  const filteredRecs = useMemo(
+    () =>
+      recommendations.filter(rec => {
+        const needle = search.trim().toLowerCase();
+        if (needle) {
+          const haystack = `${rec.title} ${rec.description}`.toLowerCase();
+          if (!haystack.includes(needle)) return false;
+        }
+
+        const path = scopePaths.get(rec.id);
+        if (!path) return false;
+        if (filterSurvey && path.surveyId !== filterSurvey) return false;
+        return matchesScope(path, scope);
+      }),
+    [recommendations, scopePaths, search, filterSurvey, scope]
+  );
 
   const visibleIds = filteredRecs.map(rec => rec.id);
   const selectedVisibleCount = visibleIds.filter(id => selectedIds.includes(id)).length;
@@ -513,24 +547,11 @@ export default function RecommendationsPage() {
     setSelectedIds(prev => (allVisibleSelected ? prev.filter(id => !visibleIds.includes(id)) : visibleIds));
   };
 
-  // Anket adını bul
+  // Anket adı da aynı çözümleyiciden; sütun ile süzgeç ayrışamaz.
   const getSurveyName = (rec: Recommendation) => {
-    if (rec.subLevel?.subCategory?.category?.surveyId) {
-      const survey = surveys.find(s => s.id === rec.subLevel?.subCategory?.category?.surveyId);
-      return survey?.name;
-    }
-    if (rec.subCategory?.category?.surveyId) {
-      const survey = surveys.find(s => s.id === rec.subCategory?.category?.surveyId);
-      return survey?.name;
-    }
-    if (rec.categoryId) {
-      const cat = categories.find(c => c.id === rec.categoryId);
-      if (cat?.surveyId) {
-        const survey = surveys.find(s => s.id === cat.surveyId);
-        return survey?.name;
-      }
-    }
-    return null;
+    const surveyId = scopePaths.get(rec.id)?.surveyId;
+    if (!surveyId) return null;
+    return surveys.find(s => s.id === surveyId)?.name ?? null;
   };
 
   // Tetikleme durumunu göster
@@ -587,189 +608,246 @@ export default function RecommendationsPage() {
         />
       )}
 
-      {/* Filters */}
-      <div className="theme-card shadow-soft p-4 mb-6">
-        <div className="flex gap-4 flex-wrap">
-          <div className="flex-1 min-w-[200px] relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)]" size={20} />
-            <input
-              type="text"
-              placeholder="Öneri ara..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg"
-            />
-          </div>
-          <select
-            value={filterSurvey}
-            onChange={(e) => {
-              setFilterSurvey(e.target.value);
-              setFilterCategory('');
-            }}
-            className="px-4 py-2 border rounded-lg min-w-[150px]"
-          >
-            <option value="">Tüm Anketler</option>
-            {surveys.map(survey => (
-              <option key={survey.id} value={survey.id}>{survey.name}</option>
-            ))}
-          </select>
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-4 py-2 border rounded-lg min-w-[150px]"
-          >
-            <option value="">Tüm Kategoriler</option>
-            {filteredCategories.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
-          {/* Tablo başlığındaki kutu da aynı işi yapar; 284 satırlık bir listede
-              o kutuyu aramak yerine düğme filtrenin yanında duruyor. */}
-          <Button
-            onClick={toggleAllVisible}
-            disabled={filteredRecs.length === 0}
-            variant="secondary"
-            className="text-[var(--text-muted)] hover:text-[var(--accent)]"
-          >
-            <CheckSquare size={18} />
-            {allVisibleSelected ? 'Seçimi temizle' : `Tümünü seç (${filteredRecs.length})`}
-          </Button>
-        </div>
-      </div>
+      {/* Ağaç üçüncü bir sabit sütun olamaz: solda zaten kabuğun yönetim
+          menüsü var. Liste ile yan yana duruyor; ölçüler globals.css'teki
+          .scope-layout kuralında. */}
+      <div className="scope-layout">
+        <aside className="scope-nav-col">
+          <RecommendationScopeNav
+            nodes={scopeNodes}
+            scope={scope}
+            total={scopeSummary.total}
+            questionBound={scopeSummary.questionBound}
+            unplaced={scopeSummary.unplaced}
+            onSelect={setScope}
+          />
+        </aside>
 
-      {/* Seçim çubuğu — yalnızca seçim varken görünür */}
-      {selectedIds.length > 0 && (
-        <div className="theme-card shadow-soft p-4 mb-4 flex items-center justify-between gap-4 flex-wrap">
-          <p className="text-[var(--text-main)] font-medium">
-            {selectedIds.length} öneri seçildi
-            <span className="text-[var(--text-dim)] font-normal"> · listede {filteredRecs.length} öneri var</span>
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setSelectedIds([])}
-              variant="secondary"
-              className="text-[var(--text-muted)]"
+        <div className="min-w-0">
+        {/* Filters */}
+        <div className="theme-card shadow-soft p-4 mb-6">
+          <div className="flex gap-4 flex-wrap">
+            <div className="flex-1 min-w-[200px] relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)]" size={20} />
+              <input
+                type="text"
+                placeholder="Öneri ara..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border rounded-lg"
+              />
+            </div>
+            <select
+              value={filterSurvey}
+              onChange={(e) => setFilterSurvey(e.target.value)}
+              className="px-4 py-2 border rounded-lg min-w-[150px]"
             >
-              Seçimi temizle
-            </Button>
-            <Button
-              onClick={handleBulkDelete}
-              disabled={bulkDeleting}
-              variant="destructive"
-            >
-              <Trash2 size={18} />
-              {bulkDeleting ? 'Siliniyor…' : `Seçilenleri sil (${selectedIds.length})`}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="theme-card shadow-soft overflow-hidden">
-        <table className="theme-table">
-          <thead>
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  checked={allVisibleSelected}
-                  // Bir kısmı seçiliyse kutu "kararsız" görünür: tık hepsini seçer.
-                  ref={(el) => {
-                    if (el) el.indeterminate = selectedVisibleCount > 0 && !allVisibleSelected;
+              <option value="">Tüm Anketler</option>
+              {surveys.map(survey => (
+                <option key={survey.id} value={survey.id}>{survey.name}</option>
+              ))}
+            </select>
+            {/* Dar ekranda kapsam sütunu gizli; yerini bu çekmece alır. */}
+            <Sheet open={scopeOpen} onOpenChange={setScopeOpen}>
+              <SheetTrigger asChild>
+                <Button variant="secondary" className="xl:hidden text-[var(--text-muted)]">
+                  <ListTree size={18} />
+                  Kapsam
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="left"
+                className="w-[88vw] border-0 p-3 pt-12 sm:max-w-sm"
+                style={{ background: "var(--canvas)" }}
+              >
+                <SheetTitle className="sr-only">Öneri kapsamı</SheetTitle>
+                <RecommendationScopeNav
+                  nodes={scopeNodes}
+                  scope={scope}
+                  total={scopeSummary.total}
+                  questionBound={scopeSummary.questionBound}
+                  unplaced={scopeSummary.unplaced}
+                  onSelect={(next) => {
+                    setScope(next);
+                    setScopeOpen(false);
                   }}
-                  onChange={toggleAllVisible}
-                  disabled={filteredRecs.length === 0}
-                  aria-label="Listedeki tüm önerileri seç"
-                  className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
                 />
-              </th>
-              <th>Başlık</th>
-              <th>Anket</th>
-              <th>Tetikleyici</th>
-              <th>CAPEX</th>
-              <th>OPEX</th>
-              <th>Tip</th>
-              <th className="text-right">İşlemler</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRecs.map((rec) => {
-              const surveyName = getSurveyName(rec);
-              const triggerInfo = getTriggerInfo(rec);
-              const stratType = strategicTypes.find(t => t.value === rec.strategicType);
-              const selected = selectedIds.includes(rec.id);
-              return (
-                <tr
-                  key={rec.id}
-                  className={`border-t hover:bg-[var(--bg-card-2)] ${selected ? 'bg-[var(--bg-card-2)]' : ''}`}
-                >
-                  <td className="p-4">
-                    <input
-                      type="checkbox"
-                      checked={selected}
-                      onChange={() => toggleOne(rec.id)}
-                      aria-label={`${rec.title} önerisini seç`}
-                      className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
-                    />
-                  </td>
-                  <td className="p-4">
-                    <p className="font-medium text-[var(--text-main)]">{rec.title}</p>
-                    <p className="text-sm text-[var(--text-dim)] truncate max-w-xs">{rec.description}</p>
-                  </td>
-                  <td className="p-4">
-                    {surveyName ? (
-                      <span className="px-2 py-1 bg-[var(--accent-quiet)] text-[var(--accent-ink)] rounded text-xs flex items-center gap-1 w-fit">
-                        <FileText size={12} />
-                        {surveyName}
-                      </span>
-                    ) : (
-                      <span className="text-[var(--text-dim)] text-sm">-</span>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    {triggerInfo ? (
-                      <div className="flex flex-col gap-1">
-                        <span className="px-2 py-1 bg-[var(--accent-soft)] text-[var(--accent-ink)] rounded text-xs flex items-center gap-1 w-fit">
-                          <HelpCircle size={12} />
-                          Soru Bağlı
-                        </span>
-                        <span className="text-xs text-[var(--text-dim)]">{triggerInfo.optionsCount} şık</span>
-                      </div>
-                    ) : (
-                      <span className="px-2 py-1 bg-[var(--warning-bg)] text-[var(--warning-ink)] rounded text-xs">
-                        Puan Aralığı: %{rec.minScoreThreshold}-{rec.maxScoreThreshold}
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    <DollarIndicator level={rec.capexLevel || 1} />
-                  </td>
-                  <td className="p-4">
-                    <DollarIndicator level={rec.opexLevel || 1} />
-                  </td>
-                  <td className="p-4">
-                    <span className={`px-2 py-1 rounded text-sm ${stratType?.color}`}>
-                      {stratType?.label}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right">
-                    <button onClick={() => openModal(rec)} className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]">
-                      <Edit size={18} />
-                    </button>
-                    <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-[var(--error-bg)] rounded text-[var(--error-ink)]">
-                      <Trash2 size={18} />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        {filteredRecs.length === 0 && (
-          <p className="text-center text-[var(--text-dim)] py-8">
-            {filterSurvey || filterCategory || search ? 'Öneri bulunamadı' : 'Henüz öneri eklenmemiş'}
-          </p>
+              </SheetContent>
+            </Sheet>
+            {/* Tablo başlığındaki kutu da aynı işi yapar; 284 satırlık bir listede
+                o kutuyu aramak yerine düğme filtrenin yanında duruyor. */}
+            <Button
+              onClick={toggleAllVisible}
+              disabled={filteredRecs.length === 0}
+              variant="secondary"
+              className="text-[var(--text-muted)] hover:text-[var(--accent)]"
+            >
+              <CheckSquare size={18} />
+              {allVisibleSelected ? 'Seçimi temizle' : `Tümünü seç (${filteredRecs.length})`}
+            </Button>
+          </div>
+        </div>
+
+        {/* Hangi kapsamın süzüldüğü tablonun üstünde yazılı durur: ağaçtaki
+            seçim aşağı kaydırılınca görünmez kalıyor ve liste sebepsiz kısa
+            görünüyordu. */}
+        {scopeLabel && (
+          <div
+            className="mb-4 flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] px-3 py-2"
+            style={{ background: "var(--surface-2)" }}
+          >
+            <span className="t-sm" style={{ color: "var(--ink-3)" }}>Kapsam</span>
+            <span className="t-sm font-medium" style={{ color: "var(--ink)" }}>{scopeLabel}</span>
+            <span className="t-sm tabular" style={{ color: "var(--ink-3)" }}>
+              · {filteredRecs.length} öneri
+            </span>
+            <button
+              type="button"
+              onClick={() => setScope({ kind: 'all' })}
+              className="ml-auto flex items-center gap-1 t-sm hover:underline"
+              style={{ color: "var(--ink-2)" }}
+            >
+              <X size={14} aria-hidden="true" />
+              Kapsamı kaldır
+            </button>
+          </div>
         )}
+
+        {/* Seçim çubuğu — yalnızca seçim varken görünür */}
+        {selectedIds.length > 0 && (
+          <div className="theme-card shadow-soft p-4 mb-4 flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-[var(--text-main)] font-medium">
+              {selectedIds.length} öneri seçildi
+              <span className="text-[var(--text-dim)] font-normal"> · listede {filteredRecs.length} öneri var</span>
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setSelectedIds([])}
+                variant="secondary"
+                className="text-[var(--text-muted)]"
+              >
+                Seçimi temizle
+              </Button>
+              <Button
+                onClick={handleBulkDelete}
+                disabled={bulkDeleting}
+                variant="destructive"
+              >
+                <Trash2 size={18} />
+                {bulkDeleting ? 'Siliniyor…' : `Seçilenleri sil (${selectedIds.length})`}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Table */}
+        <div className="theme-card shadow-soft overflow-hidden">
+          <table className="theme-table">
+            <thead>
+              <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    // Bir kısmı seçiliyse kutu "kararsız" görünür: tık hepsini seçer.
+                    ref={(el) => {
+                      if (el) el.indeterminate = selectedVisibleCount > 0 && !allVisibleSelected;
+                    }}
+                    onChange={toggleAllVisible}
+                    disabled={filteredRecs.length === 0}
+                    aria-label="Listedeki tüm önerileri seç"
+                    className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
+                  />
+                </th>
+                <th>Başlık</th>
+                <th>Anket</th>
+                <th>Tetikleyici</th>
+                <th>CAPEX</th>
+                <th>OPEX</th>
+                <th>Tip</th>
+                <th className="text-right">İşlemler</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRecs.map((rec) => {
+                const surveyName = getSurveyName(rec);
+                const triggerInfo = getTriggerInfo(rec);
+                const stratType = strategicTypes.find(t => t.value === rec.strategicType);
+                const selected = selectedIds.includes(rec.id);
+                return (
+                  <tr
+                    key={rec.id}
+                    className={`border-t hover:bg-[var(--bg-card-2)] ${selected ? 'bg-[var(--bg-card-2)]' : ''}`}
+                  >
+                    <td className="p-4">
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleOne(rec.id)}
+                        aria-label={`${rec.title} önerisini seç`}
+                        className="w-4 h-4 accent-[var(--accent)] cursor-pointer"
+                      />
+                    </td>
+                    <td className="p-4">
+                      <p className="font-medium text-[var(--text-main)]">{rec.title}</p>
+                      <p className="text-sm text-[var(--text-dim)] truncate max-w-xs">{rec.description}</p>
+                    </td>
+                    <td className="p-4">
+                      {surveyName ? (
+                        <span className="px-2 py-1 bg-[var(--accent-quiet)] text-[var(--accent-ink)] rounded text-xs flex items-center gap-1 w-fit">
+                          <FileText size={12} />
+                          {surveyName}
+                        </span>
+                      ) : (
+                        <span className="text-[var(--text-dim)] text-sm">-</span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      {triggerInfo ? (
+                        <div className="flex flex-col gap-1">
+                          <span className="px-2 py-1 bg-[var(--accent-soft)] text-[var(--accent-ink)] rounded text-xs flex items-center gap-1 w-fit">
+                            <HelpCircle size={12} />
+                            Soru Bağlı
+                          </span>
+                          <span className="text-xs text-[var(--text-dim)]">{triggerInfo.optionsCount} şık</span>
+                        </div>
+                      ) : (
+                        <span className="px-2 py-1 bg-[var(--warning-bg)] text-[var(--warning-ink)] rounded text-xs">
+                          Puan Aralığı: %{rec.minScoreThreshold}-{rec.maxScoreThreshold}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      <DollarIndicator level={rec.capexLevel || 1} />
+                    </td>
+                    <td className="p-4">
+                      <DollarIndicator level={rec.opexLevel || 1} />
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded text-sm ${stratType?.color}`}>
+                        {stratType?.label}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right">
+                      <button onClick={() => openModal(rec)} className="p-2 hover:bg-[var(--bg-card-2)] rounded text-[var(--blue-main)]">
+                        <Edit size={18} />
+                      </button>
+                      <button onClick={() => handleDelete(rec.id)} className="p-2 hover:bg-[var(--error-bg)] rounded text-[var(--error-ink)]">
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {filteredRecs.length === 0 && (
+            <p className="text-center text-[var(--text-dim)] py-8">
+              {filterSurvey || scope.kind !== 'all' || search ? 'Öneri bulunamadı' : 'Henüz öneri eklenmemiş'}
+            </p>
+          )}
+        </div>
+        </div>
       </div>
 
       {/* Modal */}

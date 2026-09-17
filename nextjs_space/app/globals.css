@@ -862,6 +862,32 @@ body.shell-active main {
 /* Haritadan gelen sıçramada soru kartı üst şeridin altında kalmasın. */
 .survey-question-anchor { scroll-margin-top: calc(var(--shell-topbar) + var(--sp-4)); }
 
+/* Yönetim ekranlarındaki kapsam ağacı (öneriler) — aynı fikir, ama listeyi
+   dar bırakmamak için ağaç biraz daha ince ve daha geç devreye giriyor. */
+.scope-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-5);
+  align-items: start;
+}
+
+.scope-nav-col { display: none; }
+
+@media (min-width: 1280px) {
+  .scope-layout { grid-template-columns: 272px minmax(0, 1fr); }
+
+  .scope-nav-col {
+    display: block;
+    position: sticky;
+    top: calc(var(--shell-topbar) + var(--sp-5));
+    height: calc(100vh - var(--shell-topbar) - var(--sp-9));
+  }
+}
+
+@media (min-width: 1536px) {
+  .scope-layout { grid-template-columns: 320px minmax(0, 1fr); }
+}
+
 /* ===== KABUK: SIDEBAR ===== */
 .sidebar {
   background: var(--rail);
