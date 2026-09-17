@@ -120,6 +120,26 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       /**
+       * Devre dışı bırakılmış hesap ayrı bir durumdur.
+       *
+       * Hesap devre dışı bırakıldığında kayıt kalıyor ve e-posta bloke
+       * oluyordu; ekran ise "zaten kayıtlı" deyip giriş, şifre sıfırlama ve
+       * doğrulamayı yeniden gönderme öneriyordu. Üçü de devre dışı hesapta
+       * çalışmaz -- kullanıcı da yönetici de çıkmaz sokağa giriyordu. Adresi
+       * serbest bırakmanın yolu hesabı kalıcı silmektir; mesaj bunu söylemeli.
+       */
+      if (!existingUser.isActive) {
+        return NextResponse.json(
+          {
+            error:
+              "Bu e-posta adresi devre dışı bırakılmış bir hesaba ait. Yöneticiniz hesabı yeniden etkinleştirebilir ya da kalıcı olarak silerek adresi serbest bırakabilir.",
+            reason: "email_disabled",
+          },
+          { status: 409 }
+        );
+      }
+
+      /**
        * `reason` ekranın ne önereceğini belirler: "zaten kayıtlı" tek başına
        * çıkmaz sokak, kullanıcı ne yapacağını bilmez. Hesabın doğrulanmış olup
        * olmadığı kasten dönülmez — üç seçenek de sunulur, hangisinin işe

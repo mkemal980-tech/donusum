@@ -270,6 +270,21 @@ export default function SignupPage() {
                 </p>
               </div>
 
+              {/*
+                Devre dışı hesapta giriş, şifre sıfırlama ve doğrulama
+                yeniden gönderme üçü de çalışmaz; onları önermek kullanıcıyı
+                boşuna dolaştırıyordu. Tek geçerli yol yöneticiye gitmek.
+              */}
+              {errorReason === "email_disabled" && (
+                <p
+                  className="mt-3 pt-3 t-sm"
+                  style={{ borderTop: "1px solid var(--line)", color: "var(--ink-2)" }}
+                >
+                  Hesabı yeniden açtırmak ya da bu adresi serbest bıraktırmak için
+                  kurum yöneticinizle görüşün.
+                </p>
+              )}
+
               {/* Hata söylendi; sıradaki soru "peki ne yapacağım" — cevabı
                   aynı kutuda dursun, kullanıcı çıkış aramasın. */}
               {errorReason === "email_taken" && (

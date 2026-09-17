@@ -136,3 +136,70 @@ describe("signup with unit join code", () => {
     expect(mocks.prisma.$transaction).not.toHaveBeenCalled();
   });
 });
+
+describe("signup — devre dışı hesabın e-postası", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.resolveJoinCodeProfile.mockResolvedValue({
+      code: null,
+      profile: null,
+      error: null,
+    });
+  });
+
+  it("devre dışı hesapta sebebi ayrı söyler", async () => {
+    /**
+     * Hesap devre dışı bırakıldığında kayıt kalıyor ve adres bloke oluyor.
+     * Ekran "zaten kayıtlı" deyip giriş / şifre sıfırlama / doğrulama
+     * yeniden gönderme öneriyordu; üçü de devre dışı hesapta çalışmaz.
+     */
+    mocks.prisma.user.findUnique.mockResolvedValue({
+      id: "u1",
+      email: "uye@example.com",
+      isActive: false,
+    });
+
+    const response = await POST(
+      new NextRequest("http://localhost/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "uye@example.com",
+          password: "GucluParola1",
+          firstName: "Ayşe",
+          sectorId: "sector-1",
+        }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body.reason).toBe("email_disabled");
+    expect(body.error).toContain("devre dışı");
+  });
+
+  it("aktif hesapta eski davranış korunur", async () => {
+    mocks.prisma.user.findUnique.mockResolvedValue({
+      id: "u1",
+      email: "uye@example.com",
+      isActive: true,
+    });
+
+    const response = await POST(
+      new NextRequest("http://localhost/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: "uye@example.com",
+          password: "GucluParola1",
+          firstName: "Ayşe",
+          sectorId: "sector-1",
+        }),
+      })
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(409);
+    expect(body.reason).toBe("email_taken");
+  });
+});

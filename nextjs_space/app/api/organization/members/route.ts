@@ -31,6 +31,20 @@ type InvitationTarget = {
   surveyName?: string | null;
 };
 
+/**
+ * Aynı e-postayla ikinci hesap açılamaz — ama sebebi doğru söylenmeli.
+ *
+ * Devre dışı bırakılmış hesap kayıtta kalıyor ve adresi bloke ediyor. Mesaj
+ * "zaten mevcut" deyip bırakınca yönetici ne yapacağını bilemiyordu: adresi
+ * serbest bırakmanın yolu hesabı kalıcı silmek (ya da yeniden etkinleştirmek).
+ */
+function duplicateEmailError(user: { isActive: boolean } | null) {
+  if (!user) return null;
+  return user.isActive
+    ? "Bu e-posta adresiyle bir hesap zaten mevcut."
+    : "Bu e-posta adresi devre dışı bırakılmış bir hesaba ait. Kullanıcılar ekranından hesabı yeniden etkinleştirin ya da kalıcı olarak silerek adresi serbest bırakın.";
+}
+
 const clean = (value: unknown, maxLength: number) =>
   String(value ?? "").trim().slice(0, maxLength);
 
@@ -291,13 +305,13 @@ async function createMember(
       where: { parentId: tenant.id, name: { equals: memberName, mode: "insensitive" } },
       select: { id: true },
     }),
-    prisma.user.findUnique({ where: { email }, select: { id: true } }),
+    prisma.user.findUnique({ where: { email }, select: { id: true, isActive: true } }),
   ]);
   if (duplicateMember) {
     return NextResponse.json({ error: "Bu isimde bir üye kuruluş zaten mevcut." }, { status: 409 });
   }
   if (duplicateUser) {
-    return NextResponse.json({ error: "Bu e-posta adresiyle bir hesap zaten mevcut." }, { status: 409 });
+    return NextResponse.json({ error: duplicateEmailError(duplicateUser)! }, { status: 409 });
   }
 
   const token = invitationToken();
@@ -396,11 +410,11 @@ async function inviteUser(
       where: { id: memberUnitId },
       select: { id: true, name: true, sectorId: true, subSectorId: true },
     }),
-    prisma.user.findUnique({ where: { email }, select: { id: true } }),
+    prisma.user.findUnique({ where: { email }, select: { id: true, isActive: true } }),
   ]);
   if (!member) return NextResponse.json({ error: "Üye kuruluş bulunamadı." }, { status: 404 });
   if (duplicateUser) {
-    return NextResponse.json({ error: "Bu e-posta adresiyle bir hesap zaten mevcut." }, { status: 409 });
+    return NextResponse.json({ error: duplicateEmailError(duplicateUser)! }, { status: 409 });
   }
   const profile = { sectorId: member.sectorId, subSectorId: member.subSectorId };
   if (!profile.sectorId) {
@@ -477,13 +491,17 @@ async function importMembers(file: File | null, tenant: { id: string; name: stri
   const emails = parsed.rows.map((row) => row.email);
   const existingUsers = await prisma.user.findMany({
     where: { email: { in: emails } },
-    select: { email: true },
+    select: { email: true, isActive: true },
   });
   if (existingUsers.length > 0) {
     return NextResponse.json(
       {
         error: "Bazı e-posta adresleri zaten kayıtlı.",
-        errors: existingUsers.map((user) => user.email),
+        errors: existingUsers.map((user) =>
+          user.isActive
+            ? user.email
+            : `${user.email} — devre dışı bir hesaba ait; Kullanıcılar ekranından kalıcı olarak silin`
+        ),
       },
       { status: 409 }
     );
@@ -709,12 +727,12 @@ async function updateInvitation(
     }),
     prisma.user.findFirst({
       where: { email, id: { not: userId } },
-      select: { id: true },
+      select: { id: true, isActive: true },
     }),
   ]);
   if (!member) return NextResponse.json({ error: "Üye kuruluş bulunamadı." }, { status: 404 });
   if (duplicateUser) {
-    return NextResponse.json({ error: "Bu e-posta adresiyle bir hesap zaten mevcut." }, { status: 409 });
+    return NextResponse.json({ error: duplicateEmailError(duplicateUser)! }, { status: 409 });
   }
 
   const inheritedProfile = member.sectorId
