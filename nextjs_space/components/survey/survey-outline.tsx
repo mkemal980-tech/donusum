@@ -33,9 +33,11 @@ type Props = {
   currentStepIndex: number;
   /** Kaydırmayla belirlenen soru; verilmezse yalnızca bölüm vurgulanır. */
   activeQuestionId?: string | null;
-  onSelectStep: (stepIndex: number) => void;
-  /** Verilmezse soru satırı da adıma atlar. */
-  onSelectQuestion?: (stepIndex: number, questionId: string) => void;
+  /**
+   * Gezinmenin tek hedefi soru. Bölüm satırları yalnızca açıp kapatıyor;
+   * bir bölüme gitmek zaten ilk sorusuna gitmek demek.
+   */
+  onSelectQuestion: (stepIndex: number, questionId: string) => void;
   /** Başlığın altına düşen açıklama (örn. "Size atanan 3 bölüm"). */
   note?: string;
 };
@@ -51,7 +53,6 @@ export default function SurveyOutline({
   responses,
   currentStepIndex,
   activeQuestionId = null,
-  onSelectStep,
   onSelectQuestion,
   note,
 }: Props) {
@@ -84,20 +85,63 @@ export default function SurveyOutline({
   }, [currentStep, activeQuestionId, outline]);
 
   /**
-   * Varsayılan olarak yalnızca bulunulan kategori açık.
+   * Bulunulan bölüm ve alt seviye — ikisi de kendiliğinden açılır.
    *
-   * 13 bölümün tamamı açık gelirse harita kendi başına bir duvar olur ve
-   * çözdüğü sorunu yeniden yaratır. Kullanıcının açtığı kategoriler açık
-   * kalır — gezinirken sürekli kapanan bir ağaç en can sıkıcı davranış.
+   * Adım bilgisi olmayan kullanım için (önizlemenin gözden geçirme modunda
+   * anketin tamamı tek sayfada) aktif soruya da bakılır; yoksa ağaç tamamen
+   * kapalı açılır ve konumu hiç göstermez.
+   */
+  const currentKeys = useMemo(() => {
+    const empty = { subCategory: null as string | null, section: null as string | null };
+
+    for (const category of outline) {
+      for (const subCategory of category.subCategories) {
+        const byStep = subCategory.sections.find((item) => item.stepIndex === currentStepIndex);
+        if (byStep) return { subCategory: subCategory.key, section: byStep.key };
+      }
+    }
+
+    if (!activeQuestionId) return empty;
+
+    for (const category of outline) {
+      for (const subCategory of category.subCategories) {
+        const byQuestion = subCategory.sections.find((item) =>
+          item.questions.some((question) => question.id === activeQuestionId),
+        );
+        if (byQuestion) return { subCategory: subCategory.key, section: byQuestion.key };
+      }
+    }
+
+    return empty;
+  }, [outline, currentStepIndex, activeQuestionId]);
+
+  /**
+   * Açık düğümler — kategori, bölüm ve alt seviye aynı listede tutulur;
+   * anahtarları birbirine karışmayacak biçimde üretiliyor.
+   *
+   * Yalnızca bulunulan yolun üstü açık gelir. Her şey açık gelirse harita
+   * kendi başına bir duvar olur ve çözdüğü sorunu yeniden yaratır.
+   * Kullanıcının açtığı ya da kapattığı düğümler öyle kalır — gezinirken
+   * kendiliğinden kapanan bir ağaç en can sıkıcı davranış.
    */
   const [expanded, setExpanded] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!currentCategoryId) return;
-    setExpanded((current) =>
-      current.includes(currentCategoryId) ? current : [...current, currentCategoryId],
+    const wanted = [currentCategoryId, currentKeys.subCategory, currentKeys.section].filter(
+      (key): key is string => Boolean(key),
     );
-  }, [currentCategoryId]);
+    if (wanted.length === 0) return;
+
+    setExpanded((current) => {
+      const missing = wanted.filter((key) => !current.includes(key));
+      return missing.length === 0 ? current : [...current, ...missing];
+    });
+  }, [currentCategoryId, currentKeys]);
+
+  const toggle = (key: string) =>
+    setExpanded((current) =>
+      current.includes(key) ? current.filter((item) => item !== key) : [...current, key],
+    );
 
   /* Aktif satır haritanın görünmeyen kısmına kayabilir; `nearest` yalnızca
      gerçekten dışarıda kaldığında kaydırır, kullanıcının kendi gezinmesini
@@ -117,11 +161,6 @@ export default function SurveyOutline({
 
   if (outline.length === 0) return null;
 
-  const selectQuestion = (question: OutlineQuestion) => {
-    if (onSelectQuestion) onSelectQuestion(question.stepIndex, question.id);
-    else onSelectStep(question.stepIndex);
-  };
-
   const questionRow = (question: OutlineQuestion) => {
     const answered = isAnswered(responses, question.id);
     const isActive = activeQuestionId === question.id;
@@ -131,7 +170,7 @@ export default function SurveyOutline({
         <button
           ref={isActive ? activeRef : undefined}
           type="button"
-          onClick={() => selectQuestion(question)}
+          onClick={() => onSelectQuestion(question.stepIndex, question.id)}
           aria-current={isActive ? "true" : undefined}
           className="flex w-full items-start gap-2 rounded-[var(--radius-xs)] px-2 py-1.5 text-left transition-colors duration-fast ease-out-quart hover:bg-[var(--surface-2)]"
           style={isActive ? { background: "var(--accent-quiet)" } : undefined}
@@ -203,13 +242,7 @@ export default function SurveyOutline({
               <li key={category.categoryId}>
                 <button
                   type="button"
-                  onClick={() =>
-                    setExpanded((current) =>
-                      current.includes(category.categoryId)
-                        ? current.filter((id) => id !== category.categoryId)
-                        : [...current, category.categoryId],
-                    )
-                  }
+                  onClick={() => toggle(category.categoryId)}
                   aria-expanded={isOpen}
                   className="flex w-full items-center gap-2 rounded-[var(--radius-xs)] px-2 py-2 text-left transition-colors duration-fast ease-out-quart hover:bg-[var(--surface-2)]"
                 >
@@ -252,9 +285,9 @@ export default function SurveyOutline({
                 {isOpen && (
                   <ul className="ml-3 flex flex-col gap-0.5 pl-2" style={{ borderLeft: "1px solid var(--line)" }}>
                     {category.subCategories.map((subCategory) => {
-                      /* Alt seviyesiz bölümde alt kategori satırının kendisi
-                         gezilebilir hedeftir; ara bir satır daha çizmek adı
-                         iki kez yazdırırdı. */
+                      /* Alt seviyesiz bölümde sorular doğrudan bu satırın
+                         altında durur; ara bir satır daha çizmek adı iki kez
+                         yazdırırdı. */
                       const flat =
                         subCategory.sections.length === 1 && subCategory.sections[0].name === null;
                       const subAnswered = subCategory.sections
@@ -263,23 +296,37 @@ export default function SurveyOutline({
                       const isCurrentSub = subCategory.sections.some(
                         (section) => section.stepIndex === currentStepIndex,
                       );
+                      const isSubOpen = expanded.includes(subCategory.key);
 
                       return (
                         <li key={subCategory.key}>
+                          {/* Bölüm satırı açıp kapatır, gezinmez: altındaki
+                              sorular zaten gezinme hedefi ve altı soruluk bir
+                              bölüm açıkken harita okunmaz uzunlukta oluyordu. */}
                           <button
                             type="button"
-                            onClick={() => onSelectStep(subCategory.firstStepIndex)}
-                            aria-current={isCurrentSub && flat ? "step" : undefined}
-                            className="flex w-full items-baseline gap-2 rounded-[var(--radius-xs)] px-2 py-1.5 text-left transition-colors duration-fast ease-out-quart hover:bg-[var(--surface-2)]"
-                            style={
-                              isCurrentSub && flat ? { background: "var(--surface-2)" } : undefined
-                            }
+                            onClick={() => toggle(subCategory.key)}
+                            aria-expanded={isSubOpen}
+                            className="flex w-full items-center gap-1.5 rounded-[var(--radius-xs)] px-2 py-1.5 text-left transition-colors duration-fast ease-out-quart hover:bg-[var(--surface-2)]"
+                            style={isCurrentSub ? { background: "var(--accent-quiet)" } : undefined}
                           >
+                            <ChevronRight
+                              size={13}
+                              aria-hidden="true"
+                              className="shrink-0 transition-transform duration-fast ease-out-quart"
+                              style={{
+                                color: "var(--accent)",
+                                transform: isSubOpen ? "rotate(90deg)" : undefined,
+                              }}
+                            />
+                            {/* Bölüm adı vurgu renginde: kategori ile soru
+                                arasındaki seviyeyi renk ayırıyor, girinti tek
+                                başına yetmiyordu. */}
                             <span
                               className="min-w-0 flex-1 truncate t-sm"
                               style={{
-                                color: isCurrentSub ? "var(--ink)" : "var(--ink-2)",
-                                fontWeight: isCurrentSub ? 500 : 400,
+                                color: "var(--accent)",
+                                fontWeight: isCurrentSub ? 600 : 500,
                               }}
                             >
                               {subCategory.name}
@@ -292,54 +339,67 @@ export default function SurveyOutline({
                             </span>
                           </button>
 
-                          {flat ? (
-                            <ul className="ml-2 flex flex-col gap-0.5 pl-2">
-                              {subCategory.sections[0].questions.map(questionRow)}
-                            </ul>
-                          ) : (
-                            <ul className="ml-2 flex flex-col gap-0.5 pl-2">
-                              {subCategory.sections.map((section) => {
-                                const sectionDone = stepProgress(steps[section.stepIndex], responses);
-                                const isCurrentSection = section.stepIndex === currentStepIndex;
+                          {isSubOpen &&
+                            (flat ? (
+                              <ul className="ml-2 flex flex-col gap-0.5 pl-2">
+                                {subCategory.sections[0].questions.map(questionRow)}
+                              </ul>
+                            ) : (
+                              <ul className="ml-2 flex flex-col gap-0.5 pl-2">
+                                {subCategory.sections.map((section) => {
+                                  const sectionDone = stepProgress(steps[section.stepIndex], responses);
+                                  const isCurrentSection = section.stepIndex === currentStepIndex;
+                                  const isSectionOpen = expanded.includes(section.key);
 
-                                return (
-                                  <li key={section.key}>
-                                    <button
-                                      type="button"
-                                      onClick={() => onSelectStep(section.stepIndex)}
-                                      aria-current={isCurrentSection ? "step" : undefined}
-                                      className="flex w-full items-baseline gap-2 rounded-[var(--radius-xs)] px-2 py-1.5 text-left transition-colors duration-fast ease-out-quart hover:bg-[var(--surface-2)]"
-                                      style={
-                                        isCurrentSection
-                                          ? { background: "var(--surface-2)" }
-                                          : undefined
-                                      }
-                                    >
-                                      <span
-                                        className="min-w-0 flex-1 truncate t-sm"
-                                        style={{
-                                          color: isCurrentSection ? "var(--ink)" : "var(--ink-2)",
-                                          fontWeight: isCurrentSection ? 500 : 400,
-                                        }}
+                                  return (
+                                    <li key={section.key}>
+                                      <button
+                                        type="button"
+                                        onClick={() => toggle(section.key)}
+                                        aria-expanded={isSectionOpen}
+                                        className="flex w-full items-center gap-1.5 rounded-[var(--radius-xs)] px-2 py-1.5 text-left transition-colors duration-fast ease-out-quart hover:bg-[var(--surface-2)]"
+                                        style={
+                                          isCurrentSection
+                                            ? { background: "var(--surface-2)" }
+                                            : undefined
+                                        }
                                       >
-                                        {section.name}
-                                      </span>
-                                      <span
-                                        className="shrink-0 t-sm tabular"
-                                        style={{ color: "var(--ink-3)" }}
-                                      >
-                                        {sectionDone.answered}/{sectionDone.total}
-                                      </span>
-                                    </button>
+                                        <ChevronRight
+                                          size={12}
+                                          aria-hidden="true"
+                                          className="shrink-0 transition-transform duration-fast ease-out-quart"
+                                          style={{
+                                            color: "var(--ink-3)",
+                                            transform: isSectionOpen ? "rotate(90deg)" : undefined,
+                                          }}
+                                        />
+                                        <span
+                                          className="min-w-0 flex-1 truncate t-sm"
+                                          style={{
+                                            color: isCurrentSection ? "var(--ink)" : "var(--ink-2)",
+                                            fontWeight: isCurrentSection ? 500 : 400,
+                                          }}
+                                        >
+                                          {section.name}
+                                        </span>
+                                        <span
+                                          className="shrink-0 t-sm tabular"
+                                          style={{ color: "var(--ink-3)" }}
+                                        >
+                                          {sectionDone.answered}/{sectionDone.total}
+                                        </span>
+                                      </button>
 
-                                    <ul className="ml-2 flex flex-col gap-0.5 pl-2">
-                                      {section.questions.map(questionRow)}
-                                    </ul>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          )}
+                                      {isSectionOpen && (
+                                        <ul className="ml-2 flex flex-col gap-0.5 pl-2">
+                                          {section.questions.map(questionRow)}
+                                        </ul>
+                                      )}
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            ))}
                         </li>
                       );
                     })}

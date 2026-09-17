@@ -147,20 +147,32 @@ test.describe("geniş ekran", () => {
     await expect(outline.getByText(SECTION_ENERGY, { exact: true })).toBeVisible();
     await expect(outline.getByText(SECTION_PEOPLE, { exact: true })).toHaveCount(0);
 
-    // --- soru satırları metinleriyle listelenir ---
+    // --- bulunulan bölümün soruları açık, diğerininki kapalı ---
     await expect(outline.getByText(`${SECTION_ENERGY} sorusu 1`)).toBeVisible();
     await expect(outline.getByText(`${SECTION_ENERGY} sorusu 3`)).toBeVisible();
+    await expect(outline.getByText(`${SECTION_WASTE} sorusu 1`)).toHaveCount(0);
 
-    // --- haritadan bölüm değiştirmek ekranı gerçekten taşır ---
+    // --- bölüm satırı açıp kapatır, gezinmez ---
     await expect(breadcrumbOf(page).getByText(SECTION_ENERGY, { exact: true })).toBeVisible();
     await rowNamed(page, SECTION_WASTE).click();
+    await expect(outline.getByText(`${SECTION_WASTE} sorusu 1`)).toBeVisible();
+    // Bölüme tıklamak ekranı taşımaz; gezinme hedefi sorudur.
+    await expect(breadcrumbOf(page).getByText(SECTION_ENERGY, { exact: true })).toBeVisible();
+
+    // --- sorudan gezinmek ekranı gerçekten taşır ---
+    await outline.getByText(`${SECTION_WASTE} sorusu 1`).click();
     await expect(breadcrumbOf(page).getByText(SECTION_WASTE, { exact: true })).toBeVisible({
       timeout: 10_000,
     });
 
+    // --- ikinci tık soruları toplar ---
+    await rowNamed(page, SECTION_WASTE).click();
+    await expect(outline.getByText(`${SECTION_WASTE} sorusu 1`)).toHaveCount(0);
+
     // --- kapalı kategori açılıp gezilebilir ---
     await rowNamed(page, CATEGORY_TWO).click();
     await rowNamed(page, SECTION_PEOPLE).click();
+    await outline.getByText(`${SECTION_PEOPLE} sorusu 1`).click();
     await expect(breadcrumbOf(page).getByText(SECTION_PEOPLE, { exact: true })).toBeVisible({
       timeout: 10_000,
     });
@@ -210,8 +222,12 @@ test.describe("dar ekran", () => {
     await expect(outline).toBeVisible({ timeout: 10_000 });
     await expect(outline.getByText(CATEGORY_ONE, { exact: true })).toBeVisible();
 
-    // Çekmeceden seçim hem gezinir hem kapanır; açık kalırsa soruyu örter.
+    // Bölüm satırı çekmecede de yalnızca açar; kapanmayı seçim yapar.
     await rowNamed(page, SECTION_WASTE).click();
+    await expect(outline.getByText(`${SECTION_WASTE} sorusu 1`)).toBeVisible();
+
+    // Soru seçimi hem gezinir hem çekmeceyi kapatır; açık kalırsa soruyu örter.
+    await outline.getByText(`${SECTION_WASTE} sorusu 1`).click();
     await expect(breadcrumbOf(page).getByText(SECTION_WASTE, { exact: true })).toBeVisible({
       timeout: 10_000,
     });

@@ -813,7 +813,6 @@ export default function SurveyClient() {
               currentStepIndex={currentStepIndex}
               activeQuestionId={activeQuestionId}
               note={outlineNote}
-              onSelectStep={jumpTo}
               onSelectQuestion={goToQuestion}
             />
           </aside>
@@ -922,10 +921,6 @@ export default function SurveyClient() {
                       currentStepIndex={currentStepIndex}
                       activeQuestionId={activeQuestionId}
                       note={outlineNote}
-                      onSelectStep={(index) => {
-                        setOutlineOpen(false);
-                        jumpTo(index);
-                      }}
                       onSelectQuestion={(index, questionId) => {
                         setOutlineOpen(false);
                         goToQuestion(index, questionId);

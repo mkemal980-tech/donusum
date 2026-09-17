@@ -389,10 +389,6 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
                       ? undefined
                       : "Gözden geçirme dökümü — harita kaydırmayı izler"
                   }
-                  onSelectStep={(index) => {
-                    if (viewMode === "user") setStepIndex(index);
-                    else goToQuestion(index, steps[index]?.questionIds[0] ?? "");
-                  }}
                   onSelectQuestion={goToQuestion}
                 />
               </aside>
