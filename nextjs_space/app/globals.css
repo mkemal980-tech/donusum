@@ -821,6 +821,47 @@ body.shell-active main {
   body.shell-active main { padding-inline: var(--sp-7); }
 }
 
+/* ===== ANKET YERLEŞİMİ =====
+   Anket haritası üçüncü bir sabit sütun olamaz: solda zaten kabuğun 248px'i
+   var ve üç sabit sütun dizüstü genişliğinde soruları ezer. Bu yüzden harita
+   <main> içinde yapışkan bir sütun; dar ekranda sütun kaybolur ve yerini
+   "Bölümler" çekmecesi alır. */
+.survey-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-6);
+  align-items: start;
+}
+
+.survey-outline-col { display: none; }
+
+@media (min-width: 1280px) {
+  /* 1280'de kabuğun menüsü 248px'i aldıktan sonra sorulara ~690px kalıyor;
+     harita bu yüzden dar başlar ve yalnızca gerçekten yer varken genişler. */
+  .survey-layout { grid-template-columns: 280px minmax(0, 1fr); }
+
+  .survey-outline-col {
+    display: block;
+    position: sticky;
+    /* Üst şerit sabit; harita onun altından başlar. */
+    top: calc(var(--shell-topbar) + var(--sp-5));
+    height: calc(100vh - var(--shell-topbar) - var(--sp-9));
+  }
+
+  /* Önizleme ekranında kabuk yok; şerit sayfanın kendi yapışkan başlığı. */
+  .survey-layout.no-shell .survey-outline-col {
+    top: var(--sp-5);
+    height: calc(100vh - var(--sp-8));
+  }
+}
+
+@media (min-width: 1536px) {
+  .survey-layout { grid-template-columns: 320px minmax(0, 1fr); }
+}
+
+/* Haritadan gelen sıçramada soru kartı üst şeridin altında kalmasın. */
+.survey-question-anchor { scroll-margin-top: calc(var(--shell-topbar) + var(--sp-4)); }
+
 /* ===== KABUK: SIDEBAR ===== */
 .sidebar {
   background: var(--rail);

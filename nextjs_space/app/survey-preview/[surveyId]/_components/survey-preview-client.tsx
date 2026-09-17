@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import SurveyQuestion from "@/components/survey/survey-question";
+import SurveyOutline from "@/components/survey/survey-outline";
+import QuestionAnchor from "@/components/survey/question-anchor";
 import { Button } from "@/components/ui/button";
+// Harita ve numaralandırma gerçek anket ekranıyla ortak; ayrı yazıldığında
+// önizleme kullanıcının gördüğünden farklı davranıyordu.
+import { buildOutline, questionNumbers, type SurveyStep } from "@/lib/survey-navigation";
 
 type Question = {
   id: string;
@@ -142,6 +147,10 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
    */
   const [viewMode, setViewMode] = useState<"user" | "all">("user");
   const [stepIndex, setStepIndex] = useState(0);
+  /** Haritada vurgulanan soru — kaydırma konumundan belirlenir. */
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
+  const [scrollTarget, setScrollTarget] = useState<string | null>(null);
+  const [questionObserver, setQuestionObserver] = useState<IntersectionObserver | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -182,18 +191,70 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
   const totalQuestions = sections.reduce((total, section) => total + section.questions.length, 0);
   const answeredCount = Object.keys(answers).length;
 
-  // Soru numaraları anket boyunca kesintisiz akar — kullanıcının gördüğü sıra.
-  const questionNumbers = useMemo(() => {
-    const numbers = new Map<string, number>();
-    let counter = 0;
+  /**
+   * Önizlemenin kendi bölüm tipi ile gezinme çekirdeğinin adım tipi arasındaki
+   * köprü. Harita mantığını ikinci kez yazmak yerine veri uyarlanıyor.
+   */
+  const steps = useMemo<SurveyStep[]>(
+    () =>
+      sections.map((section) => ({
+        categoryId: section.categoryId,
+        categoryName: section.categoryName,
+        subCategoryName: section.subCategoryName ?? "Kategori Soruları",
+        subLevelName: section.subLevelName,
+        questionIds: section.questions.map((question) => question.id),
+        categoryIndex: 0,
+        subCategoryIndex: 0,
+        subLevelIndex: 0,
+      })),
+    [sections]
+  );
+
+  const questionTexts = useMemo(() => {
+    const texts = new Map<string, string>();
     for (const section of sections) {
-      for (const question of section.questions) {
-        counter += 1;
-        numbers.set(question.id, counter);
-      }
+      for (const question of section.questions) texts.set(question.id, question.text);
     }
-    return numbers;
+    return texts;
   }, [sections]);
+
+  const outline = useMemo(
+    () => buildOutline(steps, (id) => questionTexts.get(id) ?? ""),
+    [steps, questionTexts]
+  );
+
+  // Soru numaraları anket boyunca kesintisiz akar — kullanıcının gördüğü sıra.
+  const numbers = useMemo(() => questionNumbers(steps), [steps]);
+
+  /**
+   * Bulunulan soru: üst kenara en yakın görünür kart. Gözden geçirme modunda
+   * bütün anket tek sayfada olduğu için harita doğrudan kaydırmayı izler.
+   */
+  const visibleRef = useRef<Set<string>>(new Set());
+  const orderRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).dataset.questionId;
+          if (!id) continue;
+          if (entry.isIntersecting) visibleRef.current.add(id);
+          else visibleRef.current.delete(id);
+        }
+        setActiveQuestionId(orderRef.current.find((id) => visibleRef.current.has(id)) ?? null);
+      },
+      { rootMargin: "-96px 0px -55% 0px", threshold: 0 }
+    );
+
+    setQuestionObserver(observer);
+    return () => {
+      observer.disconnect();
+      setQuestionObserver(null);
+    };
+  }, []);
 
   // Kullanıcı modunda yalnızca bulunulan bölüm gösterilir.
   const clampedStepIndex = Math.max(0, Math.min(stepIndex, sections.length - 1));
@@ -207,6 +268,19 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
         : sections.map((section, sectionIndex) => ({ section, sectionIndex })),
     [viewMode, sections, currentSection, clampedStepIndex]
   );
+
+  /* Ekranda hangi sorular varsa sıralama odur; kullanıcı modunda tek bölüm,
+     gözden geçirme modunda anketin tamamı. */
+  orderRef.current = visibleSections.flatMap(({ section }) =>
+    section.questions.map((question) => question.id)
+  );
+
+  /** Haritadan sıçrama: kullanıcı modunda önce bölüm değişir, sonra kart kaydırır. */
+  const goToQuestion = (targetStepIndex: number, questionId: string) => {
+    setScrollTarget(questionId);
+    setActiveQuestionId(questionId);
+    if (viewMode === "user" && targetStepIndex !== clampedStepIndex) setStepIndex(targetStepIndex);
+  };
 
   const sectionAnswered = (currentSection?.questions ?? []).filter(
     (question) => answers[question.id] !== undefined && answers[question.id] !== ""
@@ -237,7 +311,7 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
     <div className="min-h-screen bg-[var(--bg-main)]">
       {/* Önizleme şeridi — her zaman görünür kalır */}
       <div className="sticky top-0 z-40 bg-[var(--warning)]/15 border-b border-[var(--warning)]/40 backdrop-blur">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
+        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-3 px-4 py-3">
           <span className="px-2 py-0.5 rounded text-xs font-semibold bg-[var(--warning)] text-black">ÖNİZLEME</span>
           <div className="min-w-0">
             <p className="text-sm font-medium text-[var(--text-main)] truncate">{surveyName}</p>
@@ -283,7 +357,7 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="mx-auto max-w-[1400px] px-4 py-6">
         {loading ? (
           <p className="text-center text-[var(--text-dim)] py-16">Anket yükleniyor...</p>
         ) : error ? (
@@ -300,200 +374,232 @@ export default function SurveyPreviewClient({ surveyId }: { surveyId: string }) 
           </div>
         ) : (
           <>
-            {/* Kullanıcı modunda gerçek ekrandaki bölüm başlığı ve ilerleme */}
-            {viewMode === "user" && currentSection && (
-              <div className="mb-6 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]">
-                <div className="flex items-center gap-2 text-sm flex-wrap mb-3">
-                  <span className="px-2.5 py-1 bg-[var(--accent-solid)] text-[var(--on-accent)] rounded-lg">
-                    {currentSection.categoryName}
-                  </span>
-                  <span className="text-[var(--text-dim)]">›</span>
-                  <span className="px-2.5 py-1 bg-[var(--accent-alt)] text-white rounded-lg">
-                    {currentSection.subCategoryName ?? "Doğrudan Sorular"}
-                  </span>
-                  {currentSection.subLevelName && (
-                    <>
-                      <span className="text-[var(--text-dim)]">›</span>
-                      <span className="px-2.5 py-1 bg-[var(--border-soft)] text-[var(--text-muted)] rounded-lg">
-                        {currentSection.subLevelName}
-                      </span>
-                    </>
-                  )}
-                  <span className="ml-auto text-xs text-[var(--text-dim)] tabular-nums">
-                    Bölüm {clampedStepIndex + 1} / {sections.length}
-                  </span>
-                </div>
+            {/* Harita ile sorular yan yana; önizlemede kabuk menüsü olmadığı
+                için yapışkan sütun sayfanın kendi şeridinden başlar. */}
+            <div className="survey-layout no-shell">
+              <aside className="survey-outline-col">
+                <SurveyOutline
+                  outline={outline}
+                  steps={steps}
+                  responses={answers}
+                  currentStepIndex={viewMode === "user" ? clampedStepIndex : -1}
+                  activeQuestionId={activeQuestionId}
+                  note={
+                    viewMode === "user"
+                      ? undefined
+                      : "Gözden geçirme dökümü — harita kaydırmayı izler"
+                  }
+                  onSelectStep={(index) => {
+                    if (viewMode === "user") setStepIndex(index);
+                    else goToQuestion(index, steps[index]?.questionIds[0] ?? "");
+                  }}
+                  onSelectQuestion={goToQuestion}
+                />
+              </aside>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 h-2.5 rounded-full bg-[var(--border-soft)] overflow-hidden">
-                    <div
-                      className="h-full bg-[var(--accent)] transition-all duration-500"
-                      style={{ width: `${sectionPercentage}%` }}
-                    />
+              <div className="min-w-0">
+              {/* Kullanıcı modunda gerçek ekrandaki bölüm başlığı ve ilerleme */}
+              {viewMode === "user" && currentSection && (
+                <div className="mb-6 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]">
+                  <div className="flex items-center gap-2 text-sm flex-wrap mb-3">
+                    <span className="px-2.5 py-1 bg-[var(--accent-solid)] text-[var(--on-accent)] rounded-lg">
+                      {currentSection.categoryName}
+                    </span>
+                    <span className="text-[var(--text-dim)]">›</span>
+                    <span className="px-2.5 py-1 bg-[var(--accent-alt)] text-white rounded-lg">
+                      {currentSection.subCategoryName ?? "Doğrudan Sorular"}
+                    </span>
+                    {currentSection.subLevelName && (
+                      <>
+                        <span className="text-[var(--text-dim)]">›</span>
+                        <span className="px-2.5 py-1 bg-[var(--border-soft)] text-[var(--text-muted)] rounded-lg">
+                          {currentSection.subLevelName}
+                        </span>
+                      </>
+                    )}
+                    <span className="ml-auto text-xs text-[var(--text-dim)] tabular-nums">
+                      Bölüm {clampedStepIndex + 1} / {sections.length}
+                    </span>
                   </div>
-                  <span className="text-sm font-medium text-[var(--text-main)] tabular-nums whitespace-nowrap">
-                    {sectionAnswered} / {sectionTotal} soru
-                  </span>
+
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-2.5 rounded-full bg-[var(--border-soft)] overflow-hidden">
+                      <div
+                        className="h-full bg-[var(--accent)] transition-all duration-500"
+                        style={{ width: `${sectionPercentage}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-[var(--text-main)] tabular-nums whitespace-nowrap">
+                      {sectionAnswered} / {sectionTotal} soru
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
-
-            {/* Özet ve kategori kısayolları — yalnızca gözden geçirme modunda */}
-            {viewMode === "all" && (
-            <div className="mb-6 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]">
-              <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
-                <span className="text-[var(--text-muted)]">
-                  <strong className="text-[var(--text-main)]">{totalQuestions}</strong> soru
-                </span>
-                <span className="text-[var(--text-muted)]">
-                  <strong className="text-[var(--text-main)]">{categoryAnchors.length}</strong> kategori
-                </span>
-                <span className="text-[var(--text-muted)]">
-                  <strong className="text-[var(--text-main)]">{sections.length}</strong> bölüm
-                </span>
-                {answeredCount > 0 && (
-                  <span className="text-[var(--accent)]">
-                    {answeredCount} soruyu denediniz (kaydedilmiyor)
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-2 mt-3">
-                {categoryAnchors.map((anchor) => (
-                  <a
-                    key={anchor.id}
-                    href={`#kategori-${anchor.id}`}
-                    className="px-3 py-1 rounded-full text-xs bg-[var(--bg-card-2)] text-[var(--text-muted)] border border-[var(--border-soft)] hover:border-[var(--accent)]"
-                  >
-                    {anchor.name}
-                  </a>
-                ))}
-              </div>
-
-              {emptyCategories.length > 0 && (
-                <p className="mt-3 pt-3 border-t border-[var(--border-soft)] text-xs text-[var(--warning)]">
-                  Soru içermediği için kullanıcıya <strong>hiç görünmeyecek</strong> kategoriler:{" "}
-                  {emptyCategories.map((category) => category.name).join(", ")}
-                </p>
               )}
-            </div>
-            )}
 
-            {visibleSections.map(({ section, sectionIndex }) => {
-              const isNewCategory =
-                sectionIndex === 0 || sections[sectionIndex - 1].categoryId !== section.categoryId;
-
-              return (
-                <section key={section.key} className="mb-10">
-                  {/* Kullanıcı modunda bölüm adı zaten üstteki kırıntıda yazıyor;
-                      burada tekrarlamak ekranı gereksiz kalabalıklaştırır. */}
-                  {viewMode === "all" && (
-                    <>
-                      {isNewCategory && (
-                        <h2
-                          id={`kategori-${section.categoryId}`}
-                          className="scroll-mt-24 text-2xl font-semibold text-[var(--text-main)] mb-4 pb-2 border-b-2 border-[var(--accent)]"
-                        >
-                          {section.categoryName}
-                        </h2>
-                      )}
-
-                      <div className="mb-4">
-                        <h3 className="text-lg font-semibold text-[var(--accent)]">
-                          {section.subCategoryName ?? "Doğrudan Sorular"}
-                        </h3>
-                        {section.subLevelName && (
-                          <p className="text-sm text-[var(--text-muted)]">{section.subLevelName}</p>
-                        )}
-                      </div>
-                    </>
-                  )}
-
-                  <div className="space-y-4">
-                    {section.questions.map((question) => (
-                      <div key={question.id}>
-                        <div className="flex items-center gap-2 mb-1.5 text-xs text-[var(--text-dim)]">
-                          <span className="px-1.5 py-0.5 rounded bg-[var(--bg-card-2)]">
-                            Soru {questionNumbers.get(question.id)} / {totalQuestions}
-                          </span>
-                        </div>
-
-                        <SurveyQuestion
-                          question={question}
-                          value={answers[question.id]}
-                          onAnswer={handleAnswer}
-                          previewMode
-                        />
-
-                        {showAdminDetails && (
-                          <div className="mt-1.5 flex flex-wrap gap-2 text-[11px]">
-                            <span className="px-2 py-0.5 rounded bg-[var(--bg-card-2)] text-[var(--text-muted)]">
-                              {TYPE_LABELS[question.type] ?? question.type}
-                            </span>
-                            <span className="px-2 py-0.5 rounded bg-[var(--bg-card-2)] text-[var(--text-muted)]">
-                              Ağırlık {question.weight}
-                            </span>
-                            <span className="px-2 py-0.5 rounded bg-[var(--bg-card-2)] text-[var(--text-muted)]">
-                              {AXIS_LABELS[question.axisType] ?? question.axisType}
-                            </span>
-                            <span className="px-2 py-0.5 rounded bg-[var(--bg-card-2)] text-[var(--text-muted)]">
-                              En yüksek puan {maxScoreOf(question)}
-                            </span>
-                            {question.requiresEvidence && (
-                              <span className="px-2 py-0.5 rounded bg-[var(--accent-alt)]/20 text-[var(--accent-alt)]">
-                                Kanıt zorunlu
-                              </span>
-                            )}
-                            {question.type === "MULTIPLE_CHOICE" && (question.options?.length ?? 0) > 0 && (
-                              <span className="px-2 py-0.5 rounded bg-[var(--bg-card-2)] text-[var(--text-muted)]">
-                                Şık puanları:{" "}
-                                {question.options!.map((option) => `${option.label} (${option.score})`).join(", ")}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              );
-            })}
-
-            {viewMode === "user" ? (
-              <div className="flex items-center justify-between pt-4 border-t border-[var(--border-soft)]">
-                <Button
-                  onClick={() => setStepIndex((current) => Math.max(0, current - 1))}
-                  disabled={clampedStepIndex === 0}
-                  variant="outline"
-                  className="text-sm text-[var(--text-muted)] disabled:cursor-not-allowed"
-                >
-                  ← Önceki
-                </Button>
-
-                <span className="text-sm text-[var(--text-dim)] tabular-nums">
-                  {clampedStepIndex < sections.length - 1
-                    ? `${sections.length - clampedStepIndex - 1} bölüm kaldı`
-                    : "Son bölüm"}
-                </span>
-
-                {clampedStepIndex < sections.length - 1 ? (
-                  <Button
-                    onClick={() => setStepIndex((current) => current + 1)}
-                    className="text-sm text-[var(--bg-deep)] font-medium"
-                  >
-                    Sonraki →
-                  </Button>
-                ) : (
-                  <span className="px-5 py-2.5 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-dim)] border border-[var(--border-soft)]">
-                    Kullanıcı burada tamamlar
+              {/* Özet ve kategori kısayolları — yalnızca gözden geçirme modunda */}
+              {viewMode === "all" && (
+              <div className="mb-6 p-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-soft)]">
+                <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
+                  <span className="text-[var(--text-muted)]">
+                    <strong className="text-[var(--text-main)]">{totalQuestions}</strong> soru
                   </span>
+                  <span className="text-[var(--text-muted)]">
+                    <strong className="text-[var(--text-main)]">{categoryAnchors.length}</strong> kategori
+                  </span>
+                  <span className="text-[var(--text-muted)]">
+                    <strong className="text-[var(--text-main)]">{sections.length}</strong> bölüm
+                  </span>
+                  {answeredCount > 0 && (
+                    <span className="text-[var(--accent)]">
+                      {answeredCount} soruyu denediniz (kaydedilmiyor)
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {categoryAnchors.map((anchor) => (
+                    <a
+                      key={anchor.id}
+                      href={`#kategori-${anchor.id}`}
+                      className="px-3 py-1 rounded-full text-xs bg-[var(--bg-card-2)] text-[var(--text-muted)] border border-[var(--border-soft)] hover:border-[var(--accent)]"
+                    >
+                      {anchor.name}
+                    </a>
+                  ))}
+                </div>
+
+                {emptyCategories.length > 0 && (
+                  <p className="mt-3 pt-3 border-t border-[var(--border-soft)] text-xs text-[var(--warning)]">
+                    Soru içermediği için kullanıcıya <strong>hiç görünmeyecek</strong> kategoriler:{" "}
+                    {emptyCategories.map((category) => category.name).join(", ")}
+                  </p>
                 )}
               </div>
-            ) : (
-              <div className="py-8 text-center text-sm text-[var(--text-dim)] border-t border-[var(--border-soft)]">
-                Anketin sonu. Gerçek kullanıcı burada anketi tamamlar; önizlemede kayıt yapılmaz.
+              )}
+
+              {visibleSections.map(({ section, sectionIndex }) => {
+                const isNewCategory =
+                  sectionIndex === 0 || sections[sectionIndex - 1].categoryId !== section.categoryId;
+
+                return (
+                  <section key={section.key} className="mb-10">
+                    {/* Kullanıcı modunda bölüm adı zaten üstteki kırıntıda yazıyor;
+                        burada tekrarlamak ekranı gereksiz kalabalıklaştırır. */}
+                    {viewMode === "all" && (
+                      <>
+                        {isNewCategory && (
+                          <h2
+                            id={`kategori-${section.categoryId}`}
+                            className="scroll-mt-24 text-2xl font-semibold text-[var(--text-main)] mb-4 pb-2 border-b-2 border-[var(--accent)]"
+                          >
+                            {section.categoryName}
+                          </h2>
+                        )}
+
+                        <div className="mb-4">
+                          <h3 className="text-lg font-semibold text-[var(--accent)]">
+                            {section.subCategoryName ?? "Doğrudan Sorular"}
+                          </h3>
+                          {section.subLevelName && (
+                            <p className="text-sm text-[var(--text-muted)]">{section.subLevelName}</p>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    <div className="space-y-4">
+                      {section.questions.map((question) => (
+                        <QuestionAnchor
+                          key={question.id}
+                          questionId={question.id}
+                          observer={questionObserver}
+                          scrollOnMount={scrollTarget === question.id}
+                          onScrolled={() => setScrollTarget(null)}
+                        >
+                          <div className="flex items-center gap-2 mb-1.5 text-xs text-[var(--text-dim)]">
+                            <span className="px-1.5 py-0.5 rounded bg-[var(--bg-card-2)]">
+                              Soru {numbers.get(question.id)} / {totalQuestions}
+                            </span>
+                          </div>
+
+                          <SurveyQuestion
+                            question={question}
+                            value={answers[question.id]}
+                            onAnswer={handleAnswer}
+                            previewMode
+                          />
+
+                          {showAdminDetails && (
+                            <div className="mt-1.5 flex flex-wrap gap-2 text-[11px]">
+                              <span className="px-2 py-0.5 rounded bg-[var(--bg-card-2)] text-[var(--text-muted)]">
+                                {TYPE_LABELS[question.type] ?? question.type}
+                              </span>
+                              <span className="px-2 py-0.5 rounded bg-[var(--bg-card-2)] text-[var(--text-muted)]">
+                                Ağırlık {question.weight}
+                              </span>
+                              <span className="px-2 py-0.5 rounded bg-[var(--bg-card-2)] text-[var(--text-muted)]">
+                                {AXIS_LABELS[question.axisType] ?? question.axisType}
+                              </span>
+                              <span className="px-2 py-0.5 rounded bg-[var(--bg-card-2)] text-[var(--text-muted)]">
+                                En yüksek puan {maxScoreOf(question)}
+                              </span>
+                              {question.requiresEvidence && (
+                                <span className="px-2 py-0.5 rounded bg-[var(--accent-alt)]/20 text-[var(--accent-alt)]">
+                                  Kanıt zorunlu
+                                </span>
+                              )}
+                              {question.type === "MULTIPLE_CHOICE" && (question.options?.length ?? 0) > 0 && (
+                                <span className="px-2 py-0.5 rounded bg-[var(--bg-card-2)] text-[var(--text-muted)]">
+                                  Şık puanları:{" "}
+                                  {question.options!.map((option) => `${option.label} (${option.score})`).join(", ")}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </QuestionAnchor>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+
+              {viewMode === "user" ? (
+                <div className="flex items-center justify-between pt-4 border-t border-[var(--border-soft)]">
+                  <Button
+                    onClick={() => setStepIndex((current) => Math.max(0, current - 1))}
+                    disabled={clampedStepIndex === 0}
+                    variant="outline"
+                    className="text-sm text-[var(--text-muted)] disabled:cursor-not-allowed"
+                  >
+                    ← Önceki
+                  </Button>
+
+                  <span className="text-sm text-[var(--text-dim)] tabular-nums">
+                    {clampedStepIndex < sections.length - 1
+                      ? `${sections.length - clampedStepIndex - 1} bölüm kaldı`
+                      : "Son bölüm"}
+                  </span>
+
+                  {clampedStepIndex < sections.length - 1 ? (
+                    <Button
+                      onClick={() => setStepIndex((current) => current + 1)}
+                      className="text-sm text-[var(--bg-deep)] font-medium"
+                    >
+                      Sonraki →
+                    </Button>
+                  ) : (
+                    <span className="px-5 py-2.5 rounded-lg text-sm bg-[var(--bg-card)] text-[var(--text-dim)] border border-[var(--border-soft)]">
+                      Kullanıcı burada tamamlar
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-sm text-[var(--text-dim)] border-t border-[var(--border-soft)]">
+                  Anketin sonu. Gerçek kullanıcı burada anketi tamamlar; önizlemede kayıt yapılmaz.
+                </div>
+              )}
               </div>
-            )}
+            </div>
           </>
         )}
       </div>

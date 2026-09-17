@@ -23,6 +23,14 @@ interface SurveyQuestionProps {
   isUploading?: boolean;
   /** Yönetici önizlemesi: kanıt alanı gösterilir ama dosya yüklenemez. */
   previewMode?: boolean;
+  /**
+   * Anket boyunca kesintisiz soru numarası ve toplam.
+   *
+   * Haritadaki "Soru 12" ile karttaki soru arasında görsel bağ kurar; ikisi
+   * de `questionNumbers()` sayımından gelir, ayrı sayılmazlar.
+   */
+  number?: number;
+  totalQuestions?: number;
 }
 
 export default function SurveyQuestion({
@@ -33,7 +41,9 @@ export default function SurveyQuestion({
   onRemoveFile,
   uploadedFile,
   isUploading = false,
-  previewMode = false
+  previewMode = false,
+  number,
+  totalQuestions
 }: SurveyQuestionProps) {
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -255,6 +265,18 @@ export default function SurveyQuestion({
     <motion.div
       className="theme-card p-6 border border-[var(--border-soft)]"
     >
+      {number !== undefined && (
+        <p className="mb-2">
+          <span
+            className="rounded-[var(--radius-xs)] px-1.5 py-0.5 t-sm tabular"
+            style={{ background: "var(--surface-2)", color: "var(--ink-3)" }}
+          >
+            Soru {number}
+            {totalQuestions !== undefined ? ` / ${totalQuestions}` : ""}
+          </span>
+        </p>
+      )}
+
       <h3 className="text-lg font-medium text-[var(--text-main)] mb-6">{q?.text ?? ''}</h3>
       
       {renderInput()}

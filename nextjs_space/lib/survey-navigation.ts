@@ -239,3 +239,124 @@ export function estimateMinutes(totalQuestions: number): number {
   const rest = Math.max(0, totalQuestions - 5) * 20; // sonrası ~20 sn
   return Math.max(1, Math.round((warmUp + rest) / 60));
 }
+
+/* ── Anket haritası ─────────────────────────────────────────────────────── */
+
+/**
+ * Haritanın (sol panel) ihtiyaç duyduğu kırılım.
+ *
+ * `buildSteps` ağacı bilinçli olarak düzleştiriyor; gezinme "kaçıncı
+ * adımdayım" sorusundan ibaret ve iki ayrı indeks tutmak hataya açıktı.
+ * Ama kullanıcıya nerede olduğunu *göstermek* için kırılım geri gerekiyor.
+ *
+ * Burada ağaç yeniden kurulmuyor: adım dizisi tek kaynak olarak kalıyor ve
+ * yalnızca gruplanıyor. Böylece haritadaki her satırın karşılığı bir adım
+ * indeksi olur, tıklama tek bir `setCurrentStepIndex` çağrısına iner ve
+ * harita ile ekranın ayrışması mümkün olmaz.
+ */
+
+export type OutlineQuestion = {
+  id: string;
+  text: string;
+  /** Anket boyunca kesintisiz numara — kartın üstündeki "Soru 12 / 71" ile aynı. */
+  number: number;
+  stepIndex: number;
+};
+
+export type OutlineSection = {
+  key: string;
+  /** Alt seviye adı. Alt seviyesiz bölümde null: ad zaten bir üstte yazıyor. */
+  name: string | null;
+  stepIndex: number;
+  questions: OutlineQuestion[];
+};
+
+export type OutlineSubCategory = {
+  key: string;
+  name: string;
+  firstStepIndex: number;
+  questionCount: number;
+  sections: OutlineSection[];
+};
+
+export type OutlineCategory = {
+  categoryId: string;
+  categoryName: string;
+  firstStepIndex: number;
+  questionCount: number;
+  subCategories: OutlineSubCategory[];
+};
+
+/**
+ * Adım dizisini kategori → alt kategori → bölüm → soru ağacına geri toplar.
+ *
+ * Soru metni dışarıdan çözülür: navigasyon çekirdeği soru içeriğini bilmez
+ * ve bilmemeli — önizleme ekranı da aynı haritayı kendi veri tipiyle besliyor.
+ */
+export function buildOutline(
+  steps: SurveyStep[],
+  questionText: (questionId: string) => string
+): OutlineCategory[] {
+  const outline: OutlineCategory[] = [];
+  let counter = 0;
+
+  steps.forEach((step, stepIndex) => {
+    let category = outline[outline.length - 1];
+    if (!category || category.categoryId !== step.categoryId) {
+      category = {
+        categoryId: step.categoryId,
+        categoryName: step.categoryName,
+        firstStepIndex: stepIndex,
+        questionCount: 0,
+        subCategories: [],
+      };
+      outline.push(category);
+    }
+
+    let subCategory = category.subCategories[category.subCategories.length - 1];
+    if (!subCategory || subCategory.name !== step.subCategoryName) {
+      subCategory = {
+        key: `${step.categoryId}-${stepIndex}`,
+        name: step.subCategoryName,
+        firstStepIndex: stepIndex,
+        questionCount: 0,
+        sections: [],
+      };
+      category.subCategories.push(subCategory);
+    }
+
+    const questions: OutlineQuestion[] = step.questionIds.map((id) => ({
+      id,
+      text: questionText(id),
+      number: ++counter,
+      stepIndex,
+    }));
+
+    subCategory.sections.push({
+      key: `${subCategory.key}-${stepIndex}`,
+      name: step.subLevelName,
+      stepIndex,
+      questions,
+    });
+
+    subCategory.questionCount += questions.length;
+    category.questionCount += questions.length;
+  });
+
+  return outline;
+}
+
+/**
+ * Anket boyunca kesintisiz soru numaraları.
+ *
+ * Kartın üstündeki numara ile haritadaki numara aynı sayıdan gelmeli; iki
+ * ayrı yerde sayılırsa bölüm atlandığında sessizce ayrışırlar.
+ */
+export function questionNumbers(steps: SurveyStep[]): Map<string, number> {
+  const numbers = new Map<string, number>();
+  let counter = 0;
+  for (const step of steps) {
+    for (const id of step.questionIds) numbers.set(id, ++counter);
+  }
+  return numbers;
+}

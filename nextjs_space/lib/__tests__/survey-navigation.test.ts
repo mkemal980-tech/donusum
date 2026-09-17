@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   type NavCategory,
+  buildOutline,
   buildSteps,
   categoryProgress,
   categorySummaries,
@@ -8,6 +9,7 @@ import {
   estimateMinutes,
   findResumeStepIndex,
   overallProgress,
+  questionNumbers,
   stepProgress,
   unansweredInStep,
 } from "../survey-navigation";
@@ -215,5 +217,85 @@ describe("estimateMinutes", () => {
   it("uzun ankette makul bir süre verir", () => {
     // 71 soru → 225 + 66×20 = 1545 sn ≈ 26 dk
     expect(estimateMinutes(71)).toBe(26);
+  });
+});
+
+describe("buildOutline", () => {
+  const steps = buildSteps(categories);
+  const outline = buildOutline(steps, (id) => `${id} metni`);
+
+  it("sorusu olmayan kategoriyi haritaya hiç koymaz", () => {
+    // Ekranda gezilemeyen bir satır haritada durursa tıklanacak yeri olmaz.
+    expect(outline.map((c) => c.categoryId)).toEqual(["k1", "k2"]);
+  });
+
+  it("kategori altında alt kategori kırılımını geri kurar", () => {
+    expect(outline[0].subCategories.map((s) => s.name)).toEqual(["Kategori Soruları", "Alt 1"]);
+    expect(outline[1].subCategories.map((s) => s.name)).toEqual(["Alt 2"]);
+  });
+
+  it("alt seviyeleri aynı alt kategori altında toplar", () => {
+    const alt1 = outline[0].subCategories[1];
+    expect(alt1.sections.map((s) => s.name)).toEqual(["Seviye 1", "Seviye 2"]);
+    expect(alt1.sections.map((s) => s.stepIndex)).toEqual([1, 2]);
+  });
+
+  it("alt seviyesiz bölümde bölüm adını null bırakır", () => {
+    // Ad zaten bir üst satırda yazıyor; tekrarlamak haritayı iki kat uzatırdı.
+    const direct = outline[0].subCategories[0];
+    expect(direct.sections).toHaveLength(1);
+    expect(direct.sections[0].name).toBeNull();
+  });
+
+  it("soruları anket boyunca kesintisiz numaralar", () => {
+    const numbered = outline
+      .flatMap((c) => c.subCategories)
+      .flatMap((s) => s.sections)
+      .flatMap((s) => s.questions);
+
+    expect(numbered.map((q) => q.id)).toEqual(["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8"]);
+    expect(numbered.map((q) => q.number)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+
+  it("her satırın karşılığı bir adım indeksidir", () => {
+    expect(outline[0].firstStepIndex).toBe(0);
+    expect(outline[1].firstStepIndex).toBe(3);
+    expect(outline[0].subCategories[1].firstStepIndex).toBe(1);
+  });
+
+  it("soru sayılarını alt kategoriden kategoriye toplar", () => {
+    expect(outline[0].subCategories.map((s) => s.questionCount)).toEqual([2, 4]);
+    expect(outline[0].questionCount).toBe(6);
+    expect(outline[1].questionCount).toBe(2);
+  });
+
+  it("soru metnini dışarıdan çözer", () => {
+    expect(outline[0].subCategories[0].sections[0].questions[0].text).toBe("q1 metni");
+  });
+
+  it("adım yoksa boş harita döner", () => {
+    expect(buildOutline([], () => "")).toEqual([]);
+  });
+});
+
+describe("questionNumbers", () => {
+  it("adım sırasını izleyerek 1'den başlar", () => {
+    const numbers = questionNumbers(buildSteps(categories));
+    expect(numbers.get("q1")).toBe(1);
+    expect(numbers.get("q6")).toBe(6);
+    expect(numbers.get("q8")).toBe(8);
+    expect(numbers.size).toBe(8);
+  });
+
+  it("haritadaki numarayla aynı sayıyı verir", () => {
+    // İki yerde ayrı sayılırsa bölüm atlandığında sessizce ayrışırlar.
+    const steps = buildSteps(categories);
+    const numbers = questionNumbers(steps);
+    for (const question of buildOutline(steps, () => "")
+      .flatMap((c) => c.subCategories)
+      .flatMap((s) => s.sections)
+      .flatMap((s) => s.questions)) {
+      expect(numbers.get(question.id)).toBe(question.number);
+    }
   });
 });

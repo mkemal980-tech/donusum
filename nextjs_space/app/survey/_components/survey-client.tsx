@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -23,20 +23,26 @@ import {
   Upload,
   Clock,
   AlertTriangle,
-  Lock
+  Lock,
+  ListTree
 } from "lucide-react";
 import { getWithRetry } from "@/lib/retrying-fetch";
 import {
+  buildOutline,
   buildSteps,
   categoryProgress,
   categorySummaries,
   estimateMinutes,
   findResumeStepIndex,
   overallProgress,
+  questionNumbers,
   stepProgress,
   unansweredInStep,
 } from "@/lib/survey-navigation";
 import { Button } from "@/components/ui/button";
+import SurveyOutline from "@/components/survey/survey-outline";
+import QuestionAnchor from "@/components/survey/question-anchor";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 interface Question {
   id: string;
@@ -130,6 +136,19 @@ export default function SurveyClient() {
   const [resumedSection, setResumedSection] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, { fileName: string; cloudStoragePath: string }>>({});
   const [uploading, setUploading] = useState<string | null>(null);
+  /**
+   * Haritada vurgulanan soru.
+   *
+   * Bir adımda altı soru birden ekranda olabiliyor; "kaçıncı sorudayım"
+   * bilgisi kodun başka hiçbir yerinde tutulmuyor ve yalnızca kaydırma
+   * konumundan çıkarılabiliyor (bkz. aşağıdaki IntersectionObserver).
+   */
+  const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
+  /** Haritadan sıçranan soru; kart mount olunca kendini görünür kılar. */
+  const [scrollTarget, setScrollTarget] = useState<string | null>(null);
+  const [questionObserver, setQuestionObserver] = useState<IntersectionObserver | null>(null);
+  /** Dar ekranda haritanın çekmecesi. */
+  const [outlineOpen, setOutlineOpen] = useState(false);
   const router = useRouter();
 
   // Atanan anketleri getir
@@ -259,6 +278,14 @@ export default function SurveyClient() {
     return map;
   }, [categories]);
 
+  /* Karttaki numara ile haritadaki numara aynı sayımdan gelir; iki ayrı
+     yerde sayılırsa bölüm atlandığında sessizce ayrışırlar. */
+  const numbers = useMemo(() => questionNumbers(steps), [steps]);
+  const outline = useMemo(
+    () => buildOutline(steps, (id) => questionById.get(id)?.text ?? ""),
+    [steps, questionById],
+  );
+
   const currentStep = steps[currentStepIndex];
   const currentQuestions = (currentStep?.questionIds ?? [])
     .map((id) => questionById.get(id))
@@ -280,6 +307,49 @@ export default function SurveyClient() {
   const activeCategoryIndex = summaries.findIndex(
     (summary) => summary.categoryId === currentStep?.categoryId
   );
+
+  const outlineNote =
+    sectionInfo?.distributed && !sectionInfo.isCoordinator
+      ? `Size atanan ${sectionInfo.mySectionCount} bölüm`
+      : undefined;
+
+  /**
+   * Bulunulan soru kaydırma konumundan belirlenir.
+   *
+   * Üst kenara en yakın görünür soru aktif sayılır; `rootMargin` ekranın alt
+   * yarısını kapsam dışında bırakır, yoksa vurgu ortada zıplıyor. Kartlar
+   * kendilerini kaydediyor (bkz. QuestionAnchor) çünkü bölüm geçişi
+   * animasyonlu ve düğümler buradaki efekt çalıştığında henüz DOM'da olmuyor.
+   */
+  const visibleRef = useRef<Set<string>>(new Set());
+  const orderRef = useRef<string[]>([]);
+  orderRef.current = currentStep?.questionIds ?? [];
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const id = (entry.target as HTMLElement).dataset.questionId;
+          if (!id) continue;
+          if (entry.isIntersecting) visibleRef.current.add(id);
+          else visibleRef.current.delete(id);
+        }
+        /* Sorular DOM'a adım sırasıyla giriyor; görünenlerin ilki en üstteki.
+           Önceki bölümden kalan kimlikler kümede kalabilir ama bu sıralama
+           yalnızca bulunulan adımın sorularına baktığı için seçilemezler. */
+        setActiveQuestionId(orderRef.current.find((id) => visibleRef.current.has(id)) ?? null);
+      },
+      { rootMargin: "-80px 0px -55% 0px", threshold: 0 },
+    );
+
+    setQuestionObserver(observer);
+    return () => {
+      observer.disconnect();
+      setQuestionObserver(null);
+    };
+  }, []);
 
   const handleAnswer = async (questionId: string, value: string) => {
     // Kilitli değerlendirmede sunucu zaten 403 döner; kullanıcıyı boşuna
@@ -484,16 +554,23 @@ export default function SurveyClient() {
   const canGoPrev = currentStepIndex > 0;
 
   /** Uyarıyı atlayarak doğrudan git — onay verildikten sonra çağrılır. */
-  const jumpTo = (index: number) => {
+  const jumpTo = (index: number, options?: { scrollToTop?: boolean }) => {
     setPendingStepIndex(null);
     setCurrentStepIndex(Math.max(0, Math.min(steps.length - 1, index)));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    /* Belirli bir soruya gidiliyorsa başa kaydırma iptal: iki yumuşak
+       kaydırma aynı anda çalışınca hedef ıskalanıyor. */
+    if (options?.scrollToTop !== false) window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   /**
-   * Bölümden ayrılırken eksik soru varsa önce uyarır.
+   * "Sonraki" ile ilerlerken eksik soru varsa önce uyarır.
    * Kaydırmalı düzenin bilinen tek zaafı soru atlanması; uyarı bunu kapatır.
    * Geri giderken uyarı yok — kullanıcı zaten düzeltmeye dönüyor olabilir.
+   *
+   * Haritadan ve kategori şeridinden yapılan atlamalar bu uyarıyı geçer:
+   * orada kullanıcı nereye gittiğini açıkça seçiyor ve harita hangi soruların
+   * boş olduğunu zaten sayaç ve noktalarla söylüyor. Her tıklamada onay
+   * sormak haritayı işe yaramaz hale getirirdi.
    */
   const requestStep = (index: number) => {
     if (index > currentStepIndex && remainingUnanswered > 0) {
@@ -501,6 +578,17 @@ export default function SurveyClient() {
       return;
     }
     jumpTo(index);
+  };
+
+  /**
+   * Haritadan soruya gitmek iki iş: doğru adıma geç ve soruyu görünür kıl.
+   * İkincisi kartın kendi mount'una bırakılıyor; burada gecikme tahmin etmek
+   * gerekmiyor (bkz. QuestionAnchor).
+   */
+  const goToQuestion = (stepIndex: number, questionId: string) => {
+    setScrollTarget(questionId);
+    setActiveQuestionId(questionId);
+    if (stepIndex !== currentStepIndex) jumpTo(stepIndex, { scrollToTop: false });
   };
 
   const goNext = () => requestStep(currentStepIndex + 1);
@@ -713,285 +801,350 @@ export default function SurveyClient() {
           </span>
         </div>
 
-        {loadingStructure ? (
-          <div className="flex flex-col gap-4">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="skeleton h-32" />
-            ))}
-          </div>
-        ) : categories.length === 0 ? (
-          /* Ekipte görev dağıtılmış ama bu kişiye bölüm düşmemişse anketin
-             boş görünmesi hazırlıksızlıktan değil; doğrusunu söyle. */
-          sectionInfo?.distributed && !sectionInfo.isCoordinator ? (
-            <EmptyState
-              title="Size bölüm atanmadı"
-              description="Bu ankette bölümler ekip üyelerine dağıtıldı ve size henüz bir bölüm düşmedi. Koordinatörünüzle görüşün."
+        {/* Harita üçüncü bir sabit sütun olamaz: solda zaten kabuğun menüsü
+            var. <main> içinde yapışkan bir sütun olarak durur; ölçüler
+            globals.css'teki .survey-layout kuralında. */}
+        <div className="survey-layout">
+          <aside className="survey-outline-col">
+            <SurveyOutline
+              outline={outline}
+              steps={steps}
+              responses={responses}
+              currentStepIndex={currentStepIndex}
+              activeQuestionId={activeQuestionId}
+              note={outlineNote}
+              onSelectStep={jumpTo}
+              onSelectQuestion={goToQuestion}
             />
-          ) : (
-            <EmptyState
-              title="Anket henüz hazırlanmadı"
-              description="Bu ankete soru eklenmemiş. Sorular tanımlandığında burada açılır."
-            />
-          )
-        ) : (
-          <>
-            {/* Kilit önce söylenir: kullanıcı cevabı değiştirmeyi denemeden
-                önce neden değiştiremeyeceğini bilsin. */}
-            {sectionInfo?.locked && (
-              <div
-                className="mb-4 flex items-start gap-2.5 rounded-[var(--radius-xs)] p-3"
-                style={{ background: "var(--accent-quiet)" }}
-              >
-                <Lock size={16} className="mt-0.5 shrink-0" style={{ color: "var(--accent)" }} aria-hidden="true" />
-                <div className="t-sm">
-                  <p className="font-medium" style={{ color: "var(--ink)" }}>
-                    Bu değerlendirme gönderildi
-                    {sectionInfo.submittedAt
-                      ? ` · ${new Date(sectionInfo.submittedAt).toLocaleDateString("tr-TR")}`
-                      : ""}
-                  </p>
-                  <p style={{ color: "var(--ink-2)" }}>
-                    Cevaplar salt okunur. Düzeltme gerekiyorsa koordinatörünüzden gönderimi geri
-                    almasını isteyin.
-                  </p>
-                </div>
-              </div>
-            )}
+          </aside>
 
-            {/* Ortadan başlamak "neredeyim" hissi veriyor; nedenini söyle. */}
-            {resumedSection && !sectionInfo?.locked && (
-              <div
-                className="mb-4 flex items-start justify-between gap-3 rounded-[var(--radius-xs)] p-3"
-                style={{ background: "var(--surface-2)" }}
-              >
-                <p className="flex items-start gap-2 t-sm" style={{ color: "var(--ink-2)" }}>
-                  <Clock size={15} className="mt-0.5 shrink-0" style={{ color: "var(--ink-3)" }} aria-hidden="true" />
-                  <span>
-                    Kaldığınız yerden devam ediyorsunuz:{" "}
-                    <strong className="font-medium" style={{ color: "var(--ink)" }}>{resumedSection}</strong>.
-                    Önceki cevaplarınız kayıtlı.
-                  </span>
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setResumedSection(null)}
-                  className="shrink-0 t-sm hover:underline"
-                  style={{ color: "var(--ink-3)" }}
-                >
-                  Tamam
-                </button>
-              </div>
-            )}
-
-            {/* Katkıcı yalnızca kendi bölümlerini görüyor; ilerleme çubuğunun
-                neden anketin tamamını göstermediği açık olsun. */}
-            {sectionInfo?.distributed && !sectionInfo.isCoordinator && (
-              <p className="mb-4 t-sm" style={{ color: "var(--ink-3)" }}>
-                Size atanan {sectionInfo.mySectionCount} bölüm gösteriliyor.
-              </p>
-            )}
-            {/* Kategori haritası — "daha ne kadar var" sorusunu soru sayısıyla
-                değil kategori sayısıyla cevaplar; tıklanınca o kategorinin ilk
-                bölümüne atlar. */}
-            {summaries.length > 1 && (
-              <div className="flex items-stretch gap-1.5 mb-4 overflow-x-auto pb-1">
-                {summaries.map((summary, index) => {
-                  const progress = categoryProgress(steps, summary.categoryId, responses);
-                  const isActive = index === activeCategoryIndex;
-                  const isDone = progress.percentage === 100;
-
-                  return (
-                    <button
-                      key={summary.categoryId}
-                      onClick={() => requestStep(summary.firstStepIndex)}
-                      title={`${summary.categoryName} — ${progress.answered}/${progress.total} soru`}
-                      type="button"
-                      aria-current={isActive ? "step" : undefined}
-                      className="min-w-[104px] flex-1 rounded-[var(--radius-md)] px-3 py-2 text-left transition-colors duration-fast ease-out-quart"
-                      style={{
-                        background: isActive ? "var(--accent-quiet)" : "var(--surface)",
-                        border: `1px solid ${isActive ? "var(--accent)" : "var(--line)"}`,
-                      }}
-                    >
-                      <span
-                        className="block truncate t-sm"
-                        style={{
-                          color: isActive ? "var(--ink)" : "var(--ink-2)",
-                          fontWeight: isActive ? 500 : 400,
-                        }}
-                      >
-                        {summary.categoryName}
-                      </span>
-                      <span className="progress-bar mt-1.5" style={{ height: 3 }}>
-                        <span
-                          className="progress-bar-fill block"
-                          style={{
-                            width: `${progress.percentage}%`,
-                            background: isDone ? "var(--series-2)" : "var(--accent)",
-                          }}
-                        />
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Bölüm başlığı ve baskın ilerleme çubuğu */}
-            {/* Bölüm başlığı: kırıntı yolu + baskın ilerleme çubuğu. */}
-            <div
-              className="mb-6 rounded-[var(--radius-lg)] p-5"
-              style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
-            >
-              <nav className="breadcrumb flex-wrap" aria-label="Bölüm konumu">
-                <span className="breadcrumb-item active">{currentStep?.categoryName ?? "Kategori"}</span>
-                <ChevronRight size={14} className="breadcrumb-separator" aria-hidden="true" />
-                <span className="breadcrumb-item active">{currentStep?.subCategoryName ?? "Bölüm"}</span>
-                {currentStep?.subLevelName && (
-                  <>
-                    <ChevronRight size={14} className="breadcrumb-separator" aria-hidden="true" />
-                    <span className="breadcrumb-item">{currentStep.subLevelName}</span>
-                  </>
-                )}
-                <span className="ml-auto tabular" style={{ color: "var(--ink-3)" }}>
-                  Bölüm {currentStepIndex + 1} / {steps.length}
-                </span>
-              </nav>
-
-              <div className="mt-4 flex items-center gap-3">
-                <div className="progress-bar flex-1" style={{ height: 8 }}>
-                  <div
-                    className="progress-bar-fill"
-                    style={{ width: `${sectionProgress.percentage}%` }}
-                  />
-                </div>
-                <span className="whitespace-nowrap t-sm tabular font-medium" style={{ color: "var(--ink)" }}>
-                  {sectionProgress.answered} / {sectionProgress.total} soru
-                </span>
-              </div>
-
-              <p className="mt-2 t-sm" style={{ color: "var(--ink-3)" }}>
-                {currentStep?.categoryName}: {currentCategoryProgress.answered} /{" "}
-                {currentCategoryProgress.total} soru tamamlandı
-              </p>
+          <div className="min-w-0">
+          {loadingStructure ? (
+            <div className="flex flex-col gap-4">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="skeleton h-32" />
+              ))}
             </div>
-
-            {/* Questions */}
-            <AnimatePresence mode="wait">
-              {/* Bölüm değişimi bir durum değişikliği; yatay kaydırma yerine
-                  kısa bir çapraz geçiş yeterli. */}
-              <motion.div
-                key={`${selectedSurveyId}-${currentStepIndex}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.17, ease: [0.25, 1, 0.5, 1] }}
-                className="mb-8 flex flex-col gap-5"
-              >
-                {currentQuestions?.length === 0 ? (
-                  <EmptyState title="Bu bölümde soru yok" description="Sonraki bölüme geçebilirsiniz." />
-                ) : (
-                  /* Kilitliyken fieldset bütün girdileri tarayıcı düzeyinde
-                     kapatır — klavyeyle dolaşan kullanıcı da dışarıda kalır. */
-                  <fieldset
-                    disabled={sectionInfo?.locked ?? false}
-                    className={`m-0 flex flex-col gap-5 border-0 p-0 ${
-                      sectionInfo?.locked ? "opacity-75" : ""
-                    }`}
-                  >
-                    {currentQuestions?.map((question) => (
-                      <SurveyQuestion
-                        key={question?.id}
-                        question={question}
-                        value={responses?.[question?.id ?? '']}
-                        onAnswer={handleAnswer}
-                        onUpload={handleUpload}
-                        onRemoveFile={handleRemoveFile}
-                        uploadedFile={uploadedFiles[question?.id ?? '']?.fileName || null}
-                        isUploading={uploading === question?.id}
-                      />
-                    ))}
-                  </fieldset>
-                )}
-              </motion.div>
-            </AnimatePresence>
-
-            {/* Navigation */}
-            {/* Eksik soru uyarısı — kaydırmalı düzenin bilinen tek zaafı soru
-                atlanması; bölümden çıkarken hatırlatılır ama engellenmez. */}
-            {pendingStepIndex !== null && (
-              <div
-                className="mb-4 flex items-start gap-2.5 rounded-[var(--radius-xs)] p-3"
-                style={{ background: "var(--warning-bg)" }}
-                role="alert"
-              >
-                <AlertTriangle size={16} className="mt-0.5 shrink-0" style={{ color: "var(--warning)" }} aria-hidden="true" />
-                <div>
-                  <p className="t-sm font-medium" style={{ color: "var(--warning)" }}>
-                    Bu bölümde {remainingUnanswered} soru cevaplanmadı
-                  </p>
-                  <p className="mt-0.5 t-sm" style={{ color: "var(--ink-2)" }}>
-                    Cevaplamadan geçebilir, sonra dönüp tamamlayabilirsiniz. Eksik sorular
-                    puana dahil edilmez.
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Button size="sm" onClick={() => setPendingStepIndex(null)}>
-                      Bu bölümde kal
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => jumpTo(pendingStepIndex)}>
-                      Yine de devam et
-                    </Button>
+          ) : categories.length === 0 ? (
+            /* Ekipte görev dağıtılmış ama bu kişiye bölüm düşmemişse anketin
+               boş görünmesi hazırlıksızlıktan değil; doğrusunu söyle. */
+            sectionInfo?.distributed && !sectionInfo.isCoordinator ? (
+              <EmptyState
+                title="Size bölüm atanmadı"
+                description="Bu ankette bölümler ekip üyelerine dağıtıldı ve size henüz bir bölüm düşmedi. Koordinatörünüzle görüşün."
+              />
+            ) : (
+              <EmptyState
+                title="Anket henüz hazırlanmadı"
+                description="Bu ankete soru eklenmemiş. Sorular tanımlandığında burada açılır."
+              />
+            )
+          ) : (
+            <>
+              {/* Kilit önce söylenir: kullanıcı cevabı değiştirmeyi denemeden
+                  önce neden değiştiremeyeceğini bilsin. */}
+              {sectionInfo?.locked && (
+                <div
+                  className="mb-4 flex items-start gap-2.5 rounded-[var(--radius-xs)] p-3"
+                  style={{ background: "var(--accent-quiet)" }}
+                >
+                  <Lock size={16} className="mt-0.5 shrink-0" style={{ color: "var(--accent)" }} aria-hidden="true" />
+                  <div className="t-sm">
+                    <p className="font-medium" style={{ color: "var(--ink)" }}>
+                      Bu değerlendirme gönderildi
+                      {sectionInfo.submittedAt
+                        ? ` · ${new Date(sectionInfo.submittedAt).toLocaleDateString("tr-TR")}`
+                        : ""}
+                    </p>
+                    <p style={{ color: "var(--ink-2)" }}>
+                      Cevaplar salt okunur. Düzeltme gerekiyorsa koordinatörünüzden gönderimi geri
+                      almasını isteyin.
+                    </p>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <Button variant="outline" onClick={goPrev} disabled={!canGoPrev}>
-                <ChevronLeft size={16} aria-hidden="true" />
-                Önceki
-              </Button>
-
-              {/* Kategori noktaları üstteki haritayla mükerrer olduğu için
-                  burada yalnızca kalan bölüm sayısı ve çıkış yolu gösterilir. */}
-              <div className="flex flex-col items-center gap-1">
-                <span className="t-sm tabular" style={{ color: "var(--ink-3)" }}>
-                  {canGoNext
-                    ? `${steps.length - currentStepIndex - 1} bölüm kaldı`
-                    : "Son bölüm"}
-                </span>
-                {/* Teknik olarak gereksiz — cevaplar zaten kayıtlı — ama
-                    kullanıcı bir çıkış düğmesi arıyor ve bulamayınca anketi
-                    bitirmek zorunda olduğunu sanıyor. */}
-                {!sectionInfo?.locked && (
+              {/* Ortadan başlamak "neredeyim" hissi veriyor; nedenini söyle. */}
+              {resumedSection && !sectionInfo?.locked && (
+                <div
+                  className="mb-4 flex items-start justify-between gap-3 rounded-[var(--radius-xs)] p-3"
+                  style={{ background: "var(--surface-2)" }}
+                >
+                  <p className="flex items-start gap-2 t-sm" style={{ color: "var(--ink-2)" }}>
+                    <Clock size={15} className="mt-0.5 shrink-0" style={{ color: "var(--ink-3)" }} aria-hidden="true" />
+                    <span>
+                      Kaldığınız yerden devam ediyorsunuz:{" "}
+                      <strong className="font-medium" style={{ color: "var(--ink)" }}>{resumedSection}</strong>.
+                      Önceki cevaplarınız kayıtlı.
+                    </span>
+                  </p>
                   <button
-                    onClick={() => {
-                      toast.success("Cevaplarınız kayıtlı. Kaldığınız yerden devam edebilirsiniz.");
-                      router.push("/dashboard");
-                    }}
-                    disabled={saving}
-                    className="t-sm underline underline-offset-4 disabled:opacity-50"
+                    type="button"
+                    onClick={() => setResumedSection(null)}
+                    className="shrink-0 t-sm hover:underline"
                     style={{ color: "var(--ink-3)" }}
                   >
-                    {saving ? "Kaydediliyor" : "Kaydet ve çık"}
+                    Tamam
                   </button>
-                )}
+                </div>
+              )}
+
+              {/* Katkıcı yalnızca kendi bölümlerini görüyor; ilerleme çubuğunun
+                  neden anketin tamamını göstermediği açık olsun. */}
+              {sectionInfo?.distributed && !sectionInfo.isCoordinator && (
+                <p className="mb-4 t-sm" style={{ color: "var(--ink-3)" }}>
+                  Size atanan {sectionInfo.mySectionCount} bölüm gösteriliyor.
+                </p>
+              )}
+              {/* Kategori şeridi — "daha ne kadar var" sorusunu soru sayısıyla
+                  değil kategori sayısıyla cevaplar; tıklanınca o kategorinin ilk
+                  bölümüne atlar. */}
+              {/* Dar ekranda harita sütunu gizli; yerini bu çekmece ve altındaki
+                  şerit alır. Geniş ekranda ikisi de kalkar, harita zaten solda. */}
+              <div className="mb-4 xl:hidden">
+                <Sheet open={outlineOpen} onOpenChange={setOutlineOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <ListTree size={16} aria-hidden="true" />
+                      Bölümler
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent
+                    side="left"
+                    className="w-[88vw] border-0 p-3 pt-12 sm:max-w-sm"
+                    style={{ background: "var(--canvas)" }}
+                  >
+                    <SheetTitle className="sr-only">Anket haritası</SheetTitle>
+                    <SurveyOutline
+                      outline={outline}
+                      steps={steps}
+                      responses={responses}
+                      currentStepIndex={currentStepIndex}
+                      activeQuestionId={activeQuestionId}
+                      note={outlineNote}
+                      onSelectStep={(index) => {
+                        setOutlineOpen(false);
+                        jumpTo(index);
+                      }}
+                      onSelectQuestion={(index, questionId) => {
+                        setOutlineOpen(false);
+                        goToQuestion(index, questionId);
+                      }}
+                    />
+                  </SheetContent>
+                </Sheet>
               </div>
 
-              {canGoNext ? (
-                <Button onClick={goNext}>
-                  Sonraki
-                  <ChevronRight size={16} aria-hidden="true" />
-                </Button>
-              ) : (
-                <Button onClick={handleComplete}>
-                  Anketi tamamla
-                  <Check size={16} aria-hidden="true" />
-                </Button>
+              {summaries.length > 1 && (
+                <div className="mb-4 flex items-stretch gap-1.5 overflow-x-auto pb-1 xl:hidden">
+                  {summaries.map((summary, index) => {
+                    const progress = categoryProgress(steps, summary.categoryId, responses);
+                    const isActive = index === activeCategoryIndex;
+                    const isDone = progress.percentage === 100;
+
+                    return (
+                      <button
+                        key={summary.categoryId}
+                        onClick={() => jumpTo(summary.firstStepIndex)}
+                        title={`${summary.categoryName} — ${progress.answered}/${progress.total} soru`}
+                        type="button"
+                        aria-current={isActive ? "step" : undefined}
+                        className="min-w-[104px] flex-1 rounded-[var(--radius-md)] px-3 py-2 text-left transition-colors duration-fast ease-out-quart"
+                        style={{
+                          background: isActive ? "var(--accent-quiet)" : "var(--surface)",
+                          border: `1px solid ${isActive ? "var(--accent)" : "var(--line)"}`,
+                        }}
+                      >
+                        <span
+                          className="block truncate t-sm"
+                          style={{
+                            color: isActive ? "var(--ink)" : "var(--ink-2)",
+                            fontWeight: isActive ? 500 : 400,
+                          }}
+                        >
+                          {summary.categoryName}
+                        </span>
+                        <span className="progress-bar mt-1.5" style={{ height: 3 }}>
+                          <span
+                            className="progress-bar-fill block"
+                            style={{
+                              width: `${progress.percentage}%`,
+                              background: isDone ? "var(--series-2)" : "var(--accent)",
+                            }}
+                          />
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-            </div>
-          </>
-        )}
+
+              {/* Bölüm başlığı ve baskın ilerleme çubuğu */}
+              {/* Bölüm başlığı: kırıntı yolu + baskın ilerleme çubuğu. */}
+              <div
+                className="mb-6 rounded-[var(--radius-lg)] p-5"
+                style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+              >
+                <nav className="breadcrumb flex-wrap" aria-label="Bölüm konumu">
+                  <span className="breadcrumb-item active">{currentStep?.categoryName ?? "Kategori"}</span>
+                  <ChevronRight size={14} className="breadcrumb-separator" aria-hidden="true" />
+                  <span className="breadcrumb-item active">{currentStep?.subCategoryName ?? "Bölüm"}</span>
+                  {currentStep?.subLevelName && (
+                    <>
+                      <ChevronRight size={14} className="breadcrumb-separator" aria-hidden="true" />
+                      <span className="breadcrumb-item">{currentStep.subLevelName}</span>
+                    </>
+                  )}
+                  <span className="ml-auto tabular" style={{ color: "var(--ink-3)" }}>
+                    Bölüm {currentStepIndex + 1} / {steps.length}
+                  </span>
+                </nav>
+
+                <div className="mt-4 flex items-center gap-3">
+                  <div className="progress-bar flex-1" style={{ height: 8 }}>
+                    <div
+                      className="progress-bar-fill"
+                      style={{ width: `${sectionProgress.percentage}%` }}
+                    />
+                  </div>
+                  <span className="whitespace-nowrap t-sm tabular font-medium" style={{ color: "var(--ink)" }}>
+                    {sectionProgress.answered} / {sectionProgress.total} soru
+                  </span>
+                </div>
+
+                <p className="mt-2 t-sm" style={{ color: "var(--ink-3)" }}>
+                  {currentStep?.categoryName}: {currentCategoryProgress.answered} /{" "}
+                  {currentCategoryProgress.total} soru tamamlandı
+                </p>
+              </div>
+
+              {/* Questions */}
+              <AnimatePresence mode="wait">
+                {/* Bölüm değişimi bir durum değişikliği; yatay kaydırma yerine
+                    kısa bir çapraz geçiş yeterli. */}
+                <motion.div
+                  key={`${selectedSurveyId}-${currentStepIndex}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.17, ease: [0.25, 1, 0.5, 1] }}
+                  className="mb-8 flex flex-col gap-5"
+                >
+                  {currentQuestions?.length === 0 ? (
+                    <EmptyState title="Bu bölümde soru yok" description="Sonraki bölüme geçebilirsiniz." />
+                  ) : (
+                    /* Kilitliyken fieldset bütün girdileri tarayıcı düzeyinde
+                       kapatır — klavyeyle dolaşan kullanıcı da dışarıda kalır. */
+                    <fieldset
+                      disabled={sectionInfo?.locked ?? false}
+                      className={`m-0 flex flex-col gap-5 border-0 p-0 ${
+                        sectionInfo?.locked ? "opacity-75" : ""
+                      }`}
+                    >
+                      {currentQuestions?.map((question) => (
+                        <QuestionAnchor
+                          key={question.id}
+                          questionId={question.id}
+                          observer={questionObserver}
+                          scrollOnMount={scrollTarget === question.id}
+                          onScrolled={() => setScrollTarget(null)}
+                        >
+                          <SurveyQuestion
+                            question={question}
+                            value={responses?.[question?.id ?? '']}
+                            onAnswer={handleAnswer}
+                            onUpload={handleUpload}
+                            onRemoveFile={handleRemoveFile}
+                            uploadedFile={uploadedFiles[question?.id ?? '']?.fileName || null}
+                            isUploading={uploading === question?.id}
+                            number={numbers.get(question.id)}
+                            totalQuestions={totalQuestions}
+                          />
+                        </QuestionAnchor>
+                      ))}
+                    </fieldset>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Navigation */}
+              {/* Eksik soru uyarısı — kaydırmalı düzenin bilinen tek zaafı soru
+                  atlanması; bölümden çıkarken hatırlatılır ama engellenmez. */}
+              {pendingStepIndex !== null && (
+                <div
+                  className="mb-4 flex items-start gap-2.5 rounded-[var(--radius-xs)] p-3"
+                  style={{ background: "var(--warning-bg)" }}
+                  role="alert"
+                >
+                  <AlertTriangle size={16} className="mt-0.5 shrink-0" style={{ color: "var(--warning)" }} aria-hidden="true" />
+                  <div>
+                    <p className="t-sm font-medium" style={{ color: "var(--warning)" }}>
+                      Bu bölümde {remainingUnanswered} soru cevaplanmadı
+                    </p>
+                    <p className="mt-0.5 t-sm" style={{ color: "var(--ink-2)" }}>
+                      Cevaplamadan geçebilir, sonra dönüp tamamlayabilirsiniz. Eksik sorular
+                      puana dahil edilmez.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button size="sm" onClick={() => setPendingStepIndex(null)}>
+                        Bu bölümde kal
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => jumpTo(pendingStepIndex)}>
+                        Yine de devam et
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <Button variant="outline" onClick={goPrev} disabled={!canGoPrev}>
+                  <ChevronLeft size={16} aria-hidden="true" />
+                  Önceki
+                </Button>
+
+                {/* Kategori noktaları üstteki haritayla mükerrer olduğu için
+                    burada yalnızca kalan bölüm sayısı ve çıkış yolu gösterilir. */}
+                <div className="flex flex-col items-center gap-1">
+                  <span className="t-sm tabular" style={{ color: "var(--ink-3)" }}>
+                    {canGoNext
+                      ? `${steps.length - currentStepIndex - 1} bölüm kaldı`
+                      : "Son bölüm"}
+                  </span>
+                  {/* Teknik olarak gereksiz — cevaplar zaten kayıtlı — ama
+                      kullanıcı bir çıkış düğmesi arıyor ve bulamayınca anketi
+                      bitirmek zorunda olduğunu sanıyor. */}
+                  {!sectionInfo?.locked && (
+                    <button
+                      onClick={() => {
+                        toast.success("Cevaplarınız kayıtlı. Kaldığınız yerden devam edebilirsiniz.");
+                        router.push("/dashboard");
+                      }}
+                      disabled={saving}
+                      className="t-sm underline underline-offset-4 disabled:opacity-50"
+                      style={{ color: "var(--ink-3)" }}
+                    >
+                      {saving ? "Kaydediliyor" : "Kaydet ve çık"}
+                    </button>
+                  )}
+                </div>
+
+                {canGoNext ? (
+                  <Button onClick={goNext}>
+                    Sonraki
+                    <ChevronRight size={16} aria-hidden="true" />
+                  </Button>
+                ) : (
+                  <Button onClick={handleComplete}>
+                    Anketi tamamla
+                    <Check size={16} aria-hidden="true" />
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+          </div>
+        </div>
       </main>
     </>
   );
