@@ -210,9 +210,17 @@ export default function OrganizationMembersPage() {
     }));
     setJoinCodeForm((current) => ({
       ...current,
+      /**
+       * Varsayılan "yeni kuruluş" seçeneğinde kalır.
+       *
+       * Burada `members[0]?.id` yazıyordu -- üye kuruluş zorunluyken doğruydu.
+       * Artık boş değer geçerli ve asıl kullanım o: seçim sessizce ilk üye
+       * kuruluşa kayarsa yönetici yapı seviyesinde kod açtığını sanıp tek bir
+       * şirkete bağlı kod üretir.
+       */
       memberUnitId: members.some((member) => member.id === current.memberUnitId)
         ? current.memberUnitId
-        : members[0]?.id ?? "",
+        : "",
       surveyId: surveys.some((survey) => survey.id === current.surveyId) ? current.surveyId : "",
     }));
   }, [members, surveys]);
@@ -533,10 +541,10 @@ export default function OrganizationMembersPage() {
         {mode === "codes" && (
           <FormPanel
             title="Birim katılım kodları"
-            description="Yapı seviyesinde kod dağıtın: kaydolan kişi şirket adını yazar, kuruluşu otomatik açılır. Mevcut bir üye kuruluş seçerseniz hesap doğrudan ona bağlanır."
+            description="Kodu paylaştığınız kişiler hesaplarını kendileri açar. Kodun hangi kuruluşa bağlayacağını aşağıda belirlersiniz."
           >
             <form onSubmit={createJoinCode} className="grid gap-4 md:grid-cols-2">
-              <Field label="Kim katılacak?">
+              <Field label="Kod hangi kuruluşa bağlasın?">
                 <select
                   className="theme-select mt-1.5 w-full"
                   value={joinCodeForm.memberUnitId}
@@ -544,11 +552,10 @@ export default function OrganizationMembersPage() {
                 >
                   {/*
                     Varsayılan seçenek yapının kendisi: üye kuruluşu önceden
-                    oluşturmadan kod dağıtabilmek için. Kaydolan kişi şirket
-                    adını yazar, kuruluş o addan açılır.
+                    oluşturmadan kod dağıtabilmek için.
                   */}
                   <option value="">
-                    {selectedRoot?.name ?? "Yapıya"} — kaydolan kendi şirketini yazsın
+                    Yeni kuruluş — {selectedRoot?.name ?? "yapı"} altına eklenir
                   </option>
                   {members.map((member) => (
                     <option key={member.id} value={member.id}>
@@ -556,6 +563,18 @@ export default function OrganizationMembersPage() {
                     </option>
                   ))}
                 </select>
+                {/*
+                  Seçeneğin ne yaptığı kısa ve düz anlatılır. "Kaydolan kendi
+                  şirketini yazsın" hem emir kipiydi hem de ne olacağını
+                  söylemiyordu (bkz. PRODUCT.md > "Türkçe metin birinci sınıf").
+                */}
+                {/* <p> bir <label> içinde geçersiz; tarayıcı etiketi erken
+                    kapatıp metni dışarı taşıyor. Field bir <label> döndürüyor. */}
+                <span className="mt-1.5 block t-caption" style={{ color: "var(--ink-3)" }}>
+                  {joinCodeForm.memberUnitId
+                    ? "Bu kodla açılan her hesap doğrudan seçtiğiniz kuruluşa bağlanır."
+                    : "Kayıt formunda kuruluş adı sorulur; girilen adla bir kuruluş açılır. Aynı ad ikinci kez girilirse yeni kuruluş açılmaz, mevcut olana eklenir."}
+                </span>
               </Field>
               <Field label="Kod açıklaması (isteğe bağlı)">
                 <input
@@ -642,7 +661,7 @@ export default function OrganizationMembersPage() {
                 </>
               )}
 
-              <div className="flex items-end justify-end md:col-span-2"><Button type="submit" loading={busy}>Katılım kodu oluştur</Button></div>
+              <div className="flex items-end justify-end md:col-span-2"><Button type="submit" loading={busy}>Oluştur</Button></div>
             </form>
 
             {createdJoinCode && (
@@ -878,7 +897,7 @@ export default function OrganizationMembersPage() {
           */
           <EmptyState
             title="Henüz üye kuruluş yok"
-            description="İki yol var: katılım kodu dağıtıp üyelerin kendi şirket adlarıyla kaydolmasını sağlayabilir ya da ilk üye kuruluşu elle ekleyip davet gönderebilirsiniz."
+            description="İki yol var: katılım kodu paylaşırsanız üyeler hesaplarını kendileri açar ve kuruluşları kayıt sırasında oluşur. Ya da ilk kuruluşu buradan ekleyip yetkilisine davet gönderirsiniz."
             action={
               <div className="flex flex-wrap gap-2">
                 <Button onClick={openJoinCodes}>

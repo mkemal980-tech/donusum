@@ -16,6 +16,9 @@ const MANAGER = "e2e-katilim-yonetici@example.com";
 const ADMIN = "e2e-katilim-admin@example.com";
 const SURVEY = "E2E Devir Anketi";
 const ROOT = "E2E Katılım Yapısı";
+/** Üyesiz senaryo kendi yapısında koşar; sıraya bağlı olmasın. */
+const EMPTY_ROOT = "E2E Üyesiz Yapı";
+const EMPTY_MANAGER = "e2e-katilim-uyesiz@example.com";
 const FIRST_COMPANY = "E2E Alfa Tersanesi";
 const SECOND_COMPANY = "E2E Beta Tersanesi";
 
@@ -26,9 +29,9 @@ let sectorId = "";
 async function removeFixture() {
   await prisma.user.deleteMany({ where: { email: { endsWith: "@e2e-katilim.test" } } });
   await prisma.survey.deleteMany({ where: { name: SURVEY } });
-  await prisma.user.deleteMany({ where: { email: { in: [MANAGER, ADMIN] } } });
+  await prisma.user.deleteMany({ where: { email: { in: [MANAGER, ADMIN, EMPTY_MANAGER] } } });
   await prisma.unit.deleteMany({ where: { name: { in: [FIRST_COMPANY, SECOND_COMPANY] } } });
-  await prisma.unit.deleteMany({ where: { name: ROOT } });
+  await prisma.unit.deleteMany({ where: { name: { in: [ROOT, EMPTY_ROOT] } } });
 }
 
 test.beforeAll(async () => {
@@ -59,6 +62,20 @@ test.beforeAll(async () => {
     },
   });
   await prisma.unitAdmin.create({ data: { unitId: root.id, userId: manager.id } });
+
+  const emptyRoot = await prisma.unit.create({ data: { name: EMPTY_ROOT } });
+  const emptyManager = await prisma.user.create({
+    data: {
+      email: EMPTY_MANAGER,
+      password: await bcrypt.hash(PASSWORD, 10),
+      firstName: "Üyesiz",
+      role: "UNIT_MANAGER",
+      unitId: emptyRoot.id,
+      sectorId: sector.id,
+      emailVerified: true,
+    },
+  });
+  await prisma.unitAdmin.create({ data: { unitId: emptyRoot.id, userId: emptyManager.id } });
 
   await prisma.user.create({
     data: {
@@ -214,7 +231,7 @@ test("üye kuruluşu olmayan yönetici katılım kodu ekranını açabilir", asy
    * olmayan yönetici -- yani özelliğin tam olarak çözdüğü durumdaki kişi --
    * ekrana hiç ulaşamıyordu.
    */
-  const manager = await login(browser, MANAGER);
+  const manager = await login(browser, EMPTY_MANAGER);
   await manager.goto("/organization/members", { waitUntil: "domcontentloaded" });
 
   const button = manager.getByRole("button", { name: "Katılım kodları" });
@@ -225,11 +242,18 @@ test("üye kuruluşu olmayan yönetici katılım kodu ekranını açabilir", asy
 
   // Varsayılan hedef yapının kendisi: üye kuruluş seçmeden kod açılabilmeli.
   await expect(
-    manager.getByRole("option", { name: new RegExp(`${ROOT} — kaydolan kendi şirketini yazsın`) })
+    manager.getByRole("option", { name: new RegExp(`Yeni kuruluş — ${EMPTY_ROOT} altına eklenir`) })
   ).toBeAttached();
 
-  // Boş durumda da kod yolu sunuluyor.
-  await expect(manager.getByRole("button", { name: "Katılım kodu oluştur" })).toBeVisible();
+  // Seçeneğin ne yaptığı ekranda yazıyor; kullanıcı tahmin etmek zorunda değil.
+  await expect(manager.getByText(/Kayıt formunda kuruluş adı sorulur/)).toBeVisible();
+
+  // Boş durumda da kod yolu sunuluyor; form düğmesiyle karışmasın diye
+  // ikisinin metni farklı.
+  await expect(
+    manager.getByRole("button", { name: "Katılım kodu oluştur", exact: true })
+  ).toBeVisible();
+  await expect(manager.getByRole("button", { name: "Oluştur", exact: true })).toBeVisible();
 
   await manager.close();
 });

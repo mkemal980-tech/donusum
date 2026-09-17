@@ -393,7 +393,7 @@ export default function SignupPage() {
               </p>
               {joinCodeInfo.requiresOrganization && (
                 <p className="mt-1">
-                  Şirketinizin adını aşağıya yazın; kaydınız bu adla açılacak.
+                  Kuruluşunuzun adını aşağıya girin; değerlendirmeniz bu ad altında tutulur.
                 </p>
               )}
             </div>
