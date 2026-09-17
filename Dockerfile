@@ -7,6 +7,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY nextjs_space/package.json nextjs_space/package-lock.json ./
+# Derleme icin gelistirme bagimliliklari da gerekli (prisma, next, typescript).
 RUN npm ci
 
 FROM node:22-bookworm-slim AS builder
@@ -22,6 +23,20 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY nextjs_space/ ./
 
 RUN npm run build
+
+# Calisma imajinda yalnizca uretim bagimliliklari bulunur.
+# Onceden deps katmanindaki node_modules oldugu gibi kopyalaniyordu; imaj
+# gelistirme bagimliliklarini da tasiyordu.
+FROM node:22-bookworm-slim AS prod-deps
+
+WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates openssl \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY nextjs_space/package.json nextjs_space/package-lock.json ./
+RUN npm ci --omit=dev
 
 FROM node:22-bookworm-slim AS runner
 
@@ -41,7 +56,7 @@ RUN apt-get update \
     openssl \
   && rm -rf /var/lib/apt/lists/*
 
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 COPY --from=builder /app/package.json ./package.json

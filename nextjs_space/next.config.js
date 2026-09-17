@@ -8,7 +8,14 @@ const nextConfig = {
     outputFileTracingRoot: path.join(__dirname, '../'),
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    /**
+     * Lint hatası derlemeyi durdurur.
+     *
+     * `true` iken kalite kapısı atlanıyordu; TypeScript için zaten
+     * `ignoreBuildErrors: false` seçilmişti, lint de aynı çizgide olmalı.
+     * Yalnızca uyarılar derlemeyi durdurmaz.
+     */
+    ignoreDuringBuilds: false,
   },
   typescript: {
     ignoreBuildErrors: false,
