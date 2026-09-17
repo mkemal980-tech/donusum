@@ -9,6 +9,40 @@ import { resolveJoinCodeProfile } from "@/lib/organization-join-code-server";
 
 class JoinCodeConsumptionError extends Error {}
 
+type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+/**
+ * Şirket adından üye kuruluşu bulur ya da açar.
+ *
+ * Eşleşme ada göre ve büyük/küçük harf duyarsız; Excel toplu aktarımı da aynı
+ * kuralı kullanıyor. Aynı şirketten ikinci kişi yeni bir kuruluş açmaz, mevcut
+ * değerlendirmeye katılır.
+ */
+async function resolveMemberUnit(
+  tx: TxClient,
+  input: { parentId: string; name: string; sectorId: string | null; subSectorId: string | null }
+): Promise<{ id: string; name: string }> {
+  const siblings = await tx.unit.findMany({
+    where: { parentId: input.parentId },
+    select: { id: true, name: true },
+  });
+
+  const key = input.name.toLocaleLowerCase("tr-TR");
+  const existing = siblings.find((unit) => unit.name.toLocaleLowerCase("tr-TR") === key);
+  if (existing) return existing;
+
+  return tx.unit.create({
+    data: {
+      name: input.name,
+      organization: input.name,
+      parentId: input.parentId,
+      sectorId: input.sectorId,
+      subSectorId: input.subSectorId,
+    },
+    select: { id: true, name: true },
+  });
+}
+
 export async function POST(request: NextRequest) {
   // Kota dağıtık sayaçtan okunur; tek instance varsayımı çok-instance
   // dağıtımda sınırı instance sayısıyla çarpıyordu.
@@ -43,6 +77,19 @@ export async function POST(request: NextRequest) {
     if (!hasJoinCode && !sectorId) {
       return NextResponse.json(
         { error: "Sektör seçimi gerekli" },
+        { status: 400 }
+      );
+    }
+
+    /**
+     * Birim seviyesi kodda şirket adı zorunlu: üye kuruluş o addan açılacak.
+     * Diğer kodlarda ad zaten hedef kuruluştan geliyor ve yazılan değer
+     * kullanılmıyor.
+     */
+    const memberOrganizationName = String(organization ?? "").trim().slice(0, 160);
+    if (joinResolution?.code?.createsMemberUnit && !memberOrganizationName) {
+      return NextResponse.json(
+        { error: "Şirket adı gerekli." },
         { status: 400 }
       );
     }
@@ -110,15 +157,37 @@ export async function POST(request: NextRequest) {
             throw new JoinCodeConsumptionError("Katılım kodu artık kullanılamıyor. Lütfen yöneticinizden yeni kod isteyin.");
           }
 
+          /**
+           * Kullanıcı hangi kuruluşa bağlanır?
+           *
+           * Birim seviyesi kodda (`createsMemberUnit`) kuruluş kaydı henüz yok:
+           * kaydolan kişinin yazdığı şirket adıyla, kodun birimi altında bir
+           * üye kuruluş açılır. Aynı ad zaten varsa ona bağlanır -- aynı
+           * şirketten ikinci kişi aynı değerlendirmeye katkı verir.
+           *
+           * Kullanıcıları doğrudan kök birime bağlamak çözüm değildi:
+           * Assessment kuruluşa bağlı ve birim başına tekil; kökü paylaşan
+           * bütün şirketler tek değerlendirmeyi paylaşır, birbirlerinin
+           * cevaplarını görür ve üzerine yazarlardı.
+           */
+          const target = joinResolution.code!.createsMemberUnit
+            ? await resolveMemberUnit(tx, {
+                parentId: joinResolution.code!.unit.id,
+                name: memberOrganizationName,
+                sectorId: joinResolution.profile!.sectorId,
+                subSectorId: joinResolution.profile!.subSectorId,
+              })
+            : { id: joinResolution.code!.unit.id, name: joinResolution.code!.unit.name };
+
           const created = await tx.user.create({
             data: {
               email: email.toLowerCase(),
               password: hashedPassword,
               firstName: firstName || null,
               lastName: lastName || null,
-              organization: joinResolution.code!.unit.name,
+              organization: target.name,
               role: "USER",
-              unitId: joinResolution.code!.unit.id,
+              unitId: target.id,
               sectorId: joinResolution.profile!.sectorId,
               subSectorId: joinResolution.profile!.subSectorId,
               emailVerified: false,
@@ -255,8 +324,10 @@ export async function POST(request: NextRequest) {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      // Birim seviyesi kodda kullanıcı kendi şirket kaydına bağlanır; kodun
+      // birimi değil, açılan/bulunan kuruluş bildirilir.
       joinedUnit: hasJoinCode && joinResolution?.code
-        ? { id: joinResolution.code.unit.id, name: joinResolution.code.unit.name }
+        ? { id: user.unitId ?? joinResolution.code.unit.id, name: user.organization ?? joinResolution.code.unit.name }
         : null,
       message: "Kayıt başarılı! Lütfen email adresinizi doğrulayın."
     });

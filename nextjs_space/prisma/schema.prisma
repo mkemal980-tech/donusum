@@ -108,6 +108,7 @@ model Sector {
   subSectors        SubSector[]
   users             User[]
   units             Unit[]
+  joinCodes         UnitJoinCode[]
   scopeRules        SectorScopeRule[]
 }
 
@@ -122,6 +123,7 @@ model SubSector {
   sector            Sector             @relation(fields: [sectorId], references: [id], onDelete: Cascade)
   users             User[]
   units             Unit[]
+  joinCodes         UnitJoinCode[]
   scopeRules        SectorScopeRule[]
 
   @@unique([sectorId, name])
@@ -284,9 +286,20 @@ model UnitJoinCode {
   isActive    Boolean           @default(true)
   surveyId    String?
   createdById String?
+  /// true ise `unitId` katılınacak kuruluş değil, altına kuruluş açılacak üst
+  /// birimdir: kaydolan kişinin yazdığı şirket adıyla bir üye kuruluş açılır
+  /// (aynı ad zaten varsa ona bağlanır). Yöneticinin her şirketi önceden
+  /// oluşturması gerekmez.
+  createsMemberUnit Boolean      @default(false)
+  /// Kodun getirdiği sektör profili. Kök birime ayrıca sektör atamaya gerek
+  /// kalmaz ve farklı sektörler için ayrı kod açılabilir.
+  sectorId    String?
+  subSectorId String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   unit        Unit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  sector      Sector?           @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+  subSector   SubSector?        @relation(fields: [subSectorId], references: [id], onDelete: SetNull)
   survey      Survey?           @relation(fields: [surveyId], references: [id], onDelete: SetNull)
   createdBy   User?             @relation("JoinCodeCreator", fields: [createdById], references: [id], onDelete: SetNull)
   uses        UnitJoinCodeUse[]

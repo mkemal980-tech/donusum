@@ -56,6 +56,18 @@ export async function getDescendantUnitIds(rootId: string, db: DbClient = prisma
   return result;
 }
 
+/**
+ * Kökün kendisi dahil, yönetim kapsamındaki bütün birimler.
+ *
+ * `getDescendantUnitIds` kökü bilerek dışarıda bırakır: kampanya gönderen ile
+ * dolduran ayrı olsun diye. Ama katılım kodu, üye listesi gibi "bu yapının
+ * içindeki her şey" soran yerlerde kökün kendisi de kapsama girer -- kök
+ * birimin de kendi kodu ve kendi kullanıcıları olabilir.
+ */
+export async function getTenantScopeUnitIds(rootId: string, db: DbClient = prisma) {
+  return [rootId, ...(await getDescendantUnitIds(rootId, db))];
+}
+
 /** Oda/STK yöneticisinin doğrudan sahibi olduğu kökler. */
 export async function getOrganizationRoots(
   userId: string,

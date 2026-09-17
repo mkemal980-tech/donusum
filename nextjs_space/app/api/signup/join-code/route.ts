@@ -15,6 +15,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       valid: true,
       unitName: result.code.unit.name,
+      /**
+       * Birim seviyesi kodda kuruluş kaydı henüz yok: kaydolan kişinin yazdığı
+       * şirket adından açılacak. Ekran bu yüzden "Kuruluş" alanını göstermeli.
+       */
+      requiresOrganization: result.code.createsMemberUnit,
       sectorName: result.profile.sector?.name ?? null,
       subSectorName: result.profile.subSector?.name ?? null,
       surveyName: result.survey?.name ?? null,

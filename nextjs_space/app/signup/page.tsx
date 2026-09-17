@@ -41,11 +41,18 @@ export default function SignupPage() {
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [loadingSectors, setLoadingSectors] = useState(true);
   const [checkingJoinCode, setCheckingJoinCode] = useState(false);
+  /**
+   * `requiresOrganization`: kod yapı seviyesindeyse kuruluş kaydı henüz yok;
+   * kaydolan kişinin yazdığı şirket adından açılacak. Bu durumda "Kuruluş"
+   * alanı gizlenmemeli — eskiden kod doğrulanınca bütün blok gizleniyordu ve
+   * kullanıcı şirket adını yazamıyordu.
+   */
   const [joinCodeInfo, setJoinCodeInfo] = useState<{
     unitName: string;
     sectorName: string | null;
     subSectorName: string | null;
     surveyName: string | null;
+    requiresOrganization?: boolean;
   } | null>(null);
   const router = useRouter();
 
@@ -377,33 +384,46 @@ export default function SignupPage() {
             </p>
           </div>
 
-          {joinCodeInfo ? (
+          {joinCodeInfo && (
             <div className="rounded-[var(--radius-xs)] p-3 t-sm" style={{ background: "var(--success-bg)", color: "var(--success)" }}>
               <p className="font-medium">Kod doğrulandı · {joinCodeInfo.unitName}</p>
               <p className="mt-1">
                 {[joinCodeInfo.sectorName, joinCodeInfo.subSectorName].filter(Boolean).join(" · ")}
                 {joinCodeInfo.surveyName ? ` · ${joinCodeInfo.surveyName} anketi atanacak` : ""}
               </p>
+              {joinCodeInfo.requiresOrganization && (
+                <p className="mt-1">
+                  Şirketinizin adını aşağıya yazın; kaydınız bu adla açılacak.
+                </p>
+              )}
             </div>
-          ) : (
-            <>
-              <div>
-                <label htmlFor="organization" className={groupLabel} style={{ color: "var(--ink-2)" }}>
-                  Kuruluş
-                </label>
-                <input
-                  id="organization"
-                  type="text"
-                  name="organization"
-                  autoComplete="organization"
-                  value={formData.organization}
-                  onChange={handleChange}
-                  className="theme-input"
-                  placeholder="Şirket adı"
-                  required={!formData.joinCode.trim()}
-                />
-              </div>
+          )}
 
+          {/*
+            Şirket adı, yapı seviyesi kodda da sorulur: üye kuruluş o addan
+            açılıyor. Sektör ise kodla geliyorsa sorulmaz.
+          */}
+          {(!joinCodeInfo || joinCodeInfo.requiresOrganization) && (
+            <div>
+              <label htmlFor="organization" className={groupLabel} style={{ color: "var(--ink-2)" }}>
+                {joinCodeInfo?.requiresOrganization ? "Şirketiniz" : "Kuruluş"}
+              </label>
+              <input
+                id="organization"
+                type="text"
+                name="organization"
+                autoComplete="organization"
+                value={formData.organization}
+                onChange={handleChange}
+                className="theme-input"
+                placeholder="Şirket adı"
+                required={!formData.joinCode.trim() || Boolean(joinCodeInfo?.requiresOrganization)}
+              />
+            </div>
+          )}
+
+          {!joinCodeInfo && (
+            <>
               <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label htmlFor="sectorId" className={groupLabel} style={{ color: "var(--ink-2)" }}>

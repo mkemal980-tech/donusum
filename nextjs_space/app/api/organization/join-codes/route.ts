@@ -4,6 +4,7 @@ import { withAuth } from "@/lib/api-utils";
 import {
   canManageTenantUnit,
   getDescendantUnitIds,
+  getTenantScopeUnitIds,
 } from "@/lib/organization-campaign";
 import {
   generateJoinCode,
@@ -24,6 +25,22 @@ async function managedTenant(userId: string, role: string, tenantUnitId: string)
     where: { id: tenantUnitId },
     select: { id: true, name: true },
   });
+}
+
+/** Sektör/alt sektör eşleşmesini doğrular (üye davetindeki kuralın aynısı). */
+async function validateSectorProfile(sectorId: string, subSectorId: string | null) {
+  const sector = await prisma.sector.findUnique({
+    where: { id: sectorId },
+    select: {
+      id: true,
+      subSectors: subSectorId ? { where: { id: subSectorId }, select: { id: true } } : false,
+    },
+  });
+  if (!sector) return "Seçilen sektör bulunamadı.";
+  if (subSectorId && (!sector.subSectors || sector.subSectors.length === 0)) {
+    return "Seçilen alt sektör bu sektöre ait değil.";
+  }
+  return null;
 }
 
 async function resolveSurvey(userId: string, tenantUnitId: string, surveyId: string) {
@@ -53,9 +70,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const descendantIds = await getDescendantUnitIds(tenant.id);
+    // Kök birimin kendi kodu da listelenir (bkz. getTenantScopeUnitIds).
+    const scopeIds = await getTenantScopeUnitIds(tenant.id);
     const codes = await prisma.unitJoinCode.findMany({
-      where: { unitId: { in: descendantIds } },
+      where: { unitId: { in: scopeIds } },
       select: {
         id: true,
         label: true,
@@ -65,8 +83,11 @@ export async function GET(request: NextRequest) {
         useCount: true,
         isActive: true,
         createdAt: true,
+        createsMemberUnit: true,
         unit: { select: { id: true, name: true } },
         survey: { select: { id: true, name: true } },
+        sector: { select: { id: true, name: true } },
+        subSector: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -117,20 +138,51 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Kullanım sınırı 1–10000 arasında olmalı." }, { status: 400 });
     }
 
-    const descendantIds = await getDescendantUnitIds(tenant.id);
-    if (!memberUnitId || !descendantIds.includes(memberUnitId)) {
-      return NextResponse.json({ error: "Üye kuruluş bu STK kapsamına ait değil." }, { status: 403 });
+    /**
+     * İki tür kod var:
+     *
+     * - **Üye kuruluşa katılım**: hedef önceden oluşturulmuş bir alt birim.
+     *   Sektör o kuruluştan gelir.
+     * - **Birim seviyesi katılım** (`createsMemberUnit`): hedef yapının kendisi.
+     *   Kaydolan kişi şirket adını yazar, üye kuruluş o addan otomatik açılır.
+     *   Sektör kodun kendisinde durur, çünkü henüz bir kuruluş yok.
+     */
+    const createsMemberUnit = body.createsMemberUnit === true;
+    const scopeIds = await getTenantScopeUnitIds(tenant.id);
+
+    if (!memberUnitId || !scopeIds.includes(memberUnitId)) {
+      return NextResponse.json({ error: "Seçilen birim bu yapının kapsamında değil." }, { status: 403 });
     }
 
     const [member, surveyResolution] = await Promise.all([
       prisma.unit.findUnique({
         where: { id: memberUnitId },
-        select: { id: true, name: true, sectorId: true },
+        select: { id: true, name: true, sectorId: true, subSectorId: true },
       }),
       resolveSurvey(auth.userId, tenant.id, surveyId),
     ]);
-    if (!member) return NextResponse.json({ error: "Üye kuruluş bulunamadı." }, { status: 404 });
-    if (!member.sectorId) {
+    if (!member) return NextResponse.json({ error: "Birim bulunamadı." }, { status: 404 });
+
+    let codeSectorId: string | null = null;
+    let codeSubSectorId: string | null = null;
+
+    if (createsMemberUnit) {
+      // Sektör koda yazılır ve açılacak her üye kuruluşa aktarılır.
+      codeSectorId = clean(body.sectorId, 64) || member.sectorId || null;
+      codeSubSectorId = clean(body.subSectorId, 64) || null;
+
+      if (!codeSectorId) {
+        return NextResponse.json(
+          { error: "Bu kodla kaydolanların sektörünü seçin." },
+          { status: 400 }
+        );
+      }
+
+      const sectorError = await validateSectorProfile(codeSectorId, codeSubSectorId);
+      if (sectorError) {
+        return NextResponse.json({ error: sectorError }, { status: 400 });
+      }
+    } else if (!member.sectorId) {
       return NextResponse.json({ error: "Üye kuruluşun sektör profili olmadan katılım kodu oluşturulamaz." }, { status: 409 });
     }
     if (surveyResolution.error) {
@@ -148,6 +200,9 @@ export async function POST(request: NextRequest) {
           ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
           : null,
         maxUses,
+        createsMemberUnit,
+        sectorId: codeSectorId,
+        subSectorId: codeSubSectorId,
         surveyId: surveyResolution.survey?.id ?? null,
         createdById: auth.userId,
       },
@@ -160,8 +215,11 @@ export async function POST(request: NextRequest) {
         useCount: true,
         isActive: true,
         createdAt: true,
+        createsMemberUnit: true,
         unit: { select: { id: true, name: true } },
         survey: { select: { id: true, name: true } },
+        sector: { select: { id: true, name: true } },
+        subSector: { select: { id: true, name: true } },
       },
     });
 
@@ -174,9 +232,9 @@ export async function POST(request: NextRequest) {
 
 async function revokeCode(body: Record<string, unknown>, tenantUnitId: string) {
   const codeId = clean(body.codeId, 64);
-  const descendantIds = await getDescendantUnitIds(tenantUnitId);
+  const scopeIds = await getTenantScopeUnitIds(tenantUnitId);
   const code = await prisma.unitJoinCode.findFirst({
-    where: { id: codeId, unitId: { in: descendantIds } },
+    where: { id: codeId, unitId: { in: scopeIds } },
     select: { id: true },
   });
   if (!code) return NextResponse.json({ error: "Katılım kodu bulunamadı." }, { status: 404 });

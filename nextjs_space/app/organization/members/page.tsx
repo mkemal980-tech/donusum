@@ -74,6 +74,9 @@ type JoinCodeRecord = {
   isActive: boolean;
   createdAt: string;
   unavailableReason: string | null;
+  /** true ise kod bir kuruluşa değil yapıya bağlı; şirketi kaydolan getirir. */
+  createsMemberUnit?: boolean;
+  sector?: { id: string; name: string } | null;
   unit: { id: string; name: string };
   survey: { id: string; name: string } | null;
 };
@@ -92,11 +95,14 @@ const EMPTY_MEMBER_FORM = {
 
 const EMPTY_USER_FORM = { memberUnitId: "", firstName: "", lastName: "", email: "", surveyId: "" };
 const EMPTY_JOIN_CODE_FORM = {
+  /** Boş dize = yapının kendisi; kaydolan kişi şirketini kendi getirir. */
   memberUnitId: "",
   label: "",
   expiresInDays: "30",
   maxUses: "",
   surveyId: "",
+  sectorId: "",
+  subSectorId: "",
 };
 
 type EditInvitationForm = {
@@ -415,6 +421,10 @@ export default function OrganizationMembersPage() {
           action: "create",
           tenantUnitId,
           ...joinCodeForm,
+          // Üye kuruluş seçilmediyse kod yapının kendisine bağlanır ve
+          // kaydolan kişinin şirketini kendisi açar.
+          memberUnitId: joinCodeForm.memberUnitId || tenantUnitId,
+          createsMemberUnit: !joinCodeForm.memberUnitId,
         }),
       });
       const data = await response.json();
@@ -506,17 +516,28 @@ export default function OrganizationMembersPage() {
         {mode === "codes" && (
           <FormPanel
             title="Birim katılım kodları"
-            description="Kodu kullanan yeni hesap seçilen üye kuruluşa standart kullanıcı olarak bağlanır; kuruluş ve sektör profili otomatik devralınır."
+            description="Yapı seviyesinde kod dağıtın: kaydolan kişi şirket adını yazar, kuruluşu otomatik açılır. Mevcut bir üye kuruluş seçerseniz hesap doğrudan ona bağlanır."
           >
             <form onSubmit={createJoinCode} className="grid gap-4 md:grid-cols-2">
-              <Field label="Üye kuruluş / birim">
+              <Field label="Kim katılacak?">
                 <select
-                  required
                   className="theme-select mt-1.5 w-full"
                   value={joinCodeForm.memberUnitId}
                   onChange={(event) => setJoinCodeForm({ ...joinCodeForm, memberUnitId: event.target.value })}
                 >
-                  {members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+                  {/*
+                    Varsayılan seçenek yapının kendisi: üye kuruluşu önceden
+                    oluşturmadan kod dağıtabilmek için. Kaydolan kişi şirket
+                    adını yazar, kuruluş o addan açılır.
+                  */}
+                  <option value="">
+                    {selectedRoot?.name ?? "Yapıya"} — kaydolan kendi şirketini yazsın
+                  </option>
+                  {members.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.name} (mevcut üye kuruluş)
+                    </option>
+                  ))}
                 </select>
               </Field>
               <Field label="Kod açıklaması (isteğe bağlı)">
@@ -562,7 +583,49 @@ export default function OrganizationMembersPage() {
                   {surveys.map((survey) => <option key={survey.id} value={survey.id}>{survey.name}</option>)}
                 </select>
               </Field>
-              <div className="flex items-end justify-end"><Button type="submit" loading={busy}>Katılım kodu oluştur</Button></div>
+
+              {/*
+                Sektör yalnızca yapı seviyesi kodda sorulur: henüz bir kuruluş
+                yok, profil kodun kendisinde durur ve açılacak her şirkete
+                aktarılır. Mevcut bir üye kuruluş seçildiğinde profil zaten
+                onun kaydından geliyor.
+              */}
+              {!joinCodeForm.memberUnitId && (
+                <>
+                  <Field label="Kaydolanların sektörü">
+                    <select
+                      required
+                      className="theme-select mt-1.5 w-full"
+                      value={joinCodeForm.sectorId}
+                      onChange={(event) =>
+                        setJoinCodeForm({ ...joinCodeForm, sectorId: event.target.value, subSectorId: "" })
+                      }
+                    >
+                      <option value="">Sektör seçin</option>
+                      {sectors.map((sector) => (
+                        <option key={sector.id} value={sector.id}>{sector.name}</option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Alt sektör (isteğe bağlı)">
+                    <select
+                      className="theme-select mt-1.5 w-full"
+                      value={joinCodeForm.subSectorId}
+                      disabled={!joinCodeForm.sectorId}
+                      onChange={(event) => setJoinCodeForm({ ...joinCodeForm, subSectorId: event.target.value })}
+                    >
+                      <option value="">Alt sektör seçin</option>
+                      {sectors
+                        .find((sector) => sector.id === joinCodeForm.sectorId)
+                        ?.subSectors?.map((subSector) => (
+                          <option key={subSector.id} value={subSector.id}>{subSector.name}</option>
+                        ))}
+                    </select>
+                  </Field>
+                </>
+              )}
+
+              <div className="flex items-end justify-end md:col-span-2"><Button type="submit" loading={busy}>Katılım kodu oluştur</Button></div>
             </form>
 
             {createdJoinCode && (
@@ -590,7 +653,15 @@ export default function OrganizationMembersPage() {
                       {joinCodes.map((code) => (
                         <tr key={code.id}>
                           <td><span className="font-mono font-medium">{code.codePreview}</span>{code.label && <span className="mt-0.5 block t-caption">{code.label}</span>}</td>
-                          <td>{code.unit.name}</td>
+                          <td>
+                            {code.unit.name}
+                            {code.createsMemberUnit && (
+                              <span className="mt-0.5 block t-caption" style={{ color: "var(--ink-3)" }}>
+                                Şirketi kaydolan getirir
+                                {code.sector?.name ? ` · ${code.sector.name}` : ""}
+                              </span>
+                            )}
+                          </td>
                           <td>{code.survey?.name || "—"}</td>
                           <td>{code.useCount}{code.maxUses !== null ? ` / ${code.maxUses}` : " / sınırsız"}</td>
                           <td>{code.expiresAt ? new Date(code.expiresAt).toLocaleDateString("tr-TR") : "Süresiz"}</td>

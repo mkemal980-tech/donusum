@@ -22,6 +22,11 @@ export async function resolveJoinCodeProfile(rawCode: unknown, db: DbClient = pr
       expiresAt: true,
       maxUses: true,
       useCount: true,
+      createsMemberUnit: true,
+      sectorId: true,
+      subSectorId: true,
+      sector: { select: { name: true } },
+      subSector: { select: { name: true } },
       survey: {
         select: { id: true, name: true, isActive: true, archivedAt: true },
       },
@@ -43,23 +48,35 @@ export async function resolveJoinCodeProfile(rawCode: unknown, db: DbClient = pr
   if (unavailableReason) return { code, profile: null, error: unavailableReason };
 
   /**
-   * Sektör profili kuruluşun kendi alanından okunur.
+   * Sektör profili nereden gelir?
    *
-   * Önceden "birimdeki en eski aktif kullanıcı" üzerinden türetiliyordu: o
-   * kişi başka sektörden bir danışmansa kodla katılan herkes yanlış sektöre
-   * bağlanıyordu (bkz. migration 000014).
+   * - Birim seviyesi kodda (`createsMemberUnit`) henüz bir üye kuruluş yok;
+   *   profil kodun kendisinde durur ve açılacak kuruluşa aktarılır.
+   * - Üye kuruluşa katılım kodunda profil o kuruluşun kendi alanından okunur.
+   *   Önceden "birimdeki en eski aktif kullanıcı" üzerinden türetiliyordu: o
+   *   kişi başka sektörden bir danışmansa kodla katılan herkes yanlış sektöre
+   *   bağlanıyordu (bkz. migration 000014).
    */
-  const profile = code.unit.sectorId
-    ? {
-        sectorId: code.unit.sectorId,
-        subSectorId: code.unit.subSectorId,
-        sector: code.unit.sector,
-        subSector: code.unit.subSector,
-      }
-    : null;
+  const profile = code.createsMemberUnit
+    ? code.sectorId
+      ? {
+          sectorId: code.sectorId,
+          subSectorId: code.subSectorId,
+          sector: code.sector,
+          subSector: code.subSector,
+        }
+      : null
+    : code.unit.sectorId
+      ? {
+          sectorId: code.unit.sectorId,
+          subSectorId: code.unit.subSectorId,
+          sector: code.unit.sector,
+          subSector: code.unit.subSector,
+        }
+      : null;
 
   if (!profile) {
-    return { code, profile: null, error: "Bu birimin sektör profili eksik. Birim yöneticinizle görüşün." };
+    return { code, profile: null, error: "Bu kodun sektör profili eksik. Birim yöneticinizle görüşün." };
   }
 
   return {
