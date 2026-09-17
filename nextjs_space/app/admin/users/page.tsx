@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, X, Save, Search, FileText, Check } from "lucide-react";
+import { Plus, Edit, Trash2, X, Save, Search, FileText, Check, UserX, UserCheck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/ui/page-header";
@@ -41,6 +41,8 @@ interface UserType {
   organization: string | null;
   role: "USER" | "UNIT_MANAGER" | "ADMIN";
   emailVerified: boolean;
+  /** Devre dışı hesap listede kalır ama giriş yapamaz. */
+  isActive: boolean;
   unitId: string | null;
   sectorId: string | null;
   subSectorId: string | null;
@@ -77,6 +79,18 @@ export default function UsersPage() {
   const [userAssignments, setUserAssignments] = useState<SurveyAssignment[]>([]);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  /** Kalıcı silme onayı: ne götüreceği gösterilmeden onaylanmaz. */
+  const [deleteTarget, setDeleteTarget] = useState<{
+    user: UserType;
+    impact: {
+      assessments: number;
+      responses: number;
+      authoredElsewhere: number;
+      documents: number;
+    } | null;
+    loading: boolean;
+  } | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [roleFilter, setRoleFilter] = useState("");
   const [formData, setFormData] = useState({
     email: "",
@@ -165,19 +179,83 @@ export default function UsersPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Bu kullanıcıyı silmek istediğinizden emin misiniz?")) return;
+  /**
+   * Devre dışı bırakma ile kalıcı silme ayrıldı.
+   *
+   * Tek bir "Sil" düğmesi vardı ve arkasındaki uç nokta hesabı yalnızca devre
+   * dışı bırakıyordu; liste `isActive`'i ne süzüyor ne gösteriyordu. Sonuç:
+   * yönetici onay veriyor, "Kullanıcı silindi" bildirimi alıyor ve satır
+   * olduğu gibi kalıyordu.
+   */
+  const handleDeactivate = async (user: UserType) => {
+    const label = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
+    if (!confirm(`${label} giriş yapamayacak. Cevapları ve değerlendirmeleri korunur. Devam edilsin mi?`)) return;
 
     try {
-      const res = await fetch(`/api/admin/users?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/admin/users?id=${user.id}`, { method: "DELETE" });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        toast.success("Kullanıcı silindi");
+        toast.success("Kullanıcı devre dışı bırakıldı");
         fetchData();
       } else {
-        toast.error("Kullanıcı silinemedi");
+        toast.error(data.error || "Kullanıcı devre dışı bırakılamadı");
       }
-    } catch (error) {
+    } catch {
       toast.error("Bir hata oluştu");
+    }
+  };
+
+  const handleReactivate = async (user: UserType) => {
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: user.id, name: user.firstName, isActive: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        toast.success("Kullanıcı yeniden etkinleştirildi");
+        fetchData();
+      } else {
+        toast.error(data.error || "Kullanıcı etkinleştirilemedi");
+      }
+    } catch {
+      toast.error("Bir hata oluştu");
+    }
+  };
+
+  const openPermanentDelete = async (user: UserType) => {
+    setDeleteTarget({ user, impact: null, loading: true });
+    try {
+      const res = await fetch(`/api/admin/users?action=delete-impact&id=${user.id}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Etki bilgisi alınamadı");
+      setDeleteTarget({ user, impact: data.impact, loading: false });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Etki bilgisi alınamadı");
+      setDeleteTarget(null);
+    }
+  };
+
+  const confirmPermanentDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/users?id=${deleteTarget.user.id}&permanent=true`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        toast.success("Kullanıcı kalıcı olarak silindi");
+        setDeleteTarget(null);
+        fetchData();
+      } else {
+        toast.error(data.error || "Kullanıcı silinemedi");
+      }
+    } catch {
+      toast.error("Bir hata oluştu");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -377,9 +455,25 @@ export default function UsersPage() {
                   </div>
                 </td>
                 <td>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${roleColors[user.role]}`}>
-                    {roleLabels[user.role]}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${roleColors[user.role]}`}>
+                      {roleLabels[user.role]}
+                    </span>
+                    {/*
+                      Devre dışı bırakılan hesap listede kalır ama farkı
+                      görünmeliydi: rozet olmadan yönetici "sildim ama silinmedi"
+                      görüyordu.
+                    */}
+                    {!user.isActive && (
+                      <span
+                        className="px-2 py-1 rounded-full text-xs font-medium"
+                        style={{ background: "var(--surface-3)", color: "var(--ink-3)" }}
+                        title="Bu hesap giriş yapamaz. Cevapları ve değerlendirmeleri korunuyor."
+                      >
+                        Devre dışı
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td>
                   {user.unit?.name || "-"}
@@ -410,9 +504,30 @@ export default function UsersPage() {
                     >
                       <Edit size={16} />
                     </Button>
+                    {user.isActive ? (
+                      <Button
+                        onClick={() => handleDeactivate(user)}
+                        title="Devre dışı bırak — hesap giriş yapamaz, verileri korunur"
+                        variant="ghost"
+                        size="icon"
+                        className="text-[var(--text-dim)] hover:text-[var(--warning-ink)] hover:bg-[var(--warning-bg)]"
+                      >
+                        <UserX size={16} />
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => handleReactivate(user)}
+                        title="Yeniden etkinleştir"
+                        variant="ghost"
+                        size="icon"
+                        className="text-[var(--text-dim)] hover:text-[var(--success-ink)] hover:bg-[var(--success-bg)]"
+                      >
+                        <UserCheck size={16} />
+                      </Button>
+                    )}
                     <Button
-                      onClick={() => handleDelete(user.id)}
-                      title="Sil"
+                      onClick={() => openPermanentDelete(user)}
+                      title="Kalıcı olarak sil"
                       variant="ghost"
                       size="icon"
                       className="text-[var(--text-dim)] hover:text-[var(--error-ink)] hover:bg-[var(--error-bg)]"
@@ -718,6 +833,84 @@ export default function UsersPage() {
                 className="w-full hover:bg-[var(--bg-card)]"
               >
                 Kapat
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/*
+        Kalıcı silme onayı.
+        Şemadaki cascade zinciri kişisel değerlendirmeyi, cevaplarını, puan
+        geçmişini ve yol haritasını da götürüyor. Ne gideceği tıklamadan önce
+        yazıyor; anket silmede de aynı kalıp var.
+      */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center p-4">
+          <div className="modal-backdrop absolute inset-0" onClick={() => !deleting && setDeleteTarget(null)} />
+          <div
+            className="relative w-full max-w-lg rounded-[var(--radius-lg)] p-6"
+            style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="flex items-start gap-3">
+              <AlertTriangle size={20} style={{ color: "var(--error)" }} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <div>
+                <h2 className="t-subhead" style={{ color: "var(--ink)" }}>
+                  Kalıcı olarak silinsin mi?
+                </h2>
+                <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+                  {[deleteTarget.user.firstName, deleteTarget.user.lastName].filter(Boolean).join(" ") ||
+                    deleteTarget.user.email}{" "}
+                  · {deleteTarget.user.email}
+                </p>
+              </div>
+            </div>
+
+            {deleteTarget.loading ? (
+              <p className="mt-4 t-sm" style={{ color: "var(--ink-3)" }}>Etki hesaplanıyor…</p>
+            ) : deleteTarget.impact ? (
+              <div className="mt-4 rounded-[var(--radius-md)] p-4" style={{ background: "var(--surface-2)" }}>
+                {deleteTarget.impact.assessments === 0 &&
+                deleteTarget.impact.documents === 0 &&
+                deleteTarget.impact.authoredElsewhere === 0 ? (
+                  <p className="t-sm" style={{ color: "var(--ink-2)" }}>
+                    Bu hesaba bağlı değerlendirme, cevap veya dosya yok. Silmek güvenli.
+                  </p>
+                ) : (
+                  <>
+                    <p className="t-sm" style={{ color: "var(--ink-2)" }}>Silinecek:</p>
+                    <ul className="mt-2 list-disc pl-5 t-sm" style={{ color: "var(--ink-2)" }}>
+                      <li>{deleteTarget.impact.assessments} kişisel değerlendirme</li>
+                      <li>{deleteTarget.impact.responses} cevap (bu değerlendirmelerin içinde)</li>
+                      <li>{deleteTarget.impact.documents} yüklenen dosya kaydı</li>
+                    </ul>
+                    {deleteTarget.impact.authoredElsewhere > 0 && (
+                      <p className="mt-3 t-sm" style={{ color: "var(--ink-3)" }}>
+                        Kuruluş değerlendirmelerine girdiği {deleteTarget.impact.authoredElsewhere} cevap
+                        silinmez; yalnızca kimin girdiği bilgisi kaybolur.
+                      </p>
+                    )}
+                    <p className="mt-3 t-sm" style={{ color: "var(--error)" }}>
+                      Bu işlem geri alınamaz. Erişimi kapatmak yeterliyse "Devre dışı bırak" kullanın.
+                    </p>
+                  </>
+                )}
+              </div>
+            ) : null}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
+                Vazgeç
+              </Button>
+              <Button
+                onClick={confirmPermanentDelete}
+                loading={deleting}
+                disabled={deleteTarget.loading}
+                className="bg-[var(--error-solid)] hover:bg-[var(--error)]"
+              >
+                Kalıcı olarak sil
               </Button>
             </div>
           </div>

@@ -24,6 +24,7 @@ const SECOND_COMPANY = "E2E Beta Tersanesi";
 
 let seeded = false;
 let rootId = "";
+let emptyRootId = "";
 let sectorId = "";
 
 async function removeFixture() {
@@ -64,6 +65,7 @@ test.beforeAll(async () => {
   await prisma.unitAdmin.create({ data: { unitId: root.id, userId: manager.id } });
 
   const emptyRoot = await prisma.unit.create({ data: { name: EMPTY_ROOT } });
+  emptyRootId = emptyRoot.id;
   const emptyManager = await prisma.user.create({
     data: {
       email: EMPTY_MANAGER,
@@ -313,4 +315,46 @@ test("platform anketi bir yapıya devredilince yönetici onu dağıtabilir", asy
 
   await manager.close();
   await admin.close();
+});
+
+test("yapı seviyesi kod girildiğinde kayıt formu şirket adını sorar", async ({ browser, request }) => {
+  test.skip(!seeded, "Fikstür kurulamadı");
+  test.setTimeout(120_000);
+
+  /**
+   * Bu, API testinin yakalayamadığı boşluktu: uç nokta `requiresOrganization`
+   * döndürüyordu ama form yanıtı alan alan kopyalarken o alanı düşürüyordu.
+   * Sonuç çıkmaz sokaktı -- sunucu şirket adı istiyor, ekranda doldurulacak
+   * kutu yok. Bu yüzden kontrol formun kendisinde yapılır.
+   */
+  const manager = await login(browser, EMPTY_MANAGER);
+  const created = await manager.request.post("/api/organization/join-codes", {
+    data: {
+      tenantUnitId: emptyRootId,
+      action: "create",
+      memberUnitId: emptyRootId,
+      createsMemberUnit: true,
+      sectorId,
+    },
+  });
+  expect(created.status()).toBe(201);
+  const { code } = await created.json();
+  await manager.close();
+
+  const page = await browser.newPage();
+  await page.goto("/signup", { waitUntil: "domcontentloaded" });
+
+  // Kod girilmeden önce kuruluş alanı zaten var (kodsuz kayıt yolu).
+  await page.locator('input[name="joinCode"]').fill(code);
+  await page.getByRole("button", { name: "Doğrula" }).click();
+
+  await expect(page.getByText(/Kod doğrulandı/)).toBeVisible();
+
+  // Asıl kontrol: alan görünür ve zorunlu.
+  const organization = page.locator('input[name="organization"]');
+  await expect(organization).toBeVisible();
+  await expect(organization).toHaveAttribute("required", "");
+  await expect(page.getByText(/Kuruluşunuzun adını aşağıya girin/)).toBeVisible();
+
+  await page.close();
 });

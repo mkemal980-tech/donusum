@@ -14,6 +14,50 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const unitId = searchParams.get("unitId");
     const role = searchParams.get("role");
+    const action = searchParams.get("action");
+    const targetId = searchParams.get("id");
+
+    /**
+     * Kalıcı silmenin neyi götüreceği.
+     *
+     * Şemadaki cascade zinciri kişisel değerlendirmeyi, cevaplarını, puan
+     * geçmişini ve yol haritasını da siliyor. Yönetici bunu tıklamadan önce
+     * görmeli; anket silmede aynı kalıp zaten var.
+     */
+    if (action === "delete-impact" && targetId) {
+      const target = await prisma.user.findUnique({
+        where: { id: targetId },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          isActive: true,
+          _count: { select: { ownedAssessments: true, uploadedDocuments: true, authoredResponses: true } },
+        },
+      });
+      if (!target) {
+        return NextResponse.json({ error: "Kullanıcı bulunamadı" }, { status: 404 });
+      }
+
+      const responsesInOwnAssessments = await prisma.surveyResponse.count({
+        where: { assessment: { ownerUserId: targetId } },
+      });
+
+      return NextResponse.json({
+        user: target,
+        impact: {
+          // Kişisel değerlendirmeler ve içindeki cevaplar kalıcı silinir.
+          assessments: target._count.ownedAssessments,
+          responses: responsesInOwnAssessments,
+          // Kuruluş değerlendirmesine girdiği cevaplar silinmez; yalnızca
+          // "kim yazdı" izi kopar (answeredById SetNull).
+          authoredElsewhere: target._count.authoredResponses,
+          documents: target._count.uploadedDocuments,
+        },
+      });
+    }
 
     const where: Record<string, unknown> = {};
     if (unitId) where.unitId = unitId;
@@ -221,6 +265,11 @@ export async function PUT(request: NextRequest) {
       updateData.emailVerified = emailVerified;
     }
 
+    // Devre dışı bırakılan hesap geri açılabilmeli; aksi hâlde işlem tek yönlü.
+    if (typeof body.isActive === "boolean") {
+      updateData.isActive = body.isActive;
+    }
+
     const user = await prisma.user.update({
       where: { id },
       data: updateData,
@@ -248,6 +297,16 @@ export async function DELETE(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const id = searchParams.get("id");
+    /**
+     * İki mod.
+     *
+     * Varsayılan devre dışı bırakmadır: kişisel değerlendirmeyi, cevaplarını
+     * ve puan geçmişini kalıcı silmek geri alınamaz ve projenin soft-delete
+     * ilkesiyle çelişir. Ama gerçekten silmek de gerekebiliyor (veri silme
+     * talebi, yanlış açılmış test hesabı), o yüzden yol açıkça duruyor ve
+     * çağıran taraf ne götüreceğini `?action=delete-impact` ile görebiliyor.
+     */
+    const permanent = searchParams.get("permanent") === "true";
 
     if (!id) {
       return NextResponse.json(
@@ -296,6 +355,18 @@ export async function DELETE(request: NextRequest) {
           { status: 409 }
         );
       }
+    }
+
+    if (permanent) {
+      await prisma.user.delete({ where: { id } });
+      return NextResponse.json({ success: true, deleted: true });
+    }
+
+    if (!target.isActive) {
+      return NextResponse.json(
+        { error: "Bu kullanıcı zaten devre dışı." },
+        { status: 409 }
+      );
     }
 
     await prisma.user.update({ where: { id }, data: { isActive: false } });

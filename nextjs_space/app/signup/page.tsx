@@ -113,6 +113,15 @@ export default function SignupPage() {
         sectorName: data.sectorName ?? null,
         subSectorName: data.subSectorName ?? null,
         surveyName: data.surveyName ?? null,
+        /**
+         * Bu alan düşerse form çıkmaz sokağa girer.
+         *
+         * Yanıt alan alan kopyalanıyor ve `requiresOrganization` atlanmıştı:
+         * sunucu şirket adı istiyor, form o alanı hiç göstermiyordu. Kullanıcı
+         * "Şirket adı gerekli" hatasını alıyor ama doldurabileceği bir kutu
+         * bulamıyordu.
+         */
+        requiresOrganization: data.requiresOrganization === true,
       });
     } catch {
       setJoinCodeInfo(null);
