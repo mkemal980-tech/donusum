@@ -102,8 +102,10 @@ describe("organization pending invitations", () => {
         role: "UNIT_MANAGER",
         sectorId: "sector-c",
         subSectorId: "sub-30-1",
-        passwordResetToken: expect.any(String),
-        passwordResetExpires: expect.any(Date),
+        // Davet artık kendi alanını kullanıyor ve özetlenerek saklanıyor;
+        // "şifremi unuttum" bekleyen daveti öldürmüyor (bkz. migration 000015).
+        invitationTokenHash: expect.any(String),
+        invitationExpires: expect.any(Date),
       }),
     }));
     expect(mocks.tx.unitAdmin.create).toHaveBeenCalledWith({

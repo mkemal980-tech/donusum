@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { enforcePublicRateLimit, validators } from "@/lib/api-utils";
 import { sendEmail } from "@/lib/email";
 import bcrypt from "bcryptjs";
+import { hashToken } from "@/lib/tokens";
 
 export const dynamic = "force-dynamic";
 
@@ -31,13 +32,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Token'ı kontrol et
+    /**
+     * İki tür bağlantı da buraya düşer: şifre sıfırlama ve hesap daveti.
+     *
+     * Davet eskiden `passwordResetToken` alanını ödünç alıyordu; kullanıcı
+     * "şifremi unuttum"a bastığında bekleyen daveti sessizce ölüyordu (ve
+     * tersi). Artık her birinin kendi alanı var, ikisi de özetlenerek
+     * saklanıyor ve bu uç nokta ikisini de kabul ediyor.
+     */
+    const tokenHash = hashToken(String(token));
+    const now = new Date();
+
     const user = await prisma.user.findFirst({
       where: {
-        passwordResetToken: token,
-        passwordResetExpires: {
-          gt: new Date(),
-        },
+        OR: [
+          { passwordResetToken: tokenHash, passwordResetExpires: { gt: now } },
+          { invitationTokenHash: tokenHash, invitationExpires: { gt: now } },
+        ],
       },
     });
 
@@ -48,21 +59,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const viaInvitation = user.invitationTokenHash === tokenHash;
+
     // Şifreyi güncelle — token'ı atomik olarak "tüket".
     // updateMany + where token koşulu, eşzamanlı iki isteğin aynı token'ı
     // kullanmasını engeller (TOCTOU yarışını kapatır): yalnızca ilki başarılı olur.
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const consumed = await prisma.user.updateMany({
-      where: {
-        id: user.id,
-        passwordResetToken: token,
-        passwordResetExpires: { gt: new Date() },
-      },
+      where: viaInvitation
+        ? { id: user.id, invitationTokenHash: tokenHash, invitationExpires: { gt: now } }
+        : { id: user.id, passwordResetToken: tokenHash, passwordResetExpires: { gt: now } },
       data: {
         password: hashedPassword,
+        // Hangi yoldan gelinirse gelinsin iki token da tüketilir; yarım kalmış
+        // bir bağlantının sonradan çalışması istenmez.
         passwordResetToken: null,
         passwordResetExpires: null,
+        invitationTokenHash: null,
+        invitationExpires: null,
         // Davetle oluşturulan hesaplarda bağlantının kullanılması aynı zamanda
         // e-posta sahipliğini kanıtlar; ayrı bir doğrulama turu gerekmez.
         emailVerified: true,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { createToken, hashToken } from "@/lib/tokens";
 import { prisma } from "@/lib/db";
 import { validators, withAuth } from "@/lib/api-utils";
 import {
@@ -33,7 +34,7 @@ const clean = (value: unknown, maxLength: number) =>
   String(value ?? "").trim().slice(0, maxLength);
 
 function invitationToken() {
-  return crypto.randomBytes(32).toString("hex");
+  return createToken();
 }
 
 async function placeholderPassword() {
@@ -323,8 +324,8 @@ async function createMember(
         subSectorId,
         emailVerified: false,
         isActive: true,
-        passwordResetToken: token,
-        passwordResetExpires: expires,
+        invitationTokenHash: hashToken(token),
+        invitationExpires: expires,
       },
       select: { id: true, email: true, firstName: true, role: true },
     });
@@ -420,8 +421,8 @@ async function inviteUser(
         subSectorId: profile.subSectorId,
         emailVerified: false,
         isActive: true,
-        passwordResetToken: token,
-        passwordResetExpires: new Date(Date.now() + INVITATION_TTL_MS),
+        invitationTokenHash: hashToken(token),
+        invitationExpires: new Date(Date.now() + INVITATION_TTL_MS),
       },
       select: { id: true, email: true, firstName: true },
     });
@@ -562,8 +563,8 @@ async function importMembers(file: File | null, tenant: { id: string; name: stri
           subSectorId: row.subSectorId,
           emailVerified: false,
           isActive: true,
-          passwordResetToken: token,
-          passwordResetExpires: new Date(Date.now() + INVITATION_TTL_MS),
+          invitationTokenHash: hashToken(token),
+          invitationExpires: new Date(Date.now() + INVITATION_TTL_MS),
         },
         select: { id: true, email: true, firstName: true },
       });
@@ -622,8 +623,8 @@ async function resendInvitation(body: Record<string, unknown>, tenant: { id: str
   await prisma.user.update({
     where: { id: user.id },
     data: {
-      passwordResetToken: token,
-      passwordResetExpires: new Date(Date.now() + INVITATION_TTL_MS),
+      invitationTokenHash: hashToken(token),
+      invitationExpires: new Date(Date.now() + INVITATION_TTL_MS),
     },
   });
   const invitation = await deliverInvitations(tenant.name, [{
@@ -742,8 +743,8 @@ async function updateInvitation(
         unitId: member.id,
         sectorId: profile.sectorId,
         subSectorId: profile.subSectorId,
-        passwordResetToken: token,
-        passwordResetExpires: new Date(Date.now() + INVITATION_TTL_MS),
+        invitationTokenHash: hashToken(token),
+        invitationExpires: new Date(Date.now() + INVITATION_TTL_MS),
       },
     });
     if (makeUnitManager) {

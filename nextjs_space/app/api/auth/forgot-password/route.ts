@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { logDevEmailLink, sendEmail } from "@/lib/email";
 import { enforcePublicRateLimit } from "@/lib/api-utils";
-import crypto from "crypto";
+import { createToken, hashToken } from "@/lib/tokens";
 
 export const dynamic = "force-dynamic";
 
@@ -32,15 +32,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Token oluştur
-    const resetToken = crypto.randomBytes(32).toString("hex");
+    // Token oluştur — veritabanında yalnızca özeti durur (bkz. lib/tokens).
+    const resetToken = createToken();
     const resetExpires = new Date(Date.now() + 3600000); // 1 saat
 
     // Token'ı veritabanına kaydet
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        passwordResetToken: resetToken,
+        passwordResetToken: hashToken(resetToken),
         passwordResetExpires: resetExpires,
       },
     });

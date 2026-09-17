@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { logDevEmailLink, sendEmail } from "@/lib/email";
 import { enforcePublicRateLimit } from "@/lib/api-utils";
+import { createToken, hashToken } from "@/lib/tokens";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,8 @@ export async function POST(request: NextRequest) {
     // Token'ı kontrol et
     const user = await prisma.user.findFirst({
       where: {
-        emailVerificationToken: token,
+        // Token'ın kendisi saklanmıyor; özetiyle aranır (bkz. lib/tokens).
+        emailVerificationToken: hashToken(String(token)),
         emailVerificationExpires: {
           gt: new Date(),
         },
@@ -106,13 +108,13 @@ export async function PUT(request: NextRequest) {
 
     // Yeni token oluştur
     const crypto = await import("crypto");
-    const emailVerificationToken = crypto.randomBytes(32).toString("hex");
+    const emailVerificationToken = createToken();
     const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 saat
 
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        emailVerificationToken,
+        emailVerificationToken: hashToken(emailVerificationToken),
         emailVerificationExpires,
       },
     });

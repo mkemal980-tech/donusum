@@ -3,7 +3,7 @@ import { prisma, withRetry } from "@/lib/db";
 import { enforcePublicRateLimit, validators } from "@/lib/api-utils";
 import { logDevEmailLink, sendEmail } from "@/lib/email";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
+import { createToken, hashToken } from "@/lib/tokens";
 import { normalizeJoinCode } from "@/lib/organization-join-code";
 import { resolveJoinCodeProfile } from "@/lib/organization-join-code-server";
 
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Email doğrulama tokeni oluştur
-    const emailVerificationToken = crypto.randomBytes(32).toString("hex");
+    const emailVerificationToken = createToken();
     const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 saat
 
     // Create user (with retry for connection issues)
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
               sectorId: joinResolution.profile!.sectorId,
               subSectorId: joinResolution.profile!.subSectorId,
               emailVerified: false,
-              emailVerificationToken,
+              emailVerificationToken: hashToken(emailVerificationToken),
               emailVerificationExpires,
               isActive: true,
             },
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
             sectorId: sectorId || null,
             subSectorId: subSectorId || null,
             emailVerified: false,
-            emailVerificationToken,
+            emailVerificationToken: hashToken(emailVerificationToken),
             emailVerificationExpires,
             isActive: true,
           },

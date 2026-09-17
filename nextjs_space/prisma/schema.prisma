@@ -62,7 +62,11 @@ model User {
   sectorId                 String?
   subSectorId              String?
   passwordResetExpires     DateTime?
+  /// SHA-256 özeti saklanır, token'ın kendisi değil (bkz. lib/tokens).
   passwordResetToken       String?
+  /// Davet bağlantısı kendi alanını taşır; şifre sıfırlamayla çakışmaz.
+  invitationTokenHash      String?
+  invitationExpires        DateTime?
   role                     UserRole               @default(USER)
   unitId                   String?
   currentScoreDate         DateTime?
@@ -71,6 +75,7 @@ model User {
   targetEndurance          Float?
   targetVelocity           Float?
   emailVerificationExpires DateTime?
+  /// SHA-256 özeti saklanır (bkz. lib/tokens).
   emailVerificationToken   String?
   emailVerified            Boolean                @default(false)
   isActive                 Boolean                @default(true)
