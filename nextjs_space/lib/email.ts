@@ -77,3 +77,21 @@ export function logDevEmailLink(label: string, url: string): void {
     console.log(`[email:dev] ${label}: ${url}`);
   }
 }
+
+/**
+ * E-posta HTML'ine gömülecek kullanıcı metnini kaçırır.
+ *
+ * Kayıt ve şifre sıfırlama şablonlarında `${firstName}` kaçırılmadan
+ * gömülüyordu. Saldırgan kurbanın e-posta adresiyle kaydolup, sizin alan
+ * adınızdan SPF/DKIM geçerek giden bir e-postaya kimlik avı içeriği
+ * yerleştirebiliyordu. Hatırlatma şablonu bunu zaten doğru yapıyordu.
+ */
+export function escapeHtml(value: unknown): string {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character]!);
+}

@@ -143,7 +143,7 @@ export default function RoadmapClient() {
     return (
       <>
         <AppShell />
-        <main>
+        <main id="icerik" tabIndex={-1}>
           <div className="skeleton mb-6 h-8 w-64" />
           <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[0, 1, 2, 3].map((i) => (
@@ -160,7 +160,7 @@ export default function RoadmapClient() {
     <>
       <AppShell />
 
-      <main>
+      <main id="icerik" tabIndex={-1}>
         <PageHeader
           title="Yol haritası"
           subtitle="Önerileri takvime bağlayın, ilerlemeyi buradan izleyin."

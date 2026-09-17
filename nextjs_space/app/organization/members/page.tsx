@@ -463,7 +463,7 @@ export default function OrganizationMembersPage() {
     return (
       <>
         <AppShell />
-        <main><div className="flex items-center justify-center py-24"><Loader2 className="animate-spin" /></div></main>
+        <main id="icerik" tabIndex={-1}><div className="flex items-center justify-center py-24"><Loader2 className="animate-spin" /></div></main>
       </>
     );
   }
@@ -471,7 +471,7 @@ export default function OrganizationMembersPage() {
   return (
     <>
       <AppShell />
-      <main>
+      <main id="icerik" tabIndex={-1}>
         <PageHeader
           title="Üye yönetimi"
           subtitle="Üye kuruluşları ve kullanıcılarını ekleyin, güvenli hesap davetlerini yönetin."

@@ -14,7 +14,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <>
       <AppShell />
-      <main>{children}</main>
+      <main id="icerik" tabIndex={-1}>{children}</main>
     </>
   );
 }

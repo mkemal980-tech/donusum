@@ -38,6 +38,8 @@ vi.mock("@/lib/api-utils", () => ({
 vi.mock("@/lib/email", () => ({
   logDevEmailLink: vi.fn(),
   sendEmail: mocks.sendEmail,
+  // Şablona gömülen kullanıcı metni artık kaçırılıyor (kimlik avı vektörü).
+  escapeHtml: (value: unknown) => String(value ?? ""),
 }));
 vi.mock("@/lib/organization-join-code-server", () => ({
   resolveJoinCodeProfile: mocks.resolveJoinCodeProfile,

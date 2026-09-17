@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { logDevEmailLink, sendEmail } from "@/lib/email";
+import { escapeHtml, logDevEmailLink, sendEmail } from "@/lib/email";
 import { enforcePublicRateLimit } from "@/lib/api-utils";
 import { createToken, hashToken } from "@/lib/tokens";
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
           Şifre Sıfırlama Talebi
         </h2>
         <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <p style="margin: 10px 0;">Merhaba ${user.firstName || "Kullanıcı"},</p>
+          <p style="margin: 10px 0;">Merhaba ${escapeHtml(user.firstName || "Kullanıcı")},</p>
           <p style="margin: 10px 0;">Şifrenizi sıfırlamak için aşağıdaki butona tıklayın:</p>
           <div style="text-align: center; margin: 30px 0;">
             <a href="${resetUrl}" style="background: #1e3a8a; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">

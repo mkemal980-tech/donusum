@@ -99,19 +99,60 @@ const categoryColors = [
 ];
 
 /**
- * Yüzdeye göre olgunluk seviyesi hesaplama
- * %0-19: Başlangıç
- * %20-39: Farkındalık
- * %40-59: Gelişen
- * %60-79: Olgun
- * %80-100: Lider
+ * PDF şablonuna gömülecek metni kaçırır.
+ *
+ * Rapor HTML'i burada bir şablon dizesi olarak kuruluyor ve sunucuda başsız
+ * tarayıcıda açılıyor. Kategori ve bölüm adları artık kiracı yöneticileri
+ * tarafından da yazılabiliyor (tenant anketleri); kaçırılmayan bir ad şablonun
+ * içine işaretleme enjekte edebiliyordu.
+ */
+/**
+ * Birleşik yanıttaki kategori puanlarını ekranın haritasına çevirir.
+ *
+ * Pano bu veriyi ayrıca `/api/survey/category-scores`'tan da çekiyordu; o uç
+ * nokta `calculateUserScore`'u bir kez daha çalıştırıyordu. Aynı sayı zaten
+ * birleşik yanıtta geliyor.
+ */
+const toCategoryScoreMap = (categoryScores: any): Record<string, CategoryScore> => {
+  const map: Record<string, CategoryScore> = {};
+  for (const category of categoryScores?.categories ?? []) {
+    map[category.id] = {
+      name: category.name,
+      score: category.score,
+      percentage: category.percentage,
+    };
+  }
+  return map;
+};
+
+const pdfText = (value: unknown) =>
+  String(value ?? "").replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[character]!);
+
+/**
+ * Yüzdeye göre olgunluk seviyesi
+ * %0-19 Başlangıç · %20-39 Farkındalık · %40-59 Gelişen · %60-79 Olgun · %80+ Lider
  */
 const getMaturityLevelFromPercentage = (percentage: number) => {
-  if (percentage >= 80) return { label: 'Lider', color: 'var(--accent-cyan)' };
-  if (percentage >= 60) return { label: 'Olgun', color: '#2dd4bf' };
-  if (percentage >= 40) return { label: 'Gelişen', color: '#38bdf8' };
-  if (percentage >= 20) return { label: 'Farkındalık', color: '#5eead4' };
-  return { label: 'Başlangıç', color: '#7FB2FF' };
+  /**
+   * Olgunluk rampası tek renkli mavidir.
+   *
+   * Burada turkuaz/cyan sabitleri (#2dd4bf, #38bdf8, #5eead4, #7FB2FF)
+   * duruyordu: DESIGN.md'nin "tek renkli mavi rampa" kuralına aykırı, ürünün
+   * anti-referans saydığı palet, ve token dışında oldukları için açık temada
+   * beyaz üzerinde AA kontrastını karşılamıyorlardı. Rampa artık token'lardan
+   * okunuyor ve tema değişimini kendiliğinden izliyor.
+   */
+  if (percentage >= 80) return { label: 'Lider', color: 'var(--maturity-5)' };
+  if (percentage >= 60) return { label: 'Olgun', color: 'var(--maturity-4)' };
+  if (percentage >= 40) return { label: 'Gelişen', color: 'var(--maturity-3)' };
+  if (percentage >= 20) return { label: 'Farkındalık', color: 'var(--maturity-2)' };
+  return { label: 'Başlangıç', color: 'var(--maturity-1)' };
 };
 
 /**
@@ -185,58 +226,27 @@ export default function DashboardClient() {
           return;
         }
 
-        // 2. Kullanıcının yanıtı olan anketi bul, yoksa ilk anketi seç
-        // Her anket için yanıt sayısını kontrol et
-        let selectedId = activeSurveys[0].id;
-        
-        // Paralel olarak tüm anketlerin yanıt sayısını kontrol et
-        const responseCounts = await Promise.all(
-          activeSurveys.map(async (survey: Survey) => {
-            try {
-              const res = await fetch(`/api/survey/responses?surveyId=${survey.id}&countOnly=true`);
-              if (res.ok) {
-                const data = await res.json();
-                return { surveyId: survey.id, count: data.count || 0 };
-              }
-            } catch {}
-            return { surveyId: survey.id, count: 0 };
-          })
-        );
-        
-        // Yanıtı olan ilk anketi seç
-        const surveyWithResponses = responseCounts.find(r => r.count > 0);
-        if (surveyWithResponses) {
-          selectedId = surveyWithResponses.surveyId;
-        }
-        
-        const firstSurveyId = selectedId;
+        /**
+         * Ön seçili anket tek istekte belirlenir.
+         *
+         * Burada atanan **her anket için ayrı** bir `countOnly` isteği
+         * atılıyordu; 10 anketi olan bir kullanıcı pano açılışında 10 fazladan
+         * istek üretiyordu ve her biri `withAuth` + değerlendirme çözümünden
+         * geçiyordu. Sunucu artık üzerinde çalışılmış anketi kendisi bildiriyor.
+         */
+        const startedSurveyId = (surveyData ?? []).find(
+          (survey: Survey & { hasResponses?: boolean }) => survey.hasResponses
+        )?.id;
+        const firstSurveyId = startedSurveyId ?? activeSurveys[0].id;
         setSelectedSurveyId(firstSurveyId);
         lastLoadedSurveyIdRef.current = firstSurveyId;
 
-        const [dashboardRes, categoryScoresRes] = await Promise.all([
-          fetch(`/api/dashboard/unified?surveyId=${firstSurveyId}`),
-          fetch(`/api/survey/category-scores?surveyId=${firstSurveyId}`)
-        ]);
-        
+        const dashboardRes = await fetch(`/api/dashboard/unified?surveyId=${firstSurveyId}`);
+
         if (dashboardRes.status === 401) {
           // Session expired, redirect to login
           window.location.href = '/login';
           return;
-        }
-        
-        // Kategori skorlarını işle
-        let categoryScoresMap: Record<string, CategoryScore> = {};
-        if (categoryScoresRes.ok) {
-          const catData = await categoryScoresRes.json();
-          if (catData.categories) {
-            catData.categories.forEach((cat: any) => {
-              categoryScoresMap[cat.id] = {
-                name: cat.name,
-                score: cat.score,
-                percentage: cat.percentage
-              };
-            });
-          }
         }
         
         if (dashboardRes.ok) {
@@ -244,7 +254,10 @@ export default function DashboardClient() {
           
           // Tüm state'leri tek seferde set et
           setUserProfile(data.userProfile);
-          setScoreData({ totalScore: data.score.totalScore, categoryScores: categoryScoresMap });
+          setScoreData({
+            totalScore: data.score.totalScore,
+            categoryScores: toCategoryScoreMap(data.categoryScores),
+          });
           setResponses(data.responses);
           setTotalQuestions(data.score.totalQuestions);
           setCategoryStats(data.categoryStats);
@@ -275,35 +288,20 @@ export default function DashboardClient() {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        const [dashboardRes, categoryScoresRes] = await Promise.all([
-          fetch(`/api/dashboard/unified?surveyId=${selectedSurveyId}`),
-          fetch(`/api/survey/category-scores?surveyId=${selectedSurveyId}`)
-        ]);
-        
+        const dashboardRes = await fetch(`/api/dashboard/unified?surveyId=${selectedSurveyId}`);
+
         if (dashboardRes.status === 401) {
           window.location.href = '/login';
           return;
         }
         
-        // Kategori skorlarını işle
-        let categoryScoresMap: Record<string, CategoryScore> = {};
-        if (categoryScoresRes.ok) {
-          const catData = await categoryScoresRes.json();
-          if (catData.categories) {
-            catData.categories.forEach((cat: any) => {
-              categoryScoresMap[cat.id] = {
-                name: cat.name,
-                score: cat.score,
-                percentage: cat.percentage
-              };
-            });
-          }
-        }
-        
         if (dashboardRes.ok) {
           const data = await dashboardRes.json();
           
-          setScoreData({ totalScore: data.score.totalScore, categoryScores: categoryScoresMap });
+          setScoreData({
+            totalScore: data.score.totalScore,
+            categoryScores: toCategoryScoreMap(data.categoryScores),
+          });
           setResponses(data.responses);
           setTotalQuestions(data.score.totalQuestions);
           setCategoryStats(data.categoryStats);
@@ -360,13 +358,14 @@ export default function DashboardClient() {
       const maturity = getMaturityLevelFromPercentage(overallPercentage);
 
       // Seçilen anket adı
-      const surveyName = surveys.find(s => s.id === selectedSurveyId)?.name ?? 'Değerlendirme';
+      const surveyName = pdfText(surveys.find(s => s.id === selectedSurveyId)?.name ?? 'Değerlendirme');
 
       // Kullanıcı bilgileri
-      const userName = [userProfile?.firstName, userProfile?.lastName].filter(Boolean).join(' ') || 'Kullanıcı';
-      const companyName = userProfile?.organization || 'Şirket Adı Belirtilmemiş';
-      const sectorName = userProfile?.sector?.name || 'Sektör Belirtilmemiş';
-      const subSectorName = userProfile?.subSector?.name || '';
+      const userName = pdfText([userProfile?.firstName, userProfile?.lastName].filter(Boolean).join(' ') || 'Kullanıcı');
+      // Kapak alanları da kaçırılır: kuruluş adı ve sektör kullanıcı girdisi.
+      const companyName = pdfText(userProfile?.organization || 'Şirket Adı Belirtilmemiş');
+      const sectorName = pdfText(userProfile?.sector?.name || 'Sektör Belirtilmemiş');
+      const subSectorName = pdfText(userProfile?.subSector?.name || '');
       const reportDate = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
 
       // Kategori sayısı ve öneri istatistikleri
@@ -981,7 +980,7 @@ export default function DashboardClient() {
                 <ul class="column-list">
                   ${lowestCategories.length > 0 ? lowestCategories.map(([id, data]: any) => `
                     <li>
-                      <span style="font-weight: 600;">${data?.name ?? 'Kategori'}</span>
+                      <span style="font-weight: 600;">${pdfText(data?.name ?? 'Kategori')}</span>
                       <span style="color: #ef4444; font-weight: 700;">${data?.percentage?.toFixed(0) ?? 0}%</span>
                     </li>
                   `).join('') : '<li><span>Veri yok</span></li>'}
@@ -992,7 +991,7 @@ export default function DashboardClient() {
                 <ul class="column-list">
                   ${highestCategories.length > 0 ? highestCategories.map(([id, data]: any) => `
                     <li>
-                      <span style="font-weight: 600;">${data?.name ?? 'Kategori'}</span>
+                      <span style="font-weight: 600;">${pdfText(data?.name ?? 'Kategori')}</span>
                       <span style="color: #10b981; font-weight: 700;">${data?.percentage?.toFixed(0) ?? 0}%</span>
                     </li>
                   `).join('') : '<li><span>Veri yok</span></li>'}
@@ -1056,7 +1055,7 @@ export default function DashboardClient() {
                                      level.label === 'Olgun' ? 'olgun' : 'lider';
                   return `
                     <tr class="no-break">
-                      <td><strong>${data?.name ?? 'Kategori'}</strong></td>
+                      <td><strong>${pdfText(data?.name ?? 'Kategori')}</strong></td>
                       <td>${percentage.toFixed(0)}%</td>
                       <td>
                         <div class="progress-bar">
@@ -1091,7 +1090,7 @@ export default function DashboardClient() {
                                         catLevel.label === 'Olgun' ? 'olgun' : 'lider';
                   return `
                     <tr class="no-break" style="background: #f1f5f9;">
-                      <td><strong>${cat.name}</strong></td>
+                      <td><strong>${pdfText(cat.name)}</strong></td>
                       <td><strong>${cat.score?.toFixed(2) ?? '-'}</strong></td>
                       <td>5.00</td>
                       <td style="color: ${(5 - (cat.score ?? 0)) > 2 ? '#dc2626' : '#16a34a'};">${(5 - (cat.score ?? 0)).toFixed(2)}</td>
@@ -1105,7 +1104,7 @@ export default function DashboardClient() {
                                             subLevel.label === 'Olgun' ? 'olgun' : 'lider';
                       return `
                         <tr class="no-break">
-                          <td style="padding-left: 28px; color: #6b7280;">└ ${sub.name}</td>
+                          <td style="padding-left: 28px; color: #6b7280;">└ ${pdfText(sub.name)}</td>
                           <td>${sub.score?.toFixed(2) ?? '-'}</td>
                           <td>5.00</td>
                           <td style="color: ${(5 - (sub.score ?? 0)) > 2 ? '#dc2626' : '#16a34a'};">${(5 - (sub.score ?? 0)).toFixed(2)}</td>
@@ -1273,7 +1272,7 @@ export default function DashboardClient() {
     return (
       <>
         <AppShell />
-        <main className="flex min-h-[70vh] items-center justify-center">
+        <main id="icerik" tabIndex={-1} className="flex min-h-[70vh] items-center justify-center">
           <div className="max-w-md text-center">
             <AlertTriangle size={22} style={{ color: "var(--error)" }} className="mx-auto mb-3" aria-hidden="true" />
             <h1 className="t-subhead" style={{ color: "var(--ink)" }}>
@@ -1295,7 +1294,8 @@ export default function DashboardClient() {
     return (
       <>
         <AppShell />
-        <main>
+        <main id="icerik" tabIndex={-1} aria-busy="true">
+          <span className="sr-only" aria-live="polite">Pano yükleniyor</span>
           <div className="mb-6 h-8 w-48 skeleton" />
           <div className="mb-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {[0, 1, 2, 3].map((i) => (
@@ -1315,7 +1315,7 @@ export default function DashboardClient() {
     return (
       <>
         <AppShell />
-        <main className="flex min-h-[70vh] items-center justify-center">
+        <main id="icerik" tabIndex={-1} className="flex min-h-[70vh] items-center justify-center">
           <div className="max-w-md text-center">
             <ClipboardList size={22} style={{ color: "var(--ink-3)" }} className="mx-auto mb-3" aria-hidden="true" />
             <h1 className="t-subhead" style={{ color: "var(--ink)" }}>
@@ -1340,7 +1340,7 @@ export default function DashboardClient() {
     <>
       <AppShell />
 
-      <main ref={dashboardRef}>
+      <main id="icerik" tabIndex={-1} ref={dashboardRef}>
         {/* --- Sayfa başlığı --- */}
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>

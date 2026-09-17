@@ -195,7 +195,7 @@ export default function UnitManagerPage() {
     return (
       <>
         <AppShell />
-        <main>
+        <main id="icerik" tabIndex={-1}>
           <div className="skeleton mb-6 h-8 w-72" />
           <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[0, 1, 2, 3].map((i) => (
@@ -220,7 +220,7 @@ export default function UnitManagerPage() {
     <>
       <AppShell />
 
-      <main>
+      <main id="icerik" tabIndex={-1}>
         <PageHeader
           title="Birim takibi"
           subtitle="Birimlerinizdeki değerlendirmelerin ilerleyişi ve sonuçları."

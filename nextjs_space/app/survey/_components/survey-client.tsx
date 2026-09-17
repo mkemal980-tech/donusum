@@ -315,13 +315,35 @@ export default function SurveyClient() {
         return;
       }
 
+      /**
+       * Her cevapta bildirim çıkmaz.
+       *
+       * 200 soruluk bir ankette 200 bildirim demekti ve ürünün "ölçülü, sakin"
+       * kaydına aykırıydı. Kaydetme durumu zaten üst şeritte kalıcı olarak
+       * görünüyor (`saving` / `savedOnce`); başarı sessizdir, hata konuşur.
+       */
       setSavedOnce(true);
-      toast.success("Cevap kaydedildi", {
-        duration: 1500,
-      });
     } catch (error) {
+      /**
+       * Ağ hatasında da iyimser güncelleme geri alınır.
+       *
+       * Geri alma yalnızca `!res.ok` dalındaydı. Bağlantı koptuğunda ekran
+       * cevabı seçili göstermeye devam ediyor, kullanıcı hata bildirimini
+       * kapatıp ilerliyor ve yenilemede cevabın kaybolduğunu görüyordu.
+       */
       console.error("Error saving response:", error);
-      toast.error("Cevap kaydedilemedi");
+      setResponses(prev => {
+        const next = { ...(prev ?? {}) };
+        if (previousValue === undefined) {
+          delete next[questionId];
+        } else {
+          next[questionId] = previousValue;
+        }
+        return next;
+      });
+      toast.error("Cevap kaydedilemedi", {
+        description: "Bağlantı kurulamadı. Cevabınız kaydedilmedi, lütfen tekrar deneyin.",
+      });
     } finally {
       setSaving(false);
     }
@@ -500,7 +522,7 @@ export default function SurveyClient() {
     return (
       <>
         <AppShell />
-        <main>
+        <main id="icerik" tabIndex={-1}>
           <div className="skeleton mb-6 h-8 w-56" />
           <div className="skeleton mb-6 h-24" />
           <div className="flex flex-col gap-4">
@@ -518,7 +540,7 @@ export default function SurveyClient() {
     return (
       <>
         <AppShell />
-        <main>
+        <main id="icerik" tabIndex={-1}>
           <PageHeader title="Anket" />
           <EmptyState
             title={assignmentError ? "Anket listesi alınamadı" : "Size henüz anket atanmadı"}
@@ -553,7 +575,7 @@ export default function SurveyClient() {
     return (
       <>
         <AppShell />
-        <main>
+        <main id="icerik" tabIndex={-1}>
           <PageHeader title="Anket" subtitle={selectedSurvey.name} />
           <EmptyState
             title="Bu anketin süresi doldu"
@@ -607,7 +629,7 @@ export default function SurveyClient() {
     <>
       <AppShell />
 
-      <main>
+      <main id="icerik" tabIndex={-1}>
         <PageHeader
           title={selectedSurvey?.name || "Olgunluk değerlendirme anketi"}
           subtitle={selectedSurvey?.description || undefined}
@@ -664,21 +686,31 @@ export default function SurveyClient() {
               <> · yaklaşık {estimatedMinutes} dk</>
             )}
           </span>
-          {saving ? (
-            <span className="flex items-center gap-1.5 t-sm" style={{ color: "var(--ink-3)" }}>
-              <span className="spinner" style={{ width: 12, height: 12, borderWidth: 1.5 }} />
-              Kaydediliyor
-            </span>
-          ) : savedOnce ? (
-            <span
-              className="flex items-center gap-1.5 t-sm"
-              style={{ color: "var(--success)" }}
-              title="Her cevap anında kaydedilir; ayrıca kaydetmeniz gerekmez."
-            >
-              <CheckCircle2 size={14} aria-hidden="true" />
-              Otomatik kaydedildi
-            </span>
-          ) : null}
+          {/*
+            Kaydetme durumu ekran okuyucuya da duyurulur.
+
+            `aria-live` yalnızca giriş sayfalarında kullanılıyordu; anket
+            ekranında cevabın kaydedilip kaydedilmediği hiç duyurulmuyordu ve
+            ekran okuyucu kullanıcısı anketi güvenle doldurduğunu bilemiyordu.
+            Cevap başına bildirim de bu yüzden kaldırıldı: durum burada kalıcı.
+          */}
+          <span aria-live="polite" aria-atomic="true">
+            {saving ? (
+              <span className="flex items-center gap-1.5 t-sm" style={{ color: "var(--ink-3)" }}>
+                <span className="spinner" style={{ width: 12, height: 12, borderWidth: 1.5 }} aria-hidden="true" />
+                Kaydediliyor
+              </span>
+            ) : savedOnce ? (
+              <span
+                className="flex items-center gap-1.5 t-sm"
+                style={{ color: "var(--success)" }}
+                title="Her cevap anında kaydedilir; ayrıca kaydetmeniz gerekmez."
+              >
+                <CheckCircle2 size={14} aria-hidden="true" />
+                Otomatik kaydedildi
+              </span>
+            ) : null}
+          </span>
         </div>
 
         {loadingStructure ? (

@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
+import { getAssessmentIds } from "@/lib/assessment";
 
 // Kullanıcıya atanan anketleri getir
 export async function GET(request: NextRequest) {
@@ -67,6 +68,28 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    /**
+     * Hangi ankete başlanmış?
+     *
+     * Pano bunu öğrenmek için atanan her anket başına ayrı bir `countOnly`
+     * isteği atıyordu. Tek sorguyla burada çözülür.
+     */
+    const assessmentIds = await getAssessmentIds(
+      userId,
+      assignments.map((assignment) => assignment.surveyId)
+    );
+    const startedSurveyIds = new Set(
+      assessmentIds.length > 0
+        ? (
+            await prisma.surveyResponse.findMany({
+              where: { assessmentId: { in: assessmentIds } },
+              select: { assessment: { select: { surveyId: true } } },
+              distinct: ["assessmentId"],
+            })
+          ).map((response) => response.assessment.surveyId)
+        : []
+    );
+
     const now = new Date();
     
     // Sadece aktif anketleri dön, süre bilgisi ile
@@ -89,7 +112,9 @@ export async function GET(request: NextRequest) {
           hasDeadline,
           deadline: effectiveDeadline,
           isExpired,
-          deadlineExtendedAt: a.deadlineExtendedAt
+          deadlineExtendedAt: a.deadlineExtendedAt,
+          /** Üzerinde çalışılmış mı — pano ön seçimi bunu kullanır. */
+          hasResponses: startedSurveyIds.has(a.surveyId),
         };
       });
 

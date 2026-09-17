@@ -259,6 +259,17 @@ export default function AppShell() {
 
   return (
     <>
+      {/*
+        İçeriğe geç.
+
+        Klavye kullanıcısı her sayfada tüm kenar menüyü sekmeyle geçmek
+        zorundaydı; WCAG 2.4.1 (Seviye A) bunu gerektiriyor ve ürün AA hedefi
+        koyuyor. Bağlantı yalnızca odaklanınca görünür.
+      */}
+      <a href="#icerik" className="skip-link">
+        İçeriğe geç
+      </a>
+
       {/* ---- Sol menü (masaüstü) ---- */}
       <aside
         className="sidebar fixed left-0 top-0 z-[var(--z-sticky)] hidden h-screen flex-col lg:flex"
@@ -301,6 +312,7 @@ export default function AppShell() {
           <aside
             className="sidebar fixed left-0 top-0 z-[var(--z-modal)] flex h-screen w-[var(--shell-sidebar)] flex-col"
             role="dialog"
+            aria-modal="true"
             aria-label="Gezinme"
           >
             <div

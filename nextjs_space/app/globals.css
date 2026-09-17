@@ -152,6 +152,14 @@
   --text-display: 1.9375rem;  /* 31 */
   --text-metric-lg: 2.125rem; /* 34 */
 
+  /* Olgunluk rampası: tek renkli mavi, beş kademe.
+     DESIGN.md > "seviyeyi rozet söylüyor" — kırmızı-sarı-yeşil yok. */
+  --maturity-1: oklch(0.600 0.055 258);
+  --maturity-2: oklch(0.635 0.095 258);
+  --maturity-3: oklch(0.660 0.135 258);
+  --maturity-4: oklch(0.680 0.170 258);
+  --maturity-5: oklch(0.700 0.195 258);
+
   /* ======================================================================
      GERİYE DÖNÜK TAKMA ADLAR — eski bileşenler yeni paleti kendiliğinden alır
      ====================================================================== */
@@ -235,6 +243,7 @@
   --chart-label: var(--ink-3);
   --chart-label-hi: var(--accent);
   --chart-ref: oklch(0.635 0.191 258 / 0.5);
+  --chart-path: oklch(0.635 0.191 258 / 0.55);
   --chart-peer: oklch(0.745 0.148 165 / 0.6);
   --chart-point-ring: var(--surface);
 
@@ -276,6 +285,13 @@
    Ölçülen değerler her satırın yanında.
    ========================================================================= */
 [data-theme="light"] {
+  /* Açık temada aynı rampa koyulaşır: beyaz üzerinde AA kontrastı için. */
+  --maturity-1: oklch(0.560 0.060 258);
+  --maturity-2: oklch(0.530 0.105 258);
+  --maturity-3: oklch(0.505 0.145 258);
+  --maturity-4: oklch(0.480 0.180 258);
+  --maturity-5: oklch(0.455 0.205 258);
+
   color-scheme: light;
 
   /* Zemin ile kart arasındaki fark gölgenin yerini tutuyor; 0.968'de ikisi
@@ -344,6 +360,7 @@
   --chart-grid: oklch(0.880 0.008 264);
   --chart-axis-line: var(--line-strong);
   --chart-ref: oklch(0.505 0.181 262 / 0.45);
+  --chart-path: oklch(0.635 0.191 258 / 0.55);
   --chart-peer: oklch(0.545 0.130 165 / 0.55);
 
   /* Olgunluk rampası: seviye arttıkça KOYULAŞIR (koyu temada tersi, orada
@@ -410,6 +427,37 @@ a { color: inherit; text-decoration: none; }
 ::selection {
   background: var(--accent-quiet);
   color: var(--ink);
+}
+
+/* Yalnızca ekran okuyucuya görünen metin. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* "İçeriğe geç" bağlantısı: yalnızca klavye odağında görünür (WCAG 2.4.1). */
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -64px;
+  z-index: var(--z-toast);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  background: var(--accent-solid);
+  color: var(--on-accent);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: top var(--dur-fast) var(--ease-out-quart);
+}
+.skip-link:focus-visible {
+  top: 8px;
 }
 
 /* Klavye odağı her yerde aynı görünür. */

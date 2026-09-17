@@ -279,7 +279,7 @@ export default function RecommendationsClient() {
     return (
       <>
         <AppShell />
-        <main>
+        <main id="icerik" tabIndex={-1}>
           <div className="skeleton mb-6 h-8 w-48" />
           <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {[0, 1, 2, 3].map((i) => (
@@ -303,7 +303,7 @@ export default function RecommendationsClient() {
     <>
       <AppShell />
 
-      <main>
+      <main id="icerik" tabIndex={-1}>
         <PageHeader
           title="Öneriler"
           subtitle={

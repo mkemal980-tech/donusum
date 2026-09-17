@@ -207,26 +207,6 @@ export async function withAuth(
   } = {}
 ): Promise<{ success: true; userId: string; user: AuthenticatedUser } | { success: false; response: NextResponse }> {
   const { requireAdmin = false, requireUnitManager = false, rateLimit = 'default' } = options;
-  
-  // Rate limit check (dağıtık; Redis yoksa in-memory'ye düşer)
-  const ip = getClientIP(request);
-  const rateLimitResult = await checkRateLimitDistributed(ip, rateLimit);
-  
-  if (!rateLimitResult.allowed) {
-    return {
-      success: false,
-      response: NextResponse.json(
-        { error: 'Çok fazla istek. Lütfen biraz bekleyin.' },
-        { 
-          status: 429,
-          headers: {
-            'Retry-After': String(Math.ceil(rateLimitResult.resetIn / 1000)),
-            'X-RateLimit-Remaining': '0'
-          }
-        }
-      )
-    };
-  }
 
   // Session check
   const session = await getServerSession(authOptions);
@@ -274,6 +254,33 @@ export async function withAuth(
       response: NextResponse.json(
         { error: 'Hesabınız devre dışı bırakılmış.' },
         { status: 403 }
+      )
+    };
+  }
+
+  /**
+   * Kota kullanıcı başına sayılır, IP başına değil.
+   *
+   * Anahtar yalnızca IP iken tek NAT arkasındaki bir ofis ortak kotayı
+   * paylaşıyordu: 20 kişi anket doldururken kişi başı 5 cevap/dakika dakikalık
+   * 100 isteklik sınırı dolduruyor ve kullanıcılar anketin ortasında
+   * "Çok fazla istek" görüyordu. Kimlik doğrulandıktan sonra sayılır, böylece
+   * oturumsuz istekler de tek bir kullanıcının kotasını yiyemez.
+   */
+  const rateLimitResult = await checkRateLimitDistributed(`user:${user.id}`, rateLimit);
+
+  if (!rateLimitResult.allowed) {
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: 'Çok fazla istek. Lütfen biraz bekleyin.' },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': String(Math.ceil(rateLimitResult.resetIn / 1000)),
+            'X-RateLimit-Remaining': '0'
+          }
+        }
       )
     };
   }

@@ -69,7 +69,7 @@ export default function SettingsPage() {
     <>
       <AppShell />
 
-      <main>
+      <main id="icerik" tabIndex={-1}>
         <h1 className="t-display" style={{ color: "var(--ink)" }}>
           Hesap
         </h1>

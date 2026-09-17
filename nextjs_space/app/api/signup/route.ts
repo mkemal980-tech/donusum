@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, withRetry } from "@/lib/db";
 import { enforcePublicRateLimit, validators } from "@/lib/api-utils";
-import { logDevEmailLink, sendEmail } from "@/lib/email";
+import { escapeHtml, logDevEmailLink, sendEmail } from "@/lib/email";
 import bcrypt from "bcryptjs";
 import { createToken, hashToken } from "@/lib/tokens";
 import { normalizeJoinCode } from "@/lib/organization-join-code";
@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
         
         <div style="background: #161b22; padding: 25px; border-radius: 8px; border: 1px solid #30363d;">
           <p style="color: #e6edf3; font-size: 16px; margin: 0 0 15px 0;">
-            Merhaba <strong>${firstName || "Değerli Kullanıcı"}</strong>,
+            Merhaba <strong>${escapeHtml(firstName || "Değerli Kullanıcı")}</strong>,
           </p>
           <p style="color: #8b949e; margin: 0 0 20px 0;">
             <strong>${appName}</strong>'na kayıt olduğunuz için teşekkür ederiz! Hesabınızı aktifleştirmek için lütfen email adresinizi doğrulayın.

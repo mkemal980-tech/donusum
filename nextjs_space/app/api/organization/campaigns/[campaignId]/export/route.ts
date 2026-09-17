@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { loadCampaignDashboard } from "@/lib/organization-campaign";
+import { csvRow } from "@/lib/csv";
 
 export const dynamic = "force-dynamic";
 
-const escapeCsv = (value: unknown) => {
-  const text = value === null || value === undefined ? "" : String(value);
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-};
-
-const csvRow = (values: unknown[]) => values.map(escapeCsv).join(",");
+// Kaçış ve formül nötrleme tek kaynakta (bkz. lib/csv).
 
 export async function GET(
   request: NextRequest,

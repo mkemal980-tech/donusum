@@ -333,7 +333,7 @@ export default function SectionAssignmentsPage() {
     <div className="min-h-screen bg-[var(--bg-main)]">
       <Header />
 
-      <main className="max-w-[1000px] mx-auto px-6 py-8">
+      <main id="icerik" tabIndex={-1} className="max-w-[1000px] mx-auto px-6 py-8">
         <button
           onClick={() => router.push("/unit-manager")}
           className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-main)] mb-4"

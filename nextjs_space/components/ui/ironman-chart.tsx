@@ -337,7 +337,8 @@ export function IronmanChart() {
     const targetX = scoreToPos(data.target.velocity, 'x');
     const targetY = scoreToPos(data.target.endurance, 'y');
 
-    ctx.strokeStyle = 'rgba(219, 39, 119, 0.6)';
+    // Hedefe uzanan çizgi de palet içinden okunur; sabit pembe DESIGN.md'de yok.
+    ctx.strokeStyle = token('--chart-path', 'rgba(96, 165, 250, 0.6)');
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(currentX, currentY);
@@ -353,14 +354,17 @@ export function IronmanChart() {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Draw current point (pink) - larger
-    ctx.shadowColor = 'rgba(219, 39, 119, 0.4)';
-    ctx.shadowBlur = 12;
+    /**
+     * Mevcut durum noktası.
+     *
+     * Burada `shadowBlur` ile bir parlama çiziliyordu; DESIGN.md parlamayı
+     * açıkça yasaklıyor ("Cam efekti, parlama, renkli gölge yasak"). Nokta
+     * zaten daha büyük ve halkalı; vurgu için parlamaya gerek yok.
+     */
     ctx.fillStyle = token('--series-current', '#ec4899');
     ctx.beginPath();
     ctx.arc(currentX, currentY, 14, 0, Math.PI * 2);
     ctx.fill();
-    ctx.shadowBlur = 0;
     ctx.strokeStyle = token('--chart-point-ring', '#ffffff');
     ctx.lineWidth = 2;
     ctx.stroke();

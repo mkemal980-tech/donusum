@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import type { ExportData } from '@/lib/types';
 import { withAuth } from '@/lib/api-utils';
+import { csvRow } from '@/lib/csv';
 
 export const dynamic = 'force-dynamic';
 
@@ -243,31 +244,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-// Yardımcı fonksiyon: Object array'i CSV'ye çevir
+/**
+ * Object array'i CSV'ye çevirir.
+ *
+ * Nesne değerleri için eski kod `JSON.stringify(...).replace(/,/g, ';')`
+ * sonucunu **tırnaklamadan** erken döndürüyordu; içindeki `"` karakterleri
+ * kaçırılmadığı için `questions` (options) ya da `scoreHistory`
+ * (categoryScores) dışa aktarımı Excel'de yanlış ayrışıyordu. Ayrıca `=` ile
+ * başlayan hücreler formül olarak çalışıyordu. İkisi de lib/csv'de çözüldü.
+ */
 function convertToCSV(data: Record<string, unknown>[]): string {
   if (data.length === 0) return '';
 
   const headers = Object.keys(data[0]);
-  const csvRows: string[] = [];
-
-  // Header satırı
-  csvRows.push(headers.join(','));
-
-  // Veri satırları
-  for (const row of data) {
-    const values = headers.map(header => {
-      const value = row[header];
-      if (value === null || value === undefined) return '';
-      if (typeof value === 'object') return JSON.stringify(value).replace(/,/g, ';');
-      const stringValue = String(value);
-      // CSV özel karakterleri escape et
-      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-        return `"${stringValue.replace(/"/g, '""')}"`;
-      }
-      return stringValue;
-    });
-    csvRows.push(values.join(','));
-  }
-
-  return csvRows.join('\n');
+  return [
+    csvRow(headers),
+    ...data.map((row) => csvRow(headers.map((header) => row[header]))),
+  ].join('\n');
 }
