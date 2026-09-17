@@ -68,7 +68,44 @@ export default function MonitoringPage() {
     missing: string[];
   } | null>(null);
   const [sendingTest, setSendingTest] = useState(false);
+  /**
+   * Kuyruk durumu.
+   *
+   * Gönderim artık isteğin dışında yapılıyor; bu iyi ama görünmezlik riski
+   * taşıyor: sağlayıcı düştüğünde kayıtlar sessizce birikir. Bekleyen ve
+   * başarısız sayısı burada duruyor, tahliye ve yeniden deneme tek düğmede.
+   */
+  const [outbox, setOutbox] = useState<{
+    pending: number;
+    failed: number;
+    sent: number;
+    oldestPendingAt: string | null;
+    lastError: string | null;
+  } | null>(null);
+  const [draining, setDraining] = useState(false);
   const [timeRange, setTimeRange] = useState(24); // hours
+
+  const fetchOutbox = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/email-outbox');
+      if (res.ok) setOutbox(await res.json());
+    } catch {
+      setOutbox(null);
+    }
+  }, []);
+
+  const drainOutboxNow = useCallback(async (action?: 'retry-failed') => {
+    setDraining(true);
+    try {
+      const res = await fetch(
+        action ? `/api/admin/email-outbox?action=${action}` : '/api/admin/email-outbox',
+        { method: 'POST' }
+      );
+      if (res.ok) setOutbox(await res.json());
+    } finally {
+      setDraining(false);
+    }
+  }, []);
 
   const fetchCurrentHealth = useCallback(async () => {
     try {
@@ -127,19 +164,19 @@ export default function MonitoringPage() {
 
   const refreshAll = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchCurrentHealth(), fetchLogs(), fetchEmailStatus()]);
+    await Promise.all([fetchCurrentHealth(), fetchLogs(), fetchEmailStatus(), fetchOutbox()]);
     setRefreshing(false);
     toast.success('Veriler güncellendi');
-  }, [fetchCurrentHealth, fetchLogs, fetchEmailStatus]);
+  }, [fetchCurrentHealth, fetchLogs, fetchEmailStatus, fetchOutbox]);
 
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await Promise.all([fetchCurrentHealth(), fetchLogs(), fetchEmailStatus()]);
+      await Promise.all([fetchCurrentHealth(), fetchLogs(), fetchEmailStatus(), fetchOutbox()]);
       setLoading(false);
     };
     init();
-  }, [fetchCurrentHealth, fetchLogs]);
+  }, [fetchCurrentHealth, fetchLogs, fetchEmailStatus, fetchOutbox]);
 
   // Auto refresh every 30 seconds
   useEffect(() => {
@@ -262,6 +299,54 @@ export default function MonitoringPage() {
               {sendingTest ? 'Gönderiliyor...' : 'Deneme postası gönder'}
             </Button>
           </div>
+
+          {outbox && (
+            <div
+              className="mt-5 flex flex-wrap items-center justify-between gap-4 pt-4"
+              style={{ borderTop: '1px solid var(--line)' }}
+            >
+              <div className="flex flex-wrap items-center gap-6">
+                <Metric label="Kuyrukta" value={outbox.pending} highlight={outbox.pending > 0} />
+                <Metric label="Başarısız" value={outbox.failed} highlight={outbox.failed > 0} danger />
+                <Metric label="Gönderildi" value={outbox.sent} />
+                {outbox.oldestPendingAt && (
+                  <span className="text-sm text-[var(--text-muted)]">
+                    En eski bekleyen:{' '}
+                    {new Date(outbox.oldestPendingAt).toLocaleString('tr-TR')}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => drainOutboxNow()}
+                  disabled={draining || outbox.pending === 0}
+                  variant="outline"
+                  className="text-[var(--text-main)]"
+                  title="Bekleyen e-postaları şimdi göndermeyi dener"
+                >
+                  {draining ? 'Gönderiliyor...' : 'Kuyruğu boşalt'}
+                </Button>
+                {outbox.failed > 0 && (
+                  <Button
+                    onClick={() => drainOutboxNow('retry-failed')}
+                    disabled={draining}
+                    variant="outline"
+                    className="text-[var(--text-main)]"
+                    title="Hakkı bitmiş kayıtları yeniden kuyruğa alır"
+                  >
+                    Başarısızları yeniden dene
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {outbox?.lastError && (
+            <p className="mt-3 text-sm" style={{ color: 'var(--error)' }}>
+              Son hata: {outbox.lastError}
+            </p>
+          )}
         </motion.div>
       )}
 
@@ -478,5 +563,35 @@ export default function MonitoringPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+/** Kuyruk kartındaki tek sayılık gösterge. */
+function Metric({
+  label,
+  value,
+  highlight = false,
+  danger = false,
+}: {
+  label: string;
+  value: number;
+  highlight?: boolean;
+  danger?: boolean;
+}) {
+  const color = !highlight
+    ? 'var(--text-muted)'
+    : danger
+      ? 'var(--error)'
+      : 'var(--warning)';
+
+  return (
+    <span className="flex items-baseline gap-2">
+      <span className="text-xs uppercase tracking-wide" style={{ color: 'var(--text-dim)' }}>
+        {label}
+      </span>
+      <span className="text-lg font-semibold tabular" style={{ color }}>
+        {value}
+      </span>
+    </span>
   );
 }

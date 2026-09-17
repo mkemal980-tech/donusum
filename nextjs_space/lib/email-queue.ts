@@ -21,6 +21,8 @@ const DRAIN_BATCH = 50;
 
 export type QueuedEmail = SendEmailInput & { dedupeKey?: string };
 
+export type DrainResult = { sent: number; failed: number; skipped: boolean };
+
 export async function queueEmails(emails: QueuedEmail[]): Promise<number> {
   if (emails.length === 0) return 0;
 
@@ -37,7 +39,7 @@ export async function queueEmails(emails: QueuedEmail[]): Promise<number> {
   });
 
   // Kuyruğu arka planda boşalt; isteği bekletme.
-  void drainOutbox().catch((error) => {
+  void drainOutbox().catch((error: unknown) => {
     console.error("[email-queue] drain failed:", error);
   });
 
@@ -45,9 +47,9 @@ export async function queueEmails(emails: QueuedEmail[]): Promise<number> {
 }
 
 /** Bekleyen e-postaları sınırlı eşzamanlılıkla gönderir. */
-export async function drainOutbox(limit: number = DRAIN_BATCH) {
+export async function drainOutbox(limit: number = DRAIN_BATCH): Promise<DrainResult> {
   if (!isEmailConfigured()) {
-    return { sent: 0, failed: 0, skipped: true as const };
+    return { sent: 0, failed: 0, skipped: true };
   }
 
   const pending = await prisma.emailOutbox.findMany({
@@ -93,5 +95,68 @@ export async function drainOutbox(limit: number = DRAIN_BATCH) {
   });
 
   await Promise.all(workers);
-  return { sent, failed, skipped: false as const };
+
+  /**
+   * Parti doluysa devamı var demektir.
+   *
+   * Tek tahliye en fazla `DRAIN_BATCH` kayıt alıyor; 500 davetlik bir
+   * aktarımda geri kalanı kimse almazdı. Kalanı kuyruğun kendisi sürüklüyor.
+   * `guard` sonsuz döngüye karşı: her tur en az bir kaydın durumunu
+   * değiştiriyor, değiştirmiyorsa durulur.
+   */
+  const progressed = sent + failed > 0;
+  if (pending.length === limit && progressed) {
+    const next = await drainOutbox(limit);
+    return { sent: sent + next.sent, failed: failed + next.failed, skipped: false };
+  }
+
+  return { sent, failed, skipped: false };
+}
+
+/** Kuyruğun o anki hâli — yönetim ekranı ve izleme için. */
+export async function outboxStatus() {
+  const [pending, failed, sent] = await Promise.all([
+    prisma.emailOutbox.count({ where: { status: "PENDING" } }),
+    prisma.emailOutbox.count({ where: { status: "FAILED" } }),
+    prisma.emailOutbox.count({ where: { status: "SENT" } }),
+  ]);
+
+  const oldestPending = pending > 0
+    ? await prisma.emailOutbox.findFirst({
+        where: { status: "PENDING" },
+        orderBy: { createdAt: "asc" },
+        select: { createdAt: true },
+      })
+    : null;
+
+  const lastFailure = failed > 0
+    ? await prisma.emailOutbox.findFirst({
+        where: { status: "FAILED" },
+        orderBy: { createdAt: "desc" },
+        select: { lastError: true, createdAt: true },
+      })
+    : null;
+
+  return {
+    pending,
+    failed,
+    sent,
+    oldestPendingAt: oldestPending?.createdAt ?? null,
+    lastError: lastFailure?.lastError ?? null,
+    lastErrorAt: lastFailure?.createdAt ?? null,
+  };
+}
+
+/** Hakkı bitmiş kayıtları yeniden kuyruğa alır (sağlayıcı sorunu geçtikten sonra). */
+export async function retryFailed(): Promise<number> {
+  const result = await prisma.emailOutbox.updateMany({
+    where: { status: "FAILED" },
+    data: { status: "PENDING", attempts: 0, lastError: null },
+  });
+  if (result.count > 0) {
+    void drainOutbox().catch((error: unknown) => {
+      console.error("[email-queue] retry drain failed:", error);
+    });
+  }
+  return result.count;
 }

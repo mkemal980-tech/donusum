@@ -85,6 +85,33 @@ describe("email-queue", () => {
     );
   });
 
+  it("parti dolduğunda kalanı da sürükler", async () => {
+    // 500 davetlik aktarımda tek parti yetmiyor; kalanı kimse almazdı.
+    const first = Array.from({ length: 50 }, (_, i) => item({ id: `a${i}` }));
+    const second = [item({ id: "b0" })];
+    mocks.emailOutbox.findMany
+      .mockResolvedValueOnce(first)
+      .mockResolvedValueOnce(second)
+      .mockResolvedValue([]);
+    mocks.sendEmail.mockResolvedValue({ success: true });
+
+    const result = await drainOutbox();
+
+    expect(result.sent).toBe(51);
+    expect(mocks.emailOutbox.findMany).toHaveBeenCalledTimes(2);
+  });
+
+  it("ilerleme yoksa durur (sonsuz döngü olmaz)", async () => {
+    mocks.emailOutbox.findMany.mockResolvedValue(
+      Array.from({ length: 50 }, (_, i) => item({ id: `c${i}` }))
+    );
+    // Hiçbir kaydın durumu değişmiyor: gönderim de başarısızlık da sayılmıyor.
+    mocks.emailOutbox.findMany.mockResolvedValueOnce([]);
+
+    const result = await drainOutbox();
+    expect(result).toEqual({ sent: 0, failed: 0, skipped: false });
+  });
+
   it("e-posta yapılandırılmamışsa kuyruğa dokunmaz", async () => {
     mocks.isEmailConfigured.mockReturnValue(false);
     const result = await drainOutbox();
