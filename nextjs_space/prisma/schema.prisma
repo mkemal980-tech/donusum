@@ -657,6 +657,30 @@ model AIRecommendationCache {
   survey Survey @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 }
 
+/// Gönderilecek e-postaların kuyruğu.
+///
+/// Gönderim eskiden HTTP isteğinin içinde yapılıyordu: kampanya hatırlatması
+/// alıcı başına sıralı ve zaman aşımsız (600 çağrı = kesin zaman aşımı), toplu
+/// davet ise 500 çağrıyı birden (sağlayıcı sınırı aşılıyor). Kuyruk isteği
+/// hemen serbest bırakır ve gönderimi sağlayıcının kaldırabileceği hızda akıtır.
+model EmailOutbox {
+  id        String    @id @default(cuid())
+  to        String
+  subject   String
+  html      String
+  text      String?
+  /// PENDING | SENT | FAILED
+  status    String    @default("PENDING")
+  attempts  Int       @default(0)
+  lastError String?
+  /// Aynı işin iki kez kuyruğa girmesini engeller.
+  dedupeKey String?   @unique
+  createdAt DateTime  @default(now())
+  sentAt    DateTime?
+
+  @@index([status, createdAt])
+}
+
 // System Health Monitoring
 model HealthLog {
   id           String   @id @default(cuid())

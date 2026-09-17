@@ -16,7 +16,8 @@ const mocks = vi.hoisted(() => {
     },
     canManageTenantUnit: vi.fn(),
     getDescendantUnitIds: vi.fn(),
-    sendMemberAccountInvitation: vi.fn(),
+    buildMemberAccountInvitation: vi.fn(),
+    queueEmails: vi.fn(),
   };
 });
 
@@ -35,8 +36,10 @@ vi.mock("@/lib/organization-campaign", () => ({
   getOrganizationRoots: vi.fn(),
 }));
 vi.mock("@/lib/organization-invitations", () => ({
-  sendMemberAccountInvitation: mocks.sendMemberAccountInvitation,
+  // Davet artık kurulup kuyruğa veriliyor; gönderim ayrı bir katmanda.
+  buildMemberAccountInvitation: mocks.buildMemberAccountInvitation,
 }));
+vi.mock("@/lib/email-queue", () => ({ queueEmails: mocks.queueEmails }));
 vi.mock("@/lib/scoring", () => ({ getAccessibleSurveyIds: vi.fn(async () => []) }));
 
 import { POST } from "./route";
@@ -55,7 +58,13 @@ describe("organization pending invitations", () => {
     mocks.canManageTenantUnit.mockResolvedValue(true);
     mocks.getDescendantUnitIds.mockResolvedValue(["member-1", "member-2"]);
     mocks.prisma.unit.findUnique.mockResolvedValue({ id: "tenant-1", name: "Tersane STK" });
-    mocks.sendMemberAccountInvitation.mockResolvedValue({ success: true });
+    mocks.buildMemberAccountInvitation.mockImplementation((input: any) => ({
+      to: input.email,
+      subject: `${input.tenantName} — Dönüşüm Platformu daveti`,
+      html: "<p>davet</p>",
+      text: "davet",
+    }));
+    mocks.queueEmails.mockResolvedValue(1);
   });
 
   it("bekleyen daveti günceller, eski atamayı değiştirir ve yeni bağlantı yollar", async () => {
@@ -111,11 +120,15 @@ describe("organization pending invitations", () => {
     expect(mocks.tx.unitAdmin.create).toHaveBeenCalledWith({
       data: { unitId: "member-2", userId: "user-1" },
     });
-    expect(mocks.sendMemberAccountInvitation).toHaveBeenCalledWith(expect.objectContaining({
+    expect(mocks.buildMemberAccountInvitation).toHaveBeenCalledWith(expect.objectContaining({
       email: "yeni@example.com",
       tenantName: "Tersane STK",
       memberName: "Yeni Tersane",
     }));
+    // Gönderim kuyruğa gider, istek içinde beklenmez.
+    expect(mocks.queueEmails).toHaveBeenCalledWith([
+      expect.objectContaining({ to: "yeni@example.com", dedupeKey: expect.any(String) }),
+    ]);
   });
 
   it("bekleyen daveti siler", async () => {

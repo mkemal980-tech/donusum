@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
-import { isEmailConfigured, sendEmail } from "@/lib/email";
+import { isEmailConfigured } from "@/lib/email";
+import { queueEmails } from "@/lib/email-queue";
 import { canManageTenantUnit } from "@/lib/organization-campaign";
 
 export const dynamic = "force-dynamic";
@@ -66,8 +67,21 @@ export async function POST(
     }
 
     const appUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-    let sent = 0;
-    let failed = 0;
+
+    /**
+     * Gönderim kuyruğa yazılır, istek beklemez.
+     *
+     * Burada eskiden iç içe iki döngüde alıcı başına sıralı ve zaman aşımsız
+     * `await sendEmail` yapılıyordu: 200 üye x 3 kullanıcı = 600 sıralı HTTP
+     * çağrısı, kesin zaman aşımı ve kaçının gittiğinin bilinmemesi. İdempotent
+     * de değildi; iki tık iki kat spam demekti.
+     *
+     * `dedupeKey` aynı kampanya + alıcı + gün için ikinci kuyruğa girişi
+     * engeller, yani üst üste basmak yeni e-posta üretmez.
+     */
+    const today = new Date().toISOString().slice(0, 10);
+    const queued: Parameters<typeof queueEmails>[0] = [];
+
     for (const recipient of pending) {
       for (const user of recipient.memberUnit.users) {
         const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || "Merhaba";
@@ -78,7 +92,8 @@ export async function POST(
         const deadline = campaign.deadline
           ? new Date(campaign.deadline).toLocaleDateString("tr-TR")
           : null;
-        const result = await sendEmail({
+        queued.push({
+          dedupeKey: `campaign-remind:${campaign.id}:${user.email}:${today}`,
           to: user.email,
           subject: `${campaign.survey.name} — değerlendirme hatırlatması`,
           html: `
@@ -102,16 +117,19 @@ export async function POST(
             `${name}, ${campaign.name} kampanyasındaki ${campaign.survey.name} değerlendirmeniz henüz gönderilmedi.` +
             `${deadline ? ` Son tarih: ${deadline}.` : ""} ${appUrl}/survey`,
         });
-        if (result.success) sent++;
-        else failed++;
       }
     }
 
+    const queuedCount = await queueEmails(queued);
+
     return NextResponse.json({
       success: true,
-      sent,
-      failed,
-      message: failed > 0 ? `${sent} kişiye gönderildi, ${failed} gönderim başarısız.` : `${sent} kişiye hatırlatma gönderildi.`,
+      queued: queuedCount,
+      duplicates: queued.length - queuedCount,
+      message:
+        queuedCount === 0
+          ? "Bu üyelere bugün zaten hatırlatma gönderildi."
+          : `${queuedCount} kişiye hatırlatma kuyruğa alındı.`,
     });
   } catch (error) {
     console.error("Campaign reminder error:", error);

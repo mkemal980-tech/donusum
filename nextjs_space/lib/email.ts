@@ -32,20 +32,35 @@ export async function sendEmail({
     return { success: false, skipped: true, error };
   }
 
-  const response = await fetch(RESEND_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      from,
-      to,
-      subject,
-      html,
-      text
-    })
-  });
+  /**
+   * Zaman aşımı zorunlu.
+   *
+   * Sunucu tarafındaki hiçbir dış çağrıda zaman aşımı yoktu (`grep AbortSignal`
+   * sıfır sonuç). Sağlayıcı yavaşladığında istek süresiz bloke oluyordu; toplu
+   * gönderimde bu, tek bir yavaş çağrının bütün partiyi durdurması demekti.
+   */
+  let response: Response;
+  try {
+    response = await fetch(RESEND_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        from,
+        to,
+        subject,
+        html,
+        text
+      }),
+      signal: AbortSignal.timeout(15_000)
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error";
+    console.error(`[email] request failed: ${message}`);
+    return { success: false, error: `Email request failed: ${message}` };
+  }
 
   if (!response.ok) {
     const errorText = await response.text();

@@ -58,7 +58,12 @@ type RootUnit = {
 
 type SubSector = { id: string; name: string };
 type Sector = { id: string; name: string; naicsCode: string | null; subSectors: SubSector[] };
-type InvitationSummary = { sent?: number; failed?: number; skipped?: number };
+/**
+ * Davet artık anında gönderilmiyor, kuyruğa alınıyor (bkz. lib/email-queue):
+ * 500 daveti birden açmak sağlayıcının saniyelik sınırını aşıyordu. Ekran da
+ * "gönderildi" yerine "kuyruğa alındı" demeli.
+ */
+type InvitationSummary = { queued?: number; total?: number };
 type JoinCodeRecord = {
   id: string;
   label: string | null;
@@ -106,9 +111,13 @@ type EditInvitationForm = {
 
 function invitationMessage(invitation?: InvitationSummary) {
   if (!invitation) return "İşlem tamamlandı.";
-  if ((invitation.sent ?? 0) > 0) return "Davet e-postası gönderildi.";
-  if ((invitation.skipped ?? 0) > 0) return "Kayıt oluşturuldu; e-posta servisi yapılandırılmadığı için davet gönderilemedi.";
-  return "Kayıt oluşturuldu; davet e-postası gönderilemedi.";
+  const queued = invitation.queued ?? 0;
+  const total = invitation.total ?? queued;
+  if (queued === 0) return "Kayıt oluşturuldu; davet zaten kuyrukta.";
+  if (queued < total) return `Kayıt oluşturuldu; ${queued}/${total} davet kuyruğa alındı.`;
+  return queued === 1
+    ? "Davet e-postası kuyruğa alındı."
+    : `${queued} davet e-postası kuyruğa alındı.`;
 }
 
 export default function OrganizationMembersPage() {
@@ -308,7 +317,7 @@ export default function OrganizationMembersPage() {
     try {
       const data = await postAction({ action: "resend_invitation", userId });
       const message = invitationMessage(data.invitation);
-      if ((data.invitation?.sent ?? 0) > 0) toast.success(message);
+      if ((data.invitation?.queued ?? 0) > 0) toast.success(message);
       else toast.warning(message);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Davet yenilenemedi.");

@@ -14,7 +14,8 @@ import {
   parseMemberImportExcel,
   type MemberImportRow,
 } from "@/lib/organization-member-import";
-import { sendMemberAccountInvitation } from "@/lib/organization-invitations";
+import { buildMemberAccountInvitation } from "@/lib/organization-invitations";
+import { queueEmails } from "@/lib/email-queue";
 import { getAccessibleSurveyIds } from "@/lib/scoring";
 
 export const dynamic = "force-dynamic";
@@ -69,11 +70,18 @@ async function validateSectorProfile(sectorId: string, subSectorId: string | nul
   return null;
 }
 
+/**
+ * Davetleri kuyruğa alır.
+ *
+ * Burada eskiden `Promise.all` ile en fazla 500 davet **eşzamanlı**
+ * gönderiliyordu; sağlayıcının saniyelik sınırı aşılıyor ve çoğu başarısız
+ * oluyordu. Kuyruk sağlayıcının kaldırabileceği hızda akıtır ve başarısız
+ * olanı yeniden dener (bkz. lib/email-queue).
+ */
 async function deliverInvitations(tenantName: string, targets: InvitationTarget[]) {
-  const results = await Promise.all(
-    targets.map(async (target) => ({
-      target,
-      result: await sendMemberAccountInvitation({
+  const queued = await queueEmails(
+    targets.map((target) => ({
+      ...buildMemberAccountInvitation({
         email: target.email,
         firstName: target.firstName,
         tenantName,
@@ -81,13 +89,10 @@ async function deliverInvitations(tenantName: string, targets: InvitationTarget[
         token: target.token,
         surveyName: target.surveyName,
       }),
+      dedupeKey: `member-invite:${target.token}`,
     }))
   );
-  return {
-    sent: results.filter(({ result }) => result.success).length,
-    failed: results.filter(({ result }) => !result.success && !result.skipped).length,
-    skipped: results.filter(({ result }) => result.skipped).length,
-  };
+  return { queued, total: targets.length };
 }
 
 export async function GET(request: NextRequest) {

@@ -46,6 +46,8 @@ export async function callLLM(
 
   const response = await fetch(getChatCompletionsUrl(), {
     method: "POST",
+    // Zaman aşımı olmadan yavaş bir sağlayıcı isteği süresiz bloke ediyordu.
+    signal: AbortSignal.timeout(60_000),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`

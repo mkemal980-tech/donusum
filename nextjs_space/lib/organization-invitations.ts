@@ -23,23 +23,45 @@ async function safelySend(input: Parameters<typeof sendEmail>[0]): Promise<SendE
   }
 }
 
-export async function sendMemberAccountInvitation(input: {
+/**
+ * Davet e-postasının içeriğini kurar — göndermez.
+ *
+ * Toplu davet `Promise.all` ile 500 çağrıyı birden açıyor ve sağlayıcının
+ * saniyelik sınırını aşıyordu. İçerik kurma ile gönderme ayrıldı; gönderme
+ * kuyruğa taşındı (bkz. lib/email-queue).
+ */
+export function buildMemberAccountInvitation(input: {
   email: string;
   firstName: string | null;
   tenantName: string;
   memberName: string;
   token: string;
   surveyName?: string | null;
-}): Promise<SendEmailResult> {
+}) {
   const invitationUrl = `${appUrl()}/reset-password?token=${encodeURIComponent(input.token)}`;
+  logDevEmailLink("Member invitation", invitationUrl);
+  return {
+    to: input.email,
+    ...memberInvitationContent(input, invitationUrl),
+  };
+}
+
+type MemberInvitationInput = {
+  email: string;
+  firstName: string | null;
+  tenantName: string;
+  memberName: string;
+  token: string;
+  surveyName?: string | null;
+};
+
+function memberInvitationContent(input: MemberInvitationInput, invitationUrl: string) {
   const name = escapeHtml(input.firstName || "Merhaba");
   const tenantName = escapeHtml(input.tenantName);
   const memberName = escapeHtml(input.memberName);
   const surveyName = input.surveyName ? escapeHtml(input.surveyName) : null;
-  logDevEmailLink("Member invitation", invitationUrl);
 
-  return safelySend({
-    to: input.email,
+  return {
     subject: `${tenantName} — Dönüşüm Platformu daveti`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#0d1117;padding:28px;border-radius:10px;">
@@ -61,7 +83,14 @@ export async function sendMemberAccountInvitation(input: {
       `${input.tenantName}, ${input.memberName} adına Dönüşüm Platformu hesabınızı oluşturdu. ` +
       (input.surveyName ? `${input.surveyName} anketi hesabınıza atandı. ` : "") +
       `Şifrenizi belirlemek için: ${invitationUrl}`,
-  });
+  };
+}
+
+export async function sendMemberAccountInvitation(
+  input: MemberInvitationInput
+): Promise<SendEmailResult> {
+  const message = buildMemberAccountInvitation(input);
+  return safelySend(message);
 }
 
 export async function sendCampaignLaunchInvitation(input: {
