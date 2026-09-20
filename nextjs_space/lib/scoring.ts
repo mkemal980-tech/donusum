@@ -1035,35 +1035,475 @@ export type ProgressScores = {
   /** Eksene düşen soru ağırlıklarının toplamı — ironman ekranı için. */
   velocityWeight: number;
   enduranceWeight: number;
-  /** Bonus öncesi eksen puanı ve eklenen bonus — gelişim grafiği için. */
+  /**
+   * Taban: yalnızca anket cevaplarıyla, hiç öneri tamamlanmamış gibi
+   * hesaplanan eksen puanları. Bonus = mevcut − taban. Kademeli önerilerin
+   * basamak yükseltmesi de bonusa dahildir (bkz. docs/GELISIM-PUANI.md).
+   */
   velocityBase: number;
   enduranceBase: number;
   velocityBonus: number;
   enduranceBonus: number;
+  /** Taban genel puan ve yüzde. */
+  baselineOverallScore: number;
+  baselineOverallPercentage: number;
+  /** Gelişim katkısı: mevcut − taban; 1-5 ölçeğinde ve yüzde puanı olarak. */
+  delta: number;
+  deltaPercentage: number;
 };
 
+// ---------------------------------------------------------------------------
+// Gelişim motoru — saf hesap
+//
+// Veri yükleme (`loadProgressInputs`) ile hesap (`computeProgress` ve
+// arkadaşları) ayrıdır. Böylece aynı yükle taban, mevcut ve öneri başına
+// katkı ek sorgu olmadan hesaplanır ve hepsi DB olmadan test edilebilir.
+// Tanımlar için: docs/GELISIM-PUANI.md
+// ---------------------------------------------------------------------------
+
+export type ProgressAxis = "VELOCITY" | "ENDURANCE";
+
+export type ProgressResponseInput = {
+  questionId: string;
+  score: number;
+  /** Soru ağırlığı × sektör kapsam ağırlığı. */
+  weight: number;
+  /** Sektör kapsamı dışındaki soru hesaba girmez. */
+  applicable: boolean;
+  axisType: ProgressAxis;
+  maxScore: number;
+  categoryId: string | null;
+  subCategoryId: string | null;
+};
+
+export type ProgressRecommendationInput = {
+  id: string;
+  questionId: string | null;
+  triggerMaxAnswerScore: number | null;
+  points: number;
+  axisType: ProgressAxis;
+  categoryId: string | null;
+  subCategoryId: string | null;
+};
+
+export type ProgressInputs = {
+  responses: ProgressResponseInput[];
+  /**
+   * Kapsamdaki tüm kademeli öneriler (merdiven kurmak için hepsi gerekir)
+   * ile tamamlanmış ya da katkısı sorulan öneriler. Kimliğe göre tekildir.
+   */
+  recommendations: ProgressRecommendationInput[];
+  completedIds: Set<string>;
+  /** Tamamlanmış yol haritası kalemi sayısı (rapor için). */
+  completedCount: number;
+  totalQuestions: number;
+};
+
+/** Kademeli öneri: eşiği dolu olan. Katkısı basamaktan türetilir. */
+export function isCascadeRecommendation(rec: { triggerMaxAnswerScore: number | null | undefined }): boolean {
+  const threshold = rec.triggerMaxAnswerScore;
+  return typeof threshold === "number" && Number.isFinite(threshold);
+}
+
 /**
- * Gelişim puanı — tek doğru kaynak.
+ * Önerinin bonus birimi. Kademeli öneride her zaman 0 (kural 2); kademesizde
+ * saklanan puan, geçersiz ya da negatifse 0.
+ */
+export function effectiveRecommendationPoints(rec: {
+  triggerMaxAnswerScore: number | null | undefined;
+  points: number | null | undefined;
+}): number {
+  if (isCascadeRecommendation(rec)) return 0;
+  const points = rec.points;
+  return typeof points === "number" && Number.isFinite(points) && points > 0 ? points : 0;
+}
+
+type AxisTotals = { sum: number; weight: number };
+
+export type ProgressComputation = {
+  velocity: AxisTotals;
+  endurance: AxisTotals;
+  answeredInScope: number;
+  velocityScore: number;
+  enduranceScore: number;
+  overallScore: number;
+  overallPercentage: number;
+  cascadeLevels: Map<string, CascadeLevelState>;
+};
+
+const ratioOf = (score: number, max: number) =>
+  max > 0 ? Math.min(1, Math.max(0, score / max)) : 0;
+
+// Cevap yoksa eksen 0 kalır ("veri yok"); aksi hâlde başarı oranı 1-5
+// ölçeğine taşınır (%0 → 1.0, %100 → 5.0). Oran 1'i aşamaz, dolayısıyla
+// puan 5'i aşamaz.
+const axisScoreOf = ({ sum, weight }: AxisTotals) =>
+  weight > 0 ? percentageToScore(Math.min(1, sum / weight) * 100) : 0;
+
+const round1 = (value: number) => Math.round(value * 10) / 10;
+const round2 = (value: number) => Math.round(value * 100) / 100;
+
+/**
+ * Verilen tamamlanma kümesiyle eksen ve genel puanı hesaplar (yuvarlanmamış).
  *
- * `ScoreHistory` tablosuna yazan her yol (ilk snapshot, manuel snapshot,
- * öneri tamamlama) bu fonksiyonu kullanır. Daha önce üç ayrı kopya vardı ve
- * yalnızca öneri tamamlama bonusu ekliyordu; bu yüzden trend grafiğinde
- * kayıtlar arasında gerçek olmayan sıçramalar görülebiliyordu.
- *
- * Hesap:
  *   - Sorunun etkin puanı = baseline cevabı ile tamamlanan kademelerin yükseği
  *   - Eksen puanı = etkin puanların soru tavanına göre ağırlıklı başarı oranı,
  *     kategori puanlarıyla aynı 1-5 ölçeğine taşınır
  *   - Kademesiz önerilerin `points` değeri "kaç soruluk ilerlemeye denk"
- *     birimindedir ve soruların katkısıyla aynı ölçekte toplanır; kademeli
- *     olanlar zaten etkin puana yansıdığı için mükerrer sayılmaz
+ *     birimindedir ve soruların katkısıyla aynı ölçekte toplanır:
+ *     Δ = 4 × points / eksenAğırlığı. Kademeli olanlar etkin puana zaten
+ *     yansıdığı için mükerrer sayılmaz.
  *   - Genel puan, iki eksenin soru ağırlıklarına göre bileşimidir
- *   - Puanlar 5 ile sınırlıdır, yüzde [0, 100] aralığına kırpılır
  */
-export async function calculateProgressScores(
+export function computeProgress(
+  inputs: ProgressInputs,
+  completedIds: Set<string> = inputs.completedIds
+): ProgressComputation {
+  const baselineByQuestion = new Map(
+    inputs.responses.map(response => [response.questionId, response.score ?? 0])
+  );
+  const cascadeLevels = buildCascadeLevels(
+    applicableCascadeRecommendations(
+      inputs.recommendations.filter(isCascadeRecommendation),
+      baselineByQuestion
+    ),
+    completedIds
+  );
+
+  const velocity: AxisTotals = { sum: 0, weight: 0 };
+  const endurance: AxisTotals = { sum: 0, weight: 0 };
+  let answeredInScope = 0;
+
+  for (const response of inputs.responses) {
+    if (!response.applicable) continue;
+    answeredInScope++;
+    const effective = effectiveQuestionScore(
+      response.score,
+      cascadeLevels.get(response.questionId),
+      response.maxScore
+    );
+    const axis = response.axisType === "ENDURANCE" ? endurance : velocity;
+    axis.sum += ratioOf(effective, response.maxScore) * response.weight;
+    axis.weight += response.weight;
+  }
+
+  for (const rec of inputs.recommendations) {
+    if (!completedIds.has(rec.id)) continue;
+    const points = effectiveRecommendationPoints(rec);
+    if (points === 0) continue;
+    (rec.axisType === "ENDURANCE" ? endurance : velocity).sum += points;
+  }
+
+  const velocityScore = axisScoreOf(velocity);
+  const enduranceScore = axisScoreOf(endurance);
+  const axisWeightTotal = velocity.weight + endurance.weight;
+  const overallScore = axisWeightTotal > 0
+    ? (velocityScore * velocity.weight + enduranceScore * endurance.weight) / axisWeightTotal
+    : 0;
+  const overallPercentage = Math.min(100, Math.max(0, ((overallScore - 1) / 4) * 100));
+
+  return {
+    velocity,
+    endurance,
+    answeredInScope,
+    velocityScore,
+    enduranceScore,
+    overallScore,
+    overallPercentage,
+    cascadeLevels
+  };
+}
+
+/** Mevcut ve taban hesabını rapor biçimine çevirir. */
+export function summarizeProgress(inputs: ProgressInputs): ProgressScores {
+  const current = computeProgress(inputs);
+  const baseline = computeProgress(inputs, new Set());
+
+  return {
+    overallScore: round1(current.overallScore),
+    overallPercentage: Math.round(current.overallPercentage),
+    velocityScore: round1(current.velocityScore),
+    enduranceScore: round1(current.enduranceScore),
+    quadrant: classifyQuadrant(current.velocityScore, current.enduranceScore),
+    completedQuestions: current.answeredInScope,
+    totalQuestions: inputs.totalQuestions,
+    completedRecommendations: inputs.completedCount,
+    velocityWeight: current.velocity.weight,
+    enduranceWeight: current.endurance.weight,
+    velocityBase: round1(baseline.velocityScore),
+    enduranceBase: round1(baseline.enduranceScore),
+    velocityBonus: round2(current.velocityScore - baseline.velocityScore),
+    enduranceBonus: round2(current.enduranceScore - baseline.enduranceScore),
+    baselineOverallScore: round1(baseline.overallScore),
+    baselineOverallPercentage: Math.round(baseline.overallPercentage),
+    delta: round2(current.overallScore - baseline.overallScore),
+    deltaPercentage: round1(current.overallPercentage - baseline.overallPercentage)
+  };
+}
+
+export type RecommendationContribution = {
+  recommendationId: string;
+  kind: "cascade" | "points";
+  /** Öneri tamamlandığında genel puana eklediği fark (1-5 ölçeği). */
+  full: number;
+  /** Bugünkü durumuyla eklediği fark; tamamlanmamışsa 0. */
+  current: number;
+  /** Kademeli öneride basamak konumu (1'den başlar); kademesizde null. */
+  rung: { index: number; total: number } | null;
+};
+
+/**
+ * Öneri başına katkı (kural 4).
+ *
+ * Kademesiz öneri: tamamlanmış kümeye eklenince/çıkarılınca oluşan fark.
+ * Kademeli öneri: k. basamağın katkısı, "k−1 basamak tamamken k. basamağı
+ * da tamamlamak" ile oluşan farktır — hangi sayfadan bakılırsa bakılsın aynı
+ * sayı çıkar ve bir merdivenin basamak katkıları toplamı merdivenin toplam
+ * katkısına eşittir. Aynı basamakta birden çok öneri varsa fark eşit bölünür.
+ */
+export function computeRecommendationContributions(
+  inputs: ProgressInputs,
+  recommendationIds: Iterable<string>
+): Map<string, RecommendationContribution> {
+  const byId = new Map(inputs.recommendations.map(rec => [rec.id, rec]));
+  const baselineByQuestion = new Map(
+    inputs.responses.map(response => [response.questionId, response.score ?? 0])
+  );
+  const applicableCascade = applicableCascadeRecommendations(
+    inputs.recommendations.filter(isCascadeRecommendation),
+    baselineByQuestion
+  );
+
+  // Soru → sıralı eşikler ve her eşikteki öneri kimlikleri.
+  const ladders = new Map<string, { thresholds: number[]; idsByThreshold: Map<number, string[]> }>();
+  for (const rec of applicableCascade) {
+    if (!rec.questionId || rec.triggerMaxAnswerScore === null) continue;
+    let ladder = ladders.get(rec.questionId);
+    if (!ladder) {
+      ladder = { thresholds: [], idsByThreshold: new Map() };
+      ladders.set(rec.questionId, ladder);
+    }
+    const bucket = ladder.idsByThreshold.get(rec.triggerMaxAnswerScore);
+    if (bucket) bucket.push(rec.id);
+    else ladder.idsByThreshold.set(rec.triggerMaxAnswerScore, [rec.id]);
+  }
+  for (const ladder of ladders.values()) {
+    ladder.thresholds = [...ladder.idsByThreshold.keys()].sort((a, b) => a - b);
+  }
+
+  const actualLevels = computeProgress(inputs).cascadeLevels;
+  const overallOf = (completed: Set<string>) => computeProgress(inputs, completed).overallScore;
+  const completed = inputs.completedIds;
+
+  const result = new Map<string, RecommendationContribution>();
+  for (const id of recommendationIds) {
+    const rec = byId.get(id);
+    if (!rec) {
+      result.set(id, { recommendationId: id, kind: "points", full: 0, current: 0, rung: null });
+      continue;
+    }
+
+    if (!isCascadeRecommendation(rec)) {
+      const without = new Set(completed);
+      without.delete(id);
+      const withRec = new Set(without);
+      withRec.add(id);
+      const full = round2(overallOf(withRec) - overallOf(without));
+      result.set(id, {
+        recommendationId: id,
+        kind: "points",
+        full,
+        current: completed.has(id) ? full : 0,
+        rung: null
+      });
+      continue;
+    }
+
+    const ladder = rec.questionId ? ladders.get(rec.questionId) : undefined;
+    const rungIndex = ladder && rec.triggerMaxAnswerScore !== null
+      ? ladder.thresholds.indexOf(rec.triggerMaxAnswerScore)
+      : -1;
+    if (!ladder || rungIndex < 0) {
+      // Cevaplanmamış soru ya da baseline'ın altında kalan basamak: kullanıcıya
+      // gösterilmez, katkısı da yoktur.
+      result.set(id, { recommendationId: id, kind: "cascade", full: 0, current: 0, rung: null });
+      continue;
+    }
+
+    const ladderIds = new Set([...ladder.idsByThreshold.values()].flat());
+    const base = new Set([...completed].filter(recId => !ladderIds.has(recId)));
+    for (let i = 0; i < rungIndex; i++) {
+      for (const recId of ladder.idsByThreshold.get(ladder.thresholds[i]) ?? []) base.add(recId);
+    }
+    const rungIds = ladder.idsByThreshold.get(ladder.thresholds[rungIndex]) ?? [];
+    const withRung = new Set(base);
+    for (const recId of rungIds) withRung.add(recId);
+
+    const share = round2((overallOf(withRung) - overallOf(base)) / Math.max(1, rungIds.length));
+    const counted = (actualLevels.get(rec.questionId!)?.currentIndex ?? 0) > rungIndex;
+
+    result.set(id, {
+      recommendationId: id,
+      kind: "cascade",
+      full: share,
+      current: completed.has(id) && counted ? share : 0,
+      rung: { index: rungIndex + 1, total: ladder.thresholds.length }
+    });
+  }
+
+  return result;
+}
+
+export type ProgressBreakdownNode = {
+  id: string;
+  name: string;
+  /** Taban puan (1-5); cevap yoksa 0. */
+  baseScore: number;
+  /** Mevcut puan (1-5). */
+  totalScore: number;
+  /** Fark: totalScore − baseScore. Alan adı eski API sözleşmesinden kalır. */
+  bonusPoints: number;
+  completedCount: number;
+  responseCount: number;
+};
+
+export type ProgressBreakdownCategory = ProgressBreakdownNode & {
+  subCategories: ProgressBreakdownNode[];
+};
+
+type BreakdownTree = Array<{
+  id: string;
+  name: string;
+  subCategories: Array<{ id: string; name: string }>;
+}>;
+
+/**
+ * Kategori ve alt kategori kırılımı — eksenle aynı yöntem: ağırlıklı
+ * normalize başarı oranı 1-5 ölçeğine taşınır. Kademeli önerinin basamak
+ * yükseltmesi sorunun kategorisine, kademesiz önerinin puanı kendi
+ * kategorisine düşer.
+ */
+export function computeProgressBreakdown(
+  inputs: ProgressInputs,
+  tree: BreakdownTree
+): ProgressBreakdownCategory[] {
+  const { cascadeLevels } = computeProgress(inputs);
+  const categoryOfQuestion = new Map(
+    inputs.responses.map(response => [response.questionId, response] as const)
+  );
+
+  const node = (
+    id: string,
+    name: string,
+    inNode: (item: { categoryId: string | null; subCategoryId: string | null }) => boolean
+  ): ProgressBreakdownNode => {
+    let sumBase = 0, sumCurrent = 0, weight = 0, responseCount = 0;
+    for (const response of inputs.responses) {
+      if (!response.applicable || !inNode(response)) continue;
+      responseCount++;
+      const effective = effectiveQuestionScore(
+        response.score,
+        cascadeLevels.get(response.questionId),
+        response.maxScore
+      );
+      sumBase += ratioOf(response.score, response.maxScore) * response.weight;
+      sumCurrent += ratioOf(effective, response.maxScore) * response.weight;
+      weight += response.weight;
+    }
+
+    let completedCount = 0;
+    for (const rec of inputs.recommendations) {
+      if (!inputs.completedIds.has(rec.id)) continue;
+      // Kategorisi olmayan ama soruya bağlı öneri, sorunun kategorisine düşer.
+      const placement = rec.categoryId || rec.subCategoryId
+        ? rec
+        : categoryOfQuestion.get(rec.questionId ?? "") ?? rec;
+      if (!inNode(placement)) continue;
+      completedCount++;
+      sumCurrent += effectiveRecommendationPoints(rec);
+    }
+
+    const baseScore = axisScoreOf({ sum: sumBase, weight });
+    const totalScore = axisScoreOf({ sum: sumCurrent, weight });
+    return {
+      id,
+      name,
+      baseScore: round2(baseScore),
+      totalScore: round2(totalScore),
+      bonusPoints: round2(totalScore - baseScore),
+      completedCount,
+      responseCount
+    };
+  };
+
+  return tree.map(category => ({
+    ...node(category.id, category.name, item => item.categoryId === category.id),
+    subCategories: category.subCategories.map(sub =>
+      node(sub.id, sub.name, item => item.subCategoryId === sub.id)
+    )
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Gelişim motoru — veri yükleme
+// ---------------------------------------------------------------------------
+
+type RecommendationRow = {
+  id?: string | null;
+  questionId?: string | null;
+  triggerMaxAnswerScore?: number | null;
+  points?: number | null;
+  categoryId?: string | null;
+  subCategoryId?: string | null;
+  subLevel?: {
+    axisType?: string | null;
+    subCategoryId?: string | null;
+    subCategory?: { categoryId?: string | null } | null;
+  } | null;
+  subCategory?: { categoryId?: string | null } | null;
+};
+
+/** Prisma satırını motor girdisine çevirir. */
+export function toProgressRecommendationInput(
+  rec: RecommendationRow,
+  fallbackId: string
+): ProgressRecommendationInput {
+  return {
+    id: rec.id ?? fallbackId,
+    questionId: rec.questionId ?? null,
+    triggerMaxAnswerScore: rec.triggerMaxAnswerScore ?? null,
+    points: rec.points ?? 0,
+    axisType: rec.subLevel?.axisType === "ENDURANCE" ? "ENDURANCE" : "VELOCITY",
+    categoryId:
+      rec.categoryId ??
+      rec.subCategory?.categoryId ??
+      rec.subLevel?.subCategory?.categoryId ??
+      null,
+    subCategoryId: rec.subCategoryId ?? rec.subLevel?.subCategoryId ?? null
+  };
+}
+
+const RECOMMENDATION_INPUT_SELECT = {
+  id: true,
+  questionId: true,
+  triggerMaxAnswerScore: true,
+  points: true,
+  categoryId: true,
+  subCategoryId: true,
+  subLevel: { select: { axisType: true, subCategoryId: true, subCategory: { select: { categoryId: true } } } },
+  subCategory: { select: { categoryId: true } }
+} as const;
+
+/**
+ * Motor girdilerini yükler. Bonus yalnızca kullanıcının erişebildiği (ve
+ * istenmişse seçili) anketin önerilerinden gelir. `extraRecommendations`,
+ * katkısı sorulan ama henüz tamamlanmamış önerileri (yol haritası kalemleri)
+ * hesaba dahil eder.
+ */
+export async function loadProgressInputs(
   userId: string,
-  options: { surveyId?: string; db?: DbClient } = {}
-): Promise<ProgressScores> {
+  options: { surveyId?: string; db?: DbClient; extraRecommendations?: RecommendationRow[] } = {}
+): Promise<ProgressInputs> {
   const { surveyId } = options;
   const db = options.db ?? prisma;
 
@@ -1090,9 +1530,11 @@ export async function calculateProgressScores(
           type: true,
           options: true,
           conditionalOptions: true,
-          // Sektör kapsamı bölüm düzeyinde tanımlı.
+          // Sektör kapsamı bölüm düzeyinde tanımlı; kırılım için kategori de.
+          categoryId: true,
           subCategoryId: true,
-          subLevel: { select: { subCategoryId: true } }
+          subCategory: { select: { categoryId: true } },
+          subLevel: { select: { subCategoryId: true, subCategory: { select: { categoryId: true } } } }
         }
       }
     }
@@ -1100,28 +1542,16 @@ export async function calculateProgressScores(
 
   const scopeOf = await getScopeResolver(userId, surveyId, db);
 
-  // Bonus yalnızca kullanıcının erişebildiği (ve istenmişse seçili) anketin
-  // önerilerinden gelir.
   const surveyIds = await getAccessibleSurveyIds(userId, surveyId, db);
   const recommendationWhere = await buildRecommendationSurveyWhere(surveyIds, db);
 
-  const completedRecs = await db.roadmapItem.findMany({
+  const completedItems = await db.roadmapItem.findMany({
     where: {
       assessmentId: { in: progressAssessmentIds },
       status: "COMPLETED",
       recommendation: recommendationWhere
     },
-    include: {
-      recommendation: {
-        select: {
-          id: true,
-          questionId: true,
-          triggerMaxAnswerScore: true,
-          points: true,
-          subLevel: { select: { axisType: true } }
-        }
-      }
-    }
+    include: { recommendation: { select: RECOMMENDATION_INPUT_SELECT } }
   });
 
   // Kademeli önerilerde ilerleme, tamamlanan basamaklardan okunur. Basamağın
@@ -1131,102 +1561,8 @@ export async function calculateProgressScores(
     where: {
       AND: [recommendationWhere, { questionId: { not: null }, triggerMaxAnswerScore: { not: null } }]
     },
-    select: { id: true, questionId: true, triggerMaxAnswerScore: true }
+    select: RECOMMENDATION_INPUT_SELECT
   });
-
-  const completedIds = new Set(completedRecs.map(item => item.recommendationId));
-  const baselineByQuestion = new Map(
-    responses.map(response => [response.question.id, response.score ?? 0])
-  );
-  const cascadeLevels = buildCascadeLevels(
-    applicableCascadeRecommendations(cascadeRecs, baselineByQuestion),
-    completedIds
-  );
-
-  // Eksen puanı, sorunun kendi tavanına göre normalize edilmiş başarı
-  // oranından hesaplanır — kategori puanlarıyla aynı ölçek (bkz.
-  // percentageToScore). Ham puanların doğrudan ortalaması alınırsa tavanı 5'in
-  // altında olan sorular ekseni haksız yere aşağı çeker.
-  let velocitySum = 0, velocityWeight = 0;
-  let enduranceSum = 0, enduranceWeight = 0;
-  // Kapsam dışı sorular "cevaplandı" sayılmaz; ilerleme yüzdesi şişmesin.
-  let answeredInScope = 0;
-
-  for (const response of responses) {
-    const scope = scopeOf(
-      response.question.subLevel?.subCategoryId ?? response.question.subCategoryId
-    );
-    if (!scope.applicable) continue;
-
-    answeredInScope++;
-    const weight = (response.question.weight || 1) * scope.weight;
-    const max = maxScoreForQuestion(response.question);
-    const effective = effectiveQuestionScore(
-      response.score,
-      cascadeLevels.get(response.question.id),
-      max
-    );
-    const ratio = max > 0 ? Math.min(1, Math.max(0, effective / max)) : 0;
-
-    if (response.question.axisType === "ENDURANCE") {
-      enduranceSum += ratio * weight;
-      enduranceWeight += weight;
-    } else {
-      velocitySum += ratio * weight;
-      velocityWeight += weight;
-    }
-  }
-
-  /**
-   * Kademesiz önerilerin `points` değeri "kaç soruluk ilerlemeye denk"
-   * anlamındadır: 1.0 = ağırlığı 1 olan bir soruyu en alttan tavana çıkarmak,
-   * 0.5 = onun yarısı. Bu yüzden eksen ortalamasına doğrudan eklenmez,
-   * soruların katkısıyla aynı birimde toplanır.
-   *
-   * Önceden ham `points` doğrudan 1-5 ortalamasına ekleniyordu; anket ne kadar
-   * uzun olursa olsun her öneri +0.5 getiriyor, on öneri tamamlayan herkes
-   * cevaplarından bağımsız olarak tavana dayanıyordu. Artık katkı anketin
-   * boyutuna göre orantılı: Δ = 4 × points / eksenAğırlığı.
-   */
-  let velocityBonusUnits = 0, enduranceBonusUnits = 0;
-
-  for (const item of completedRecs) {
-    // Kademeli öneriler etkin puana zaten yansıdı; bonus olarak tekrar sayılmaz.
-    const threshold = item.recommendation.triggerMaxAnswerScore;
-    if (typeof threshold === "number" && Number.isFinite(threshold)) continue;
-
-    const points = item.recommendation.points || 0;
-    if ((item.recommendation.subLevel?.axisType ?? "VELOCITY") === "ENDURANCE") {
-      enduranceBonusUnits += points;
-    } else {
-      velocityBonusUnits += points;
-    }
-  }
-
-  // Cevap yoksa eksen 0 kalır ("veri yok"); aksi hâlde başarı oranı 1-5
-  // ölçeğine taşınır (%0 → 1.0, %100 → 5.0). Oran 1'i aşamaz, dolayısıyla
-  // puan 5'i aşamaz.
-  const axisScore = (sum: number, weight: number) =>
-    weight > 0 ? percentageToScore(Math.min(1, sum / weight) * 100) : 0;
-
-  const baseVelocity = axisScore(velocitySum, velocityWeight);
-  const baseEndurance = axisScore(enduranceSum, enduranceWeight);
-
-  const velocityScore = axisScore(velocitySum + velocityBonusUnits, velocityWeight);
-  const enduranceScore = axisScore(enduranceSum + enduranceBonusUnits, enduranceWeight);
-
-  // Grafiğe bildirilen bonus, ham `points` değil puana yaptığı gerçek etkidir.
-  const velocityBonus = velocityScore - baseVelocity;
-  const enduranceBonus = enduranceScore - baseEndurance;
-
-  // Genel puan eksenlerin soru ağırlıklarına göre bileşimi — böylece bonus
-  // sonrası da eksen puanlarıyla tutarlı kalır ve 5'i aşamaz.
-  const axisWeightTotal = velocityWeight + enduranceWeight;
-  const overallScore = axisWeightTotal > 0
-    ? (velocityScore * velocityWeight + enduranceScore * enduranceWeight) / axisWeightTotal
-    : 0;
-
-  const overallPercentage = Math.min(100, Math.max(0, ((overallScore - 1) / 4) * 100));
 
   // Toplam soru sayısı kapsam dışı bölümleri içermez — kullanıcıya
   // sorulmayan soru "tamamlanacak iş" gibi görünmemeli.
@@ -1234,24 +1570,120 @@ export async function calculateProgressScores(
     where: questionWhere,
     select: { subCategoryId: true, subLevel: { select: { subCategoryId: true } } }
   });
+
+  const responseInputs: ProgressResponseInput[] = responses.map(response => {
+    const question = response.question as typeof response.question & {
+      id?: string;
+      categoryId?: string | null;
+      subCategoryId?: string | null;
+      subCategory?: { categoryId?: string | null } | null;
+      subLevel?: { subCategoryId?: string | null; subCategory?: { categoryId?: string | null } | null } | null;
+    };
+    const subCategoryId = question.subLevel?.subCategoryId ?? question.subCategoryId ?? null;
+    const scope = scopeOf(subCategoryId);
+    return {
+      questionId: question.id as string,
+      score: response.score,
+      weight: (question.weight || 1) * scope.weight,
+      applicable: scope.applicable,
+      axisType: question.axisType === "ENDURANCE" ? "ENDURANCE" : "VELOCITY",
+      maxScore: maxScoreForQuestion(question),
+      categoryId:
+        question.categoryId ??
+        question.subCategory?.categoryId ??
+        question.subLevel?.subCategory?.categoryId ??
+        null,
+      subCategoryId
+    };
+  });
+
+  const recommendations = new Map<string, ProgressRecommendationInput>();
+  const completedIds = new Set<string>();
+  completedItems.forEach((item, index) => {
+    const rec = toProgressRecommendationInput(
+      (item.recommendation ?? {}) as RecommendationRow,
+      (item as { recommendationId?: string }).recommendationId ?? `roadmap-${index}`
+    );
+    recommendations.set(rec.id, rec);
+    completedIds.add(rec.id);
+  });
+  cascadeRecs.forEach((row, index) => {
+    const rec = toProgressRecommendationInput(row as RecommendationRow, `cascade-${index}`);
+    if (!recommendations.has(rec.id)) recommendations.set(rec.id, rec);
+  });
+  (options.extraRecommendations ?? []).forEach((row, index) => {
+    const rec = toProgressRecommendationInput(row, `extra-${index}`);
+    if (!recommendations.has(rec.id)) recommendations.set(rec.id, rec);
+  });
+
   const totalQuestions = scopedQuestions.filter(
     (q) => scopeOf(q.subLevel?.subCategoryId ?? q.subCategoryId).applicable
   ).length;
 
   return {
-    overallScore: Math.round(overallScore * 10) / 10,
-    overallPercentage: Math.round(overallPercentage),
-    velocityScore: Math.round(velocityScore * 10) / 10,
-    enduranceScore: Math.round(enduranceScore * 10) / 10,
-    quadrant: classifyQuadrant(velocityScore, enduranceScore),
-    completedQuestions: answeredInScope,
-    totalQuestions,
-    completedRecommendations: completedRecs.length,
-    velocityWeight,
-    enduranceWeight,
-    velocityBase: Math.round(baseVelocity * 10) / 10,
-    enduranceBase: Math.round(baseEndurance * 10) / 10,
-    velocityBonus: Math.round(velocityBonus * 100) / 100,
-    enduranceBonus: Math.round(enduranceBonus * 100) / 100
+    responses: responseInputs,
+    recommendations: [...recommendations.values()],
+    completedIds,
+    completedCount: completedItems.length,
+    totalQuestions
+  };
+}
+
+/**
+ * Gelişim puanı — tek doğru kaynak.
+ *
+ * `ScoreHistory` tablosuna yazan her yol (ilk snapshot, gönderim, öneri
+ * tamamlama) ve her ekran bu fonksiyonu kullanır. Tanım: docs/GELISIM-PUANI.md
+ */
+export async function calculateProgressScores(
+  userId: string,
+  options: { surveyId?: string; db?: DbClient } = {}
+): Promise<ProgressScores> {
+  return summarizeProgress(await loadProgressInputs(userId, options));
+}
+
+/**
+ * Yol haritası kalemleri için öneri başına katkı. Kalemler tamamlanmamış da
+ * olabilir; bu yüzden önerileri motora ek girdi olarak verilir.
+ */
+export async function calculateRecommendationContributions(
+  userId: string,
+  recommendations: RecommendationRow[],
+  options: { surveyId?: string; db?: DbClient } = {}
+): Promise<{ scores: ProgressScores; contributions: Map<string, RecommendationContribution> }> {
+  const inputs = await loadProgressInputs(userId, { ...options, extraRecommendations: recommendations });
+  const ids = recommendations.map((rec, index) => rec.id ?? `extra-${index}`);
+  return {
+    scores: summarizeProgress(inputs),
+    contributions: computeRecommendationContributions(inputs, ids)
+  };
+}
+
+/** Pano için kategori kırılımı ve genel puanlar — tek yükle. */
+export async function calculateProgressBreakdown(
+  userId: string,
+  options: { surveyId?: string; db?: DbClient } = {}
+): Promise<{ scores: ProgressScores; categories: ProgressBreakdownCategory[] }> {
+  const db = options.db ?? prisma;
+  const [inputs, tree] = await Promise.all([
+    loadProgressInputs(userId, options),
+    db.category.findMany({
+      where: { archivedAt: null, ...(options.surveyId ? { surveyId: options.surveyId } : {}) },
+      select: {
+        id: true,
+        name: true,
+        subCategories: {
+          where: { archivedAt: null },
+          orderBy: { order: "asc" },
+          select: { id: true, name: true }
+        }
+      },
+      orderBy: { order: "asc" }
+    })
+  ]);
+
+  return {
+    scores: summarizeProgress(inputs),
+    categories: computeProgressBreakdown(inputs, tree)
   };
 }
