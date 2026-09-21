@@ -4,6 +4,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
 
+/**
+ * Saklanacak puan. Kademeli öneride (eşik dolu) her zaman 0 — ekran ne
+ * gönderirse göndersin. Kademesizde 0-2 aralığı; boşsa 0.5.
+ */
+function recommendationPoints(cascadeThreshold: number | null, points: unknown): number {
+  if (cascadeThreshold !== null) return 0;
+  const value = typeof points === 'number' && Number.isFinite(points) ? points : 0.5;
+  return Math.min(2, Math.max(0, value));
+}
+
 export async function GET(request: NextRequest) {
   const auth = await withAuth(request, { requireAdmin: true, rateLimit: 'admin' });
   if (!auth.success) return auth.response;
@@ -147,6 +157,10 @@ export async function POST(request: NextRequest) {
         validQuestionId = questionId;
       }
     }
+    const cascadeThreshold: number | null =
+      validQuestionId && typeof triggerMaxAnswerScore === 'number' && Number.isFinite(triggerMaxAnswerScore)
+        ? triggerMaxAnswerScore
+        : null;
 
     const recommendation = await prisma.recommendation.create({
       data: {
@@ -161,11 +175,10 @@ export async function POST(request: NextRequest) {
           ? JSON.stringify(triggerOptions) 
           : null,
         // Kademeli tetikleme eşiği — yalnızca geçerli bir soruya bağlıysa anlamlı.
-        triggerMaxAnswerScore:
-          validQuestionId && typeof triggerMaxAnswerScore === 'number'
-            ? triggerMaxAnswerScore
-            : null,
-        points: points ?? 0.5,  // Gelişim skoru puanı
+        triggerMaxAnswerScore: cascadeThreshold,
+        // Kademeli öneride puan her zaman 0; katkı basamaktan türetilir
+        // (docs/GELISIM-PUANI.md, kural 2). Kademesizde 0-2 aralığına kırpılır.
+        points: recommendationPoints(cascadeThreshold, points),
         costType: costType || "OPEX",
         timeframe: timeframe || "SHORT_TERM",
         strategicType: strategicType || "QUICK_WIN",
@@ -213,6 +226,10 @@ export async function PUT(request: NextRequest) {
         validQuestionId = questionId;
       }
     }
+    const cascadeThreshold: number | null =
+      validQuestionId && typeof triggerMaxAnswerScore === 'number' && Number.isFinite(triggerMaxAnswerScore)
+        ? triggerMaxAnswerScore
+        : null;
 
     const recommendation = await prisma.recommendation.update({
       where: { id },
@@ -228,11 +245,10 @@ export async function PUT(request: NextRequest) {
           ? JSON.stringify(triggerOptions) 
           : null,
         // Kademeli tetikleme eşiği — yalnızca geçerli bir soruya bağlıysa anlamlı.
-        triggerMaxAnswerScore:
-          validQuestionId && typeof triggerMaxAnswerScore === 'number'
-            ? triggerMaxAnswerScore
-            : null,
-        points: points ?? 0.5,  // Gelişim skoru puanı
+        triggerMaxAnswerScore: cascadeThreshold,
+        // Kademeli öneride puan her zaman 0; katkı basamaktan türetilir
+        // (docs/GELISIM-PUANI.md, kural 2). Kademesizde 0-2 aralığına kırpılır.
+        points: recommendationPoints(cascadeThreshold, points),
         costType: costType || "OPEX",
         timeframe: timeframe || "SHORT_TERM",
         strategicType: strategicType || "QUICK_WIN",

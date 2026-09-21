@@ -3,33 +3,28 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api-utils";
-import { getAccessibleSurveyIds, isRecommendationActionable } from "@/lib/scoring";
-import { getAssessmentIds, getOrCreateAssessment } from "@/lib/assessment";
+import {
+  calculateRecommendationContributions,
+  getAccessibleSurveyIds,
+  isRecommendationActionable
+} from "@/lib/scoring";
+import { getAssessmentIds } from "@/lib/assessment";
+import { resolveAssessmentForRecommendation, updateRoadmapStatus } from "@/lib/roadmap-status";
 
-/** Önerinin bağlı olduğu anketin değerlendirmesi. */
-async function assessmentForRecommendation(userId: string, recommendationId: string) {
-  const rec = await prisma.recommendation.findUnique({
-    where: { id: recommendationId },
-    select: {
-      question: {
-        select: {
-          category: { select: { surveyId: true } },
-          subCategory: { select: { category: { select: { surveyId: true } } } },
-          subLevel: { select: { subCategory: { select: { category: { select: { surveyId: true } } } } } },
-        },
-      },
-    },
-  });
-  const q = rec?.question;
-  const surveyId =
-    q?.category?.surveyId ??
-    q?.subCategory?.category?.surveyId ??
-    q?.subLevel?.subCategory?.category?.surveyId ??
-    null;
-  if (!surveyId) return null;
-  return getOrCreateAssessment(userId, surveyId);
-}
+const RECOMMENDATION_INCLUDE = {
+  recommendation: {
+    include: {
+      subLevel: { select: { axisType: true, subCategoryId: true, subCategory: { select: { categoryId: true } } } },
+      subCategory: { select: { categoryId: true } }
+    }
+  }
+} as const;
 
+/**
+ * Yol haritası: kalemler, öneri başına katkı ve özet.
+ *
+ * Katkı sunucuda hesaplanır (docs/GELISIM-PUANI.md); ekran yalnızca gösterir.
+ */
 export async function GET(request: NextRequest) {
   const auth = await withAuth(request);
   if (!auth.success) return auth.response;
@@ -40,9 +35,7 @@ export async function GET(request: NextRequest) {
 
     const roadmapItems = await prisma.roadmapItem.findMany({
       where: { assessmentId: { in: assessmentIds } },
-      include: {
-        recommendation: true
-      },
+      include: RECOMMENDATION_INCLUDE,
       orderBy: [
         { plannedYear: 'asc' },
         { plannedQuarter: 'asc' },
@@ -50,7 +43,36 @@ export async function GET(request: NextRequest) {
       ]
     });
 
-    return NextResponse.json(roadmapItems ?? []);
+    const { scores, contributions } = await calculateRecommendationContributions(
+      userId,
+      roadmapItems.map(item => item.recommendation)
+    );
+
+    const items = roadmapItems.map(item => ({
+      ...item,
+      contribution: contributions.get(item.recommendationId) ?? {
+        recommendationId: item.recommendationId,
+        kind: "points" as const,
+        full: 0,
+        current: 0,
+        rung: null
+      }
+    }));
+
+    return NextResponse.json({
+      items,
+      summary: {
+        total: items.length,
+        completed: items.filter(item => item.status === "COMPLETED").length,
+        inProgress: items.filter(item => item.status === "IN_PROGRESS").length,
+        baselineScore: scores.baselineOverallScore,
+        baselinePercentage: scores.baselineOverallPercentage,
+        currentScore: scores.overallScore,
+        currentPercentage: scores.overallPercentage,
+        delta: scores.delta,
+        deltaPercentage: scores.deltaPercentage
+      }
+    });
   } catch (error) {
     console.error("Error fetching roadmap:", error);
     return NextResponse.json(
@@ -85,13 +107,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const assessmentId = await assessmentForRecommendation(userId, recommendationId);
-    if (!assessmentId) {
+    const resolved = await resolveAssessmentForRecommendation(userId, recommendationId);
+    if (!resolved) {
       return NextResponse.json(
         { error: "Öneri bir ankete bağlı değil." },
         { status: 400 }
       );
     }
+    const { assessmentId } = resolved;
 
     const roadmapItem = await prisma.roadmapItem.upsert({
       where: {
@@ -109,9 +132,7 @@ export async function POST(request: NextRequest) {
         plannedYear: plannedYear ?? null,
         priority: priority ?? 0
       },
-      include: {
-        recommendation: true
-      }
+      include: RECOMMENDATION_INCLUDE
     });
 
     return NextResponse.json(roadmapItem);
@@ -124,7 +145,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Status güncelleme için PUT
+/**
+ * Durum güncelleme. Öneriler sayfasındaki tamamlama ucuyla aynı servisi
+ * kullanır: kilit, skor geçmişi ve dönen sayılar burada da aynıdır.
+ */
 export async function PUT(request: NextRequest) {
   const auth = await withAuth(request);
   if (!auth.success) return auth.response;
@@ -141,39 +165,43 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Geçerli status değerleri
-    const validStatuses = ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED', 'PLANNED', 'CANCELLED'];
-    if (status && !validStatuses.includes(status)) {
-      return NextResponse.json(
-        { error: "Invalid status value" },
-        { status: 400 }
-      );
-    }
-
-    const assessmentId = await assessmentForRecommendation(userId, recommendationId);
-    if (!assessmentId) {
-      return NextResponse.json(
-        { error: "Öneri bir ankete bağlı değil." },
-        { status: 400 }
-      );
-    }
-
-    const roadmapItem = await prisma.roadmapItem.update({
-      where: {
-        assessmentId_recommendationId: { assessmentId, recommendationId }
-      },
-      data: {
-        ...(status && { status }),
-        ...(plannedQuarter !== undefined && { plannedQuarter }),
-        ...(plannedYear !== undefined && { plannedYear }),
-        ...(priority !== undefined && { priority })
-      },
-      include: {
-        recommendation: true
+    if (status === undefined) {
+      // Yalnızca zamanlama/öncelik değişiyor: durum olduğu gibi kalır.
+      const resolved = await resolveAssessmentForRecommendation(userId, recommendationId);
+      if (!resolved) {
+        return NextResponse.json({ error: "Öneri bir ankete bağlı değil." }, { status: 400 });
       }
+      const item = await prisma.roadmapItem.update({
+        where: { assessmentId_recommendationId: { assessmentId: resolved.assessmentId, recommendationId } },
+        data: {
+          ...(plannedQuarter !== undefined && { plannedQuarter }),
+          ...(plannedYear !== undefined && { plannedYear }),
+          ...(priority !== undefined && { priority })
+        },
+        include: RECOMMENDATION_INCLUDE
+      });
+      return NextResponse.json({ item });
+    }
+
+    const outcome = await updateRoadmapStatus(userId, {
+      recommendationId,
+      status,
+      plannedQuarter,
+      plannedYear,
+      priority
     });
 
-    return NextResponse.json(roadmapItem);
+    if (!outcome.ok) {
+      return NextResponse.json({ error: outcome.error.message }, { status: outcome.error.httpStatus });
+    }
+
+    const { item, after, earned, isCompleted, wasCompleted } = outcome.result;
+    return NextResponse.json({
+      item,
+      progress: after,
+      earned,
+      pointsEarned: isCompleted && !wasCompleted ? earned : 0
+    });
   } catch (error) {
     console.error("Error updating roadmap item:", error);
     return NextResponse.json(
@@ -199,8 +227,8 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const assessmentId = await assessmentForRecommendation(userId, recommendationId);
-    if (!assessmentId) {
+    const resolved = await resolveAssessmentForRecommendation(userId, recommendationId);
+    if (!resolved) {
       return NextResponse.json(
         { error: "Öneri bir ankete bağlı değil." },
         { status: 400 }
@@ -209,7 +237,7 @@ export async function DELETE(request: NextRequest) {
 
     await prisma.roadmapItem.delete({
       where: {
-        assessmentId_recommendationId: { assessmentId, recommendationId }
+        assessmentId_recommendationId: { assessmentId: resolved.assessmentId, recommendationId }
       }
     });
 
