@@ -61,7 +61,9 @@ interface Recommendation {
   subLevelId: string | null;
   questionId: string | null;
   triggerOptions: string | null;
-  points: number;  // Gelişim skoru için puan
+  /** Kademeli tetikleme eşiği. Doluysa öneri kademelidir ve puanı 0'dır. */
+  triggerMaxAnswerScore?: number | null;
+  points: number;  // Gelişim skoru için puan ("kaç soruluk ilerleme")
   question?: {
     id: string;
     text: string;
@@ -267,8 +269,10 @@ export default function RecommendationsPage() {
       return;
     }
     
-    // Soru seçilmişse en az bir şık seçilmeli
-    if (modalQuestionId && selectedTriggerOptions.length === 0) {
+    // Soru seçilmişse en az bir şık seçilmeli — kademeli öneri hariç: onun
+    // tetikleyicisi eşiktir ve soru ekranından yönetilir.
+    const cascade = formData.triggerMaxAnswerScore != null;
+    if (modalQuestionId && selectedTriggerOptions.length === 0 && !cascade) {
       alert('Lütfen en az bir tetikleyici şık seçin!');
       return;
     }
@@ -1120,36 +1124,52 @@ export default function RecommendationsPage() {
                 </div>
               )}
 
-              {/* Gelişim Skoru Puanı */}
-              <div className="p-4 bg-[var(--bg-card-2)] rounded-lg border-2 border-[var(--blue-main)]">
-                <div className="flex items-center gap-2 mb-3">
-                  <TrendingUp size={18} className="text-[var(--accent)]" />
-                  <label className="text-sm font-medium text-[var(--accent)]">Gelişim Skoru Puanı</label>
+              {/* Gelişim Skoru Puanı — docs/GELISIM-PUANI.md */}
+              {formData.triggerMaxAnswerScore != null ? (
+                <div className="p-4 bg-[var(--bg-card-2)] rounded-lg border border-[var(--border-soft)]">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp size={18} className="text-[var(--accent)]" />
+                    <label className="text-sm font-medium text-[var(--text-main)]">Gelişim Skoru Puanı: otomatik</label>
+                  </div>
+                  <p className="text-xs text-[var(--text-muted)]">
+                    Bu öneri kademeli (eşik {formData.triggerMaxAnswerScore}). Kullanıcı tamamladığında bağlı
+                    olduğu sorunun basamağı bir üst şıkka çıkar; katkı sorunun ağırlığından ve anketin
+                    boyutundan türetilir. Puan alanı 0 olarak saklanır, elle girilmez. Kademe ayarları soru
+                    ekranındaki öneri penceresinden düzenlenir.
+                  </p>
                 </div>
-                <p className="text-xs text-[var(--blue-main)] mb-4">
-                  Bu öneri tamamlandığında kullanıcının gelişim skoruna eklenecek puan (0-2 arası önerilir).
-                  Puan yalnızca yol haritasında &quot;Tamamlandı&quot; işaretlendiğinde eklenir; &quot;Devam ediyor&quot; durumunda eklenmez.
-                </p>
-                <div className="flex items-center gap-4">
-                  <input
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="0.1"
-                    value={formData.points || 0.5}
-                    onChange={(e) => setFormData({ ...formData, points: parseFloat(e.target.value) })}
-                    className="flex-1"
-                  />
-                  <div className="w-20 text-center">
-                    <span className="text-2xl font-semibold text-[var(--accent)]">{(formData.points || 0.5).toFixed(1)}</span>
-                    <p className="text-xs text-[var(--text-dim)]">puan</p>
+              ) : (
+                <div className="p-4 bg-[var(--bg-card-2)] rounded-lg border-2 border-[var(--blue-main)]">
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingUp size={18} className="text-[var(--accent)]" />
+                    <label className="text-sm font-medium text-[var(--accent)]">Gelişim Skoru Puanı</label>
+                  </div>
+                  <p className="text-xs text-[var(--blue-main)] mb-4">
+                    Kaç soruluk ilerlemeye denk olduğunu belirtir: 1.0 bir soruyu en alttan tavana çıkarmakla
+                    aynı, 0.5 onun yarısı. Yalnızca &quot;Tamamlandı&quot; durumunda gelişim skoruna eklenir;
+                    &quot;Devam ediyor&quot; puan vermez.
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="range"
+                      min="0"
+                      max="2"
+                      step="0.1"
+                      value={formData.points ?? 0.5}
+                      onChange={(e) => setFormData({ ...formData, points: parseFloat(e.target.value) })}
+                      className="flex-1"
+                    />
+                    <div className="w-20 text-center">
+                      <span className="text-2xl font-semibold text-[var(--accent)]">{(formData.points ?? 0.5).toFixed(1)}</span>
+                      <p className="text-xs text-[var(--text-dim)]">puan</p>
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-xs text-[var(--text-dim)] mt-1">
+                    <span>0 (katkı yok)</span>
+                    <span>2 (iki soruluk ilerleme)</span>
                   </div>
                 </div>
-                <div className="flex justify-between text-xs text-[var(--text-dim)] mt-1">
-                  <span>0 (Düşük etki)</span>
-                  <span>2 (Yüksek etki)</span>
-                </div>
-              </div>
+              )}
 
               {/* Bubble Chart Ayarları */}
               <div className="p-4 bg-[var(--accent-quiet)] rounded-lg">

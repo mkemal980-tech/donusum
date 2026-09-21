@@ -51,6 +51,13 @@ interface Recommendation {
   stepDistance?: number;
   /** Yumuşak kilit: sırası gelmemiş basamak ilerletilemez. */
   isActionable?: boolean;
+  /** Sunucuda hesaplanan katkı (docs/GELISIM-PUANI.md). */
+  contribution?: {
+    kind: "cascade" | "points";
+    full: number;
+    current: number;
+    rung: { index: number; total: number } | null;
+  } | null;
 }
 
 interface AssignedSurvey {
@@ -208,11 +215,13 @@ export default function RecommendationsClient() {
           COMPLETED: "Tamamlandı"
         };
         
-        // Tamamlandıysa kazanılan puanı göster
-        if (status === 'COMPLETED' && data.pointsEarned > 0) {
-          toast.success(`🎉 Öneri tamamlandı! +${data.pointsEarned} puan kazandınız`, {
-            description: data.updatedScores 
-              ? `Yeni skor: ${data.updatedScores.overallScore}/5 (${data.updatedScores.overallPercentage}%)`
+        // Tamamlandıysa bu tamamlamanın puana yaptığı gerçek farkı göster.
+        // `pointsEarned` ham öneri puanı değil, sunucunun hesapladığı farktır;
+        // kademeli öneride de sıfırdan büyüktür.
+        if (status === 'COMPLETED' && typeof data.pointsEarned === 'number' && data.pointsEarned > 0) {
+          toast.success(`Öneri tamamlandı · puan +${data.pointsEarned.toFixed(2)}`, {
+            description: data.updatedScores
+              ? `Yeni puan: ${data.updatedScores.overallScore}/5 (%${data.updatedScores.overallPercentage})`
               : undefined,
             duration: 5000,
           });

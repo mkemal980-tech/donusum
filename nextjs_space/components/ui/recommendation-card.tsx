@@ -22,6 +22,13 @@ interface RecommendationCardProps {
     stepDistance?: number;
     /** Yumuşak kilit: sırası gelmemiş basamak ilerletilemez. */
     isActionable?: boolean;
+    /** Sunucuda hesaplanan katkı (docs/GELISIM-PUANI.md). */
+    contribution?: {
+      kind: "cascade" | "points";
+      full: number;
+      current: number;
+      rung: { index: number; total: number } | null;
+    } | null;
   };
   onAddToRoadmap?: (id: string) => void;
   onStatusChange?: (id: string, status: CompletionStatus) => void;
@@ -44,6 +51,16 @@ const strategicLabels: Record<string, string> = {
   BIG_BET: "Büyük Yatırım",
   PROJECT: "Proje"
 };
+
+/** Kartın puan satırı: tamamlandıysa bugünkü katkı, değilse tamamlanınca ne kadar. */
+function contributionLabel(rec: RecommendationCardProps["recommendation"]): string {
+  const c = rec?.contribution;
+  if (!c) return "Puan katkısı";
+  const fmt = (value: number) => `+${value.toFixed(2)} puan`;
+  if (rec.completionStatus === "COMPLETED") return `Şu an ${fmt(c.current)}`;
+  if (c.kind === "cascade" && c.rung) return `Basamak ${c.rung.index}/${c.rung.total} · ${fmt(c.full)}`;
+  return `Tamamlanınca ${fmt(c.full)}`;
+}
 
 const statusConfig: Record<CompletionStatus, { label: string; color: string; bgColor: string; icon: React.ElementType }> = {
   NOT_STARTED: { 
@@ -191,7 +208,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
         </div>
         <div className="flex items-center gap-2 text-sm text-[var(--text-dim)]">
           <Target size={14} className="text-[var(--warning)]" />
-          <span>Puan artışı</span>
+          <span className="tabular">{contributionLabel(rec)}</span>
         </div>
       </div>
 

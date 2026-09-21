@@ -29,6 +29,11 @@ interface ProgressData {
   overall: {
     velocity: { baseScore: number; bonusPoints: number; totalScore: number };
     endurance: { baseScore: number; bonusPoints: number; totalScore: number };
+    /** Taban, mevcut ve fark — motorun tek tanımı (docs/GELISIM-PUANI.md). */
+    baselineScore: number;
+    currentScore: number;
+    delta: number;
+    deltaPercentage: number;
     totalCompletedRecommendations: number;
     totalResponses: number;
   };
@@ -90,11 +95,13 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
     }))
   );
 
-  // Genel ortalama skor hesapla
-  const overallBaseScore = data.categories.length > 0
-    ? data.categories.reduce((sum, cat) => sum + (cat.baseScore || 0), 0) / data.categories.length
-    : 0;
-  const overallBonusPoints = data.categories.reduce((sum, cat) => sum + (cat.bonusPoints || 0), 0);
+  // Genel puan motordan gelir; kategorilerin ortalaması alınmaz — eksen
+  // ağırlıklı bileşim burada yeniden türetilirse panonun öbür kartlarıyla
+  // farklı sayı çıkar.
+  const overallBaseScore = data.overall?.baselineScore ?? 0;
+  const overallCurrentScore = data.overall?.currentScore ?? 0;
+  const overallBonusPoints = data.overall?.delta ?? 0;
+  const overallDeltaPercentage = data.overall?.deltaPercentage ?? 0;
 
   const chartCategories = viewMode === 'category' 
     ? data.categories.map(cat => ({
@@ -122,7 +129,10 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
           <TrendingUp className="mt-0.5 shrink-0" size={16} aria-hidden="true" />
           <span>
             Tamamlanan öneriler puanınızı{" "}
-            <span className="tabular font-medium">+{overallBonusPoints.toFixed(2)}</span> artırdı.{" "}
+            <span className="tabular font-medium">+{overallBonusPoints.toFixed(2)}</span> artırdı
+            {overallDeltaPercentage > 0 && (
+              <> (<span className="tabular">+{overallDeltaPercentage.toFixed(1)}</span> yüzde puanı)</>
+            )}.{" "}
             <Link href="/roadmap" className="underline underline-offset-4">
               Yol haritasına git
             </Link>
@@ -155,11 +165,11 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
       {/* Chart */}
       <ProgressBenchmarkChart
         title="Benchmark"
-        overall={{ 
-          surveyScore: overallBaseScore, 
-          progressScore: Math.min(5, overallBaseScore + overallBonusPoints), 
+        overall={{
+          surveyScore: overallBaseScore,
+          progressScore: overallCurrentScore,
           delta: overallBonusPoints,
-          name: "Genel" 
+          name: "Genel"
         }}
         categories={chartCategories}
       />
