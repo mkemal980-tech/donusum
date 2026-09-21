@@ -7,6 +7,36 @@ Bir adım bitince buradaki durumu güncelleyin.
 
 ---
 
+## Son iş: öneri katkısı ve gelişim puanı (2026-09-21)
+
+Sorun: yol haritasında 13 tamamlanmış öneri varken "Gelişim katkısı" +0.00
+görünüyordu. Kademeli önerilerin puanı tasarım gereği 0; katkıları basamak
+yükselmesinden geliyor, ama yol haritası sayfası hâlâ tarayıcıda
+`puan × durum yüzdesi` topluyordu. Aynı eski model panoda ve bildirimde de
+vardı; yol haritası ucu kilidi atlıyor ve skor geçmişine yazmıyordu.
+
+Tek tanım artık `docs/GELISIM-PUANI.md`. Dal: `fix/oneri-puan-katkisi`.
+
+| Faz | Ne yapıldı | Durum |
+|---|---|---|
+| 0 | Sözleşme: katkı = mevcut − taban; yalnızca COMPLETED sayılır; kademelide puan 0 | ✅ |
+| 1 | `lib/scoring.ts`: yükleme/hesap ayrımı, taban, fark, öneri başına katkı, kategori kırılımı | ✅ |
+| 2 | `lib/roadmap-status.ts` tek durum servisi; roadmap/completion/progress-scores/recommendations uçları; admin API puan kuralı | ✅ |
+| 3 | `scripts/normalize-cascade-points.ts`, `scripts/snapshot-progress-scores.ts` (kuru çalışma + `--apply`) | ✅ yazıldı, **canlıda çalıştırılmadı** |
+| 4 | Yol haritası, kart, öneriler bildirimi, pano, admin formu | ✅ |
+| 5 | Birim/uç testleri (451 geçiyor), `e2e/roadmap-contribution.spec.ts` | ✅ birim · ⏳ e2e yerelde DB olmadığı için **koşulmadı** |
+
+### Yayın öncesi yapılacaklar
+
+1. `npm run test:e2e -- e2e/roadmap-contribution.spec.ts` — DB'si olan bir ortamda.
+2. Railway'de sırayla (önce kuru, sonra `--apply`):
+   - `npx tsx --require dotenv/config scripts/normalize-cascade-points.ts`
+   - `npx tsx --require dotenv/config scripts/snapshot-progress-scores.ts`
+3. Şema değişikliği yok; migration gerekmez. `PLANNED` enum'da kaldı ve artık
+   her uç/ekran onu tanıyor.
+
+---
+
 ## Devam eden iş: çok kullanıcılı değerlendirme
 
 Büyük bir şirkette anketin farklı bölümlerini farklı departmanlar doldurur

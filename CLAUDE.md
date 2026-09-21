@@ -34,3 +34,6 @@ hali onu koruyormuş gibi yazılmıştı.)
 - Next.js 14 App Router, `nextjs_space/` altında.
 - Tailwind + CSS değişkenleri (`app/globals.css`), shadcn/ui (`components/ui`).
 - Prisma + NextAuth. Veritabanı komutları için `docs/DATABASE_GUIDELINES.md`.
+- Gelişim puanı ve öneri katkısının tek tanımı `docs/GELISIM-PUANI.md`;
+  sayı üreten her yer `lib/scoring.ts` motorunu, durum değiştiren her uç
+  `lib/roadmap-status.ts` servisini kullanır. Tarayıcıda puan hesaplanmaz.
