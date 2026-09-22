@@ -10,10 +10,18 @@
  * değerlendirmesinde birimin aktif bir kullanıcısı, kişisel değerlendirmede
  * sahibi). Üyesi kalmamış değerlendirme atlanır ve raporlanır.
  *
+ * Varsayılan olarak yalnızca tamamlanmış önerisi olan değerlendirmelere
+ * yazar; ötekilerde nokta mevcut puana eşit olur ve trende gürültü ekler.
+ * `--all` hepsine yazar.
+ *
+ * Yerelden çalıştırırken `railway run` iç adresi çevirmez; Postgres
+ * servisinin DATABASE_PUBLIC_URL değerini DATABASE_URL olarak verin.
+ *
  * Kullanım:
  *   npx tsx --require dotenv/config scripts/snapshot-progress-scores.ts            # kuru çalışma
  *   npx tsx --require dotenv/config scripts/snapshot-progress-scores.ts --apply    # uygula
  *   npx tsx --require dotenv/config scripts/snapshot-progress-scores.ts --survey=ID --apply
+ *   npx tsx --require dotenv/config scripts/snapshot-progress-scores.ts --all --apply
  */
 import { PrismaClient } from "@prisma/client";
 import { calculateProgressScores } from "../lib/scoring";
@@ -37,6 +45,7 @@ async function memberFor(assessment: { ownerUserId: string | null; unitId: strin
 
 async function main() {
   const apply = process.argv.includes("--apply");
+  const all = process.argv.includes("--all");
   const surveyArg = process.argv.find((a) => a.startsWith("--survey="))?.split("=")[1];
 
   const assessments = await prisma.assessment.findMany({
@@ -69,6 +78,11 @@ async function main() {
     }
 
     const scores = await calculateProgressScores(member.id, { surveyId: assessment.surveyId });
+    if (!all && scores.completedRecommendations === 0) {
+      console.log(`[atlandı] ${assessment.survey.name} / ${assessment.id}: tamamlanmış öneri yok`);
+      skipped++;
+      continue;
+    }
     const line =
       `${assessment.survey.name} / ${assessment.id}: puan ${scores.overallScore} ` +
       `(taban ${scores.baselineOverallScore}, katkı +${scores.delta}), ` +

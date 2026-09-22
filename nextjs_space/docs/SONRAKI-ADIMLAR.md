@@ -22,18 +22,32 @@ Tek tanım artık `docs/GELISIM-PUANI.md`. Dal: `fix/oneri-puan-katkisi`.
 | 0 | Sözleşme: katkı = mevcut − taban; yalnızca COMPLETED sayılır; kademelide puan 0 | ✅ |
 | 1 | `lib/scoring.ts`: yükleme/hesap ayrımı, taban, fark, öneri başına katkı, kategori kırılımı | ✅ |
 | 2 | `lib/roadmap-status.ts` tek durum servisi; roadmap/completion/progress-scores/recommendations uçları; admin API puan kuralı | ✅ |
-| 3 | `scripts/normalize-cascade-points.ts`, `scripts/snapshot-progress-scores.ts` (kuru çalışma + `--apply`) | ✅ yazıldı, **canlıda çalıştırılmadı** |
+| 3 | `scripts/normalize-cascade-points.ts`, `scripts/snapshot-progress-scores.ts` (kuru çalışma + `--apply`) | ✅ yazıldı; 2026-09-22 canlıda kuru koşuldu (aşağıda) |
 | 4 | Yol haritası, kart, öneriler bildirimi, pano, admin formu | ✅ |
 | 5 | Birim/uç testleri (451 geçiyor), `e2e/roadmap-contribution.spec.ts` | ✅ birim · ⏳ e2e yerelde DB olmadığı için **koşulmadı** |
 
-### Yayın öncesi yapılacaklar
+### Yayın durumu (2026-09-22)
 
-1. `npm run test:e2e -- e2e/roadmap-contribution.spec.ts` — DB'si olan bir ortamda.
-2. Railway'de sırayla (önce kuru, sonra `--apply`):
-   - `npx tsx --require dotenv/config scripts/normalize-cascade-points.ts`
-   - `npx tsx --require dotenv/config scripts/snapshot-progress-scores.ts`
-3. Şema değişikliği yok; migration gerekmez. `PLANNED` enum'da kaldı ve artık
-   her uç/ekran onu tanıyor.
+`master`'a hızlı ileri sarma ile alındı (e7d61aa), Railway 20:31'de derleyip
+yayına aldı; canlı chunk'larda yeni kod doğrulandı. Şema değişikliği yok.
+
+Canlı veritabanında kuru çalışma sonuçları:
+
+- `normalize-cascade-points`: puanı 0 olmayan kademeli öneri **yok**,
+  yapılacak bir şey kalmadı.
+- `snapshot-progress-scores`: 4 değerlendirme; yalnızca "Tersane 2026 /
+  cmua81cjn0009s209bzqtqohe" tamamlanmış öneri taşıyor (13 tane) ve katkısı
+  +0.17 (taban 3.6 → 3.7). Ekrandaki +0.00 sorununun düzeldiğinin sayısal
+  kanıtı bu. Betik artık varsayılan olarak yalnızca tamamlanmış önerisi olan
+  değerlendirmelere yazıyor.
+
+### Kalanlar (isteğe bağlı)
+
+1. Trend grafiğine bugünkü noktayı düşürmek için, `nextjs_space` içinde:
+   `DATABASE_URL="<Postgres servisinin DATABASE_PUBLIC_URL değeri>" npx tsx --require dotenv/config scripts/snapshot-progress-scores.ts --apply`
+   (tek satır yazar; `railway variables -s Postgres --json` değeri verir).
+   Yapılmazsa bir sonraki durum değişikliğinde nokta zaten kendiliğinden düşer.
+2. `npm run test:e2e -- e2e/roadmap-contribution.spec.ts` — DB'si olan bir ortamda.
 
 ---
 
