@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import AppShell from "@/components/ui/app-shell";
 import PageHeader from "@/components/ui/page-header";
@@ -86,6 +87,9 @@ function contributionLine(item: RoadmapItem): { text: string; now: string | null
 }
 
 export default function RoadmapClient() {
+  const searchParams = useSearchParams();
+  const selectedRecommendationId = searchParams.get("recommendationId");
+  const sourceSubCategoryName = searchParams.get("subCategoryName");
   const [roadmapItems, setRoadmapItems] = useState<RoadmapItem[]>([]);
   const [summary, setSummary] = useState<RoadmapSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -108,6 +112,13 @@ export default function RoadmapClient() {
   useEffect(() => {
     fetchRoadmap();
   }, []);
+
+  useEffect(() => {
+    if (loading || !selectedRecommendationId) return;
+    const row = document.getElementById(`roadmap-item-${selectedRecommendationId}`);
+    row?.scrollIntoView({ behavior: "smooth", block: "center" });
+    row?.focus({ preventScroll: true });
+  }, [loading, selectedRecommendationId]);
 
   const handleRemove = async (recommendationId: string) => {
     try {
@@ -254,6 +265,17 @@ export default function RoadmapClient() {
           </p>
         )}
 
+        {selectedRecommendationId && roadmapItems.some(
+          (item) => item.recommendationId === selectedRecommendationId
+        ) && (
+          <p
+            className="mb-6 rounded-[var(--radius-md)] p-4 t-sm"
+            style={{ background: "var(--accent-faint)", color: "var(--ink-2)", border: "1px solid var(--accent-quiet)" }}
+          >
+            {sourceSubCategoryName ? `${sourceSubCategoryName} alt kategorisinden eklenen` : "Eklenen"} öneri aşağıda işaretlendi.
+          </p>
+        )}
+
         {/* Items List with Status */}
         {(roadmapItems?.length ?? 0) > 0 && (
           <Panel title="Öneri durumları" className="mb-6">
@@ -266,8 +288,19 @@ export default function RoadmapClient() {
                 return (
                   <div
                     key={item?.id}
-                    className="flex flex-wrap items-center justify-between gap-3 py-3"
-                    style={{ borderTop: "1px solid var(--line)" }}
+                    id={`roadmap-item-${item?.recommendationId}`}
+                    tabIndex={item?.recommendationId === selectedRecommendationId ? -1 : undefined}
+                    aria-current={item?.recommendationId === selectedRecommendationId ? "true" : undefined}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-xs)] px-3 py-3"
+                    style={{
+                      borderTop: "1px solid var(--line)",
+                      background: item?.recommendationId === selectedRecommendationId
+                        ? "var(--accent-faint)"
+                        : undefined,
+                      outline: item?.recommendationId === selectedRecommendationId
+                        ? "1px solid var(--accent)"
+                        : undefined,
+                    }}
                   >
                     <div className="flex min-w-0 flex-1 items-start gap-2.5">
                       <StatusIcon size={16} className="mt-0.5 shrink-0" style={{ color: currentStatus.color }} aria-hidden="true" />

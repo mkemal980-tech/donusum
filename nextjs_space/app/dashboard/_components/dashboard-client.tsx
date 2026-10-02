@@ -9,6 +9,13 @@ import ProgressBar from "@/components/ui/progress-bar";
 import { MaturityLevelBar } from "@/components/ui/maturity-level-bar";
 import SectionErrorBoundary from "@/components/section-error-boundary";
 import { ProgressSection } from "./progress-section";
+import {
+  buildDashboardResultSummary,
+  getDashboardResultState,
+  type DashboardResultState,
+} from "@/lib/dashboard-result";
+import { escapeReportText } from "@/lib/report-html";
+import { toast } from "sonner";
 
 
 // Error fallback component for chunk loading failures
@@ -59,10 +66,12 @@ const KPIDashboard = dynamic(
 import {
   AlertTriangle,
   ArrowRight,
+  ChevronDown,
   ClipboardList,
   Download,
   Lightbulb,
   Map,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -75,11 +84,6 @@ interface CategoryScore {
 interface ScoreData {
   totalScore: number;
   categoryScores: Record<string, CategoryScore>;
-}
-
-interface SurveyResponse {
-  id: string;
-  questionId: string;
 }
 
 interface Survey {
@@ -125,14 +129,7 @@ const toCategoryScoreMap = (categoryScores: any): Record<string, CategoryScore> 
   return map;
 };
 
-const pdfText = (value: unknown) =>
-  String(value ?? "").replace(/[&<>"']/g, (character) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  })[character]!);
+const pdfText = escapeReportText;
 
 /**
  * Yüzdeye göre olgunluk seviyesi
@@ -191,16 +188,21 @@ export default function DashboardClient() {
   const [assessmentStatus, setAssessmentStatus] = useState<{
     submitted: boolean;
     submittedAt: string | null;
-  }>({ submitted: false, submittedAt: null });
-  const [responses, setResponses] = useState<SurveyResponse[]>([]);
+    isCoordinator: boolean;
+  }>({ submitted: false, submittedAt: null, isCoordinator: false });
+  const [completedQuestions, setCompletedQuestions] = useState(0);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [loading, setLoading] = useState(true);
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>("");
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [errorState, setErrorState] = useState<{ type: string; message: string } | null>(null);
+  const [confirmingSubmission, setConfirmingSubmission] = useState(false);
+  const [submittingAssessment, setSubmittingAssessment] = useState(false);
+  const [ironmanExpanded, setIronmanExpanded] = useState(false);
   const router = useRouter();
   const dashboardRef = useRef<HTMLDivElement>(null);
   const lastLoadedSurveyIdRef = useRef<string | null>(null);
@@ -234,14 +236,15 @@ export default function DashboardClient() {
          * istek üretiyordu ve her biri `withAuth` + değerlendirme çözümünden
          * geçiyordu. Sunucu artık üzerinde çalışılmış anketi kendisi bildiriyor.
          */
-        const startedSurveyId = (surveyData ?? []).find(
+        const startedSurveyId = activeSurveys.find(
           (survey: Survey & { hasResponses?: boolean }) => survey.hasResponses
         )?.id;
         const firstSurveyId = startedSurveyId ?? activeSurveys[0].id;
         setSelectedSurveyId(firstSurveyId);
-        lastLoadedSurveyIdRef.current = firstSurveyId;
 
-        const dashboardRes = await fetch(`/api/dashboard/unified?surveyId=${firstSurveyId}`);
+        const dashboardRes = await fetch(
+          `/api/dashboard/unified?surveyId=${encodeURIComponent(firstSurveyId)}`
+        );
 
         if (dashboardRes.status === 401) {
           // Session expired, redirect to login
@@ -249,23 +252,27 @@ export default function DashboardClient() {
           return;
         }
         
-        if (dashboardRes.ok) {
-          const data = await dashboardRes.json();
-          
-          // Tüm state'leri tek seferde set et
-          setUserProfile(data.userProfile);
-          setScoreData({
-            totalScore: data.score.totalScore,
-            categoryScores: toCategoryScoreMap(data.categoryScores),
-          });
-          setResponses(data.responses);
-          setTotalQuestions(data.score.totalQuestions);
-          setCategoryStats(data.categoryStats);
-          setAssessmentStatus({
-            submitted: Boolean(data.assessment?.locked),
-            submittedAt: data.assessment?.submittedAt ?? null,
-          });
+        if (!dashboardRes.ok) {
+          throw new Error(`Dashboard request failed: ${dashboardRes.status}`);
         }
+
+        const data = await dashboardRes.json();
+
+        // Tüm state'leri tek seferde set et
+        setUserProfile(data.userProfile);
+        setScoreData({
+          totalScore: data.score.totalScore,
+          categoryScores: toCategoryScoreMap(data.categoryScores),
+        });
+        setCompletedQuestions(data.score.answeredQuestions ?? data.responses?.length ?? 0);
+        setTotalQuestions(data.score.totalQuestions);
+        setCategoryStats(data.categoryStats);
+        setAssessmentStatus({
+          submitted: Boolean(data.assessment?.locked),
+          submittedAt: data.assessment?.submittedAt ?? null,
+          isCoordinator: Boolean(data.assessment?.isCoordinator),
+        });
+        lastLoadedSurveyIdRef.current = firstSurveyId;
       } catch (error) {
         console.error("Error initializing dashboard:", error);
         setErrorState({
@@ -287,32 +294,43 @@ export default function DashboardClient() {
 
     const fetchDashboardData = async () => {
       setLoading(true);
+      setErrorState(null);
       try {
-        const dashboardRes = await fetch(`/api/dashboard/unified?surveyId=${selectedSurveyId}`);
+        const dashboardRes = await fetch(
+          `/api/dashboard/unified?surveyId=${encodeURIComponent(selectedSurveyId)}`
+        );
 
         if (dashboardRes.status === 401) {
           window.location.href = '/login';
           return;
         }
         
-        if (dashboardRes.ok) {
-          const data = await dashboardRes.json();
-          
-          setScoreData({
-            totalScore: data.score.totalScore,
-            categoryScores: toCategoryScoreMap(data.categoryScores),
-          });
-          setResponses(data.responses);
-          setTotalQuestions(data.score.totalQuestions);
-          setCategoryStats(data.categoryStats);
-          setAssessmentStatus({
-            submitted: Boolean(data.assessment?.locked),
-            submittedAt: data.assessment?.submittedAt ?? null,
-          });
-          lastLoadedSurveyIdRef.current = selectedSurveyId;
+        if (!dashboardRes.ok) {
+          throw new Error(`Dashboard request failed: ${dashboardRes.status}`);
         }
+
+        const data = await dashboardRes.json();
+
+        setScoreData({
+          totalScore: data.score.totalScore,
+          categoryScores: toCategoryScoreMap(data.categoryScores),
+        });
+        setCompletedQuestions(data.score.answeredQuestions ?? data.responses?.length ?? 0);
+        setTotalQuestions(data.score.totalQuestions);
+        setCategoryStats(data.categoryStats);
+        setAssessmentStatus({
+          submitted: Boolean(data.assessment?.locked),
+          submittedAt: data.assessment?.submittedAt ?? null,
+          isCoordinator: Boolean(data.assessment?.isCoordinator),
+        });
+        setConfirmingSubmission(false);
+        lastLoadedSurveyIdRef.current = selectedSurveyId;
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
+        setErrorState({
+          type: "LOAD_ERROR",
+          message: "Seçilen değerlendirme yüklenemedi. Lütfen sayfayı yenileyin.",
+        });
       } finally {
         setLoading(false);
       }
@@ -321,10 +339,38 @@ export default function DashboardClient() {
     fetchDashboardData();
   }, [selectedSurveyId, surveys.length]);
 
-  const completedQuestions = responses?.length ?? 0;
   const completionPercentage = totalQuestions > 0 
     ? Math.round((completedQuestions / totalQuestions) * 100) 
     : 0;
+
+  const submitAssessment = async () => {
+    setSubmittingAssessment(true);
+    try {
+      const response = await fetch("/api/assessment/submission", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ surveyId: selectedSurveyId, action: "submit" }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        toast.error(result?.error || "Değerlendirme gönderilemedi");
+        return;
+      }
+
+      setAssessmentStatus((current) => ({
+        ...current,
+        submitted: true,
+        submittedAt: result.submittedAt ?? new Date().toISOString(),
+      }));
+      setConfirmingSubmission(false);
+      toast.success("Değerlendirme gönderildi ve puan kesinleşti.");
+    } catch (error) {
+      console.error("Error submitting assessment:", error);
+      toast.error("Değerlendirme gönderilirken bir hata oluştu.");
+    } finally {
+      setSubmittingAssessment(false);
+    }
+  };
 
   // PDF Oluşturma Fonksiyonu - Dark Theme Design
   const generatePdfReport = async () => {
@@ -367,6 +413,9 @@ export default function DashboardClient() {
       const sectorName = pdfText(userProfile?.sector?.name || 'Sektör Belirtilmemiş');
       const subSectorName = pdfText(userProfile?.subSector?.name || '');
       const reportDate = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+      const assessmentLabel = assessmentStatus.submitted
+        ? `Kesin${assessmentStatus.submittedAt ? ` · ${new Date(assessmentStatus.submittedAt).toLocaleDateString("tr-TR")}` : ""}`
+        : "Taslak";
 
       // Kategori sayısı ve öneri istatistikleri
       const categoryCount = Object.keys(scoreData?.categoryScores ?? {}).length;
@@ -915,6 +964,10 @@ export default function DashboardClient() {
                     <div class="cover-meta-label">Rapor Tarihi</div>
                     <div class="cover-meta-value">${reportDate}</div>
                   </div>
+                  <div class="cover-meta-item">
+                    <div class="cover-meta-label">Değerlendirme Durumu</div>
+                    <div class="cover-meta-value">${assessmentLabel}</div>
+                  </div>
                   ${subSectorName ? `
                   <div class="cover-meta-item">
                     <div class="cover-meta-label">Alt Sektör</div>
@@ -949,8 +1002,9 @@ export default function DashboardClient() {
               <h3>Genel Değerlendirme</h3>
               <p>
                 ${companyName}, ${surveyName} kapsamında ${categoryCount} ana kategori üzerinden değerlendirilmiştir. 
-                Değerlendirme sonucunda <strong>"${maturity.label}"</strong> olgunluk seviyesinde konumlanmıştır 
-                (%${overallPercentage.toFixed(0)} tamamlanma). Toplam ${recommendations.length} öneri tespit edilmiştir: 
+                ${assessmentStatus.submitted ? "Kesin değerlendirme" : "Taslak değerlendirme"} sonucunda
+                <strong>"${maturity.label}"</strong> olgunluk seviyesinde konumlanmıştır
+                (olgunluk puanı %${overallPercentage.toFixed(0)}). Toplam ${recommendations.length} öneri tespit edilmiştir:
                 ${quickWinCount} hızlı kazanım, ${projectCount} proje, ${bigBetCount} stratejik yatırım.
               </p>
             </div>
@@ -1162,9 +1216,9 @@ export default function DashboardClient() {
                   <div class="rec-card ${typeClass} no-break">
                     <div class="rec-header">
                       <span class="rec-type ${typeClass}">${typeName}</span>
-                      <span class="rec-title">${rec.title}</span>
+                      <span class="rec-title">${pdfText(rec.title)}</span>
                     </div>
-                    <div class="rec-desc">${rec.description?.substring(0, 180) ?? ''}${(rec.description?.length ?? 0) > 180 ? '...' : ''}</div>
+                    <div class="rec-desc">${pdfText(rec.description?.substring(0, 180) ?? '')}${(rec.description?.length ?? 0) > 180 ? '...' : ''}</div>
                     <div class="rec-meta">
                       <span>⏱️ ${timeframe}</span>
                       <span>💰 CAPEX: ${'$'.repeat(rec.capexLevel ?? 1)}</span>
@@ -1335,6 +1389,21 @@ export default function DashboardClient() {
   const totalRecommendations = categoryStats.reduce((sum, c) => sum + (c.recommendationCount ?? 0), 0);
   const selectedSurvey = surveys.find((s) => s.id === selectedSurveyId);
   const categoryEntries = Object.entries(scoreData?.categoryScores ?? {});
+  const dashboardState = getDashboardResultState({
+    answeredQuestions: completedQuestions,
+    totalQuestions,
+    submitted: assessmentStatus.submitted,
+    isCoordinator: assessmentStatus.isCoordinator,
+  });
+  const resultSummary = buildDashboardResultSummary({
+    score: scoreData?.totalScore ?? 0,
+    maturityLabel: maturity.label,
+    state: dashboardState,
+    categories: categoryEntries.map(([, category]) => ({
+      name: category.name,
+      percentage: category.percentage,
+    })),
+  });
 
   return (
     <>
@@ -1345,11 +1414,11 @@ export default function DashboardClient() {
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="t-display" style={{ color: "var(--ink)" }}>
-              Pano
+              Değerlendirme sonucu
             </h1>
             <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
               {selectedSurvey ? selectedSurvey.name : "Değerlendirme seçilmedi"}
-              {assessmentStatus.submitted ? " · kesin puan" : " · taslak"}
+              {dashboardState === "SUBMITTED" ? " · kesin puan" : " · taslak puan"}
             </p>
           </div>
 
@@ -1362,7 +1431,11 @@ export default function DashboardClient() {
                 <select
                   id="survey-select"
                   value={selectedSurveyId}
-                  onChange={(e) => setSelectedSurveyId(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedCategoryId(null);
+                    setIronmanExpanded(false);
+                    setSelectedSurveyId(e.target.value);
+                  }}
                   className="theme-select w-auto"
                 >
                   {surveys.map((survey) => (
@@ -1380,6 +1453,20 @@ export default function DashboardClient() {
             </Button>
           </div>
         </div>
+
+        <AssessmentStatusPanel
+          state={dashboardState}
+          answeredQuestions={completedQuestions}
+          totalQuestions={totalQuestions}
+          submittedAt={assessmentStatus.submittedAt}
+          confirmingSubmission={confirmingSubmission}
+          submittingAssessment={submittingAssessment}
+          onContinueSurvey={() => router.push("/survey")}
+          onViewRecommendations={() => router.push("/recommendations")}
+          onRequestSubmission={() => setConfirmingSubmission(true)}
+          onCancelSubmission={() => setConfirmingSubmission(false)}
+          onConfirmSubmission={submitAssessment}
+        />
 
         {/* --- Metrik şeridi: panonun ilk cevabı --- */}
         <div className="mb-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
@@ -1429,6 +1516,12 @@ export default function DashboardClient() {
               <div className="hidden w-px self-stretch md:block" style={{ background: "var(--line)" }} />
               <MaturityLevelBar score={scoreData?.totalScore ?? 0} isPercentage />
             </div>
+            <p
+              className="mt-6 border-t pt-5 t-body"
+              style={{ color: "var(--ink-2)", borderColor: "var(--line)" }}
+            >
+              {resultSummary}
+            </p>
           </section>
 
           <section
@@ -1443,12 +1536,28 @@ export default function DashboardClient() {
             {categoryEntries.length > 0 ? (
               <div className="mt-5 flex flex-col gap-4">
                 {categoryEntries.map(([id, data], index) => (
-                  <ProgressBar
+                  <button
                     key={id}
-                    value={data?.percentage ?? 0}
-                    label={data?.name ?? "Adsız kategori"}
-                    color={categoryColors[index % categoryColors.length]}
-                  />
+                    type="button"
+                    className="rounded-[var(--radius-xs)] p-2 text-left transition-colors hover:bg-[var(--surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                    style={{
+                      background: selectedCategoryId === id ? "var(--accent-faint)" : undefined,
+                    }}
+                    aria-pressed={selectedCategoryId === id}
+                    aria-controls="category-analysis-section"
+                    onClick={() => {
+                      setSelectedCategoryId(id);
+                      const heading = document.getElementById("category-analysis-heading");
+                      heading?.focus({ preventScroll: true });
+                      heading?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                  >
+                    <ProgressBar
+                      value={data?.percentage ?? 0}
+                      label={data?.name ?? "Adsız kategori"}
+                      color={categoryColors[index % categoryColors.length]}
+                    />
+                  </button>
                 ))}
               </div>
             ) : (
@@ -1459,11 +1568,45 @@ export default function DashboardClient() {
           </section>
         </div>
 
+        {/* --- Kategori analizi: ana puan özetinin hemen ardından --- */}
+        <section id="category-analysis-section" className="mb-6" aria-labelledby="category-analysis-heading">
+          <div className="mb-4">
+            <h2
+              id="category-analysis-heading"
+              tabIndex={-1}
+              className="t-subhead focus-visible:outline-none"
+              style={{ color: "var(--ink)" }}
+            >
+              Kategori analizi
+            </h2>
+            <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+              Seviyelendirme ve fark (GAP) analizi
+            </p>
+          </div>
+          <Suspense fallback={<ComponentSkeleton height="500px" />}>
+            <CategoryDashboard
+              surveyId={selectedSurveyId}
+              selectedCategoryId={selectedCategoryId}
+              onCategoryChange={setSelectedCategoryId}
+            />
+          </Suspense>
+        </section>
+
         {/* --- Açıklayıcı bölümler --- */}
         <div className="flex flex-col gap-6">
-          <Suspense fallback={<ComponentSkeleton height="300px" />}>
-            <KPIDashboard surveyId={selectedSurveyId} />
-          </Suspense>
+          <section aria-labelledby="transformation-dynamics-heading">
+            <div className="mb-4">
+              <h2 id="transformation-dynamics-heading" className="t-subhead" style={{ color: "var(--ink)" }}>
+                Dönüşüm dinamiği
+              </h2>
+              <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+                Aksiyon alma hızınız ile kurduğunuz süreçlerin kalıcılığı birlikte değerlendirilir.
+              </p>
+            </div>
+            <Suspense fallback={<ComponentSkeleton height="300px" />}>
+              <KPIDashboard surveyId={selectedSurveyId} isSubmitted={assessmentStatus.submitted} />
+            </Suspense>
+          </section>
 
           <SectionErrorBoundary label="Kıyaslama grafiği yüklenemedi.">
             <Suspense fallback={<ComponentSkeleton height="400px" />}>
@@ -1473,54 +1616,219 @@ export default function DashboardClient() {
 
           <ProgressSection surveyId={selectedSurveyId} />
 
-          <SectionErrorBoundary label="Ironman analizi yüklenemedi.">
-            <Suspense fallback={<ComponentSkeleton height="600px" />}>
-              <IronmanChart />
-            </Suspense>
-          </SectionErrorBoundary>
-
-          <section aria-labelledby="category-analysis-heading">
-            <div className="mb-4">
-              <h2 id="category-analysis-heading" className="t-subhead" style={{ color: "var(--ink)" }}>
-                Kategori analizi
-              </h2>
-              <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
-                Seviyelendirme ve fark (GAP) analizi
-              </p>
-            </div>
-            <Suspense fallback={<ComponentSkeleton height="500px" />}>
-              <CategoryDashboard surveyId={selectedSurveyId} />
-            </Suspense>
+          <section
+            className="rounded-[var(--radius-lg)]"
+            style={{ background: "var(--surface)", border: "1px solid var(--line)" }}
+          >
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-4 p-6 text-left"
+              aria-expanded={ironmanExpanded}
+              aria-controls="ironman-details"
+              onClick={() => setIronmanExpanded((expanded) => !expanded)}
+            >
+              <span>
+                <span className="block t-subhead" style={{ color: "var(--ink)" }}>
+                  Ayrıntılı dönüşüm analizi
+                </span>
+                <span className="mt-1 block t-sm" style={{ color: "var(--ink-2)" }}>
+                  Mevcut ve hedef aksiyon hızı ile süreç dayanıklılığını karşılaştırın.
+                </span>
+              </span>
+              <ChevronDown
+                size={20}
+                className={`shrink-0 transition-transform ${ironmanExpanded ? "rotate-180" : ""}`}
+                style={{ color: "var(--ink-3)" }}
+                aria-hidden="true"
+              />
+            </button>
+            {ironmanExpanded && (
+              <div id="ironman-details" className="border-t p-6" style={{ borderColor: "var(--line)" }}>
+                <SectionErrorBoundary label="Ayrıntılı dönüşüm analizi yüklenemedi.">
+                  <Suspense fallback={<ComponentSkeleton height="600px" />}>
+                    <IronmanChart surveyId={selectedSurveyId} />
+                  </Suspense>
+                </SectionErrorBoundary>
+              </div>
+            )}
           </section>
+
         </div>
 
         {/* --- Sıradaki adım --- */}
         <nav className="mt-10 grid gap-5 md:grid-cols-3" aria-label="Sıradaki adım">
-          <NextStep
-            icon={ClipboardList}
-            title="Ankete devam et"
-            description="Eksik bölümleri tamamlayın, puan güncellensin."
-            action="Başla"
-            onClick={() => router.push("/survey")}
-            primary
-          />
-          <NextStep
-            icon={Lightbulb}
-            title="Önerileri incele"
-            description="Zayıf kategoriler için üretilen geliştirme adımları."
-            action="İncele"
-            onClick={() => router.push("/recommendations")}
-          />
-          <NextStep
-            icon={Map}
-            title="Yol haritası kur"
-            description="Önerileri takvime ve sorumluya bağlayın."
-            action="Planla"
-            onClick={() => router.push("/roadmap")}
-          />
+          {assessmentStatus.submitted ? (
+            <>
+              <NextStep
+                icon={Lightbulb}
+                title="Önerileri incele"
+                description="Alt kategorileriniz için üretilen gelişim adımlarını değerlendirin."
+                action="İncele"
+                onClick={() => router.push("/recommendations")}
+                primary
+              />
+              <NextStep
+                icon={Map}
+                title="Yol haritasını düzenle"
+                description="Seçtiğiniz önerileri takvime bağlayın ve ilerlemeyi izleyin."
+                action="Planla"
+                onClick={() => router.push("/roadmap")}
+              />
+              <NextStep
+                icon={ClipboardList}
+                title="Yanıtları görüntüle"
+                description="Kesin puanı oluşturan kilitli anket yanıtlarını inceleyin."
+                action="Görüntüle"
+                onClick={() => router.push("/survey")}
+              />
+            </>
+          ) : (
+            <>
+              <NextStep
+                icon={ClipboardList}
+                title={dashboardState === "NOT_STARTED" ? "Ankete başla" : "Ankete devam et"}
+                description="Eksik bölümleri tamamlayın, taslak puanınız güncellensin."
+                action={dashboardState === "NOT_STARTED" ? "Başla" : "Devam et"}
+                onClick={() => router.push("/survey")}
+                primary
+              />
+              <NextStep
+                icon={Lightbulb}
+                title="Önerileri incele"
+                description="Mevcut cevaplarınıza göre oluşan geliştirme adımları."
+                action="İncele"
+                onClick={() => router.push("/recommendations")}
+              />
+              <NextStep
+                icon={Map}
+                title="Yol haritası kur"
+                description="Önerileri takvime ve sorumluya bağlayın."
+                action="Planla"
+                onClick={() => router.push("/roadmap")}
+              />
+            </>
+          )}
         </nav>
       </main>
     </>
+  );
+}
+
+function AssessmentStatusPanel({
+  state,
+  answeredQuestions,
+  totalQuestions,
+  submittedAt,
+  confirmingSubmission,
+  submittingAssessment,
+  onContinueSurvey,
+  onViewRecommendations,
+  onRequestSubmission,
+  onCancelSubmission,
+  onConfirmSubmission,
+}: {
+  state: DashboardResultState;
+  answeredQuestions: number;
+  totalQuestions: number;
+  submittedAt: string | null;
+  confirmingSubmission: boolean;
+  submittingAssessment: boolean;
+  onContinueSurvey: () => void;
+  onViewRecommendations: () => void;
+  onRequestSubmission: () => void;
+  onCancelSubmission: () => void;
+  onConfirmSubmission: () => void;
+}) {
+  const remaining = Math.max(0, totalQuestions - answeredQuestions);
+  const submittedDate = submittedAt
+    ? new Date(submittedAt).toLocaleDateString("tr-TR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
+
+  const content: Record<DashboardResultState, { title: string; description: string }> = {
+    NOT_STARTED: {
+      title: "Değerlendirme henüz başlamadı",
+      description: `${totalQuestions} soruyu yanıtladıkça taslak puanınız ve kategori analiziniz oluşur.`,
+    },
+    IN_PROGRESS: {
+      title: `${remaining} soru kaldı`,
+      description: `${answeredQuestions}/${totalQuestions} soru yanıtlandı. Taslak puanınız yeni cevaplarla güncellenir.`,
+    },
+    READY_TO_SUBMIT: {
+      title: "Tüm sorular yanıtlandı",
+      description: "Değerlendirme henüz gönderilmedi. Gönderdiğinizde cevaplar kilitlenir ve puan kesinleşir.",
+    },
+    AWAITING_SUBMISSION: {
+      title: "Tüm sorular yanıtlandı",
+      description: "Değerlendirme henüz gönderilmedi. Koordinatörünüz gönderdiğinde cevaplar kilitlenir ve puan kesinleşir.",
+    },
+    SUBMITTED: {
+      title: "Değerlendirme gönderildi",
+      description: submittedDate
+        ? `${submittedDate} tarihinde gönderildi. Puanınız kesinleşti; gelişim adımlarınızı önerilerden planlayabilirsiniz.`
+        : "Puanınız kesinleşti; gelişim adımlarınızı önerilerden planlayabilirsiniz.",
+    },
+  };
+
+  return (
+    <section
+      className="mb-6 flex flex-col gap-4 rounded-[var(--radius-lg)] p-5 sm:flex-row sm:items-center sm:justify-between"
+      style={{
+        background: state === "SUBMITTED" ? "var(--success-bg)" : "var(--surface)",
+        border: `1px solid ${state === "SUBMITTED" ? "var(--success)" : "var(--line)"}`,
+      }}
+      aria-labelledby="assessment-status-heading"
+      aria-live="polite"
+    >
+      <div className="max-w-[70ch]">
+        <h2 id="assessment-status-heading" className="text-[15px] font-semibold" style={{ color: "var(--ink)" }}>
+          {content[state].title}
+        </h2>
+        <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+          {content[state].description}
+        </p>
+        {state === "READY_TO_SUBMIT" && confirmingSubmission && (
+          <p className="mt-2 t-sm font-medium" style={{ color: "var(--warning)" }}>
+            Gönderimden sonra cevapları değiştirmek için koordinatörün değerlendirmeyi yeniden açması gerekir.
+          </p>
+        )}
+      </div>
+
+      <div className="flex shrink-0 flex-wrap gap-2">
+        {(state === "NOT_STARTED" || state === "IN_PROGRESS" || state === "AWAITING_SUBMISSION") && (
+          <Button onClick={onContinueSurvey}>
+            {state === "NOT_STARTED" ? "Ankete başla" : state === "IN_PROGRESS" ? "Ankete devam et" : "Yanıtları görüntüle"}
+            <ArrowRight size={16} aria-hidden="true" />
+          </Button>
+        )}
+        {state === "READY_TO_SUBMIT" && !confirmingSubmission && (
+          <Button onClick={onRequestSubmission}>
+            <Send size={16} aria-hidden="true" />
+            Değerlendirmeyi gönder
+          </Button>
+        )}
+        {state === "READY_TO_SUBMIT" && confirmingSubmission && (
+          <>
+            <Button variant="outline" onClick={onCancelSubmission} disabled={submittingAssessment}>
+              Vazgeç
+            </Button>
+            <Button onClick={onConfirmSubmission} loading={submittingAssessment}>
+              {!submittingAssessment && <Send size={16} aria-hidden="true" />}
+              Gönder ve kesinleştir
+            </Button>
+          </>
+        )}
+        {state === "SUBMITTED" && (
+          <Button onClick={onViewRecommendations}>
+            Önerileri incele
+            <ArrowRight size={16} aria-hidden="true" />
+          </Button>
+        )}
+      </div>
+    </section>
   );
 }
 

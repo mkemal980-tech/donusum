@@ -91,25 +91,29 @@ export function BubbleChart({ recommendations, title = "Bubble Chart" }: BubbleC
   /* Baloncuk dolgusu, kenarlığı ve içindeki numaranın rengi. Dolgu üzerine
      beyaz yazıldığı için `-solid` varyantları kullanılır. */
   const bubblePalette = useCallback(
-    () => ({
-      QUICK_WIN: {
-        bg: readToken('--success-solid', '#1F9E71'),
-        border: readToken('--success', '#27C08A'),
-      },
-      PROJECT: {
-        bg: readToken('--accent-solid', '#1E6FE8'),
-        border: readToken('--accent', '#2E86FF'),
-      },
-      BIG_BET: {
-        bg: readToken('--series-4-solid', '#7F5CBE'),
-        border: readToken('--series-4', '#9A79D6'),
-      },
-      text: readToken('--on-accent', '#FFFFFF'),
-      surface: readToken('--surface', '#1E212A'),
-      line: readToken('--line', '#2E313D'),
-      ink2: readToken('--ink-2', '#B3B7C4'),
-      ink3: readToken('--ink-3', '#8B90A2'),
-    }),
+    () => {
+      // Sürüm sayısı renk değeri değildir; değişmesi token'ları yeniden okutmak içindir.
+      void themeVersion;
+      return {
+        QUICK_WIN: {
+          bg: readToken('--success-solid', '#1F9E71'),
+          border: readToken('--success', '#27C08A'),
+        },
+        PROJECT: {
+          bg: readToken('--accent-solid', '#1E6FE8'),
+          border: readToken('--accent', '#2E86FF'),
+        },
+        BIG_BET: {
+          bg: readToken('--series-4-solid', '#7F5CBE'),
+          border: readToken('--series-4', '#9A79D6'),
+        },
+        text: readToken('--on-accent', '#FFFFFF'),
+        surface: readToken('--surface', '#1E212A'),
+        line: readToken('--line', '#2E313D'),
+        ink2: readToken('--ink-2', '#B3B7C4'),
+        ink3: readToken('--ink-3', '#8B90A2'),
+      };
+    },
     // themeVersion tema değişince artar; renkler yeniden okunur.
     [themeVersion],
   );

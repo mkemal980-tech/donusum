@@ -12,9 +12,14 @@ interface DataPoint {
 interface GapRadarChartProps {
   data: DataPoint[];
   title?: string;
+  targetLabel?: string;
 }
 
-export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProps) {
+export function GapRadarChart({
+  data,
+  title = "GAP Analizi",
+  targetLabel = "Hedef",
+}: GapRadarChartProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -23,6 +28,9 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
      çevrilir. Önceden değişken adı doğrudan fillStyle'a veriliyor, tarayıcı
      bunu yok sayıp varsayılan siyahla çiziyordu. */
   const colors = useMemo(() => {
+    // Bu iki değer renk değildir; değişimleri token'ların yeniden okunmasını tetikler.
+    void mounted;
+    void themeVersion;
     const read = readToken;
 
     return {
@@ -414,7 +422,7 @@ export function GapRadarChart({ data, title = "GAP Analizi" }: GapRadarChartProp
           </span>
           <span className="flex items-center gap-2" style={{ color: "var(--ink-2)" }}>
             <span className="h-2 w-2 rounded-full" style={{ background: colors.primary }} aria-hidden="true" />
-            Hedef
+            {targetLabel}
           </span>
         </div>
       </div>

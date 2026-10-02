@@ -64,7 +64,7 @@ interface ComparisonData {
   targetEndurance: number;
 }
 
-export function IronmanChart() {
+export function IronmanChart({ surveyId }: { surveyId?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [data, setData] = useState<IronmanData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -85,8 +85,12 @@ export function IronmanChart() {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
+      setComparisonData(null);
       try {
-        const res = await fetch('/api/ironman/user');
+        const res = await fetch(
+          surveyId ? `/api/ironman/user?surveyId=${encodeURIComponent(surveyId)}` : '/api/ironman/user'
+        );
         if (!res.ok) {
           // API hatası durumunda data null kalacak, fallback UI gösterilecek
           setData(null);
@@ -102,7 +106,7 @@ export function IronmanChart() {
       }
     };
     fetchData();
-  }, []);
+  }, [surveyId]);
 
   // Sektörleri yükle
   const fetchSectors = async () => {

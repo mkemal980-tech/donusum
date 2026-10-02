@@ -121,6 +121,14 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <div>
+        <h2 className="t-subhead" style={{ color: "var(--ink)" }}>
+          Anket sonrası gelişim
+        </h2>
+        <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+          Tamamlanan yol haritası adımlarının başlangıç puanınıza yaptığı katkı.
+        </p>
+      </div>
       {hasDelta && (
         <p
           className="flex items-start gap-2.5 rounded-[var(--radius-xs)] p-3 t-sm"
@@ -164,7 +172,7 @@ export function ProgressSection({ surveyId }: { surveyId?: string }) {
 
       {/* Chart */}
       <ProgressBenchmarkChart
-        title="Benchmark"
+        title="Başlangıç puanı ve güncel puan"
         overall={{
           surveyScore: overallBaseScore,
           progressScore: overallCurrentScore,

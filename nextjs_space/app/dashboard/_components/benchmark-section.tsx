@@ -121,8 +121,8 @@ export function BenchmarkSection({ surveyId }: { surveyId?: string }) {
 
       <BenchmarkChart
         title={activeTab === "subsector" && hasSubSectorData 
-          ? `${data.subSector?.name} Benchmark` 
-          : `${data.sector?.name} Benchmark`
+          ? `${data.subSector?.name} karşılaştırması`
+          : `${data.sector?.name} karşılaştırması`
         }
         overall={currentBenchmark.overall}
         categories={currentBenchmark.categories}

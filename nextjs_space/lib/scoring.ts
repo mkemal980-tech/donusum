@@ -873,7 +873,10 @@ export async function getRecommendationsForUser(
           // Öneride kapsam boşsa sorunun kendi yerleşimine düşülür.
           subLevelId: true,
           subCategoryId: true,
-          categoryId: true
+          categoryId: true,
+          // Soru bir alt seviyeye bağlıysa alt kategori kimliği doğrudan
+          // Question üzerinde tutulmaz; filtreleme için ilişkiyi çöz.
+          subLevel: { select: { subCategoryId: true } }
         }
       },
       subLevel: {
@@ -983,6 +986,12 @@ export async function getRecommendationsForUser(
       isInRoadmap: existingIds.has(rec?.id),
       subLevelName: rec.subLevel?.name,
       subCategoryName: rec.subLevel?.subCategory?.name ?? rec.subCategory?.name,
+      resolvedSubCategoryId:
+        rec.subLevel?.subCategoryId ??
+        rec.subCategoryId ??
+        rec.question?.subLevel?.subCategoryId ??
+        rec.question?.subCategoryId ??
+        null,
       categoryName: rec.subLevel?.subCategory?.category?.name ?? rec.subCategory?.category?.name,
       // Tetikleme bilgisi
       triggeredByQuestion: !!rec.questionId,

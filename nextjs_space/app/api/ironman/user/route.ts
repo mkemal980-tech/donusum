@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
   const auth = await withAuth(request);
   if (!auth.success) return auth.response;
   const userId = auth.userId;
+  const surveyId = new URL(request.url).searchParams.get('surveyId') ?? undefined;
 
   try {
     // Kullanıcı bilgilerini al
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest) {
     // 4.5) 1-5 ölçeğinde tanımlı. İki farklı ölçek karşılaştırıldığı için
     // tavanı 5'in altında olan sorular şirketi haksız yere kadranın altında
     // gösteriyordu.
-    const scores = await calculateProgressScores(userId);
+    const scores = await calculateProgressScores(userId, { surveyId });
 
     // Hiç cevap yoksa ekran sektör ortalamasını başlangıç kabul eder.
     const currentVelocity = scores.velocityWeight > 0 ? scores.velocityScore : 2.5;

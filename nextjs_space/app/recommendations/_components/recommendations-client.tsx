@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import AppShell from "@/components/ui/app-shell";
@@ -51,6 +52,8 @@ interface Recommendation {
   stepDistance?: number;
   /** Yumuşak kilit: sırası gelmemiş basamak ilerletilemez. */
   isActionable?: boolean;
+  resolvedSubCategoryId?: string | null;
+  subCategoryName?: string | null;
   /** Sunucuda hesaplanan katkı (docs/GELISIM-PUANI.md). */
   contribution?: {
     kind: "cascade" | "points";
@@ -72,6 +75,11 @@ interface CompletionRecord {
 }
 
 export default function RecommendationsClient() {
+  const searchParams = useSearchParams();
+  const requestedSurveyId = searchParams.get("surveyId") ?? "";
+  const requestedSubCategoryId = searchParams.get("subCategoryId") ?? "";
+  const requestedSubCategoryName = searchParams.get("subCategoryName") ?? "";
+  const requestedRecommendationId = searchParams.get("recommendationId") ?? "";
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   /**
    * Öneriler tek bir anketin sonucudur; birden fazla ankete erişimi olan
@@ -84,13 +92,21 @@ export default function RecommendationsClient() {
   const [completions, setCompletions] = useState<Record<string, CompletionStatus>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<'bubble' | 'list'>('bubble');
+  const [viewMode, setViewMode] = useState<'bubble' | 'list'>(requestedSubCategoryId ? 'list' : 'bubble');
+  const [subCategoryFilter, setSubCategoryFilter] = useState(requestedSubCategoryId);
+  const [recommendationFilter, setRecommendationFilter] = useState(requestedRecommendationId);
   const [statusFilter, setStatusFilter] = useState<'all' | CompletionStatus>('all');
   const [filters, setFilters] = useState({
     timeframe: "all",
     costType: "all",
     strategicType: "all"
   });
+
+  useEffect(() => {
+    setSubCategoryFilter(requestedSubCategoryId);
+    setRecommendationFilter(requestedRecommendationId);
+    if (requestedSubCategoryId) setViewMode("list");
+  }, [requestedRecommendationId, requestedSubCategoryId]);
 
   // Video oynatıcı state'leri
   const [activeVideo, setActiveVideo] = useState<{ url: string; title: string } | null>(null);
@@ -139,7 +155,11 @@ export default function RecommendationsClient() {
           ? data.map((survey: AssignedSurvey) => ({ id: survey.id, name: survey.name }))
           : [];
         setSurveys(list);
-        setSelectedSurveyId((current) => current || list[0]?.id || "");
+        setSelectedSurveyId((current) => {
+          const requested = list.find((survey) => survey.id === requestedSurveyId)?.id;
+          if (requested) return requested;
+          return list.some((survey) => survey.id === current) ? current : list[0]?.id ?? "";
+        });
         if (list.length === 0) setLoading(false);
       } catch (error) {
         console.error("Error fetching surveys:", error);
@@ -147,7 +167,7 @@ export default function RecommendationsClient() {
       }
     };
     loadSurveys();
-  }, []);
+  }, [requestedSurveyId]);
 
   // Anket değişince öneriler ve tamamlama durumları yeniden okunur.
   useEffect(() => {
@@ -255,8 +275,10 @@ export default function RecommendationsClient() {
     const matchesCost = filters?.costType === "all" || rec?.costType === filters?.costType;
     const matchesStrategic = filters?.strategicType === "all" || rec?.strategicType === filters?.strategicType;
     const matchesStatus = statusFilter === "all" || rec?.completionStatus === statusFilter;
+    const matchesSubCategory = !subCategoryFilter || rec?.resolvedSubCategoryId === subCategoryFilter;
+    const matchesRecommendation = !recommendationFilter || rec?.id === recommendationFilter;
     
-    return matchesSearch && matchesTimeframe && matchesCost && matchesStrategic && matchesStatus;
+    return matchesSearch && matchesTimeframe && matchesCost && matchesStrategic && matchesStatus && matchesSubCategory && matchesRecommendation;
   });
 
   // Stats
@@ -332,7 +354,11 @@ export default function RecommendationsClient() {
                   <select
                     id="rec-survey"
                     value={selectedSurveyId}
-                    onChange={(event) => setSelectedSurveyId(event.target.value)}
+                    onChange={(event) => {
+                      setSubCategoryFilter("");
+                      setRecommendationFilter("");
+                      setSelectedSurveyId(event.target.value);
+                    }}
                     className="theme-select w-auto"
                     title="Öneriler seçili ankete göre listelenir"
                   >
@@ -398,6 +424,41 @@ export default function RecommendationsClient() {
             );
           })}
         </div>
+
+        {subCategoryFilter && (
+          <div
+            className="mb-6 flex flex-col gap-3 rounded-[var(--radius-md)] p-4 sm:flex-row sm:items-center sm:justify-between"
+            style={{ background: "var(--accent-faint)", border: "1px solid var(--accent-quiet)" }}
+          >
+            <div>
+              <p className="t-label" style={{ color: "var(--accent-ink)" }}>
+                Alt kategori filtresi
+              </p>
+              <p className="mt-1 t-body" style={{ color: "var(--ink)" }}>
+                {requestedSubCategoryName || recommendationsWithStatus.find(
+                  (recommendation) => recommendation.resolvedSubCategoryId === subCategoryFilter
+                )?.subCategoryName || "Seçili alt kategori"}
+              </p>
+              {recommendationFilter && (
+                <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>
+                  Öneri: {recommendationsWithStatus.find(
+                    (recommendation) => recommendation.id === recommendationFilter
+                  )?.title ?? "Seçili öneri"}
+                </p>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (recommendationFilter) setRecommendationFilter("");
+                else setSubCategoryFilter("");
+              }}
+            >
+              {recommendationFilter ? "Tüm alt kategori önerilerini göster" : "Filtreyi kaldır"}
+            </Button>
+          </div>
+        )}
 
         {/* Filtreler */}
         <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start">
@@ -615,7 +676,7 @@ export default function RecommendationsClient() {
           <EmptyState
             title="Gösterilecek öneri yok"
             description={
-              searchTerm || filters?.timeframe !== "all" || filters?.costType !== "all" || filters?.strategicType !== "all" || statusFilter !== "all"
+              searchTerm || subCategoryFilter || recommendationFilter || filters?.timeframe !== "all" || filters?.costType !== "all" || filters?.strategicType !== "all" || statusFilter !== "all"
                 ? "Seçili filtrelerde eşleşen öneri kalmadı. Filtreleri gevşetin."
                 : surveys.length > 1 && selectedSurveyName
                   ? `Öneriler, "${selectedSurveyName}" anketi cevaplandıkça üretilir.`

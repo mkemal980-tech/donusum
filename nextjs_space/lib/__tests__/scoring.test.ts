@@ -324,6 +324,41 @@ describe("getRecommendationsForUser — soru-cevap tetikli filtreleme", () => {
     expect(recs[0].triggeredByQuestion).toBe(true);
   });
 
+  it("sorunun alt seviyesinden alt kategori kimliğini çözümler", async () => {
+    findManySurveyResponse
+      .mockResolvedValueOnce([{ questionId: "q1", value: "Evet" }])
+      .mockResolvedValue([]);
+    findManyCategory.mockResolvedValue([]);
+    findManyRecommendation.mockResolvedValue([
+      {
+        id: "rec-1",
+        questionId: "q1",
+        subLevelId: null,
+        subCategoryId: null,
+        triggerOptions: JSON.stringify(["evet"]),
+        minScoreThreshold: 0,
+        maxScoreThreshold: 100,
+        question: {
+          id: "q1",
+          text: "Soru 1",
+          type: "YES_NO",
+          subCategoryId: null,
+          subLevel: { subCategoryId: "sub-from-question-level" },
+        },
+        subLevel: null,
+        subCategory: null,
+      },
+    ]);
+    findManyRoadmapItem.mockResolvedValue([]);
+
+    const recs = await getRecommendationsForUser("user-1");
+
+    expect(recs[0].resolvedSubCategoryId).toBe("sub-from-question-level");
+    expect(findManyRecommendation.mock.calls[0][0].include.question.select.subLevel).toEqual({
+      select: { subCategoryId: true },
+    });
+  });
+
   it("kullanıcının cevabı triggerOptions'ta yoksa öneriyi elemeye alır", async () => {
     findManySurveyResponse
       .mockResolvedValueOnce([{ questionId: "q1", value: "Hayır" }])

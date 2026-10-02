@@ -152,6 +152,7 @@ export async function GET(request: NextRequest) {
         status: assessment.status,
         submittedAt: assessment.submittedAt,
         locked: assessment.locked,
+        isCoordinator: assessment.isCoordinator,
       },
       score: {
         totalScore: scoreData.totalScore,

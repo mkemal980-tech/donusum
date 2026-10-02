@@ -60,9 +60,10 @@ interface KPIData {
 
 interface KPIDashboardProps {
   surveyId?: string;
+  isSubmitted?: boolean;
 }
 
-export function KPIDashboard({ surveyId }: KPIDashboardProps) {
+export function KPIDashboard({ surveyId, isSubmitted = false }: KPIDashboardProps) {
   const router = useRouter();
   const [data, setData] = useState<KPIData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -93,11 +94,13 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
             <div key={i} className="skeleton h-[104px]" />
           ))}
         </div>
-        <div className="grid gap-5 md:grid-cols-3">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="skeleton h-[200px]" />
-          ))}
-        </div>
+        {!isSubmitted && (
+          <div className="grid gap-5 md:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="skeleton h-[200px]" />
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -157,11 +160,12 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
      yüzde) buradan kaldırıldı; bu bölüm yalnızca Ironman eksenlerini anlatır. */
   const gaugeCards = [
     {
-      title: 'Velocity (hız)',
+      title: 'Aksiyon hızı',
       value: data.ironman.velocity.toFixed(1),
       suffix: '/5',
       description:
         'Aksiyon alma hızınız. Uygulamaya, projeye ve harekete geçmeye bakan sorulardan gelir. Yüksek puan çabuk hareket ettiğinizi gösterir; tek başına yüksek olması attığınız adımların kalıcı olduğu anlamına gelmez.',
+      meaning: 'Uygulama ve harekete geçme gücü',
       subtitle:
         data.ironman.velocityVsSector !== null
           ? `Sektöre göre ${data.ironman.velocityVsSector > 0 ? '+' : ''}${data.ironman.velocityVsSector}`
@@ -169,11 +173,12 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
       trend: data.ironman.velocityVsSector,
     },
     {
-      title: 'Endurance (dayanıklılık)',
+      title: 'Süreç dayanıklılığı',
       value: data.ironman.endurance.toFixed(1),
       suffix: '/5',
       description:
         'Yaptığınız işin kalıcılığı. Politika, dokümantasyon, süreç ve süreklilik sorularından gelir. Yüksek puan, kişilere değil sisteme bağlı çalıştığınızı gösterir.',
+      meaning: 'Politika, süreç ve uygulamaların kalıcılığı',
       subtitle:
         data.ironman.enduranceVsSector !== null
           ? `Sektöre göre ${data.ironman.enduranceVsSector > 0 ? '+' : ''}${data.ironman.enduranceVsSector}`
@@ -181,10 +186,11 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
       trend: data.ironman.enduranceVsSector,
     },
     {
-      title: 'Ironman kadranı',
+      title: 'Dönüşüm profili',
       value: data.ironman.quadrantInfo.title,
       description:
         'İki eksenin kesişimi; eşik her iki eksende de 3.0. İkisi de 3.0 üstündeyse Demir Adam (hem hızlı hem kalıcı), yalnızca hız yüksekse Sprinter, yalnızca dayanıklılık yüksekse Maraton Koşucusu, ikisi de düşükse Yaya.',
+      meaning: 'Aksiyon hızı ve süreç dayanıklılığının kesişimi',
       subtitle: 'Hız ve dayanıklılığın kesişimi',
     },
   ];
@@ -222,6 +228,10 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
               )}
             </p>
 
+            <p className="mt-1.5 t-sm" style={{ color: "var(--ink-2)" }}>
+              {card.meaning}
+            </p>
+
             <p className="mt-1.5 flex items-center gap-1 t-sm" style={{ color: "var(--ink-3)" }}>
               {renderTrend(card.trend ?? null)}
               {card.subtitle}
@@ -230,7 +240,7 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
         ))}
       </div>
 
-      <div className="grid gap-5 md:grid-cols-3">
+      {!isSubmitted && <div className="grid gap-5 md:grid-cols-3">
         {/* Kategori ilerlemesi */}
         <section
           className="rounded-[var(--radius-lg)] p-5"
@@ -360,7 +370,7 @@ export function KPIDashboard({ surveyId }: KPIDashboardProps) {
             )}
           </dl>
         </section>
-      </div>
+      </div>}
     </div>
   );
 }

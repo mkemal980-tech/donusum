@@ -1,19 +1,28 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-const mocks = vi.hoisted(() => ({
-  prisma: {
-    user: { findUnique: vi.fn(), findMany: vi.fn(), count: vi.fn(), update: vi.fn(), delete: vi.fn() },
-    surveyResponse: { count: vi.fn() },
-    /**
-     * Kalıcı silme artık bağımlılıkları kendisi temizliyor (cascade kurallarına
-     * güvenmiyor), bu yüzden işlem içindeki istemci de taklit edilir.
-     */
-    $transaction: vi.fn(async (callback: (client: unknown) => unknown) => callback(mocks.tx)),
-  },
-  tx: {} as Record<string, { deleteMany: ReturnType<typeof vi.fn>; updateMany: ReturnType<typeof vi.fn>; findMany: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn> }>,
-  withAuth: vi.fn(),
-}));
+const mocks = vi.hoisted(() => {
+  const tx = {} as Record<string, {
+    deleteMany: ReturnType<typeof vi.fn>;
+    updateMany: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
+    delete: ReturnType<typeof vi.fn>;
+  }>;
+
+  return {
+    prisma: {
+      user: { findUnique: vi.fn(), findMany: vi.fn(), count: vi.fn(), update: vi.fn(), delete: vi.fn() },
+      surveyResponse: { count: vi.fn() },
+      /**
+       * Kalıcı silme artık bağımlılıkları kendisi temizliyor (cascade kurallarına
+       * güvenmiyor), bu yüzden işlem içindeki istemci de taklit edilir.
+       */
+      $transaction: vi.fn(async (callback: (client: unknown) => unknown) => callback(tx)),
+    },
+    tx,
+    withAuth: vi.fn(),
+  };
+});
 
 vi.mock("@/lib/db", () => ({ prisma: mocks.prisma }));
 vi.mock("@/lib/api-utils", () => ({
