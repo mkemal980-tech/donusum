@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -20,6 +20,7 @@ const TABS = [
   { id: "recommendations", label: "Birim önerileri" }, { id: "roadmap", label: "Yol haritası" },
   { id: "documents", label: "Yüklenen dosyalar" }, { id: "history", label: "Geçmiş ve dönemler" },
 ];
+const ALL = "all";
 type Document = { id: string; fileName: string; fileType: string; createdAt: string; downloadUrl: string | null; user: { firstName: string | null; lastName: string | null; email: string } };
 
 export function UnitDashboardLoading() {
@@ -41,6 +42,7 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [navigating, startNavigation] = useTransition();
   const [index, setIndex] = useState<UnitDashboardIndex | null>(null);
   const [indexLoading, setIndexLoading] = useState(true);
   const [indexError, setIndexError] = useState<string | null>(null);
@@ -75,28 +77,32 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
   }, [status, role, revision]);
 
   const units = index?.units ?? [];
-  const unitId = searchParams.get("unitId") ?? units[0]?.id ?? "";
-  const unit = units.find(row => row.id === unitId);
-  const unitRows = index?.assessments.filter(row => row.unitId === unitId) ?? [];
-  const selectedSurveyId = searchParams.get("surveyId") ?? preferred(unitRows)?.surveyId ?? "";
-  const surveyRows = unitRows.filter(row => row.surveyId === selectedSurveyId);
   const requestedId = searchParams.get("assessmentId") ?? searchParams.get("selection");
-  const selected = requestedId ? surveyRows.find(row => row.id === requestedId) : preferred(surveyRows);
+  const unitId = searchParams.get("unitId") ?? index?.assessments.find(row => row.id === requestedId)?.unitId ?? (units.length > 1 ? ALL : units[0]?.id ?? "");
+  const isOverview = unitId === ALL;
+  const unit = units.find(row => row.id === unitId);
+  const unitRows = index?.assessments.filter(row => isOverview || row.unitId === unitId) ?? [];
+  const selectedSurveyId = searchParams.get("surveyId") ?? (isOverview ? ALL : preferred(unitRows)?.surveyId ?? "");
+  const surveyRows = unitRows.filter(row => selectedSurveyId === ALL || row.surveyId === selectedSurveyId);
+  const selectedPeriodId = searchParams.get("periodId") ?? ALL;
+  const overviewRows = surveyRows.filter(row => selectedPeriodId === ALL || row.periodId === selectedPeriodId);
+  const selected = isOverview ? undefined : requestedId ? surveyRows.find(row => row.id === requestedId) : preferred(surveyRows);
   const assessmentId = selected?.assessmentId ?? null;
   const activeTab = TABS.some(tab => tab.id === searchParams.get("tab")) ? searchParams.get("tab")! : "results";
   const current = detail?.assessment.id === assessmentId ? detail : null;
-  const context = { unitId, surveyId: selectedSurveyId, assessmentId, selection: assessmentId ? null : selected?.id ?? null, tab: activeTab };
+  const context = { unitId, surveyId: selectedSurveyId === ALL ? "" : selectedSurveyId, periodId: isOverview && selectedPeriodId !== ALL ? selectedPeriodId : undefined, assessmentId, selection: assessmentId ? null : selected?.id ?? null, tab: activeTab };
   const contextParams = new URLSearchParams();
   if (unitId) contextParams.set("unitId", unitId);
-  if (selectedSurveyId) contextParams.set("surveyId", selectedSurveyId);
+  if (context.surveyId) contextParams.set("surveyId", context.surveyId);
+  if (context.periodId) contextParams.set("periodId", context.periodId);
   if (assessmentId) contextParams.set("assessmentId", assessmentId);
   else if (selected) contextParams.set("selection", selected.id);
   if (activeTab !== "results") contextParams.set("tab", activeTab);
   const contextQuery = contextParams.toString();
 
   useEffect(() => {
-    if (actorKey && contextQuery && selected) window.sessionStorage.setItem("unit-dashboard:" + actorKey, contextQuery);
-  }, [actorKey, contextQuery, selected]);
+    if (actorKey && contextQuery && (selected || isOverview)) window.sessionStorage.setItem("unit-dashboard:" + actorKey, contextQuery);
+  }, [actorKey, contextQuery, selected, isOverview]);
 
   // Seçim açık URL ile taşınır; kullanıcı panoya boş URL ile dönerse son seçimi geri alınır.
   useEffect(() => {
@@ -119,8 +125,15 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
     }
     const nextTab = tab ?? activeTab;
     if (nextTab !== "results") params.set("tab", nextTab);
-    router.replace(pathname + "?" + params.toString(), { scroll: false });
-  }, [unitId, activeTab, pathname, router]);
+    startNavigation(() => router.replace(pathname + "?" + params.toString(), { scroll: false }));
+  }, [unitId, activeTab, pathname, router, startNavigation]);
+
+  const showOverview = (surveyId = ALL, periodId = ALL) => {
+    const params = new URLSearchParams({ unitId: ALL });
+    if (surveyId !== ALL) params.set("surveyId", surveyId);
+    if (periodId !== ALL) params.set("periodId", periodId);
+    startNavigation(() => router.replace(pathname + "?" + params.toString(), { scroll: false }));
+  };
 
   useEffect(() => {
     setDetail(null);
@@ -200,7 +213,11 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
 
   if (status !== "authenticated" || (!index && indexLoading)) return <UnitDashboardLoading />;
   const surveys = [...new Map(unitRows.map(row => [row.surveyId, { id: row.surveyId, name: row.surveyName }])).values()];
-  const filteredRows = unitRows.filter(row => statusFilter === "ALL" || (statusFilter === "OVERDUE" ? row.overdue : row.status === statusFilter));
+  const periods = [...new Map(surveyRows.map(row => [row.periodId, { id: row.periodId, name: row.periodName }])).values()];
+  const filteredRows = (isOverview ? overviewRows : unitRows).filter(row => statusFilter === "ALL" || (statusFilter === "OVERDUE" ? row.overdue : row.status === statusFilter));
+  const startedCount = overviewRows.filter(row => row.assessmentId).length;
+  const submittedCount = overviewRows.filter(row => row.status === "SUBMITTED").length;
+  const assessedUnitCount = new Set(overviewRows.map(row => row.unitId)).size;
   const taskHref = assessmentId ? "/unit-manager/assignments?assessmentId=" + encodeURIComponent(assessmentId) + "&surveyId=" + encodeURIComponent(selectedSurveyId) + "&unitId=" + encodeURIComponent(unitId) : null;
 
   return (
@@ -209,34 +226,48 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
       <main id="icerik" tabIndex={-1}>
         <PageHeader title={title} subtitle="Birim sonuçlarını inceleyin, eksikleri ve sonraki adımları takip edin."
           actions={<>
+            {units.length > 1 && !isOverview && <Button variant="outline" onClick={() => showOverview()}>Tüm birimler</Button>}
             <Button asChild variant="outline"><Link href={"/dashboard?view=assessment&" + contextQuery}>Kendi değerlendirmem</Link></Button>
             <Button variant="ghost" aria-label="Birim verilerini yenile" disabled={indexLoading || detailLoading} onClick={() => setRevision(value => value + 1)}><RefreshCw size={16} aria-hidden="true" />Yenile</Button>
           </>} />
         {indexError ? <EmptyState title="Veriler yüklenemedi" description={indexError} action={<Button onClick={() => setRevision(value => value + 1)}>Tekrar dene</Button>} /> :
           !units.length ? <EmptyState title="Yönettiğiniz birim yok" description="Birime yönetici olarak atandığınızda o birimin değerlendirmeleri burada görünür." /> :
           <>
-            <div className="mb-6 grid gap-4 md:grid-cols-3">
-              <div><label htmlFor="unit-select" className="t-label block mb-1">Birim</label><select id="unit-select" className="theme-select w-full" value={unitId}
-                onChange={event => navigate(preferred(index?.assessments.filter(row => row.unitId === event.target.value) ?? []), event.target.value)}>
-                {units.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
+            <div className="mb-6 grid gap-4 md:grid-cols-3" aria-busy={navigating}>
+              <div><label htmlFor="unit-select" className="t-label block mb-1">Birim</label><select id="unit-select" className="theme-select w-full" value={unitId} disabled={navigating}
+                onChange={event => event.target.value === ALL ? showOverview() : navigate(preferred(index?.assessments.filter(row => row.unitId === event.target.value) ?? []), event.target.value)}>
+                {(units.length > 1 || isOverview) && <option value={ALL}>Tüm yönetilen birimler</option>}
+                {units.map(row => <option key={row.id} value={row.id}>{row.name}{row.assessmentCount ? " · " + row.assessmentCount + " değerlendirme" : " · Değerlendirme yok"}</option>)}
               </select></div>
-              <div><label htmlFor="unit-survey-select" className="t-label block mb-1">Anket</label><select id="unit-survey-select" className="theme-select w-full" value={selectedSurveyId} disabled={!surveys.length}
-                onChange={event => navigate(preferred(unitRows.filter(row => row.surveyId === event.target.value)))}>
+              <div><label htmlFor="unit-survey-select" className="t-label block mb-1">Anket</label><select id="unit-survey-select" className="theme-select w-full" value={selectedSurveyId} disabled={navigating || !surveys.length}
+                onChange={event => isOverview ? showOverview(event.target.value) : navigate(preferred(unitRows.filter(row => row.surveyId === event.target.value)))}>
+                {isOverview && <option value={ALL}>Tüm anketler</option>}
                 {!surveys.length && <option value="">Atanmış anket yok</option>}
                 {surveys.map(row => <option key={row.id} value={row.id}>{row.name}</option>)}
               </select></div>
-              <div><label htmlFor="unit-period-select" className="t-label block mb-1">Dönem</label><select id="unit-period-select" className="theme-select w-full" value={selected?.id ?? ""} disabled={!surveyRows.length}
-                onChange={event => navigate(surveyRows.find(row => row.id === event.target.value))}>
+              <div><label htmlFor="unit-period-select" className="t-label block mb-1">Dönem</label><select id="unit-period-select" className="theme-select w-full" value={isOverview ? selectedPeriodId : selected?.id ?? ""} disabled={navigating || !surveyRows.length}
+                onChange={event => isOverview ? showOverview(selectedSurveyId, event.target.value) : navigate(surveyRows.find(row => row.id === event.target.value))}>
+                {isOverview && <option value={ALL}>Tüm dönemler</option>}
                 {!surveyRows.length && <option value="">Dönem yok</option>}
-                {surveyRows.map(row => <option key={row.id} value={row.id}>{row.periodName} · {UNIT_RESULT_LABELS[row.status]}</option>)}
+                {isOverview ? periods.map(row => <option key={row.id} value={row.id}>{row.name}</option>) : surveyRows.map(row => <option key={row.id} value={row.id}>{row.periodName} · {UNIT_RESULT_LABELS[row.status]}</option>)}
               </select></div>
             </div>
             {index?.hasAnonymousCampaigns && <p className="mb-4 t-sm text-[var(--ink-2)]">Anonim kampanyaların toplu sonuçları <Link href="/organization" className="underline">Üye sonuçları</Link> ekranında gösterilir.</p>}
-            {!unit || (requestedId && !selected && !indexLoading) ? <EmptyState title="Bu değerlendirmeye erişilemiyor" description="Seçili birim, anket veya dönem yönetim kapsamınızda olmayabilir." action={<Button onClick={() => navigate(preferred(unitRows))}>Birim seçimine dön</Button>} /> :
-              indexLoading && requestedId && !selected ? <div className="skeleton h-64" /> : !selected ? <EmptyState title={unit.name} description="Bu birimde henüz değerlendirme başlatılmadı ve aktif anket ataması yok." action={<Button asChild variant="outline"><Link href="/admin/surveys">Anketleri incele</Link></Button>} /> :
+            {(!unit && !isOverview) || (requestedId && !selected && !indexLoading) ? <EmptyState title="Bu değerlendirmeye erişilemiyor" description="Seçili birim, anket veya dönem yönetim kapsamınızda olmayabilir." action={<Button onClick={() => units.length > 1 ? showOverview() : navigate(preferred(unitRows))}>Birim seçimine dön</Button>} /> :
+              indexLoading && requestedId && !selected ? <div className="skeleton h-64" /> : isOverview ? <section aria-label="Yönetim kapsamı özeti">
+                <h2 className="t-subhead mb-2">Tüm yönetilen birimler</h2>
+                <p className="t-sm mb-5 text-[var(--ink-2)]">Yönettiğiniz birimler ve alt birimlerin değerlendirmeleri birlikte listelenir. Bir satırı açarak sonuçları, görevleri ve yol haritasını inceleyebilirsiniz.</p>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <StatCard label="Yönetilen birim" value={units.length} note="Alt birimler dahil" />
+                  <StatCard label="Anketi bulunan birim" value={assessedUnitCount} note="Seçili anket ve dönemde" />
+                  <StatCard label="Başlanan değerlendirme" value={startedCount} note={submittedCount + " gönderilmiş · " + (startedCount - submittedCount) + " taslak"} />
+                  <StatCard label="Başlanmamış anket" value={overviewRows.length - startedCount} note="Atanmış, henüz cevap girilmemiş" />
+                </div>
+                {!unitRows.length && <p className="mt-5 t-sm text-[var(--ink-2)]">Yönettiğiniz birimlerde henüz değerlendirme başlatılmadı ve aktif anket ataması yok.</p>}
+              </section> : !selected ? <EmptyState title={unit!.name} description="Bu birimde henüz değerlendirme başlatılmadı ve aktif anket ataması yok." action={units.length > 1 && index!.assessments.length ? <Button variant="outline" onClick={() => showOverview()}>Diğer birimlerin değerlendirmelerini göster</Button> : <Button asChild variant="outline"><Link href="/admin/surveys">Anketleri incele</Link></Button>} /> :
               <>
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-                  <div><h2 className="t-subhead">{unit.name}</h2><p className="t-sm text-[var(--ink-2)]">{selected.surveyName} · {selected.periodName}</p></div>
+                  <div><h2 className="t-subhead">{selected.unitName}</h2><p className="t-sm text-[var(--ink-2)]">{selected.surveyName} · {selected.periodName}</p></div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={"badge " + (selected.status === "SUBMITTED" ? "badge-success" : selected.overdue ? "badge-warning" : "badge-neutral")}>{UNIT_RESULT_LABELS[selected.status]}</span>
                     {selected.deadline && <span className="t-sm text-[var(--ink-2)]">{selected.deadlineLabel}: {unitDate(selected.deadline)}{selected.overdue ? " · Süre geçti" : ""}</span>}
@@ -285,9 +316,9 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
               </>}
             <section className="mt-8" aria-label="Birim değerlendirmeleri">
               <div className="mb-4 flex flex-wrap justify-between gap-3"><h2 className="t-subhead">Birim değerlendirmeleri</h2><div><label htmlFor="assessment-status" className="sr-only">Değerlendirme durumuna göre filtrele</label><select id="assessment-status" className="theme-select" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}><option value="ALL">Bütün durumlar</option>{Object.entries(UNIT_RESULT_LABELS).filter(([key]) => key !== "AWAITING_SUBMISSION").map(([key, text]) => <option key={key} value={key}>{text}</option>)}<option value="OVERDUE">Süresi geçenler</option></select></div></div>
-              <div className="theme-card p-0 overflow-x-auto"><table className="theme-table"><thead><tr><th>Değerlendirme</th><th>Dönem</th><th>Durum</th><th>Tamamlanma</th><th>Puan</th><th>İşlem</th></tr></thead><tbody>
-                {filteredRows.map(row => <tr key={row.id}><td>{row.surveyName}</td><td>{row.periodName}</td><td>{UNIT_RESULT_LABELS[row.status]}{row.overdue ? " · Süre geçti" : ""}</td><td className="tabular">{row.assessmentId ? row.responseCount + "/" + row.totalQuestions + " · %" + row.completionPercentage : "Henüz başlamadı"}</td><td className="tabular">{row.score == null ? "—" : "%" + row.score + " · " + unitScore(row.maturityScore) + "/5"}</td><td><Button variant="link" onClick={() => navigate(row, undefined, "results")}>Sonucu görüntüle</Button>{row.assessmentId && <Button asChild variant="link"><Link href={"/unit-manager/assignments?assessmentId=" + encodeURIComponent(row.assessmentId) + "&surveyId=" + encodeURIComponent(row.surveyId) + "&unitId=" + encodeURIComponent(row.unitId)}>Görevleri aç</Link></Button>}</td></tr>)}
-                {!filteredRows.length && <tr><td colSpan={6}>Bu filtreye uygun değerlendirme yok.</td></tr>}
+              <div className="theme-card p-0 overflow-x-auto"><table className="theme-table"><thead><tr><th>Birim</th><th>Değerlendirme</th><th>Dönem</th><th>Durum</th><th>Tamamlanma</th><th>Puan</th><th>İşlem</th></tr></thead><tbody>
+                {filteredRows.map(row => <tr key={row.id}><td>{row.unitName}</td><td>{row.surveyName}</td><td>{row.periodName}</td><td>{UNIT_RESULT_LABELS[row.status]}{row.overdue ? " · Süre geçti" : ""}</td><td className="tabular">{row.assessmentId ? row.responseCount + "/" + row.totalQuestions + " · %" + row.completionPercentage : "Henüz başlamadı"}</td><td className="tabular">{row.score == null ? "—" : "%" + row.score + " · " + unitScore(row.maturityScore) + "/5"}</td><td><Button variant="link" onClick={() => navigate(row, undefined, "results")}>{row.assessmentId ? "Sonucu görüntüle" : "Değerlendirmeyi aç"}</Button>{row.assessmentId && <Button asChild variant="link"><Link href={"/unit-manager/assignments?assessmentId=" + encodeURIComponent(row.assessmentId) + "&surveyId=" + encodeURIComponent(row.surveyId) + "&unitId=" + encodeURIComponent(row.unitId)}>Görevleri aç</Link></Button>}</td></tr>)}
+                {!filteredRows.length && <tr><td colSpan={7}>Bu filtreye uygun değerlendirme yok.</td></tr>}
               </tbody></table></div>
             </section>
           </>}
