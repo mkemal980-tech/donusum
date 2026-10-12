@@ -9,6 +9,7 @@ import { useAdminNavGroups } from "./admin-nav";
 import {
   ArrowLeft,
   Building2,
+  Gauge,
   ChevronLeft,
   ClipboardList,
   LayoutDashboard,
@@ -63,6 +64,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
       { href: "/organization/members", label: "Üye yönetimi", icon: UserPlus, roles: ["UNIT_MANAGER", "ADMIN"] },
       { href: "/admin/surveys", label: "Anket tasarımı", icon: ClipboardList, roles: ["UNIT_MANAGER", "ADMIN"] },
       { href: "/unit-manager", label: "Birim takibi", icon: Building2, roles: ["UNIT_MANAGER", "ADMIN"], prefix: true },
+      { href: "/unit-manager/management", label: "Birim yönetimi", icon: Gauge, roles: ["UNIT_MANAGER", "ADMIN"], prefix: true },
     ],
   },
   {
@@ -137,6 +139,11 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
     () =>
       NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => i.roles.includes(role)).map(item => {
         if (role !== "UNIT_MANAGER") return item;
+        if (item.href === "/unit-manager/management") {
+          const params = new URLSearchParams(unitQuery);
+          for (const key of ["assessmentId", "selection", "tab"]) params.delete(key);
+          return { ...item, href: item.href + (params.toString() ? "?" + params.toString() : "") };
+        }
         if (item.href === "/survey") return { ...item, label: "Kendi anketim" };
         if (item.href === "/dashboard" || item.href === "/recommendations" || item.href === "/roadmap") {
           const params = new URLSearchParams(unitQuery);
@@ -156,6 +163,7 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
   const isActive = useCallback(
     (item: { href: string; prefix?: boolean }) => {
       const [path, query] = item.href.split("?");
+      if (path === "/unit-manager" && pathname?.startsWith("/unit-manager/management")) return false;
       if (pathname !== path && !(item.prefix && pathname?.startsWith(path))) return false;
       if (role === "UNIT_MANAGER" && path === "/dashboard") {
         const tab = new URLSearchParams(query).get("tab") ?? "results";

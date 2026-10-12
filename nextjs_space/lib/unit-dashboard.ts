@@ -51,8 +51,9 @@ export async function loadManagedStructure(scope: ScoringAssessment, db: DbClien
   return { categories, questions, scoring: { ...scope, questionIds: questions.map(question => question.id) } };
 }
 
-export async function loadUnitDashboardIndex(actor: ManagedActor, db: DbClient = prisma) {
-  const scope = await managedUnitScope(actor, db);
+export async function loadUnitDashboardIndex(actor: ManagedActor, db: DbClient = prisma, unitIds?: readonly string[]) {
+  const authorized = await managedUnitScope(actor, db);
+  const scope = unitIds ? { in: unitIds.filter(id => !("in" in authorized) || authorized.in.includes(id)) } : authorized;
   const unitWhere = "in" in scope ? { id: { in: scope.in } } : {};
   const [units, records, assignments, recipients, direct] = await Promise.all([
     db.unit.findMany({ where: unitWhere, select: { id: true, name: true, description: true, parentId: true }, orderBy: { name: "asc" } }),
@@ -210,6 +211,11 @@ export async function loadUnitAssessmentDetail(actor: ManagedActor, assessmentId
     const questions = structure.questions.filter(question => question.categoryId === category.id);
     return {
       id: category.id, name: category.name, baseScore: progress.baseScore, currentScore: progress.totalScore,
+      weightPercentage: (() => {
+        const scoped = progressInputs.responses.filter(row => row.applicable);
+        const totalWeight = scoped.reduce((sum, row) => sum + row.weight, 0);
+        return totalWeight ? scoped.filter(row => row.categoryId === category.id).reduce((sum, row) => sum + row.weight, 0) / totalWeight * 100 : 0;
+      })(),
       basePercentage: progress.baseScore ? Math.max(0, (progress.baseScore - 1) / 4 * 100) : 0,
       currentPercentage: progress.totalScore ? Math.max(0, (progress.totalScore - 1) / 4 * 100) : 0,
       delta: progress.bonusPoints, answeredQuestions: questions.filter(question => responseById.has(question.id)).length,
@@ -224,6 +230,10 @@ export async function loadUnitAssessmentDetail(actor: ManagedActor, assessmentId
         const activeAssigneeId = section.assigneeId && memberById.has(section.assigneeId) ? section.assigneeId : null;
         return {
           ...section, assigneeId: activeAssigneeId,
+          currentPercentage: section.id && answered.length ? (() => {
+            const score = progress.subCategories.find(row => row.id === section.id)?.totalScore;
+            return score ? Math.max(0, (score - 1) / 4 * 100) : null;
+          })() : null,
           assigneeName: activeAssigneeId ? label(memberById.get(activeAssigneeId)!) : section.id ? "Atanmamış" : "Koordinatör",
           questionCount: rows.length, answeredCount: answered.length,
           percentage: rows.length ? Math.round(answered.length / rows.length * 100) : 0,
@@ -260,6 +270,7 @@ export async function loadUnitAssessmentDetail(actor: ManagedActor, assessmentId
     const contribution = contributions.contributions.get(rec.id);
     return {
       id: rec.id, title: rec.title, description: rec.description, estimatedImpact: rec.estimatedImpact,
+      categoryId: rec.categoryId ?? rec.subLevel?.subCategory?.categoryId ?? rec.subCategory?.categoryId ?? structure.questions.find(question => question.id === rec.questionId)?.categoryId ?? null,
       strategicType: rec.strategicType, timeframe: rec.timeframe, costType: rec.costType,
       capexLevel: rec.capexLevel, opexLevel: rec.opexLevel, order: rec.order,
       isActionable: shown?.isActionable ?? false, stepDistance: shown?.stepDistance ?? 0,
@@ -295,6 +306,10 @@ export async function loadUnitAssessmentDetail(actor: ManagedActor, assessmentId
       roadmapLocked: !record.survey.isActive || Boolean(record.survey.archivedAt) || record.campaignRecipient?.campaign.status === "CLOSED",
     },
     scores: contributions.scores,
+    questionMix: {
+      velocity: progressInputs.responses.filter(row => row.applicable && row.axisType === "VELOCITY").length,
+      endurance: progressInputs.responses.filter(row => row.applicable && row.axisType === "ENDURANCE").length,
+    },
     answeredQuestions: responseById.size, totalQuestions: structure.questions.length,
     completionPercentage: structure.questions.length ? Math.round(responseById.size / structure.questions.length * 100) : 0,
     categories, work, recommendations,

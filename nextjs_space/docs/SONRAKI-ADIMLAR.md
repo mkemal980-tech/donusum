@@ -7,6 +7,28 @@ Bir adım bitince buradaki durumu güncelleyin.
 
 ---
 
+## Son iş: her birim için yönetici alanı (2026-10-12)
+
+`/admin/demo-manager` ekranının alt bölümleri de referans alındı.
+Gerçek verili görünüm `/unit-manager/management` adresinde açılır:
+
+- Ana adminin Birimler listesindeki her birimde **Yönetici alanı** bağlantısı;
+  uygulama menüsünde **Birim yönetimi**, birim panosunda da doğrudan geçiş var.
+- Katılım, kategori/E–S–G sonuçları, yanıt gelişimi, olgunluk dağılımı,
+  Ironman analizi, şirket ölçeği, sektör kıyası, öneri portföyü ve içgörüler.
+- Birim + alt birimler, anket, dönem ve taslak/gönderilmiş sonuç seçimi;
+  bütün bölümleri içeren Excel ve PDF raporları. Puanlar mevcut ortak
+  motordan alınır. Anonim kampanyaların tekil sonuçları bu görünümde açılmaz;
+  mevcut Üye sonuçları alanına yönlendirilir.
+- Şirket ölçeği gerçek çalışan sayısına dayanır: nullable `Unit.employeeCount`
+  alanı ve yetkili birim yöneticisine profil formu eklendi.
+  Migration: `000019_unit_employee_count`; mevcut kayıtlar null kalır.
+- 565 birim/API testi ve örnek API yanıtlarıyla 20 tarayıcı senaryosu geçti.
+  İki mevcut demo erişim e2e senaryosu yerel DB bulunmadığı için atlandı.
+  Canlı yönetim kapsamı ve hesaplar yalnızca okuma işlemleriyle doğrulandı.
+
+---
+
 ## Son iş: birim panosunun açılış görünümü (2026-10-12)
 
 Birden çok birim yöneten kullanıcının panosu alfabetik sıradaki ilk birime

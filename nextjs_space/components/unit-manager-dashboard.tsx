@@ -219,6 +219,10 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
   const submittedCount = overviewRows.filter(row => row.status === "SUBMITTED").length;
   const assessedUnitCount = new Set(overviewRows.map(row => row.unitId)).size;
   const taskHref = assessmentId ? "/unit-manager/assignments?assessmentId=" + encodeURIComponent(assessmentId) + "&surveyId=" + encodeURIComponent(selectedSurveyId) + "&unitId=" + encodeURIComponent(unitId) : null;
+  const managementParams = new URLSearchParams({ unitId: unitId || "all" });
+  if (selectedSurveyId && selectedSurveyId !== ALL) managementParams.set("surveyId", selectedSurveyId);
+  const managementPeriod = selected?.periodId ?? (isOverview && selectedPeriodId !== ALL ? selectedPeriodId : null);
+  if (managementPeriod) managementParams.set("periodId", managementPeriod);
 
   return (
     <>
@@ -226,6 +230,7 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
       <main id="icerik" tabIndex={-1}>
         <PageHeader title={title} subtitle="Birim sonuçlarını inceleyin, eksikleri ve sonraki adımları takip edin."
           actions={<>
+            {units.length > 0 && <Button asChild variant="outline"><Link href={"/unit-manager/management?" + managementParams.toString()}>Yönetici alanı</Link></Button>}
             {units.length > 1 && !isOverview && <Button variant="outline" onClick={() => showOverview()}>Tüm birimler</Button>}
             <Button asChild variant="outline"><Link href={"/dashboard?view=assessment&" + contextQuery}>Kendi değerlendirmem</Link></Button>
             <Button variant="ghost" aria-label="Birim verilerini yenile" disabled={indexLoading || detailLoading} onClick={() => setRevision(value => value + 1)}><RefreshCw size={16} aria-hidden="true" />Yenile</Button>
