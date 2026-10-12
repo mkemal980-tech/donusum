@@ -3,7 +3,8 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { validateSurveyAccess, withAuth } from "@/lib/api-utils";
-import { getScopeResolver } from "@/lib/scoring";
+import { getScopeResolver, getScopeResolverForProfile } from "@/lib/scoring";
+import { resolveManagedAssessment, ManagedAssessmentError } from "@/lib/managed-assessment";
 import {
   getAssessmentContext,
   getContributorCandidates,
@@ -27,15 +28,17 @@ export async function GET(request: NextRequest) {
   if (!auth.success) return auth.response;
 
   try {
-    const surveyId = new URL(request.url).searchParams.get("surveyId");
+    const params = new URL(request.url).searchParams;
+    const managed = params.get("assessmentId") ? await resolveManagedAssessment(auth, params.get("assessmentId")!) : null;
+    const surveyId = managed?.surveyId ?? params.get("surveyId");
     if (!surveyId) {
       return NextResponse.json({ error: "surveyId gerekli" }, { status: 400 });
     }
 
-    const accessError = await validateSurveyAccess(auth.userId, auth.user.role, surveyId);
+    const accessError = managed ? null : await validateSurveyAccess(auth.userId, auth.user.role, surveyId);
     if (accessError) return accessError;
 
-    const context = await getAssessmentContext(auth.userId, surveyId);
+    const context = managed?.context ?? await getAssessmentContext(auth.userId, surveyId);
 
     const [categories, assignments, members, scopeOf] = await Promise.all([
       prisma.category.findMany({
@@ -64,12 +67,13 @@ export async function GET(request: NextRequest) {
       }),
       context.assessmentId ? getSectionAssignments(context.assessmentId) : [],
       getContributorCandidates({ unitId: context.unitId, ownerUserId: auth.userId }),
-      getScopeResolver(auth.userId, surveyId),
+      managed ? getScopeResolverForProfile(managed.scoring, surveyId) : getScopeResolver(auth.userId, surveyId),
     ]);
 
     const assigneeOfSection = new Map(
       assignments.map((assignment) => [assignment.subCategoryId, assignment.assigneeId])
     );
+    const activeMemberIds = new Set(members.map(member => member.id));
 
     /**
      * İlerleme: kuruluşun bu ankete verdiği cevaplar bölümlere dağıtılır.
@@ -132,16 +136,23 @@ export async function GET(request: NextRequest) {
             id: subCategory.id,
             name: subCategory.name,
             questionCount:
-              subCategory._count.questions +
-              subCategory.subLevels.reduce((sum, level) => sum + level._count.questions, 0),
+              subCategory.subLevels.length
+                ? subCategory.subLevels.reduce((sum, level) => sum + level._count.questions, 0)
+                : subCategory._count.questions,
             answeredCount: answeredBySection.get(subCategory.id) ?? 0,
             lastAnsweredAt: lastAnsweredAt.get(subCategory.id) ?? null,
-            assigneeId: assigneeOfSection.get(subCategory.id) ?? null,
+            assigneeId: activeMemberIds.has(assigneeOfSection.get(subCategory.id) ?? "")
+              ? assigneeOfSection.get(subCategory.id) ?? null
+              : null,
           })),
       }))
       .filter((category) => category.sections.length > 0 || category.directQuestionCount > 0);
 
     return NextResponse.json({
+      surveyId,
+      unitId: context.unitId,
+      surveyName: managed?.survey.name ?? null,
+      unitName: managed?.unit?.name ?? null,
       assessmentId: context.assessmentId,
       isCoordinator: context.isCoordinator,
       distributed: assignments.length > 0,
@@ -155,6 +166,7 @@ export async function GET(request: NextRequest) {
       categories: shaped,
     });
   } catch (error) {
+    if (error instanceof ManagedAssessmentError) return NextResponse.json({ error: error.message }, { status: error.status });
     console.error("Error fetching section assignments:", error);
     return NextResponse.json({ error: "Görev dağılımı alınamadı" }, { status: 500 });
   }
@@ -183,10 +195,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const accessError = await validateSurveyAccess(auth.userId, auth.user.role, surveyId);
+    const managed = body.assessmentId ? await resolveManagedAssessment(auth, body.assessmentId) : null;
+    if (managed && managed.surveyId !== surveyId) return NextResponse.json({ error: "Anket bu değerlendirmeye ait değil." }, { status: 400 });
+    const accessError = managed ? null : await validateSurveyAccess(auth.userId, auth.user.role, surveyId);
     if (accessError) return accessError;
 
-    const context = await getAssessmentContext(auth.userId, surveyId);
+    const context = managed?.context ?? await getAssessmentContext(auth.userId, surveyId);
     if (!context.isCoordinator) {
       return NextResponse.json(
         { error: "Görev dağıtma yetkiniz yok." },
@@ -214,7 +228,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Bölüm bu ankete ait değil." }, { status: 400 });
     }
 
-    const assessmentId = await getOrCreateAssessment(auth.userId, surveyId);
+    const scopeOf = managed ? await getScopeResolverForProfile(managed.scoring, surveyId) : await getScopeResolver(auth.userId, surveyId);
+    if (!scopeOf(subCategoryId).applicable) return NextResponse.json({ error: "Bölüm bu birimin kapsamı dışında." }, { status: 400 });
+    const assessmentId = managed?.id ?? await getOrCreateAssessment(auth.userId, surveyId);
 
     if (!assigneeId) {
       await prisma.sectionAssignment.deleteMany({ where: { assessmentId, subCategoryId } });
@@ -242,6 +258,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, assignment });
   } catch (error) {
+    if (error instanceof ManagedAssessmentError) return NextResponse.json({ error: error.message }, { status: error.status });
     console.error("Error saving section assignment:", error);
     return NextResponse.json({ error: "Görev ataması kaydedilemedi" }, { status: 500 });
   }

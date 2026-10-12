@@ -43,6 +43,10 @@ hesap yapılmaz.
    sayfadan yapıldığı fark etmez.
 7. **Puanlar 5 ile sınırlıdır.** Tavana dayanmış eksende öneri katkısı 0
    görünür; bu bir hata değil, ölçeğin sınırıdır.
+8. **Kapsamdaki boş sorular paydada kalır.** Cevaplanmamış soru sıfır katkı
+   üretir ve tamamlanma sayısına girmez. Hiç cevap yoksa puan yerine veri
+   yok durumu gösterilir. Arşivlenmiş ve sektör kapsamı dışındaki sorular
+   paya, paydaya ve tamamlanma oranına girmez.
 
 ## Ekranda gösterim
 

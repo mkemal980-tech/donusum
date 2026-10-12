@@ -5,12 +5,15 @@ import { prisma } from "@/lib/db";
 import { getFileUrl } from "@/lib/s3";
 import { withAuth } from "@/lib/api-utils";
 import { getManagedUnitIds } from "@/lib/assessment";
+import { resolveManagedAssessment, ManagedAssessmentError } from "@/lib/managed-assessment";
 
 export async function GET(request: NextRequest) {
   const auth = await withAuth(request, { requireUnitManager: true });
   if (!auth.success) return auth.response;
 
   try {
+    const assessmentId = request.nextUrl.searchParams.get("assessmentId");
+    if (assessmentId) await resolveManagedAssessment(auth, assessmentId);
     /**
      * Kapsam açıkça çözülür; boş bırakılmaz.
      *
@@ -25,9 +28,10 @@ export async function GET(request: NextRequest) {
      * hiyerarşiyle birlikte (bkz. lib/assessment > getManagedUnitIds), ayrıca
      * kullanıcının kendi birimi. Yönetilen birim yoksa liste boştur.
      */
-    const whereClause: { user?: { unitId: { in: string[] } } } = {};
+    const whereClause: { user?: { unitId: { in: string[] } }; response?: { assessmentId: string } } = {};
+    if (assessmentId) whereClause.response = { assessmentId };
 
-    if (auth.user.role !== "ADMIN") {
+    if (!assessmentId && auth.user.role !== "ADMIN") {
       const managedUnitIds = new Set(await getManagedUnitIds(auth.userId));
       if (auth.user.unitId) managedUnitIds.add(auth.user.unitId);
 
@@ -109,6 +113,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(documentsWithUrls);
   } catch (error) {
+    if (error instanceof ManagedAssessmentError) return NextResponse.json({ error: error.message }, { status: error.status });
     console.error("Error fetching documents:", error);
     return NextResponse.json(
       { error: "Failed to fetch documents" },

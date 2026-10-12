@@ -4,7 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { validateSurveyAccess, withAuth } from "@/lib/api-utils";
 import { isEmailConfigured, sendEmail } from "@/lib/email";
-import { getScopeResolver } from "@/lib/scoring";
+import { getScopeResolver, getScopeResolverForProfile } from "@/lib/scoring";
+import { resolveManagedAssessment, ManagedAssessmentError } from "@/lib/managed-assessment";
 import {
   getAssessmentContext,
   getContributorCandidates,
@@ -29,15 +30,18 @@ export async function POST(request: NextRequest) {
   if (!auth.success) return auth.response;
 
   try {
-    const { surveyId } = (await request.json()) ?? {};
+    const body = (await request.json()) ?? {};
+    const { surveyId } = body;
     if (!surveyId) {
       return NextResponse.json({ error: "surveyId gerekli" }, { status: 400 });
     }
 
-    const accessError = await validateSurveyAccess(auth.userId, auth.user.role, surveyId);
+    const managed = body.assessmentId ? await resolveManagedAssessment(auth, body.assessmentId) : null;
+    if (managed && managed.surveyId !== surveyId) return NextResponse.json({ error: "Anket bu değerlendirmeye ait değil." }, { status: 400 });
+    const accessError = managed ? null : await validateSurveyAccess(auth.userId, auth.user.role, surveyId);
     if (accessError) return accessError;
 
-    const context = await getAssessmentContext(auth.userId, surveyId);
+    const context = managed?.context ?? await getAssessmentContext(auth.userId, surveyId);
     if (!context.isCoordinator) {
       return NextResponse.json({ error: "Hatırlatma gönderme yetkiniz yok." }, { status: 403 });
     }
@@ -59,7 +63,7 @@ export async function POST(request: NextRequest) {
       prisma.survey.findUnique({ where: { id: surveyId }, select: { name: true } }),
       getSectionAssignments(context.assessmentId),
       getContributorCandidates({ unitId: context.unitId, ownerUserId: auth.userId }),
-      getScopeResolver(auth.userId, surveyId),
+      managed ? getScopeResolverForProfile(managed.scoring, surveyId) : getScopeResolver(auth.userId, surveyId),
     ]);
 
     if (assignments.length === 0) {
@@ -188,6 +192,7 @@ export async function POST(request: NextRequest) {
           : `${sent} kişiye hatırlatma gönderildi.`,
     });
   } catch (error) {
+    if (error instanceof ManagedAssessmentError) return NextResponse.json({ error: error.message }, { status: error.status });
     console.error("Error sending assignment reminders:", error);
     return NextResponse.json({ error: "Hatırlatma gönderilemedi" }, { status: 500 });
   }

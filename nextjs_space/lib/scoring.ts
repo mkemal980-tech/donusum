@@ -10,6 +10,17 @@ import {
 /** Transaction içinde de çalışabilmek için: prisma ya da tx istemcisi. */
 export type DbClient = Prisma.TransactionClient | typeof prisma;
 
+/** Yalnızca sunucuda, değerlendirme erişimi doğrulandıktan sonra verilir. */
+export type ScoringAssessment = {
+  id: string;
+  surveyId: string;
+  sectorId: string | null;
+  subSectorId: string | null;
+  questionIds?: string[];
+};
+
+export type ScoringOptions = { surveyId?: string; db?: DbClient; assessment?: ScoringAssessment };
+
 /**
  * Yeni Puanlama Sistemi:
  * 
@@ -384,17 +395,25 @@ export async function getScopeResolver(
 ): Promise<(subCategoryId: string | null | undefined) => ResolvedScope> {
   const user = await db.user.findUnique({
     where: { id: userId },
-    select: { sectorId: true, subSectorId: true },
+    select: { sectorId: true, subSectorId: true, unit: { select: { sectorId: true, subSectorId: true } } },
   });
 
-  if (!user?.sectorId) {
+  return getScopeResolverForProfile(user?.unit ?? user, surveyId, db);
+}
+
+export async function getScopeResolverForProfile(
+  profile: { sectorId: string | null; subSectorId: string | null } | null,
+  surveyId: string | undefined,
+  db: DbClient = prisma
+): Promise<(subCategoryId: string | null | undefined) => ResolvedScope> {
+  if (!profile?.sectorId) {
     // Sektörü olmayan kullanıcıya her şey sorulur.
     return buildScopeResolver([], { sectorId: null, subSectorId: null });
   }
 
   const rules = await db.sectorScopeRule.findMany({
     where: {
-      sectorId: user.sectorId,
+      sectorId: profile.sectorId,
       ...(surveyId ? { surveyId } : {}),
     },
     select: {
@@ -406,13 +425,16 @@ export async function getScopeResolver(
     },
   });
 
-  return buildScopeResolver(rules as ScopeRule[], user);
+  return buildScopeResolver(rules as ScopeRule[], profile);
 }
 
-export async function calculateUserScore(userId: string, surveyId?: string) {
+export async function calculateUserScore(userId: string, surveyId?: string, options: ScoringOptions = {}) {
+  const db = options.db ?? prisma;
+  surveyId = options.assessment?.surveyId ?? surveyId;
+  const surveyIds = surveyId ? [surveyId] : await getAccessibleSurveyIds(userId, undefined, db);
   // Önce tüm kategorileri getir (ankete göre filtrelenebilir)
-  const allCategories = await prisma.category.findMany({
-    where: { archivedAt: null, ...(surveyId ? { surveyId } : {}) },
+  const allCategories = await db.category.findMany({
+    where: { archivedAt: null, surveyId: { in: surveyIds } },
     include: {
       questions: { where: { archivedAt: null } },  // Doğrudan kategoriye bağlı sorular
       subCategories: {
@@ -430,21 +452,25 @@ export async function calculateUserScore(userId: string, surveyId?: string) {
   });
 
   // Sektöre göre kapsam/ağırlık — kural yoksa her şey kapsamda, ağırlık 1.
-  const scopeOf = await getScopeResolver(userId, surveyId);
+  const scopeOf = options.assessment
+    ? await getScopeResolverForProfile(options.assessment, surveyId, db)
+    : await getScopeResolver(userId, surveyId, db);
 
   // Cevaplar kişiye değil kuruluşun değerlendirmesine bağlı; aynı kuruluştaki
   // herkesin girdiği cevaplar tek puanda toplanır.
-  const assessmentIds = await getAssessmentIds(
+  const assessmentIds = options.assessment ? [options.assessment.id] : await getAssessmentIds(
     userId,
-    surveyId ? [surveyId] : await getAccessibleSurveyIds(userId)
+    surveyIds,
+    db
   );
 
-  const responses = await prisma.surveyResponse.findMany({
+  const responses = await db.surveyResponse.findMany({
     where: {
       assessmentId: { in: assessmentIds },
       question: {
         archivedAt: null,
-        ...(surveyId ? buildSurveyQuestionWhere(surveyId) : {})
+        ...(options.assessment?.questionIds ? { id: { in: options.assessment.questionIds } } : {}),
+        ...buildSurveyQuestionWhere(surveyIds)
       }
     },
     include: {
@@ -805,6 +831,8 @@ export async function getRecommendationsForUser(
   userId: string,
   options: {
     surveyId?: string;
+    assessment?: ScoringAssessment;
+    db?: DbClient;
     /**
      * Hazır hesaplanmış puan.
      *
@@ -815,12 +843,13 @@ export async function getRecommendationsForUser(
     scores?: Awaited<ReturnType<typeof calculateUserScore>>;
   } = {}
 ) {
+  const db = options.db ?? prisma;
   // Kullanıcının tüm anket cevaplarını getir
-  const recSurveyIds = await getAccessibleSurveyIds(userId, options.surveyId);
-  const recAssessmentIds = await getAssessmentIds(userId, recSurveyIds);
+  const recSurveyIds = options.assessment ? [options.assessment.surveyId] : await getAccessibleSurveyIds(userId, options.surveyId, db);
+  const recAssessmentIds = options.assessment ? [options.assessment.id] : await getAssessmentIds(userId, recSurveyIds, db);
 
-  const userResponses = await prisma.surveyResponse.findMany({
-    where: { assessmentId: { in: recAssessmentIds } },
+  const userResponses = await db.surveyResponse.findMany({
+    where: { assessmentId: { in: recAssessmentIds }, ...(options.assessment?.questionIds ? { questionId: { in: options.assessment.questionIds } } : {}) },
     select: {
       questionId: true,
       value: true,
@@ -836,10 +865,10 @@ export async function getRecommendationsForUser(
 
   // Öneriler yalnızca kullanıcının erişebildiği anketlerden gelir.
   const surveyIds = recSurveyIds;
-  const surveyWhere = await buildRecommendationSurveyWhere(surveyIds);
+  const surveyWhere = await buildRecommendationSurveyWhere(surveyIds, db);
 
   const { categoryScores, subLevelScores, subCategoryScores } =
-    options.scores ?? (await calculateUserScore(userId, options.surveyId));
+    options.scores ?? (await calculateUserScore(userId, options.surveyId, options));
   const categoryPercentages = Object.fromEntries(
     Object.entries(categoryScores).map(([id, data]) => [id, data?.percentage ?? 0])
   );
@@ -862,7 +891,7 @@ export async function getRecommendationsForUser(
   );
 
   // Erişilebilir anketlerin önerilerini getir
-  const recommendations = await prisma.recommendation.findMany({
+  const recommendations = await db.recommendation.findMany({
     where: surveyWhere,
     include: {
       question: {
@@ -955,7 +984,7 @@ export async function getRecommendationsForUser(
   });
 
   // Roadmap'teki önerileri bul
-  const existingRoadmapItems = await prisma.roadmapItem.findMany({
+  const existingRoadmapItems = await db.roadmapItem.findMany({
     where: { assessmentId: { in: recAssessmentIds } },
     select: { recommendationId: true, status: true }
   });
@@ -1024,9 +1053,12 @@ export async function getRecommendationsForUser(
  */
 export async function isRecommendationActionable(
   userId: string,
-  recommendationId: string
+  recommendationId: string,
+  options?: ScoringOptions
 ): Promise<boolean> {
-  const recommendations = await getRecommendationsForUser(userId);
+  const recommendations = options
+    ? await getRecommendationsForUser(userId, options)
+    : await getRecommendationsForUser(userId);
   const match = recommendations.find(rec => rec.id === recommendationId);
   // Kullanıcıya hiç gösterilmeyen öneri de yapılabilir değildir.
   return match?.isActionable === true;
@@ -1083,6 +1115,8 @@ export type ProgressResponseInput = {
   maxScore: number;
   categoryId: string | null;
   subCategoryId: string | null;
+  /** Boş sorular paydada kalır, tamamlanmış soru sayılmaz. */
+  answered?: boolean;
 };
 
 export type ProgressRecommendationInput = {
@@ -1185,7 +1219,7 @@ export function computeProgress(
 
   for (const response of inputs.responses) {
     if (!response.applicable) continue;
-    answeredInScope++;
+    if (response.answered !== false) answeredInScope++;
     const effective = effectiveQuestionScore(
       response.score,
       cascadeLevels.get(response.questionId),
@@ -1203,8 +1237,8 @@ export function computeProgress(
     (rec.axisType === "ENDURANCE" ? endurance : velocity).sum += points;
   }
 
-  const velocityScore = axisScoreOf(velocity);
-  const enduranceScore = axisScoreOf(endurance);
+  const velocityScore = answeredInScope > 0 ? axisScoreOf(velocity) : 0;
+  const enduranceScore = answeredInScope > 0 ? axisScoreOf(endurance) : 0;
   const axisWeightTotal = velocity.weight + endurance.weight;
   const overallScore = axisWeightTotal > 0
     ? (velocityScore * velocity.weight + enduranceScore * endurance.weight) / axisWeightTotal
@@ -1409,7 +1443,7 @@ export function computeProgressBreakdown(
     let sumBase = 0, sumCurrent = 0, weight = 0, responseCount = 0;
     for (const response of inputs.responses) {
       if (!response.applicable || !inNode(response)) continue;
-      responseCount++;
+      if (response.answered !== false) responseCount++;
       const effective = effectiveQuestionScore(
         response.score,
         cascadeLevels.get(response.questionId),
@@ -1432,8 +1466,8 @@ export function computeProgressBreakdown(
       sumCurrent += effectiveRecommendationPoints(rec);
     }
 
-    const baseScore = axisScoreOf({ sum: sumBase, weight });
-    const totalScore = axisScoreOf({ sum: sumCurrent, weight });
+    const baseScore = responseCount > 0 ? axisScoreOf({ sum: sumBase, weight }) : 0;
+    const totalScore = responseCount > 0 ? axisScoreOf({ sum: sumCurrent, weight }) : 0;
     return {
       id,
       name,
@@ -1511,19 +1545,28 @@ const RECOMMENDATION_INPUT_SELECT = {
  */
 export async function loadProgressInputs(
   userId: string,
-  options: { surveyId?: string; db?: DbClient; extraRecommendations?: RecommendationRow[] } = {}
+  options: ScoringOptions & { extraRecommendations?: RecommendationRow[] } = {}
 ): Promise<ProgressInputs> {
-  const { surveyId } = options;
+  const surveyId = options.assessment?.surveyId ?? options.surveyId;
   const db = options.db ?? prisma;
+  const surveyIds = options.assessment ? [options.assessment.surveyId] : await getAccessibleSurveyIds(userId, surveyId, db);
 
   const questionWhere = {
     archivedAt: null,
-    ...(surveyId ? buildSurveyQuestionWhere(surveyId) : {})
+    ...(options.assessment?.questionIds ? { id: { in: options.assessment.questionIds } } : {}),
+    AND: [
+      { OR: [
+        { category: { archivedAt: null } },
+        { subCategory: { archivedAt: null, category: { archivedAt: null }, subLevels: { none: { archivedAt: null } } } },
+        { subLevel: { archivedAt: null, subCategory: { archivedAt: null, category: { archivedAt: null } } } },
+      ] },
+      buildSurveyQuestionWhere(surveyIds),
+    ],
   };
 
-  const progressAssessmentIds = await getAssessmentIds(
+  const progressAssessmentIds = options.assessment ? [options.assessment.id] : await getAssessmentIds(
     userId,
-    surveyId ? [surveyId] : await getAccessibleSurveyIds(userId, undefined, db),
+    surveyIds,
     db
   );
 
@@ -1549,9 +1592,10 @@ export async function loadProgressInputs(
     }
   });
 
-  const scopeOf = await getScopeResolver(userId, surveyId, db);
+  const scopeOf = options.assessment
+    ? await getScopeResolverForProfile(options.assessment, surveyId, db)
+    : await getScopeResolver(userId, surveyId, db);
 
-  const surveyIds = await getAccessibleSurveyIds(userId, surveyId, db);
   const recommendationWhere = await buildRecommendationSurveyWhere(surveyIds, db);
 
   const completedItems = await db.roadmapItem.findMany({
@@ -1577,7 +1621,11 @@ export async function loadProgressInputs(
   // sorulmayan soru "tamamlanacak iş" gibi görünmemeli.
   const scopedQuestions = await db.question.findMany({
     where: questionWhere,
-    select: { subCategoryId: true, subLevel: { select: { subCategoryId: true } } }
+    select: {
+      id: true, type: true, weight: true, axisType: true, options: true, conditionalOptions: true,
+      categoryId: true, subCategoryId: true, subCategory: { select: { categoryId: true } },
+      subLevel: { select: { subCategoryId: true, subCategory: { select: { categoryId: true } } } },
+    }
   });
 
   const responseInputs: ProgressResponseInput[] = responses.map(response => {
@@ -1592,7 +1640,8 @@ export async function loadProgressInputs(
     const scope = scopeOf(subCategoryId);
     return {
       questionId: question.id as string,
-      score: response.score,
+      score: typeof response.value === "string" && !response.value.trim() ? 0 : response.score,
+      answered: typeof response.value === "string" ? Boolean(response.value.trim()) : true,
       weight: (question.weight || 1) * scope.weight,
       applicable: scope.applicable,
       axisType: question.axisType === "ENDURANCE" ? "ENDURANCE" : "VELOCITY",
@@ -1605,10 +1654,34 @@ export async function loadProgressInputs(
       subCategoryId
     };
   });
+  const answeredIds = new Set(responseInputs.map(response => response.questionId));
+  for (const question of scopedQuestions) {
+    if (!question.id || answeredIds.has(question.id)) continue;
+    const subCategoryId = question.subLevel?.subCategoryId ?? question.subCategoryId ?? null;
+    const scope = scopeOf(subCategoryId);
+    responseInputs.push({
+      questionId: question.id, score: 0, answered: false,
+      weight: (question.weight || 1) * scope.weight, applicable: scope.applicable,
+      axisType: question.axisType === "ENDURANCE" ? "ENDURANCE" : "VELOCITY", maxScore: maxScoreForQuestion(question),
+      categoryId: question.categoryId ?? question.subCategory?.categoryId ?? question.subLevel?.subCategory?.categoryId ?? null,
+      subCategoryId,
+    });
+  }
 
   const recommendations = new Map<string, ProgressRecommendationInput>();
   const completedIds = new Set<string>();
-  completedItems.forEach((item, index) => {
+  const questionsById = new Map(responseInputs.map(response => [response.questionId, response]));
+  const visibleCategoryIds = new Set(responseInputs.filter(response => response.applicable).map(response => response.categoryId).filter(Boolean));
+  const eligible = (row: RecommendationRow) => {
+    const question = row.questionId ? questionsById.get(row.questionId) : undefined;
+    if (row.questionId && (!question || !question.applicable)) return false;
+    const sectionId = row.subLevel?.subCategoryId ?? row.subCategoryId ?? question?.subCategoryId;
+    if (!scopeOf(sectionId).applicable) return false;
+    const categoryId = row.categoryId ?? row.subLevel?.subCategory?.categoryId ?? row.subCategory?.categoryId ?? question?.categoryId;
+    return !categoryId || visibleCategoryIds.has(categoryId);
+  };
+  const relevantCompleted = completedItems.filter(item => eligible(item.recommendation as RecommendationRow));
+  relevantCompleted.forEach((item, index) => {
     const rec = toProgressRecommendationInput(
       (item.recommendation ?? {}) as RecommendationRow,
       (item as { recommendationId?: string }).recommendationId ?? `roadmap-${index}`
@@ -1616,11 +1689,11 @@ export async function loadProgressInputs(
     recommendations.set(rec.id, rec);
     completedIds.add(rec.id);
   });
-  cascadeRecs.forEach((row, index) => {
+  cascadeRecs.filter(eligible).forEach((row, index) => {
     const rec = toProgressRecommendationInput(row as RecommendationRow, `cascade-${index}`);
     if (!recommendations.has(rec.id)) recommendations.set(rec.id, rec);
   });
-  (options.extraRecommendations ?? []).forEach((row, index) => {
+  (options.extraRecommendations ?? []).filter(eligible).forEach((row, index) => {
     const rec = toProgressRecommendationInput(row, `extra-${index}`);
     if (!recommendations.has(rec.id)) recommendations.set(rec.id, rec);
   });
@@ -1633,7 +1706,7 @@ export async function loadProgressInputs(
     responses: responseInputs,
     recommendations: [...recommendations.values()],
     completedIds,
-    completedCount: completedItems.length,
+    completedCount: relevantCompleted.length,
     totalQuestions
   };
 }
@@ -1646,7 +1719,7 @@ export async function loadProgressInputs(
  */
 export async function calculateProgressScores(
   userId: string,
-  options: { surveyId?: string; db?: DbClient } = {}
+  options: ScoringOptions = {}
 ): Promise<ProgressScores> {
   return summarizeProgress(await loadProgressInputs(userId, options));
 }
@@ -1658,7 +1731,7 @@ export async function calculateProgressScores(
 export async function calculateRecommendationContributions(
   userId: string,
   recommendations: RecommendationRow[],
-  options: { surveyId?: string; db?: DbClient } = {}
+  options: ScoringOptions = {}
 ): Promise<{ scores: ProgressScores; contributions: Map<string, RecommendationContribution> }> {
   const inputs = await loadProgressInputs(userId, { ...options, extraRecommendations: recommendations });
   const ids = recommendations.map((rec, index) => rec.id ?? `extra-${index}`);
@@ -1671,13 +1744,14 @@ export async function calculateRecommendationContributions(
 /** Pano için kategori kırılımı ve genel puanlar — tek yükle. */
 export async function calculateProgressBreakdown(
   userId: string,
-  options: { surveyId?: string; db?: DbClient } = {}
+  options: ScoringOptions = {}
 ): Promise<{ scores: ProgressScores; categories: ProgressBreakdownCategory[] }> {
   const db = options.db ?? prisma;
+  const surveyIds = options.assessment ? [options.assessment.surveyId] : await getAccessibleSurveyIds(userId, options.surveyId, db);
   const [inputs, tree] = await Promise.all([
     loadProgressInputs(userId, options),
     db.category.findMany({
-      where: { archivedAt: null, ...(options.surveyId ? { surveyId: options.surveyId } : {}) },
+      where: { archivedAt: null, surveyId: { in: surveyIds } },
       select: {
         id: true,
         name: true,

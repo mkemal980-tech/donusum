@@ -5,6 +5,7 @@ import {
   getAccessibleSurveyIds,
   isRecommendationActionable,
   type DbClient,
+  type ScoringAssessment,
   type ProgressScores
 } from "./scoring";
 
@@ -127,10 +128,11 @@ export async function recordScoreHistory(
   triggerType: string,
   triggerEntityId?: string,
   surveyId?: string,
-  db: DbClient = prisma
+  db: DbClient = prisma,
+  assessment?: ScoringAssessment
 ): Promise<ProgressScores> {
-  const scores = await calculateProgressScores(userId, { surveyId, db });
-  const assessmentIds = await getAssessmentIds(
+  const scores = await calculateProgressScores(userId, { surveyId, db, ...(assessment ? { assessment } : {}) });
+  const assessmentIds = assessment ? [assessment.id] : await getAssessmentIds(
     userId,
     surveyId ? [surveyId] : await getAccessibleSurveyIds(userId, undefined, db),
     db
@@ -167,12 +169,16 @@ function upsertItem(
     plannedQuarter?: number | null;
     plannedYear?: number | null;
     priority?: number;
+    assigneeId?: string | null;
+    dueDate?: Date | null;
   }
 ) {
   const timing = {
     ...(data.plannedQuarter !== undefined && { plannedQuarter: data.plannedQuarter }),
     ...(data.plannedYear !== undefined && { plannedYear: data.plannedYear }),
-    ...(data.priority !== undefined && { priority: data.priority })
+    ...(data.priority !== undefined && { priority: data.priority }),
+    ...(data.assigneeId !== undefined && { assigneeId: data.assigneeId }),
+    ...(data.dueDate !== undefined && { dueDate: data.dueDate })
   };
   return db.roadmapItem.upsert({
     where: { assessmentId_recommendationId: { assessmentId, recommendationId } },
@@ -182,7 +188,9 @@ function upsertItem(
       status: data.status,
       plannedQuarter: data.plannedQuarter ?? null,
       plannedYear: data.plannedYear ?? null,
-      priority: data.priority ?? 0
+      priority: data.priority ?? 0,
+      ...(data.assigneeId !== undefined && { assigneeId: data.assigneeId }),
+      ...(data.dueDate !== undefined && { dueDate: data.dueDate })
     },
     update: { status: data.status, ...timing },
     include: RECOMMENDATION_INCLUDE
@@ -197,6 +205,9 @@ export type UpdateRoadmapStatusInput = {
   plannedQuarter?: number | null;
   plannedYear?: number | null;
   priority?: number;
+  assessment?: ScoringAssessment;
+  assigneeId?: string | null;
+  dueDate?: Date | null;
 };
 
 /**
@@ -223,7 +234,9 @@ export async function updateRoadmapStatus(
   const status = input.status;
 
   if (isForwardMove(status)) {
-    const actionable = await isRecommendationActionable(userId, input.recommendationId);
+    const actionable = input.assessment
+      ? await isRecommendationActionable(userId, input.recommendationId, { assessment: input.assessment, db })
+      : await isRecommendationActionable(userId, input.recommendationId);
     if (!actionable) {
       return {
         ok: false,
@@ -236,7 +249,13 @@ export async function updateRoadmapStatus(
     }
   }
 
-  const resolved = await resolveAssessmentForRecommendation(userId, input.recommendationId, input.surveyId, db);
+  const recommendationSurvey = input.assessment ? await surveyIdForRecommendation(input.recommendationId, db) : null;
+  if (input.assessment && recommendationSurvey && recommendationSurvey !== input.assessment.surveyId) {
+    return { ok: false, error: { code: "NOT_FOUND", message: "Öneri bu ankete ait değil.", httpStatus: 404 } };
+  }
+  const resolved = input.assessment
+    ? { assessmentId: input.assessment.id, surveyId: input.assessment.surveyId }
+    : await resolveAssessmentForRecommendation(userId, input.recommendationId, input.surveyId, db);
   if (!resolved) {
     return {
       ok: false,
@@ -245,7 +264,7 @@ export async function updateRoadmapStatus(
   }
   const { assessmentId, surveyId } = resolved;
 
-  const before = await calculateProgressScores(userId, { surveyId, db });
+  const before = await calculateProgressScores(userId, { surveyId, db, ...(input.assessment ? { assessment: input.assessment } : {}) });
 
   const run = async (tx: DbClient) => {
     const previous = await tx.roadmapItem.findUnique({
@@ -259,7 +278,9 @@ export async function updateRoadmapStatus(
       status,
       plannedQuarter: input.plannedQuarter,
       plannedYear: input.plannedYear,
-      priority: input.priority
+      priority: input.priority,
+      assigneeId: input.assigneeId,
+      dueDate: input.dueDate
     });
 
     // Tamamlanma durumu değiştiyse trend grafiğine nokta düşer; yön fark
@@ -270,9 +291,10 @@ export async function updateRoadmapStatus(
           isCompleted ? "RECOMMENDATION_COMPLETED" : "RECOMMENDATION_REVERTED",
           input.recommendationId,
           surveyId,
-          tx
+          tx,
+          input.assessment
         )
-      : await calculateProgressScores(userId, { surveyId, db: tx });
+      : await calculateProgressScores(userId, { surveyId, db: tx, ...(input.assessment ? { assessment: input.assessment } : {}) });
 
     return { item, wasCompleted, isCompleted, after };
   };

@@ -89,6 +89,7 @@ model User {
   unit                     Unit?                  @relation("UnitUsers", fields: [unitId], references: [id])
   surveyAssignments        UserSurveyAssignment[]
   assignedSections         SectionAssignment[]    @relation("SectionAssignee")
+  assignedRoadmapItems      RoadmapItem[]          @relation("RoadmapAssignee")
   distributedSections      SectionAssignment[]    @relation("SectionAssigner")
   submittedAssessments     Assessment[]           @relation("AssessmentSubmitter")
   createdCampaigns         SurveyCampaign[]       @relation("CampaignCreator")
@@ -583,13 +584,17 @@ model RoadmapItem {
   priority         Int            @default(0)
   plannedQuarter   Int?
   plannedYear      Int?
+  assigneeId       String?
+  dueDate          DateTime?
   status           RoadmapStatus  @default(NOT_STARTED)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   recommendation   Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
   assessment       Assessment     @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assignee         User?          @relation("RoadmapAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
 
   @@unique([assessmentId, recommendationId])
+  @@index([assigneeId, dueDate])
 }
 
 enum UserRole {
