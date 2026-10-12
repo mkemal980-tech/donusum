@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Building2, Plus, Edit, Trash2, X, Save, Users, UserCircle, ChevronDown, ChevronRight, Shield, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -267,6 +268,8 @@ export default function UnitsPage() {
               {hasSubUnits && (
                 <button
                   onClick={() => toggleExpand(unit.id)}
+                  aria-label={(isExpanded ? "Alt birimleri daralt: " : "Alt birimleri göster: ") + unit.name}
+                  aria-expanded={isExpanded}
                   className="mt-1 p-1 hover:bg-[var(--bg-card-2)] rounded"
                 >
                   {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
@@ -285,6 +288,7 @@ export default function UnitsPage() {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <Button asChild variant="outline" size="sm"><Link href={"/unit-manager/management?unitId=" + encodeURIComponent(unit.id)} aria-label={unit.name + " yönetici alanı"}>Yönetici alanı</Link></Button>
               <Button
                 onClick={() => openCreateModal(unit.id)}
                 title="Alt Birim Ekle"
