@@ -1,5 +1,10 @@
-import DashboardClient from "./_components/dashboard-client";
+import { Suspense } from "react";
+import DashboardHome, { DashboardLoading } from "./_components/dashboard-home";
 
-export default async function DashboardPage() {
-  return <DashboardClient />;
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardHome />
+    </Suspense>
+  );
 }

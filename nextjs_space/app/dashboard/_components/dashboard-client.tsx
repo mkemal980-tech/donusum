@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, Suspense } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import AppShell from "@/components/ui/app-shell";
@@ -179,7 +180,12 @@ interface UserProfile {
   subSector: { id: string; name: string } | null;
 }
 
-export default function DashboardClient() {
+export default function DashboardClient({ showUnitDashboardLink = false, unitDashboardHref = "/dashboard" }: { showUnitDashboardLink?: boolean; unitDashboardHref?: string }) {
+  const unitDashboardLink = showUnitDashboardLink ? (
+    <Button asChild variant="outline">
+      <Link href={unitDashboardHref}>Birim panosuna dön</Link>
+    </Button>
+  ) : null;
   const [scoreData, setScoreData] = useState<ScoreData | null>(null);
   /**
    * Puan taslak mı kesin mi? Gönderilmemiş bir puana bakıp karar vermek
@@ -1338,6 +1344,7 @@ export default function DashboardClient() {
             <Button onClick={() => window.location.reload()} className="mt-5">
               Sayfayı yenile
             </Button>
+            {unitDashboardLink && <div className="mt-3">{unitDashboardLink}</div>}
           </div>
         </main>
       </>
@@ -1379,6 +1386,7 @@ export default function DashboardClient() {
               Değerlendirme başlayınca pano dolar. Atama için kuruluşunuzun platform
               yöneticisiyle görüşün.
             </p>
+            {unitDashboardLink && <div className="mt-5">{unitDashboardLink}</div>}
           </div>
         </main>
       </>
@@ -1423,6 +1431,7 @@ export default function DashboardClient() {
           </div>
 
           <div className="flex items-center gap-2">
+            {unitDashboardLink}
             {surveys.length > 1 && (
               <>
                 <label htmlFor="survey-select" className="sr-only">

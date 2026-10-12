@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import Header from "@/components/ui/header";
 import {
@@ -88,9 +88,18 @@ function ProgressBar({ percentage }: { percentage: number }) {
 }
 
 export default function SectionAssignmentsPage() {
+  return <Suspense fallback={<div className="skeleton h-64" />}><SectionAssignmentsContent /></Suspense>;
+}
+
+function SectionAssignmentsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const managedAssessmentId = searchParams.get("assessmentId");
+  const requestedSurveyId = searchParams.get("surveyId") ?? "";
+  const [unitId, setUnitId] = useState(searchParams.get("unitId") ?? "");
+  const [unitName, setUnitName] = useState("");
   const [surveys, setSurveys] = useState<Survey[]>([]);
-  const [surveyId, setSurveyId] = useState("");
+  const [surveyId, setSurveyId] = useState(requestedSurveyId);
   const [categories, setCategories] = useState<Category[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [isCoordinator, setIsCoordinator] = useState(true);
@@ -105,6 +114,10 @@ export default function SectionAssignmentsPage() {
   const [notifying, setNotifying] = useState(false);
 
   useEffect(() => {
+    if (managedAssessmentId) {
+      setSurveyId(requestedSurveyId);
+      return;
+    }
     // Anket seçilirse yükleme göstergesini loadSections devralır; anket yoksa
     // burada kapatılır, aksi hâlde ekran sonsuza kadar dönerdi.
     const load = async () => {
@@ -130,20 +143,28 @@ export default function SectionAssignmentsPage() {
       }
     };
     load();
-  }, []);
+  }, [managedAssessmentId, requestedSurveyId]);
 
   const loadSections = useCallback(async () => {
-    if (!surveyId) return;
+    if (!surveyId && !managedAssessmentId) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await getWithRetry(`/api/assessment/sections?surveyId=${surveyId}`);
+      const params = new URLSearchParams({ surveyId });
+      if (managedAssessmentId) params.set("assessmentId", managedAssessmentId);
+      const res = await getWithRetry("/api/assessment/sections?" + params.toString());
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Görev dağılımı alınamadı");
         return;
       }
       setCategories(data.categories ?? []);
+      if (managedAssessmentId) {
+        setUnitName(data.unitName ?? "");
+        setUnitId(data.unitId ?? "");
+        setSurveys([{ id: data.surveyId, name: data.surveyName }]);
+        setSurveyId(data.surveyId);
+      }
       setMembers(data.members ?? []);
       setIsCoordinator(Boolean(data.isCoordinator));
       setLocked(Boolean(data.locked));
@@ -155,7 +176,7 @@ export default function SectionAssignmentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [surveyId]);
+  }, [surveyId, managedAssessmentId]);
 
   useEffect(() => {
     loadSections();
@@ -178,7 +199,7 @@ export default function SectionAssignmentsPage() {
       const res = await fetch("/api/assessment/sections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ surveyId, subCategoryId: sectionId, assigneeId }),
+        body: JSON.stringify({ surveyId, subCategoryId: sectionId, assigneeId, ...(managedAssessmentId ? { assessmentId: managedAssessmentId } : {}) }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -289,7 +310,7 @@ export default function SectionAssignmentsPage() {
       const res = await fetch("/api/assessment/notify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ surveyId }),
+        body: JSON.stringify({ surveyId, ...(managedAssessmentId ? { assessmentId: managedAssessmentId } : {}) }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -311,7 +332,7 @@ export default function SectionAssignmentsPage() {
       const res = await fetch("/api/assessment/submission", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ surveyId, action }),
+        body: JSON.stringify({ surveyId, action, ...(managedAssessmentId ? { assessmentId: managedAssessmentId } : {}) }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -331,20 +352,21 @@ export default function SectionAssignmentsPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-main)]">
-      <Header />
+      <Header unitContext={managedAssessmentId ? { unitId, surveyId, assessmentId: managedAssessmentId, tab: "team" } : undefined} />
 
-      <main id="icerik" tabIndex={-1} className="max-w-[1000px] mx-auto px-6 py-8">
+      <main id="icerik" tabIndex={-1}>
         <button
-          onClick={() => router.push("/unit-manager")}
+          onClick={() => router.push(managedAssessmentId ? "/dashboard?" + new URLSearchParams({ assessmentId: managedAssessmentId, unitId, surveyId, tab: "team" }).toString() : "/unit-manager")}
           className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-main)] mb-4"
         >
           <ArrowLeft size={16} />
-          Birim Yönetimi
+          Birim panosuna dön
         </button>
 
         <div className="mb-6">
           <h1 className="t-display" style={{ color: "var(--ink)" }}>Görev dağılımı</h1>
           <p className="text-[var(--text-muted)]">
+            {unitName && <strong>{unitName} · </strong>}
             Anketin hangi bölümünü kimin dolduracağını belirleyin, nerede kalındığını takip edin.
           </p>
         </div>
@@ -366,6 +388,7 @@ export default function SectionAssignmentsPage() {
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <select
             value={surveyId}
+            disabled={Boolean(managedAssessmentId)}
             onChange={(event) => setSurveyId(event.target.value)}
             className="px-4 py-2 border border-[var(--border-soft)] rounded-lg bg-[var(--bg-card)] text-[var(--text-main)]"
           >
@@ -517,6 +540,7 @@ export default function SectionAssignmentsPage() {
                       </div>
 
                       <select
+                        aria-label={section.name + " sorumlusu"}
                         value={section.assigneeId ?? ""}
                         disabled={!isCoordinator || locked || savingSection === section.id}
                         onChange={(event) => assign(section.id, event.target.value || null)}

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { X, Calendar, TrendingUp, GripVertical } from "lucide-react";
 import { useState } from "react";
+import { hasRoadmapTiming, roadmapTimelineQuarters } from "@/lib/roadmap-calendar";
 
 interface RoadmapItem {
   id: string;
@@ -24,16 +25,6 @@ interface RoadmapTimelineProps {
   onUpdateTiming: (recommendationId: string, quarter: number, year: number) => void;
 }
 
-const currentYear = 2026;
-const quarters = [
-  { q: 1, year: currentYear, label: "Ç1 2026" },
-  { q: 2, year: currentYear, label: "Ç2 2026" },
-  { q: 3, year: currentYear, label: "Ç3 2026" },
-  { q: 4, year: currentYear, label: "Ç4 2026" },
-  { q: 1, year: currentYear + 1, label: "Ç1 2027" },
-  { q: 2, year: currentYear + 1, label: "Ç2 2027" },
-];
-
 const strategicColors: Record<string, string> = {
   QUICK_WIN: "var(--success)",
   BIG_BET: "#a855f7",
@@ -42,6 +33,7 @@ const strategicColors: Record<string, string> = {
 
 export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: RoadmapTimelineProps) {
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const quarters = roadmapTimelineQuarters(items);
 
   const getItemsForQuarter = (q: number, year: number) => {
     return (items ?? []).filter(item => 
@@ -50,7 +42,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
   };
 
   const unassignedItems = (items ?? []).filter(item => 
-    !item?.plannedQuarter || !item?.plannedYear
+    !hasRoadmapTiming(item)
   );
 
   const handleDragStart = (e: React.DragEvent, recommendationId: string) => {
@@ -136,7 +128,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
 
       {/* Horizontal Timeline */}
       <div className="overflow-x-auto pb-4">
-        <div className="min-w-[900px]">
+        <div style={{ minWidth: Math.max(900, quarters.length * 200) }}>
           {/* Timeline Header */}
           <div className="flex items-center mb-2">
             {quarters?.map((quarter, index) => (

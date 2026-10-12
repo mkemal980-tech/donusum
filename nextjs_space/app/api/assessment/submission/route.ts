@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db";
 import { validateSurveyAccess, withAuth } from "@/lib/api-utils";
 import { getAssessmentContext, getOrCreateAssessment } from "@/lib/assessment";
 import { calculateProgressScores, calculateUserScore } from "@/lib/scoring";
+import { resolveManagedAssessment, ManagedAssessmentError } from "@/lib/managed-assessment";
+import { loadManagedStructure } from "@/lib/unit-dashboard";
 
 /**
  * Değerlendirmenin gönderilmesi ve geri alınması.
@@ -33,10 +35,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const accessError = await validateSurveyAccess(auth.userId, auth.user.role, surveyId);
+    const managed = body.assessmentId ? await resolveManagedAssessment(auth, body.assessmentId) : null;
+    if (managed && managed.surveyId !== surveyId) return NextResponse.json({ error: "Anket bu değerlendirmeye ait değil." }, { status: 400 });
+    const accessError = managed ? null : await validateSurveyAccess(auth.userId, auth.user.role, surveyId);
     if (accessError) return accessError;
 
-    const context = await getAssessmentContext(auth.userId, surveyId);
+    const context = managed?.context ?? await getAssessmentContext(auth.userId, surveyId);
     if (!context.isCoordinator) {
       return NextResponse.json(
         { error: "Değerlendirmeyi gönderme yetkiniz yok." },
@@ -45,6 +49,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "reopen") {
+      if (managed && (!managed.survey.isActive || managed.survey.archivedAt || managed.campaignRecipient?.campaign.status === "CLOSED")) {
+        return NextResponse.json({ error: "Kapalı dönem yeniden açılamaz." }, { status: 409 });
+      }
       if (!context.assessmentId || !context.locked) {
         return NextResponse.json(
           { error: "Bu değerlendirme zaten açık." },
@@ -68,7 +75,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const assessmentId = await getOrCreateAssessment(auth.userId, surveyId);
+    const assessmentId = managed?.id ?? await getOrCreateAssessment(auth.userId, surveyId);
+    const scoring = managed ? (await loadManagedStructure(managed.scoring)).scoring : undefined;
 
     /**
      * Puanın gönderim anındaki hâli geçmişe yazılır. Kilit sonradan geri
@@ -76,8 +84,8 @@ export async function POST(request: NextRequest) {
      * güvenilir cevabı budur.
      */
     const [scores, baselineScores] = await Promise.all([
-      calculateProgressScores(auth.userId, { surveyId }),
-      calculateUserScore(auth.userId, surveyId),
+      calculateProgressScores(auth.userId, { surveyId, ...(scoring ? { assessment: scoring } : {}) }),
+      calculateUserScore(auth.userId, surveyId, scoring ? { assessment: scoring } : {}),
     ]);
 
     /**
@@ -129,6 +137,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, ...submitted });
   } catch (error) {
+    if (error instanceof ManagedAssessmentError) return NextResponse.json({ error: error.message }, { status: error.status });
     console.error("Error submitting assessment:", error);
     return NextResponse.json({ error: "Gönderim tamamlanamadı" }, { status: 500 });
   }

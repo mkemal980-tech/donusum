@@ -85,7 +85,9 @@ function initials(name: string) {
   return parts.map((p) => p.charAt(0).toLocaleUpperCase("tr-TR")).join("") || "?";
 }
 
-export default function AppShell() {
+export type UnitShellContext = { unitId: string; surveyId: string; assessmentId: string | null; selection?: string | null; tab?: string };
+
+export default function AppShell({ unitContext }: { unitContext?: UnitShellContext } = {}) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession() || {};
@@ -100,10 +102,28 @@ export default function AppShell() {
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const user = session?.user as
-    | { firstName?: string; name?: string; email?: string; role?: string }
+    | { id?: string; firstName?: string; name?: string; email?: string; role?: string }
     | undefined;
   const role = user?.role ?? "USER";
   const userName = user?.firstName || user?.name || "Kullanıcı";
+  const [rememberedContext, setRememberedContext] = useState("");
+  const actorKey = user?.id ?? user?.email ?? "";
+  useEffect(() => {
+    if (actorKey) setRememberedContext(window.sessionStorage.getItem("unit-dashboard:" + actorKey) ?? "");
+  }, [actorKey, pathname]);
+  const unitQuery = useMemo(() => {
+    const params = new URLSearchParams(rememberedContext);
+    if (unitContext) {
+      params.delete("selection");
+      params.delete("assessmentId");
+      if (unitContext.unitId) params.set("unitId", unitContext.unitId);
+      if (unitContext.surveyId) params.set("surveyId", unitContext.surveyId);
+      if (unitContext.assessmentId) params.set("assessmentId", unitContext.assessmentId);
+      else if (unitContext.selection) params.set("selection", unitContext.selection);
+    }
+    params.delete("tab");
+    return params.toString();
+  }, [rememberedContext, unitContext]);
 
   /* Yönetim paneli kendi menüsüne sahip; iki sidebar yerine aynı sidebar
      bağlama göre içerik değiştirir. Üstteki geri bağlantısı çıkışı gösterir. */
@@ -112,18 +132,35 @@ export default function AppShell() {
 
   const appGroups = useMemo(
     () =>
-      NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => i.roles.includes(role)) })).filter(
+      NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => i.roles.includes(role)).map(item => {
+        if (role !== "UNIT_MANAGER") return item;
+        if (item.href === "/survey") return { ...item, label: "Kendi anketim" };
+        if (item.href === "/dashboard" || item.href === "/recommendations" || item.href === "/roadmap") {
+          const params = new URLSearchParams(unitQuery);
+          if (item.href === "/recommendations") params.set("tab", "recommendations");
+          if (item.href === "/roadmap") params.set("tab", "roadmap");
+          return { ...item, href: "/dashboard" + (params.toString() ? "?" + params.toString() : ""), label: item.href === "/recommendations" ? "Birim önerileri" : item.label };
+        }
+        return item;
+      }) })).filter(
         (g) => g.items.length > 0,
       ),
-    [role],
+    [role, unitQuery],
   );
 
   const groups: NavGroup[] = inAdmin ? adminGroups : appGroups;
 
   const isActive = useCallback(
-    (item: { href: string; prefix?: boolean }) =>
-      (item.prefix ? pathname?.startsWith(item.href) : pathname === item.href) ?? false,
-    [pathname],
+    (item: { href: string; prefix?: boolean }) => {
+      const [path, query] = item.href.split("?");
+      if (pathname !== path && !(item.prefix && pathname?.startsWith(path))) return false;
+      if (role === "UNIT_MANAGER" && path === "/dashboard") {
+        const tab = new URLSearchParams(query).get("tab") ?? "results";
+        return tab === (unitContext?.tab ?? "results");
+      }
+      return true;
+    },
+    [pathname, role, unitContext?.tab],
   );
 
   /* Tema sunucuda bilinmiyor; düğme ancak istemcide çözüldükten sonra
