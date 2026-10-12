@@ -4,7 +4,7 @@ import * as XLSX from "xlsx";
 import { unitDetail, unitRow } from "../test-fixtures/unit-dashboard";
 import { buildUnitReportHtml, unitReportTables } from "../lib/unit-dashboard-report";
 
-async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, failed = false, pending = false, denied = false } = {}) {
+async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, failed = false, pending = false, denied = false, emptyFirst = false } = {}) {
   let assignmentRequests = 0;
   const actions: { path: string; body: Record<string, unknown> }[] = [];
   let rows = empty ? [] : [unitRow(), unitRow("assessment-2", "unit-2", "Enerji birimi"), { ...unitRow("assessment-old"), periodId: "period-2025", periodName: "2025 dönemi", status: "SUBMITTED" as const, locked: true }];
@@ -49,7 +49,9 @@ async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, fail
     } else if (path === "/api/unit-manager/team") {
       status = failed ? 500 : 200;
       body = failed ? { error: "Birim verileri yüklenemedi." } : {
-        units: [{ id: "managed-unit", name: "Esra'nın birimi", description: null, parentId: null, assessmentCount: empty ? 0 : 2 },
+        units: [...(emptyFirst ? [{ id: "empty-unit", name: "ABC Tersane", description: null, parentId: "root", assessmentCount: 0 },
+          { id: "root", name: "Tersane2026", description: null, parentId: null, assessmentCount: 0 }] : []),
+          { id: "managed-unit", name: "Esra'nın birimi", description: null, parentId: emptyFirst ? "root" : null, assessmentCount: empty ? 0 : 2 },
           { id: "unit-2", name: "Enerji birimi", description: null, parentId: null, assessmentCount: empty ? 0 : 1 }],
         assessments: rows, hasAnonymousCampaigns: false,
       };
@@ -91,7 +93,7 @@ async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, fail
 
 test("kişisel ataması ve birim üyeliği olmayan yönetici sonuç, eksik ve belgeleri görür", async ({ page }, testInfo) => {
   const api = await mockApis(page);
-  await page.goto("/dashboard");
+  await page.goto("/dashboard?unitId=managed-unit");
   await expect(page.getByRole("heading", { name: "Birim panosu" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Esra'nın birimi", exact: true })).toBeVisible();
   await expect(page.getByText("Atık yönetimi için sorumlu seçin")).toBeVisible();
@@ -110,7 +112,7 @@ test("kişisel ataması ve birim üyeliği olmayan yönetici sonuç, eksik ve be
 
 test("birim ve dönem seçimi URL'de korunur; kategori ve ekip detayları açılır", async ({ page }) => {
   await mockApis(page);
-  await page.goto("/dashboard");
+  await page.goto("/dashboard?unitId=managed-unit");
   await expect(page.getByText("Atık yönetimi için sorumlu seçin")).toBeVisible();
   await page.getByLabel("Birim", { exact: true }).selectOption("unit-2");
   await expect(page).toHaveURL(/assessmentId=assessment-2/);
@@ -161,7 +163,7 @@ test("öneri, sorumlu, tarih ve durum seçili birimin yol haritasına kaydedilir
 
 test("atanmış ama başlanmamış anket açık bir başlatma işlemiyle değerlendirmeye dönüşür", async ({ page }) => {
   const api = await mockApis(page, { pending: true });
-  await page.goto("/dashboard");
+  await page.goto("/dashboard?unitId=managed-unit");
   await page.getByRole("button", { name: "Değerlendirmeyi başlat" }).click();
   await expect(page).toHaveURL(/assessmentId=assessment-started/);
   await expect(page.getByText("Atık yönetimi için sorumlu seçin")).toBeVisible();
@@ -189,7 +191,7 @@ test("veri yokluğu, ağ hatası ve erişim hatası ayrı gösterilir", async ({
   const page = await browser.newPage();
   await mockApis(page, { empty: true });
   await page.goto("/dashboard");
-  await expect(page.getByText("Bu birimde henüz değerlendirme başlatılmadı ve aktif anket ataması yok.")).toBeVisible();
+  await expect(page.getByText("Yönettiğiniz birimlerde henüz değerlendirme başlatılmadı ve aktif anket ataması yok.")).toBeVisible();
   await page.close();
   const failed = await browser.newPage();
   await mockApis(failed, { failed: true });
@@ -199,10 +201,57 @@ test("veri yokluğu, ağ hatası ve erişim hatası ayrı gösterilir", async ({
   await failed.close();
   const denied = await browser.newPage();
   await mockApis(denied, { denied: true });
-  await denied.goto("/dashboard");
+  await denied.goto("/dashboard?unitId=managed-unit");
   await expect(denied.getByText("Bu değerlendirmeye erişiminiz yok.")).toBeVisible();
   await expect(denied.getByText("Enerji tüketimi izleniyor mu?", { exact: true })).toHaveCount(0);
   await denied.close();
+});
+
+test("üst birim yöneticisi ilk açılışta boş alt birime düşmeden bütün sonuçları görür", async ({ page }, testInfo) => {
+  const api = await mockApis(page, { emptyFirst: true });
+  await page.goto("/dashboard");
+  await expect(page.getByLabel("Birim", { exact: true })).toHaveValue("all");
+  await expect(page.getByRole("heading", { name: "Tüm yönetilen birimler" })).toBeVisible();
+  const table = page.getByRole("region", { name: "Birim değerlendirmeleri" });
+  await expect(table.getByRole("columnheader", { name: "Birim", exact: true })).toBeVisible();
+  await expect(table.getByRole("row")).toHaveCount(4);
+  await expect(table.getByRole("cell", { name: "Enerji birimi", exact: true })).toBeVisible();
+  await expect(table.getByRole("cell", { name: "Esra'nın birimi", exact: true })).toHaveCount(2);
+  expect(api.assignments()).toBe(0);
+  await page.screenshot({ path: testInfo.outputPath("birim-ozeti.png"), fullPage: true });
+  await table.getByRole("row").filter({ hasText: "Enerji birimi" }).getByRole("button", { name: "Sonucu görüntüle" }).click();
+  await expect(page).toHaveURL(/unitId=unit-2.*assessmentId=assessment-2/);
+  await expect(page.getByRole("heading", { name: "Enerji birimi", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Tüm birimler", exact: true }).click();
+  await expect(table.getByRole("row")).toHaveCount(4);
+  await page.getByLabel("Birim", { exact: true }).selectOption("empty-unit");
+  await expect(page.getByText("Bu birimde henüz değerlendirme başlatılmadı ve aktif anket ataması yok.")).toBeVisible();
+  await page.getByRole("button", { name: "Diğer birimlerin değerlendirmelerini göster" }).click();
+  await expect(table.getByRole("row")).toHaveCount(4);
+});
+
+test("toplu görünümün anket ve dönem seçimi korunur; birim detayı filtrelerden etkilenmez", async ({ page }) => {
+  await mockApis(page);
+  await page.goto("/unit-manager");
+  const table = page.getByRole("region", { name: "Birim değerlendirmeleri" });
+  await page.getByLabel("Anket", { exact: true }).selectOption("survey-1");
+  await page.getByLabel("Dönem", { exact: true }).selectOption("period-2025");
+  await expect(page).toHaveURL(/unitId=all.*surveyId=survey-1.*periodId=period-2025/);
+  await expect(table.getByRole("row")).toHaveCount(2);
+  await expect(table.getByRole("cell", { name: "Gönderildi", exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel("Dönem", { exact: true })).toHaveValue("period-2025");
+  await page.getByRole("link", { name: "Pano", exact: true }).click();
+  await expect(page).toHaveURL(/periodId=period-2025/);
+  await page.getByLabel("Birim", { exact: true }).selectOption("unit-2");
+  await expect(page).toHaveURL(/assessmentId=assessment-2/);
+  expect(new URL(page.url()).searchParams.has("periodId")).toBe(false);
+  await expect(page.getByRole("heading", { name: "Enerji birimi", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Tüm birimler", exact: true }).click();
+  await page.getByLabel("Değerlendirme durumuna göre filtrele").selectOption("SUBMITTED");
+  await expect(table.getByRole("row")).toHaveCount(2);
+  await page.getByLabel("Değerlendirme durumuna göre filtrele").selectOption("ALL");
+  await expect(table.getByRole("row")).toHaveCount(4);
 });
 
 for (const role of ["USER", "ADMIN"]) {

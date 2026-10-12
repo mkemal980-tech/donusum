@@ -85,7 +85,7 @@ function initials(name: string) {
   return parts.map((p) => p.charAt(0).toLocaleUpperCase("tr-TR")).join("") || "?";
 }
 
-export type UnitShellContext = { unitId: string; surveyId: string; assessmentId: string | null; selection?: string | null; tab?: string };
+export type UnitShellContext = { unitId: string; surveyId: string; assessmentId: string | null; selection?: string | null; periodId?: string; tab?: string };
 
 export default function AppShell({ unitContext }: { unitContext?: UnitShellContext } = {}) {
   const pathname = usePathname();
@@ -116,8 +116,11 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
     if (unitContext) {
       params.delete("selection");
       params.delete("assessmentId");
+      params.delete("surveyId");
+      params.delete("periodId");
       if (unitContext.unitId) params.set("unitId", unitContext.unitId);
       if (unitContext.surveyId) params.set("surveyId", unitContext.surveyId);
+      if (unitContext.periodId) params.set("periodId", unitContext.periodId);
       if (unitContext.assessmentId) params.set("assessmentId", unitContext.assessmentId);
       else if (unitContext.selection) params.set("selection", unitContext.selection);
     }

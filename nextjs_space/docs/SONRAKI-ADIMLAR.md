@@ -3,7 +3,24 @@
 Bu dosya, yeni bir oturuma başlarken bağlamı hızlıca kurmak için tutulur.
 Bir adım bitince buradaki durumu güncelleyin.
 
-**Son güncelleme:** 2026-08-08 (plan tamam + veri/içerik işleri)
+**Son güncelleme:** 2026-10-12 (birim panosu)
+
+---
+
+## Son iş: birim panosunun açılış görünümü (2026-10-12)
+
+Birden çok birim yöneten kullanıcının panosu alfabetik sıradaki ilk birime
+açılıyordu. O alt birimde kayıt olmayınca, diğer alt birimlerin mevcut
+değerlendirmeleri de görünmüyormuş izlenimi veriyordu.
+
+- İlk açılış artık **Tüm yönetilen birimler** özeti; tablo birim adlarını da gösteriyor.
+- Anket, dönem ve durum filtreleri toplu görünümde çalışıyor; seçilen satır
+  birimin kendi sonuç, görev ve yol haritası ekranını açıyor.
+- Boş birimden diğer sonuçlara geçiş var; seçim ve menü bağlantıları bağlamı koruyor.
+- 11 örnek API yanıtlı tarayıcı senaryosu, üretim derlemesi ve derlemeye dahil
+  lint/tip kontrolü geçti. Canlı veritabanında yalnızca okuma işlemleriyle
+  yönetim kapsamı, değerlendirme listesi ve bir sonuç detayı ayrıca doğrulandı.
+- Şema veya veri değişikliği yok.
 
 ---
 
