@@ -10,7 +10,8 @@ import Panel from "@/components/ui/panel";
 import StatCard from "@/components/ui/stat-card";
 import { Button } from "@/components/ui/button";
 import RoadmapTimeline from "@/components/ui/roadmap-timeline";
-import { CheckCircle, Clock, PlayCircle, XCircle, CalendarClock } from "lucide-react";
+import { CheckCircle, Clock, PlayCircle, XCircle, CalendarClock, Sparkles } from "lucide-react";
+import type { RoadmapGenerationResult } from "@/lib/roadmap-planner";
 
 /**
  * Yol haritası.
@@ -93,17 +94,22 @@ export default function RoadmapClient() {
   const [roadmapItems, setRoadmapItems] = useState<RoadmapItem[]>([]);
   const [summary, setSummary] = useState<RoadmapSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [generationResult, setGenerationResult] = useState<RoadmapGenerationResult | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const fetchRoadmap = async () => {
     try {
       const res = await fetch("/api/roadmap");
-      if (res.ok) {
-        const data = await res.json();
-        setRoadmapItems(data?.items ?? []);
-        setSummary(data?.summary ?? null);
-      }
+      if (!res.ok) throw new Error("Yol haritası yüklenemedi");
+      const data = await res.json();
+      setRoadmapItems(data?.items ?? []);
+      setSummary(data?.summary ?? null);
+      return true;
     } catch (error) {
       console.error("Error fetching roadmap:", error);
+      toast.error("Yol haritası yüklenemedi. Lütfen sayfayı yenileyin.");
+      return false;
     } finally {
       setLoading(false);
     }
@@ -119,6 +125,26 @@ export default function RoadmapClient() {
     row?.scrollIntoView({ behavior: "smooth", block: "center" });
     row?.focus({ preventScroll: true });
   }, [loading, selectedRecommendationId]);
+
+  const handleGenerate = async () => {
+    if (generating) return;
+    setGenerating(true);
+    setGenerationError(null);
+    try {
+      const response = await fetch("/api/roadmap/generate", { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || "Yol haritası oluşturulamadı.");
+      setGenerationResult(data);
+      const refreshed = await fetchRoadmap();
+      if (refreshed) toast.success(`${data.categoryCount} alt kategoriden ${data.selectedCount} öneri takvime yerleştirildi`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Yol haritası oluşturulamadı.";
+      setGenerationError(message);
+      toast.error(message);
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handleRemove = async (recommendationId: string) => {
     try {
@@ -222,7 +248,49 @@ export default function RoadmapClient() {
         <PageHeader
           title="Yol haritası"
           subtitle="Önerileri takvime bağlayın, ilerlemeyi buradan izleyin."
+          actions={
+            <Button onClick={handleGenerate} loading={generating}>
+              {!generating && <Sparkles size={16} aria-hidden="true" />}
+              {generating ? "Yol haritası oluşturuluyor…" : "AI ile yol haritası oluştur"}
+            </Button>
+          }
         />
+
+        <p className="mb-6 t-sm" style={{ color: "var(--ink-2)" }}>
+          AI, her alt kategoriden en önemli 3 uygulanabilir öneriyi seçer ve vadesine göre takvime ekler.
+          {" "}Üçten az öneri varsa mevcut önerilerin tümü seçilir; tarih atanmış işler korunur.
+        </p>
+        {generating && (
+          <p role="status" className="mb-6 t-sm" style={{ color: "var(--ink-2)" }}>
+            Önerilerin etkisi, maliyeti ve uygulama sırası değerlendiriliyor. Bu işlem biraz sürebilir.
+          </p>
+        )}
+        {generationError && (
+          <p role="alert" className="mb-6 t-sm" style={{ color: "var(--error)" }}>{generationError}</p>
+        )}
+        {generationResult && (
+          <Panel title="AI yol haritası" className="mb-6">
+            <p role="status" className="t-sm" style={{ color: "var(--ink-2)" }}>
+              {generationResult.categoryCount} alt kategoriden {generationResult.selectedCount} öneri seçildi.
+              {" "}{generationResult.addedCount} yeni öneri eklendi, {generationResult.scheduledCount} öneriye tarih atandı.
+              {generationResult.preservedCount > 0 && ` ${generationResult.preservedCount} önerinin mevcut takvimi korundu.`}
+            </p>
+            <details className="mt-4">
+              <summary className="cursor-pointer t-sm" style={{ color: "var(--ink)" }}>Seçilen öneriler ve gerekçeleri</summary>
+              <ol className="mt-3 space-y-3">
+                {generationResult.selections.map((selection) => (
+                  <li key={selection.recommendationId} className="pt-3" style={{ borderTop: "1px solid var(--line)" }}>
+                    <p className="t-body" style={{ color: "var(--ink)" }}>{selection.title}</p>
+                    <p className="t-sm" style={{ color: "var(--ink-3)" }}>
+                      {selection.subCategoryName} · Ç{selection.plannedQuarter} {selection.plannedYear}
+                    </p>
+                    <p className="mt-1 t-sm" style={{ color: "var(--ink-2)" }}>{selection.reason}</p>
+                  </li>
+                ))}
+              </ol>
+            </details>
+          </Panel>
+        )}
 
         <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Yol haritasındaki öneri" value={roadmapItems?.length ?? 0} />
@@ -325,6 +393,7 @@ export default function RoadmapClient() {
                     <select
                       id={`status-${item?.id}`}
                       value={item?.status || 'NOT_STARTED'}
+                      disabled={generating}
                       onChange={(e) => handleUpdateStatus(item?.recommendationId, e.target.value)}
                       className="theme-select w-auto"
                     >
@@ -351,7 +420,7 @@ export default function RoadmapClient() {
         ) : (
           <EmptyState
             title="Yol haritası boş"
-            description="Öneriler sayfasında bir öneriyi yol haritasına ekleyin; çeyrek ve sorumlu ataması burada yapılır."
+            description="AI ile her alt kategorinin öncelikli önerilerini takvime ekleyin veya Öneriler sayfasından bir öneri seçin."
             action={
               <Button asChild>
                 <a href="/recommendations">Önerilere git</a>
