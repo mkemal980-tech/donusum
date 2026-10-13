@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildUnitManagementAnalytics, managementScopeIds, unitSizeLabel } from "../unit-management-analytics";
 import { managementDashboard, managementDetails, managementRows, managementUnits } from "../../test-fixtures/unit-management";
 import { buildUnitManagementReportHtml, unitManagementReportTables } from "../unit-management-report";
+import { ironmanInsight } from "../unit-management-display";
 import * as XLSX from "xlsx";
 
 describe("birim yönetici analizi", () => {
@@ -83,5 +84,10 @@ describe("birim yönetici analizi", () => {
     expect(Object.keys(tables)).toEqual(expect.arrayContaining(["Ironman", "Şirket ölçeği", "Sektörler", "Öneriler", "İçgörüler"]));
     const sheet = XLSX.utils.aoa_to_sheet(tables["Öneriler"]);
     expect(sheet.A2).toMatchObject({ t: "s" }); expect(sheet.A2.f).toBeUndefined();
+  });
+  it("rapor Ironman tablosuna panodaki yorumu ekler", () => {
+    const data = managementDashboard();
+    const rows = unitManagementReportTables(data)["Ironman"];
+    expect(rows.find(row => row[0] === "Yorum")?.[1]).toBe(ironmanInsight(data.analytics.ironman).headline);
   });
 });

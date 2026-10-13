@@ -6,7 +6,7 @@ import Panel from "./ui/panel";
 import StatCard from "./ui/stat-card";
 import { Button } from "./ui/button";
 import type { UnitManagementDashboard } from "@/lib/unit-management";
-import { decimal, percentage, signed, esgSymbol, QUADRANT_LABELS, STRATEGY_LABELS, PORTFOLIO_STATUS_LABELS, TIMEFRAME_LABELS } from "@/lib/unit-management-display";
+import { decimal, percentage, signed, esgSymbol, ironmanInsight, QUADRANT_LABELS, STRATEGY_LABELS, PORTFOLIO_STATUS_LABELS, TIMEFRAME_LABELS } from "@/lib/unit-management-display";
 import { unitDate, UNIT_RESULT_LABELS } from "@/lib/unit-dashboard-display";
 
 const COLORS = ["var(--ink-3)", "var(--warning)", "var(--accent)", "var(--series-2)", "var(--series-4)"];
@@ -76,6 +76,7 @@ export function UnitManagementPanels({ data }: { data: UnitManagementDashboard }
           <h3 className="mt-6 t-label">Birim dağılımı</h3><div className="mt-3 space-y-3">{a.ironman.distribution.map((item, i) => <div key={item.key}><div className="mb-2 flex justify-between gap-3"><Legend color={AXIS_COLORS[i]} label={QUADRANT_LABELS[item.key]} value={item.count} /><span className="t-caption tabular text-[var(--ink-3)]">{a.ironman.count ? percentage(item.count / a.ironman.count * 100) : "—"}</span></div><Bar label={QUADRANT_LABELS[item.key] + " dağılımı"} value={a.ironman.count ? item.count / a.ironman.count * 100 : null} color={AXIS_COLORS[i]} /></div>)}</div>
         </div>
       </div>
+      <IronmanInsight data={a.ironman} />
     </Panel>
     <div className="grid gap-6 xl:grid-cols-5">
       <Panel className="xl:col-span-3" title="Sürdürülebilirlik başlıkları" description="Kategori ortalaması ve kayıtlı sektör kıyası · 100 üzerinden">
@@ -122,12 +123,20 @@ function IronmanChart({ data }: { data: UnitManagementDashboard["analytics"]["ir
   return <div><svg viewBox="0 0 520 490" className="h-auto w-full max-h-[450px]" role="img" aria-label={data.quadrant ? `Ironman kadranı: ${QUADRANT_LABELS[data.quadrant]}, hız ${decimal(data.velocity)}, dayanıklılık ${decimal(data.endurance)}` : "Ironman kadranı: iki eksende henüz sonuç yok"}>
     <rect x="60" y="30" width="400" height="400" rx="6" fill="var(--surface-2)" />
     {[1, 2, 3, 4, 5].map(tick => <g key={tick}><line x1={x(tick)} y1="30" x2={x(tick)} y2="430" stroke="var(--line)" strokeDasharray={tick === data.threshold ? "5 4" : undefined} /><line x1="60" y1={y(tick)} x2="460" y2={y(tick)} stroke="var(--line)" strokeDasharray={tick === data.threshold ? "5 4" : undefined} /><text x={x(tick)} y="450" textAnchor="middle" fontSize="12" fill="var(--ink-3)">{tick}</text><text x="42" y={y(tick) + 4} textAnchor="end" fontSize="12" fill="var(--ink-3)">{tick}</text></g>)}
-    {[["Maraton Koşucusu", 160, 60], ["Demir Adam", 360, 60], ["Yaya", 160, 407], ["Sprinter", 360, 407]].map(([label, px, py]) => <text key={label} x={Number(px)} y={Number(py)} textAnchor="middle" fill="var(--ink-3)" fontSize="12">{label}</text>)}
-    {data.benchmarkVelocity != null && data.benchmarkEndurance != null && <rect x={x(data.benchmarkVelocity) - 5} y={y(data.benchmarkEndurance) - 5} width="10" height="10" fill="var(--ink-3)"><title>Sektör kıyası</title></rect>}
-    {data.targetVelocity != null && data.targetEndurance != null && <circle cx={x(data.targetVelocity)} cy={y(data.targetEndurance)} r="8" fill="none" stroke="var(--ink)" strokeWidth="2"><title>Kayıtlı referans hedef</title></circle>}
+    {[["Maraton Koşucusu", "kalıcı ama yavaş", 160, 60], ["Demir Adam", "hızlı ve kalıcı", 360, 60], ["Yaya", "yavaş, kalıcı değil", 160, 398], ["Sprinter", "hızlı ama kalıcı değil", 360, 398]].map(([label, hint, px, py]) => <g key={label}><text x={Number(px)} y={Number(py)} textAnchor="middle" fill="var(--ink-3)" fontSize="12">{label}</text><text x={Number(px)} y={Number(py) + 15} textAnchor="middle" fill="var(--ink-3)" fontSize="10" opacity="0.8">{hint}</text></g>)}
+    {data.benchmarkVelocity != null && data.benchmarkEndurance != null && <rect x={x(data.benchmarkVelocity) - 5} y={y(data.benchmarkEndurance) - 5} width="10" height="10" fill="var(--ink-3)"><title>Sektör ortalaması</title></rect>}
+    {data.targetVelocity != null && data.targetEndurance != null && <circle cx={x(data.targetVelocity)} cy={y(data.targetEndurance)} r="8" fill="none" stroke="var(--ink)" strokeWidth="2"><title>Sektörün gelecek yıl için beklenen ortalaması</title></circle>}
     {data.velocity != null && data.endurance != null && <circle cx={x(data.velocity)} cy={y(data.endurance)} r="8" fill="var(--accent)" stroke="var(--canvas)" strokeWidth="3"><title>Seçili kapsamın mevcut konumu</title></circle>}
-    <text x="260" y="480" textAnchor="middle" fontSize="13" fill="var(--ink-2)">Hız</text><text x="16" y="230" textAnchor="middle" transform="rotate(-90 16 230)" fontSize="13" fill="var(--ink-2)">Dayanıklılık</text>
-  </svg><div className="flex flex-wrap gap-4 t-caption text-[var(--ink-2)]"><span>● Mevcut konum</span><span>■ Kayıtlı sektör kıyası</span><span>○ Referans hedef</span></div></div>;
+    <text x="260" y="480" textAnchor="middle" fontSize="13" fill="var(--ink-2)">Hız (aksiyon alma)</text><text x="16" y="230" textAnchor="middle" transform="rotate(-90 16 230)" fontSize="13" fill="var(--ink-2)">Dayanıklılık (kalıcılık)</text>
+  </svg><div className="flex flex-wrap gap-4 t-caption text-[var(--ink-2)]"><span>● Mevcut konum</span><span>■ Sektör ortalaması</span><span>○ Sektörün gelecek yıl hedefi</span></div></div>;
+}
+function IronmanInsight({ data }: { data: UnitManagementDashboard["analytics"]["ironman"] }) {
+  const insight = ironmanInsight(data);
+  return <section className="mt-6 rounded-[var(--radius-md)] bg-[var(--surface-2)] p-5" aria-label="Ironman yorumu">
+    <h3 className="flex items-center gap-2 t-label"><Lightbulb size={14} aria-hidden="true" />Bu grafik ne söylüyor?</h3>
+    <p className="mt-2 t-sm text-[var(--ink)]">{insight.headline}</p>
+    <ul className="mt-3 list-disc space-y-2 pl-5 t-sm text-[var(--ink-2)]">{insight.points.map(point => <li key={point}>{point}</li>)}</ul>
+  </section>;
 }
 function RecommendationPortfolio({ data }: { data: UnitManagementDashboard }) {
   const p = data.analytics.portfolio;

@@ -1,7 +1,13 @@
 import type { UnitManagementDashboard } from "./unit-management";
 import { escapeReportText } from "./report-html";
-import { percentage, signed, decimal, QUADRANT_LABELS, STRATEGY_LABELS, PORTFOLIO_STATUS_LABELS, TIMEFRAME_LABELS } from "./unit-management-display";
+import { percentage, signed, decimal, ironmanInsight, QUADRANT_LABELS, STRATEGY_LABELS, PORTFOLIO_STATUS_LABELS, TIMEFRAME_LABELS } from "./unit-management-display";
 import { UNIT_RESULT_LABELS, unitDate } from "./unit-dashboard-display";
+
+/** Panodaki yorum raporda da aynı cümlelerle yer alır; sayfa dışına çıkan tablo açıklamasız kalmaz. */
+function ironmanInsightRows(ironman: UnitManagementDashboard["analytics"]["ironman"]) {
+  const { headline, points } = ironmanInsight(ironman);
+  return [["Yorum", headline], ...points.map(point => ["", point])];
+}
 
 export function unitManagementReportTables(data: UnitManagementDashboard): Record<string, (string | number | null)[][]> {
   const { selection: s, analytics: a } = data;
@@ -10,7 +16,7 @@ export function unitManagementReportTables(data: UnitManagementDashboard): Recor
     "Kategoriler": [["Kategori", "Sonuç", "Mevcut %", "Taban %", "Gelişim puanı", "Soru ağırlığı %", "Sektör kıyası %"], ...a.results.categories.map(row => [row.name, row.count, row.average, row.baseline, row.gain, row.weight, row.benchmark])],
     "Bölümler": [["Kategori", "Bölüm", "Ortalama %", "Cevaplanan soru", "Toplam soru"], ...a.results.categories.flatMap(category => category.sections.map(section => [category.name, section.name, section.average, section.answered, section.total]))],
     "Olgunluk": [["Seviye", "Değerlendirme"], ...a.results.distribution.map(row => [row.label, row.count])],
-    "Ironman": [["Gösterge", "Değer"], ["Hız", decimal(a.ironman.velocity)], ["Dayanıklılık", decimal(a.ironman.endurance)], ["Kadran", a.ironman.quadrant ? QUADRANT_LABELS[a.ironman.quadrant] : null], ["Kıyas hız", decimal(a.ironman.benchmarkVelocity)], ["Kıyas dayanıklılık", decimal(a.ironman.benchmarkEndurance)], ...a.ironman.distribution.map(row => [QUADRANT_LABELS[row.key], row.count])],
+    "Ironman": [["Gösterge", "Değer"], ["Hız", decimal(a.ironman.velocity)], ["Dayanıklılık", decimal(a.ironman.endurance)], ["Kadran", a.ironman.quadrant ? QUADRANT_LABELS[a.ironman.quadrant] : null], ["Kıyas hız", decimal(a.ironman.benchmarkVelocity)], ["Kıyas dayanıklılık", decimal(a.ironman.benchmarkEndurance)], ...a.ironman.distribution.map(row => [QUADRANT_LABELS[row.key], row.count]), ...ironmanInsightRows(a.ironman)],
     "Yanıt gelişimi": [["Tarih", "Başlatılan", "Gönderilen"], ...a.trend.map(row => [row.date, row.started, row.submitted])],
     "Şirket ölçeği": [["Ölçek", "Birim", "Sonuç", "Ortalama %"], ...a.companySizes.map(row => [row.label, row.unitCount, row.count, row.average])],
     "Sektörler": [["Sektör", "Birim", "Sonuç", "Gönderilmiş", "Ortalama %", "Kıyas %", "Fark"], ...a.sectors.map(row => [row.name, row.unitCount, row.count, row.submitted, row.average, row.benchmark, row.difference])],
