@@ -10,6 +10,7 @@ import StatCard from "@/components/ui/stat-card";
 interface Unit {
   id: string;
   name: string;
+  subUnits?: Unit[];
 }
 
 interface Sector {
@@ -371,6 +372,20 @@ export default function UsersPage() {
     s => s.isActive && !userAssignments.some(a => a.surveyId === s.id)
   );
 
+  /**
+   * Birim seçimi alt birimleri de kapsar.
+   *
+   * Katılım koduyla kaydolan şirketler kodun birimi altında alt birim olarak
+   * açılıyor; liste yalnızca üst birimleri gösterince bu kullanıcıların
+   * birimi "Seçiniz" görünüyor ve başka bir şirkete taşınamıyordu.
+   */
+  const flatUnits: { id: string; name: string; level: number }[] = [];
+  const addUnit = (unit: Unit, level: number) => {
+    flatUnits.push({ id: unit.id, name: unit.name, level });
+    unit.subUnits?.forEach((sub) => addUnit(sub, level + 1));
+  };
+  units.forEach((u) => addUnit(u, 0));
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -673,9 +688,9 @@ export default function UsersPage() {
                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
                 >
                   <option value="">Seçiniz</option>
-                  {units.map((unit) => (
-                    <option key={unit.id} value={unit.id}>
-                      {unit.name}
+                  {flatUnits.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {"  ".repeat(u.level)}{u.level > 0 ? "└ " : ""}{u.name}
                     </option>
                   ))}
                 </select>
