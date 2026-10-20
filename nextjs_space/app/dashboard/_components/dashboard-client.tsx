@@ -1608,6 +1608,7 @@ export default function DashboardClient({ showUnitDashboardLink = false, unitDas
               surveyId={selectedSurveyId}
               selectedCategoryId={selectedCategoryId}
               onCategoryChange={setSelectedCategoryId}
+              canManageRoadmap={assessmentStatus.isCoordinator}
             />
           </Suspense>
         </section>

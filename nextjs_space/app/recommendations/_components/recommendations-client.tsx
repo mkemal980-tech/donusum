@@ -52,6 +52,9 @@ interface Recommendation {
   stepDistance?: number;
   /** Yumuşak kilit: sırası gelmemiş basamak ilerletilemez. */
   isActionable?: boolean;
+  /** Sunucu söyler (bkz. lib/roadmap-access): yol haritasına ekleme ve durum değiştirme yetkisi. */
+  canManageRoadmap?: boolean;
+  canUpdateStatus?: boolean;
   resolvedSubCategoryId?: string | null;
   subCategoryName?: string | null;
   /** Sunucuda hesaplanan katkı (docs/GELISIM-PUANI.md). */
@@ -338,9 +341,12 @@ export default function RecommendationsClient() {
         <PageHeader
           title="Öneriler"
           subtitle={
-            surveys.length > 1
+            (surveys.length > 1
               ? `${selectedSurveyName} değerlendirmesine göre hazırlanan iyileştirme adımları`
-              : "Değerlendirme sonucunuza göre hazırlanan iyileştirme adımları"
+              : "Değerlendirme sonucunuza göre hazırlanan iyileştirme adımları") +
+            (recommendations.length > 0 && !recommendations[0]?.canManageRoadmap
+              ? ". Yol haritasını birim yöneticiniz planlar; size atanan işlerin durumunu güncelleyebilirsiniz."
+              : "")
           }
           actions={
             <>
@@ -622,8 +628,8 @@ export default function RecommendationsClient() {
                     <RecommendationCard
                       key={rec?.id}
                       recommendation={rec}
-                      onAddToRoadmap={handleAddToRoadmap}
-                      onStatusChange={handleStatusChange}
+                      onAddToRoadmap={rec?.canManageRoadmap ? handleAddToRoadmap : undefined}
+                      onStatusChange={rec?.canUpdateStatus ? handleStatusChange : undefined}
                     />
                   ))}
                 </div>
@@ -642,8 +648,8 @@ export default function RecommendationsClient() {
                     <RecommendationCard
                       key={rec?.id}
                       recommendation={rec}
-                      onAddToRoadmap={handleAddToRoadmap}
-                      onStatusChange={handleStatusChange}
+                      onAddToRoadmap={rec?.canManageRoadmap ? handleAddToRoadmap : undefined}
+                      onStatusChange={rec?.canUpdateStatus ? handleStatusChange : undefined}
                     />
                   ))}
                 </div>
@@ -662,8 +668,8 @@ export default function RecommendationsClient() {
                     <RecommendationCard
                       key={rec?.id}
                       recommendation={rec}
-                      onAddToRoadmap={handleAddToRoadmap}
-                      onStatusChange={handleStatusChange}
+                      onAddToRoadmap={rec?.canManageRoadmap ? handleAddToRoadmap : undefined}
+                      onStatusChange={rec?.canUpdateStatus ? handleStatusChange : undefined}
                     />
                   ))}
                 </div>

@@ -8,8 +8,12 @@ import {
   getAccessibleSurveyIds,
   isRecommendationActionable
 } from "@/lib/scoring";
-import { getAssessmentIds } from "@/lib/assessment";
+import { getAssessmentIds, isUserCoordinator } from "@/lib/assessment";
 import { resolveAssessmentForRecommendation, updateRoadmapStatus } from "@/lib/roadmap-status";
+import { loadRoadmapAccess, ROADMAP_FORBIDDEN } from "@/lib/roadmap-access";
+
+/** Ekleme, silme ve planlama yalnızca koordinatörde (bkz. lib/roadmap-access). */
+const forbidden = () => NextResponse.json({ error: ROADMAP_FORBIDDEN }, { status: 403 });
 
 const RECOMMENDATION_INCLUDE = {
   recommendation: {
@@ -43,13 +47,14 @@ export async function GET(request: NextRequest) {
       ]
     });
 
-    const { scores, contributions } = await calculateRecommendationContributions(
-      userId,
-      roadmapItems.map(item => item.recommendation)
-    );
+    const [{ scores, contributions }, access] = await Promise.all([
+      calculateRecommendationContributions(userId, roadmapItems.map(item => item.recommendation)),
+      loadRoadmapAccess(userId, assessmentIds),
+    ]);
 
     const items = roadmapItems.map(item => ({
       ...item,
+      canUpdateStatus: access.canUpdate(item.recommendationId),
       contribution: contributions.get(item.recommendationId) ?? {
         recommendationId: item.recommendationId,
         kind: "points" as const,
@@ -61,6 +66,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       items,
+      permissions: { canManage: access.canManage },
       summary: {
         total: items.length,
         completed: items.filter(item => item.status === "COMPLETED").length,
@@ -97,6 +103,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    if (!(await isUserCoordinator(userId))) return forbidden();
 
     // Yumuşak kilit: sırası gelmemiş kademe yol haritasına eklenemez.
     const actionable = await isRecommendationActionable(userId, recommendationId);
@@ -167,6 +174,7 @@ export async function PUT(request: NextRequest) {
 
     if (status === undefined) {
       // Yalnızca zamanlama/öncelik değişiyor: durum olduğu gibi kalır.
+      if (!(await isUserCoordinator(userId))) return forbidden();
       const resolved = await resolveAssessmentForRecommendation(userId, recommendationId);
       if (!resolved) {
         return NextResponse.json({ error: "Öneri bir ankete bağlı değil." }, { status: 400 });
@@ -226,6 +234,7 @@ export async function DELETE(request: NextRequest) {
         { status: 400 }
       );
     }
+    if (!(await isUserCoordinator(userId))) return forbidden();
 
     const resolved = await resolveAssessmentForRecommendation(userId, recommendationId);
     if (!resolved) {

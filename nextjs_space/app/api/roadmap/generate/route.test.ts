@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { ExistingRoadmapPlan, RoadmapCandidate } from "@/lib/roadmap-planner";
 
 const mocks = vi.hoisted(() => ({
+  isUserCoordinator: vi.fn(async () => true),
   withAuth: vi.fn(), isLLMConfigured: vi.fn(), callLLMForJSON: vi.fn(),
   getAccessibleSurveyIds: vi.fn(), getAssessmentIds: vi.fn(), getRecommendationsForUser: vi.fn(), getScopeResolver: vi.fn(),
   prisma: {
@@ -13,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/api-utils", () => ({ withAuth: mocks.withAuth }));
 vi.mock("@/lib/db", () => ({ prisma: mocks.prisma }));
-vi.mock("@/lib/assessment", () => ({ getAssessmentIds: mocks.getAssessmentIds }));
+vi.mock("@/lib/assessment", () => ({ getAssessmentIds: mocks.getAssessmentIds, isUserCoordinator: mocks.isUserCoordinator }));
 vi.mock("@/lib/scoring", () => ({
   getAccessibleSurveyIds: mocks.getAccessibleSurveyIds,
   getRecommendationsForUser: mocks.getRecommendationsForUser, getScopeResolver: mocks.getScopeResolver,
@@ -33,6 +34,7 @@ const post = () => POST(new NextRequest("http://localhost/api/roadmap/generate",
 
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.isUserCoordinator.mockResolvedValue(true);
   rows = [];
   mocks.withAuth.mockResolvedValue({ success: true, userId: "user-1", user: { role: "USER" } });
   mocks.isLLMConfigured.mockReturnValue(true);
@@ -185,6 +187,15 @@ describe("POST /api/roadmap/generate", () => {
   it("aday yoksa AI çağırmaz", async () => {
     mocks.getRecommendationsForUser.mockResolvedValue([]);
     expect((await post()).status).toBe(400);
+    expect(mocks.callLLMForJSON).not.toHaveBeenCalled();
+  });
+});
+
+describe("yol haritası oluşturma yetkisi", () => {
+  it("çalışan AI ile yol haritası oluşturamaz; model çağrılmaz", async () => {
+    mocks.isUserCoordinator.mockResolvedValue(false);
+    const response = await POST(new NextRequest("http://localhost/api/roadmap/generate", { method: "POST" }));
+    expect(response.status).toBe(403);
     expect(mocks.callLLMForJSON).not.toHaveBeenCalled();
   });
 });

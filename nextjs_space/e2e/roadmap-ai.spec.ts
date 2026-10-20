@@ -19,8 +19,9 @@ test("AI butonu bekleme durumunu gösterir ve oluşan planı takvimde açar", as
   await page.route("**/api/roadmap", (route) => route.fulfill({ json: {
     items: generated ? [{
       id: "item-1", recommendationId: recommendation.id, status: "NOT_STARTED",
-      plannedQuarter: 2, plannedYear: 2028, recommendation,
+      plannedQuarter: 2, plannedYear: 2028, recommendation, canUpdateStatus: true,
     }] : [],
+    permissions: { canManage: true },
     summary: null,
   } }));
   await page.route("**/api/roadmap/generate", async (route) => {
@@ -55,7 +56,7 @@ test("AI butonu bekleme durumunu gösterir ve oluşan planı takvimde açar", as
 });
 
 test("AI başarısız olduğunda hatayı gösterir ve yeniden denemeye izin verir", async ({ page }) => {
-  await page.route("**/api/roadmap", (route) => route.fulfill({ json: { items: [], summary: null } }));
+  await page.route("**/api/roadmap", (route) => route.fulfill({ json: { items: [], permissions: { canManage: true }, summary: null } }));
   await page.route("**/api/roadmap/generate", (route) => route.fulfill({
     status: 503, json: { error: "AI hizmeti şu anda kullanılamıyor." },
   }));

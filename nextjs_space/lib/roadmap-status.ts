@@ -1,5 +1,6 @@
 import { prisma } from "./db";
 import { getAssessmentIds, getOrCreateAssessment } from "./assessment";
+import { loadRoadmapAccess, ROADMAP_FORBIDDEN } from "./roadmap-access";
 import {
   calculateProgressScores,
   getAccessibleSurveyIds,
@@ -39,7 +40,7 @@ export function isForwardMove(status: RoadmapStatus): boolean {
 }
 
 export type RoadmapStatusError = {
-  code: "INVALID_STATUS" | "LOCKED" | "NO_SURVEY" | "NOT_FOUND";
+  code: "INVALID_STATUS" | "LOCKED" | "NO_SURVEY" | "NOT_FOUND" | "FORBIDDEN";
   message: string;
   httpStatus: number;
 };
@@ -263,6 +264,18 @@ export async function updateRoadmapStatus(
     };
   }
   const { assessmentId, surveyId } = resolved;
+
+  // Yönetici yolu (`input.assessment`) yetkiyi zaten doğruladı; kişisel yolda
+  // çalışan yalnızca kendisine düşen, yol haritasında olan işin durumunu değiştirir.
+  if (!input.assessment) {
+    const access = await loadRoadmapAccess(userId, [assessmentId], db);
+    if (!access.canManage && !access.canUpdate(input.recommendationId)) {
+      return { ok: false, error: { code: "FORBIDDEN", message: ROADMAP_FORBIDDEN, httpStatus: 403 } };
+    }
+    if (!access.canManage) {
+      input = { ...input, plannedQuarter: undefined, plannedYear: undefined, priority: undefined, assigneeId: undefined, dueDate: undefined };
+    }
+  }
 
   const before = await calculateProgressScores(userId, { surveyId, db, ...(input.assessment ? { assessment: input.assessment } : {}) });
 

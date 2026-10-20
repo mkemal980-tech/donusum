@@ -275,6 +275,12 @@ export async function getAssessmentContext(
  * değerlendirmesinin koordinatörüdür — tek başına çalışan birinin görev
  * dağıtacak kimsesi yok, bütün bölümler zaten onun.
  */
+/** Kullanıcı kendi değerlendirmesinin koordinatörü mü? Kural `resolveCoordinator` ile aynı. */
+export async function isUserCoordinator(userId: string, db: DbClient = prisma): Promise<boolean> {
+  const user = await db.user.findUnique({ where: { id: userId }, select: { unitId: true, role: true } });
+  return resolveCoordinator(userId, user?.role ?? "USER", user?.unitId ?? null, db);
+}
+
 async function resolveCoordinator(
   userId: string,
   role: string,
