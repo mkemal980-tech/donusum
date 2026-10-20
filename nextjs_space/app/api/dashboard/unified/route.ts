@@ -4,7 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
 import {
+  breakdownPercentage,
   buildSurveyQuestionWhere,
+  calculateProgressBreakdown,
   calculateUserScore,
   getRecommendationsForUser
 } from "@/lib/scoring";
@@ -40,9 +42,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Bu ankete erişiminiz yok" }, { status: 403 });
     }
 
-    // PARALEL FETCH - Tüm veriler aynı anda çekilir
-    // Puan bir kez hesaplanır ve önerilere de o sonuç verilir.
-    const scoreData = await calculateUserScore(userId, surveyId);
+    /**
+     * Ekrandaki her puan ilerleme motorundan gelir (docs/GELISIM-PUANI.md):
+     * birim panosu ve yol haritasıyla aynı "mevcut puan". Eski hesap yalnızca
+     * hangi önerilerin gösterileceğini belirler; eşikleri o ölçekte tanımlı.
+     */
+    const [scoreData, progress] = await Promise.all([
+      calculateUserScore(userId, surveyId),
+      calculateProgressBreakdown(userId, { surveyId }),
+    ]);
 
     const [
       userProfile,
@@ -99,7 +107,7 @@ export async function GET(request: NextRequest) {
 
     ]);
 
-    const categoryScores = toCategoryScores(scoreData);
+    const categoryScores = toCategoryScores(progress);
 
     // Soru sayımı görünür yapıdan gelir: arşivlenmiş ve kapsam dışı sorular
     // toplamda görünmez, böylece tamamlanma yüzdesi %100'e ulaşabilir.
@@ -155,7 +163,9 @@ export async function GET(request: NextRequest) {
         isCoordinator: assessment.isCoordinator,
       },
       score: {
-        totalScore: scoreData.totalScore,
+        totalScore: progress.scores.overallPercentage,
+        baselinePercentage: progress.scores.baselineOverallPercentage,
+        deltaPercentage: progress.scores.deltaPercentage,
         answeredQuestions: answeredVisible,
         totalQuestions,
         completionPercentage
@@ -176,18 +186,24 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** Hesaplanmış puanı ekranın beklediği şekle çevirir — yeni sorgu yapmaz. */
-function toCategoryScores(scoreData: Awaited<ReturnType<typeof calculateUserScore>>) {
+/**
+ * Kırılımı ekranın beklediği şekle çevirir — yeni sorgu yapmaz. Sektör
+ * kapsamında sorusu olmayan kategori listelenmez; cevapsız kategori %0'dır.
+ */
+function toCategoryScores({ scores, categories }: Awaited<ReturnType<typeof calculateProgressBreakdown>>) {
+  const view = (node: { id: string; name: string; totalScore: number; responseCount: number }) => ({
+    id: node.id,
+    name: node.name,
+    score: node.responseCount ? Math.round(node.totalScore * 10) / 10 : 1,
+    percentage: node.responseCount ? Math.round(breakdownPercentage(node.totalScore)) : 0
+  });
+  const scoped = categories.filter(category => category.questionCount > 0);
   return {
-    overallScore: scoreData.totalScoreOn5,
-    overallPercentage: scoreData.totalScore,
-    categories: Object.entries(scoreData.categoryScores).map(([id, data]) => ({
-      id,
-      name: data.name,
-      score: data.scoreOn5,
-      percentage: data.percentage
-    })),
-    subCategories: Object.entries(scoreData.subCategoryScores).map(([id, data]) => ({ id, ...data })),
-    subLevels: Object.entries(scoreData.subLevelScores).map(([id, data]) => ({ id, ...data }))
+    overallScore: scores.overallScore,
+    overallPercentage: scores.overallPercentage,
+    categories: scoped.map(view),
+    subCategories: scoped.flatMap(category => category.subCategories
+      .filter(section => section.questionCount > 0)
+      .map(section => ({ ...view(section), categoryName: category.name })))
   };
 }

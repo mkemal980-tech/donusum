@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { withAuth } from '@/lib/api-utils';
-import { calculateProgressScores, classifyQuadrant } from '@/lib/scoring';
+import { calculateProgressScores, classifyQuadrant, getScoringProfile } from '@/lib/scoring';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,20 +101,20 @@ export async function GET(request: NextRequest) {
     // 4.5) 1-5 ölçeğinde tanımlı. İki farklı ölçek karşılaştırıldığı için
     // tavanı 5'in altında olan sorular şirketi haksız yere kadranın altında
     // gösteriyordu.
-    const scores = await calculateProgressScores(userId, { surveyId });
+    const [scores, profile] = await Promise.all([calculateProgressScores(userId, { surveyId }), getScoringProfile(userId)]);
 
     // Hiç cevap yoksa ekran sektör ortalamasını başlangıç kabul eder.
     const currentVelocity = scores.velocityWeight > 0 ? scores.velocityScore : 2.5;
     const currentEndurance = scores.enduranceWeight > 0 ? scores.enduranceScore : 2.5;
     const quadrant = classifyQuadrant(currentVelocity, currentEndurance);
 
-    // Sektör benchmark verilerini al
+    // Sektör kıyası, soruları puanlayan profille aynı sektörden (birim, yoksa kullanıcı).
     let benchmark = null;
-    if (user.sectorId) {
+    if (profile?.sectorId) {
       benchmark = await prisma.ironmanBenchmark.findFirst({
         where: {
-          sectorId: user.sectorId,
-          subSectorId: user.subSectorId || null,
+          sectorId: profile.sectorId,
+          subSectorId: profile.subSectorId || null,
         },
         include: {
           sector: { select: { id: true, name: true } },
@@ -122,10 +122,10 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      if (!benchmark && user.subSectorId) {
+      if (!benchmark && profile.subSectorId) {
         benchmark = await prisma.ironmanBenchmark.findFirst({
           where: {
-            sectorId: user.sectorId,
+            sectorId: profile.sectorId,
             subSectorId: null,
           },
           include: {
@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
       } : null,
       company: {
         name: user.organization || 'Your Company',
-        industry: user.sector?.name || 'Not specified',
+        industry: profile?.sector?.name || 'Not specified',
         region: user.region || 'Global',
       },
       stats: {

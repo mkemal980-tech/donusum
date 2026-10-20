@@ -323,6 +323,40 @@ describe("computeProgressBreakdown — kategori kırılımı", () => {
     expect(b.completedCount).toBe(0);
   });
 
+  it("basamak kırılımı bölümle aynı yöntemi kullanır; basamaksız bölüm önerisi basamağa düşmez", () => {
+    const levelTree = [{ id: "catA", name: "A", subCategories: [{ id: "subA", name: "A1", subLevels: [{ id: "l1", name: "Temel" }, { id: "l2", name: "İleri" }] }] }];
+    const data = inputs({
+      responses: [
+        response({ questionId: "q1", score: 5, categoryId: "catA", subCategoryId: "subA", subLevelId: "l1" }),
+        response({ questionId: "q2", score: 0, categoryId: "catA", subCategoryId: "subA", subLevelId: "l2", answered: false }),
+      ],
+      recommendations: [
+        rec({ id: "p1", points: 0.5, categoryId: "catA", subCategoryId: "subA", subLevelId: "l2" }),
+        rec({ id: "p2", points: 0.5, categoryId: "catA", subCategoryId: "subA" }),
+      ],
+      completedIds: new Set(["p1", "p2"]),
+    });
+    const [a] = computeProgressBreakdown(data, levelTree);
+    const [l1, l2] = a.subCategories[0].subLevels;
+    expect(l1).toMatchObject({ id: "l1", baseScore: 5, totalScore: 5, questionCount: 1, responseCount: 1, completedCount: 0 });
+    // Cevapsız basamak taban 0 ("veri yok"); yalnızca kendi önerisi sayılır.
+    expect(l2).toMatchObject({ id: "l2", baseScore: 0, questionCount: 1, responseCount: 0, completedCount: 1 });
+    expect(a.subCategories[0]).toMatchObject({ questionCount: 2, responseCount: 1, completedCount: 2 });
+  });
+
+  it("kapsam dışı soru düğümün soru sayısına girmez", () => {
+    const data = inputs({
+      responses: [
+        response({ questionId: "q1", score: 3, categoryId: "catA", subCategoryId: "subA" }),
+        response({ questionId: "q2", score: 3, categoryId: "catB", subCategoryId: "subB", applicable: false }),
+      ],
+    });
+    const [a, b] = computeProgressBreakdown(data, tree);
+    expect(a.questionCount).toBe(1);
+    expect(b).toMatchObject({ questionCount: 0, totalScore: 0 });
+    expect(a.subCategories[0].subLevels).toEqual([]);
+  });
+
   it("cevabı olmayan kategori 0 kalır, 5'i aşmaz", () => {
     const data = inputs({
       responses: [response({ questionId: "q1", score: 5, categoryId: "catA", subCategoryId: "subA" })],
@@ -354,7 +388,12 @@ describe("toProgressRecommendationInput", () => {
       axisType: "ENDURANCE",
       categoryId: "c",
       subCategoryId: "s",
+      subLevelId: null,
     });
+  });
+
+  it("basamağa bağlı önerinin basamağını taşır", () => {
+    expect(toProgressRecommendationInput({ id: "r", subLevelId: "l1", subCategoryId: "s" }, "yedek").subLevelId).toBe("l1");
   });
 
   it("kimliği olmayan satıra yedek kimlik verir", () => {

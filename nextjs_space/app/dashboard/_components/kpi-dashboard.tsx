@@ -24,7 +24,6 @@ interface KPIData {
     quadrant: string;
     quadrantInfo: {
       title: string;
-      color: string;
     };
     velocityVsSector: number | null;
     enduranceVsSector: number | null;

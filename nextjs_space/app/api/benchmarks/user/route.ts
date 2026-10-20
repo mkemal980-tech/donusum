@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
-import { calculateUserScore, percentageToScore } from "@/lib/scoring";
+import { calculateProgressBreakdown, getScoringProfile } from "@/lib/scoring";
 
 export const dynamic = "force-dynamic";
 
@@ -14,14 +14,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const surveyId = searchParams.get("surveyId");
     
-    // Get user with sector info
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        sector: true,
-        subSector: true
-      }
-    });
+    /**
+     * Kıyas, soruları puanlayan profille aynı sektörden yapılır: birime bağlı
+     * kullanıcıda birimin sektörü, değilse kendi profili. Eskiden kullanıcının
+     * kendi profili okunuyordu; sorular birimin sektörüne göre puanlanıp başka
+     * bir sektörle kıyaslanabiliyordu.
+     */
+    const user = await getScoringProfile(userId);
 
     if (!user || !user.sectorId) {
       return NextResponse.json({ 
@@ -31,13 +30,10 @@ export async function GET(request: NextRequest) {
     }
 
     /**
-     * Puan da seçili anketle sınırlanır.
-     *
-     * Eskiden `calculateUserScore(userId)` çağrılıyordu: kategoriler tek
-     * ankete göre süzülürken kullanıcının puanı bütün anketlerin birleşimi
-     * üzerinden hesaplanıyordu. Aynı ekranda iki farklı puan çıkıyordu.
+     * Puan seçili anketle sınırlanır ve ilerleme motorundan gelir: panonun
+     * öbür kartları, birim panosu ve yol haritasıyla aynı "mevcut puan".
      */
-    const userScores = await calculateUserScore(userId, surveyId ?? undefined);
+    const userScores = await calculateProgressBreakdown(userId, { surveyId: surveyId ?? undefined });
 
     // Build benchmark query - include surveyId filter if provided
     const benchmarkWhere: any = {
@@ -86,16 +82,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function buildResponse(user: any, userScores: any, sectorBenchmarks: any[], subSectorBenchmarks: any[], categories: any[]) {
+function buildResponse(user: any, userScores: Awaited<ReturnType<typeof calculateProgressBreakdown>>, sectorBenchmarks: any[], subSectorBenchmarks: any[], categories: any[]) {
+  const categoryNodes = new Map(userScores.categories.map(category => [category.id, category]));
   // Build benchmark data structure
   const buildBenchmarkData = (benchmarks: any[]) => {
     const overallBenchmark = benchmarks.find((b: any) => b.level === "OVERALL");
     const categoryBenchmarks = benchmarks.filter((b: any) => b.level === "CATEGORY");
 
-    // Uygulamanın tek ölçek dönüşümü: %0 → 1.0, %100 → 5.0.
-    // Eskiden burada `/100*5` vardı ve %50 alan kuruluş ana kartta 3.0,
-    // bu kartta 2.5 görüyordu.
-    const userOverallScore = percentageToScore(userScores.totalScore);
+    // Motorun 1-5 puanı doğrudan kullanılır (%0 → 1.0, %100 → 5.0); kıyaslar da bu ölçekte.
+    const userOverallScore = userScores.scores.overallScore;
     
     // Genel benchmark değerleri (kategori için yoksa kullanılacak)
     const overallAverage = overallBenchmark?.averageScore || 0;
@@ -110,12 +105,12 @@ function buildResponse(user: any, userScores: any, sectorBenchmarks: any[], subS
         averageScore: overallBenchmark ? overallAverage : null
       },
       categories: categories.map((cat: any) => {
-        // categoryScores is an object where key is categoryId
-        const catScore = userScores.categoryScores[cat.id];
+        const catScore = categoryNodes.get(cat.id);
         const catBenchmark = categoryBenchmarks.find((b: any) => b.targetId === cat.id);
-        
-        // Convert percentage (0-100) to 5-point scale
-        const userCatScore = catScore ? (catScore.percentage / 100) * 5 : 0;
+
+        // Kategori de 1-5 ölçeğinde: eskiden `yüzde / 100 × 5` kullanılıyordu ve
+        // %50 alan kategori 2,5 görünüyor, 3,0 olan sektör ortalamasının altında kalıyordu.
+        const userCatScore = catScore?.responseCount ? catScore.totalScore : 0;
         
         /**
          * Kategori kıyası yoksa gösterilmez.
