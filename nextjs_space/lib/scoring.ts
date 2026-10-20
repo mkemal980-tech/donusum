@@ -411,9 +411,6 @@ export async function getScopeResolver(
   return getScopeResolverForProfile(await getScoringProfile(userId, db), surveyId, db);
 }
 
-/** Kırılım düğümünün 1-5 puanını ekrandaki yüzdeye çevirir; cevapsız düğüm 0. */
-export const breakdownPercentage = (score: number) => score ? Math.min(100, Math.max(0, (score - 1) / 4 * 100)) : 0;
-
 export async function getScopeResolverForProfile(
   profile: { sectorId: string | null; subSectorId: string | null } | null,
   surveyId: string | undefined,

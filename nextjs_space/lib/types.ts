@@ -502,49 +502,6 @@ export interface UserScoreData {
 
 export type IronmanQuadrant = 'IRONMAN' | 'SPRINTER' | 'MARATHON_RUNNER' | 'WALKER';
 
-export interface IronmanData {
-  current: {
-    velocity: number;
-    endurance: number;
-    date: string;
-    quadrant: IronmanQuadrant;
-    quadrantInfo: QuadrantInfo;
-  };
-  target: {
-    velocity: number;
-    endurance: number;
-    date: string;
-  };
-  benchmark: {
-    current: {
-      velocity: number;
-      endurance: number;
-    };
-    target: {
-      velocity: number;
-      endurance: number;
-    };
-  };
-  company: {
-    name: string;
-    industry: string;
-    region: string;
-  };
-  stats: {
-    totalQuestions: number;
-    answeredQuestions: number;
-    velocityQuestions: number;
-    enduranceQuestions: number;
-  };
-}
-
-export interface QuadrantInfo {
-  title: string;
-  titleEn: string;
-  description: string;
-  color: string;
-}
-
 // ============================================
 // DASHBOARD TYPES - Dashboard veri tipleri
 // ============================================

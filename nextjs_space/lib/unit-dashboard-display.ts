@@ -20,10 +20,10 @@ export function maturityLabel(percentage: number | null) {
   return "Başlangıç";
 }
 
-/** Birim panosu: birim yöneticisinde ana pano, ADMIN'de birim takibi (ADMIN'in /dashboard'u kişisel panodur). */
-export function unitDashboardHref(role: string | undefined, params: Record<string, string | null | undefined>) {
+/** Bir birimin panosu: herkes için tek pano. */
+export function unitDashboardHref(params: Record<string, string | null | undefined>) {
   const query = new URLSearchParams(Object.entries(params).filter((entry): entry is [string, string] => Boolean(entry[1])));
-  return (role === "UNIT_MANAGER" ? "/dashboard" : "/unit-manager") + (query.toString() ? "?" + query.toString() : "");
+  return "/dashboard" + (query.toString() ? "?" + query.toString() : "");
 }
 
 export function unitDate(value: string | null) {

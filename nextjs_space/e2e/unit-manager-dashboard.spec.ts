@@ -312,3 +312,15 @@ test("ADMIN /dashboard'da bütün birimlerin panosunu açar", async ({ page }) =
   await expect(page.getByRole("heading", { name: "Birim panosu" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Tüm yönetilen birimler" })).toBeVisible();
 });
+
+test("eski Birim takibi, Öneriler ve Yol haritası adresleri panonun ilgili görünümüne gider", async ({ page }) => {
+  await mockApis(page);
+  await page.goto("/unit-manager?unitId=unit-2&surveyId=survey-1&assessmentId=assessment-2&tab=team");
+  await expect(page).toHaveURL(/\/dashboard\?unitId=unit-2&surveyId=survey-1&assessmentId=assessment-2&tab=team/);
+  await expect(page.getByRole("tab", { name: "Ekip ve görevler" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByLabel("Ana gezinme").getByRole("link", { name: "Birim takibi" })).toHaveCount(0);
+  await page.goto("/roadmap");
+  await expect(page).toHaveURL(/\/dashboard\?.*tab=roadmap/);
+  await page.goto("/recommendations");
+  await expect(page).toHaveURL(/\/dashboard\?.*tab=recommendations/);
+});

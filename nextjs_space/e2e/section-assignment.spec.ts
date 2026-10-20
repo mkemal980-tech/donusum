@@ -216,7 +216,7 @@ test("dağıt, doldur, gönder: çok kullanıcılı değerlendirmenin tam turu",
   ).toBeVisible({ timeout: 15_000 });
 
   // --- birim panosunun satırı kişi değil değerlendirme ---
-  await open(coordinator, "/unit-manager", SURVEY);
+  await open(coordinator, "/dashboard", SURVEY);
   await expect(coordinator.getByRole("columnheader", { name: "Değerlendirme" })).toBeVisible();
   await coordinator.getByRole("tab", { name: "Ekip ve görevler" }).click();
   await expect(
@@ -249,7 +249,7 @@ test("dağıt, doldur, gönder: çok kullanıcılı değerlendirmenin tam turu",
   await open(contributor, "/survey", "Bu değerlendirme gönderildi");
 
   // Panoda puan taslak olmaktan çıkar.
-  await open(coordinator, "/dashboard?view=assessment", "Kesin puan");
+  await open(coordinator, "/dashboard", "Gönderildi");
 
   // --- geri alma kilidi açar ---
   await open(coordinator, "/unit-manager/assignments", "Gönderimi geri al");
@@ -356,15 +356,17 @@ test("panodaki öneri sayısı, kullanıcının gerçekten göreceği sayıdır"
   const shown = await (
     await contributor.request.get(`/api/recommendations?surveyId=${surveyId}`)
   ).json();
-  const kpi = await (
-    await contributor.request.get(`/api/dashboard/kpi?surveyId=${surveyId}`)
+  const index = await (await contributor.request.get("/api/dashboard/assessments")).json();
+  const row = index.assessments.find((item: any) => item.surveyId === surveyId && item.assessmentId);
+  const view = await (
+    await contributor.request.get(`/api/dashboard/assessment?assessmentId=${row.assessmentId}`)
   ).json();
 
   // Tanımlı iki öneriden yalnızca biri tetikleniyor.
   expect(shown).toHaveLength(1);
   expect(shown[0].title).toBe("E2E her puanda geçerli");
-  // Panodaki sayı Öneriler ekranıyla aynı olmalı — asıl kontrol bu.
-  expect(kpi.recommendations.total).toBe(shown.length);
+  // Panodaki öneriler öneri ucuyla aynı olmalı — asıl kontrol bu.
+  expect(view.recommendations.map((rec: any) => rec.title)).toEqual(shown.map((rec: any) => rec.title));
 });
 
 test("ara verip dönen kullanıcı kaldığı yerden devam eder", async ({ browser }) => {

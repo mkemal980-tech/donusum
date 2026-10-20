@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { CategoryResults, TeamProgress, UnitHistory, UnitRecommendations, type RoadmapPatch } from "./unit-dashboard-panels";
 import { AnswerStrip, CategoryAnalysis, CategoryTable, LowestQuestions, RoadmapSummary, ScoreTrend, UnitIronman } from "./assessment-results";
 import { SELF_UNIT_ID, UNIT_RESULT_LABELS, unitDate, unitScore } from "@/lib/unit-dashboard-display";
+import { decimal } from "@/lib/unit-management-display";
 import type { UnitAssessmentRow, UnitDashboardIndex } from "@/lib/unit-dashboard";
 import type { AssessmentView, ViewerRole } from "@/lib/assessment-view";
 import type { UnitGroupComparison } from "@/lib/unit-group-comparison";
@@ -55,7 +56,7 @@ function ComparisonNote({ data }: { data: UnitGroupComparison | null }) {
  * sayılarla. Rol yalnızca neyin görüneceğini ve neyin yapılabileceğini
  * değiştirir; ayıklama ve yetki sunucudadır (lib/assessment-view).
  */
-export default function AssessmentDashboard({ title, managersOnly = false }: { title?: string; managersOnly?: boolean }) {
+export default function AssessmentDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -79,17 +80,14 @@ export default function AssessmentDashboard({ title, managersOnly = false }: { t
   const [confirmingSubmit, setConfirmingSubmit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [statusFilter, setStatusFilter] = useState("ALL");
-  const role = (session?.user as { role?: string })?.role;
   const actorKey = (session?.user as { id?: string })?.id ?? session?.user?.email ?? "";
-  const allowed = !managersOnly || role === "ADMIN" || role === "UNIT_MANAGER";
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
-    else if (status === "authenticated" && !allowed) router.replace("/dashboard");
-  }, [status, allowed, router]);
+  }, [status, router]);
 
   useEffect(() => {
-    if (status !== "authenticated" || !allowed) return;
+    if (status !== "authenticated") return;
     const abort = new AbortController();
     setIndexLoading(true);
     fetch("/api/dashboard/assessments", { cache: "no-store", signal: abort.signal }).then(readJson).then(data => {
@@ -97,7 +95,7 @@ export default function AssessmentDashboard({ title, managersOnly = false }: { t
     }).catch(error => { if (!abort.signal.aborted) setIndexError(error.message); })
       .finally(() => { if (!abort.signal.aborted) setIndexLoading(false); });
     return () => abort.abort();
-  }, [status, allowed, revision]);
+  }, [status, revision]);
 
   const isManager = index?.role === "manager";
   const isOwner = index?.role === "owner";
@@ -223,7 +221,7 @@ export default function AssessmentDashboard({ title, managersOnly = false }: { t
     try {
       const result = await readJson(await fetch("/api/dashboard/assessment/roadmap", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...patch, assessmentId }) }));
-      toast.success(result.earned > 0 ? "Öneri tamamlandı · puan +" + result.earned.toLocaleString("tr-TR") : "Yol haritası kaydedildi.");
+      toast.success(result.earned > 0 ? "Öneri tamamlandı · +" + decimal(result.earned * 25) + " puan" : "Yol haritası kaydedildi.");
       setRevision(value => value + 1);
     } catch (error) { toast.error(error instanceof Error ? error.message : "Yol haritası kaydedilemedi."); }
     finally { setBusyId(null); }
@@ -277,7 +275,7 @@ export default function AssessmentDashboard({ title, managersOnly = false }: { t
     finally { setExporting(null); }
   };
 
-  if (status !== "authenticated" || !allowed || (!index && indexLoading)) return <AssessmentDashboardLoading />;
+  if (status !== "authenticated" || (!index && indexLoading)) return <AssessmentDashboardLoading />;
   // Kişisel değerlendirmede ekip yoktur; çalışan yalnızca kendi görevlerini görür.
   const tabs = TABS.filter(tab => tab.id !== "team" || current?.viewer.role !== "owner").map(tab => tab.id === "team" && !isManager ? { ...tab, label: "Görevlerim" } : tab);
   const surveys = [...new Map(unitRows.map(row => [row.surveyId, { id: row.surveyId, name: row.surveyName }])).values()];
@@ -304,7 +302,7 @@ export default function AssessmentDashboard({ title, managersOnly = false }: { t
     <>
       <AppShell unitContext={context} />
       <main id="icerik" tabIndex={-1}>
-        <PageHeader title={title ?? (isManager ? "Birim panosu" : "Değerlendirme sonucu")}
+        <PageHeader title={isManager ? "Birim panosu" : "Değerlendirme sonucu"}
           subtitle={isManager ? "Birim sonuçlarını inceleyin, eksikleri ve sonraki adımları takip edin." : isOwner ? "Sonucunuz, eksikler ve sonraki adımlar." : "Biriminizin sonucu, size düşen işler ve sonraki adımlar."}
           actions={<>
             {canCompare && <Button asChild variant="outline"><Link href={"/unit-manager/management" + (managementParams.toString() ? "?" + managementParams.toString() : "")}>Birim yönetimi</Link></Button>}

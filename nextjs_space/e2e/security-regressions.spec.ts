@@ -9,8 +9,9 @@ import { prisma } from "@/lib/db";
  *
  * - Birimi atanmamış bir UNIT_MANAGER `where: {}` ile sistemdeki bütün
  *   kuruluşların belgelerini imzalı indirme adresleriyle alıyordu.
- * - `/api/dashboard/unified` `surveyId`'yi doğrulamıyordu; herhangi bir oturum
- *   sahibi başka kiracının anket yapısını okuyabiliyordu.
+ * - Pano anket yapısı ucu `surveyId`'yi doğrulamıyordu; herhangi bir oturum
+ *   sahibi başka kiracının anket yapısını okuyabiliyordu (uç kaldırıldı; aynı
+ *   yapıyı veren `/api/survey/structure` denetleniyor).
  * - SCALE cevabının puanı sınırlanmıyordu; tek istekle kuruluşun yüzdesi
  *   %19980'e çıkabiliyordu.
  * - `/api/upload/complete` istemciden gelen depolama yolunu doğrulamıyordu.
@@ -114,25 +115,19 @@ async function login(browser: Browser, email: string): Promise<Page> {
   return page;
 }
 
-test("birimi olmayan birim yöneticisi başka kuruluşun belgelerini görmez", async ({ browser }) => {
+test("birimi olmayan birim yöneticisi başka kuruluşun değerlendirmesini ve belgelerini görmez", async ({ browser }) => {
   test.skip(!seeded, "Fikstür kurulamadı");
   const page = await login(browser, MANAGER_NO_UNIT);
 
-  const response = await page.request.get("/api/unit-manager/documents");
-  expect(response.ok()).toBeTruthy();
-  const documents = await response.json();
+  // Yönetilen birim yok: liste boş olmalı, "bütün birimler" değil.
+  const index = await (await page.request.get("/api/dashboard/assessments")).json();
+  expect(index.role).toBe("manager");
+  expect(index.units).toHaveLength(0);
+  expect(index.assessments).toHaveLength(0);
 
-  // Yönetilen birim yok: liste boş olmalı, "bütün belgeler" değil.
-  expect(Array.isArray(documents)).toBe(true);
-  expect(documents).toHaveLength(0);
-  await page.close();
-});
-
-test("belge yanıtları depolama yolunu sızdırmaz", async ({ browser }) => {
-  test.skip(!seeded, "Fikstür kurulamadı");
-  const page = await login(browser, MANAGER_NO_UNIT);
-  const body = await (await page.request.get("/api/unit-manager/documents")).text();
-  expect(body).not.toContain("cloudStoragePath");
+  const documents = await page.request.get("/api/dashboard/assessment/documents?assessmentId=baskasinin-degerlendirmesi");
+  expect(documents.status()).toBe(403);
+  expect(await documents.text()).not.toContain("cloudStoragePath");
   await page.close();
 });
 
@@ -140,7 +135,7 @@ test("kullanıcı erişmediği anketin yapısını okuyamaz", async ({ browser }
   test.skip(!seeded, "Fikstür kurulamadı");
   const page = await login(browser, OUTSIDER); // bu ankete atanmamış
 
-  const response = await page.request.get(`/api/dashboard/unified?surveyId=${surveyId}`);
+  const response = await page.request.get(`/api/survey/structure?surveyId=${surveyId}`);
   expect(response.status()).toBe(403);
   await page.close();
 });

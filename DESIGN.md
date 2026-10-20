@@ -189,8 +189,9 @@ active, disabled, loading, error.
 ## PDF raporu
 
 Panonun PDF çıktısı açık zeminlidir: rapor yazdırılıp yönetim kuruluna
-dağıtılıyor. Renkleri bugün `dashboard-client.tsx` içinde sabit yazılıdır ve
-henüz önceki mavi kimliği taşır; iso2app turuncusuna geçişi sabit renk
+dağıtılıyor. Rapor sunucuda, panonun gösterdiği veriden üretilir
+(`nextjs_space/lib/unit-dashboard-report.ts`); renkleri orada sabit yazılıdır
+ve henüz önceki mavi vurguyu taşır; iso2app turuncusuna geçişi sabit renk
 temizliği adımında yapılacaktır.
 
 ## iso2app'ten bilinçli sapmalar

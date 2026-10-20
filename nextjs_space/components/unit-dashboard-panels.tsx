@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/empty-state";
 import type { UnitAssessmentDetail } from "@/lib/unit-dashboard";
-import { percentage } from "@/lib/unit-management-display";
+import { decimal, percentage } from "@/lib/unit-management-display";
 import { UNIT_ROADMAP_LABELS, surveyAnswer, unitDate, unitScore } from "@/lib/unit-dashboard-display";
 
 export function CategoryResults({ data }: { data: UnitAssessmentDetail }) {
@@ -110,8 +110,9 @@ function RoadmapRow({ rec, data, busy, save, canManage }: {
             <span>{rec.reasons.join(" · ")}</span>
             <span>Etki {rec.estimatedImpact}/10</span>
             <span>{rec.costType} · maliyet düzeyi {rec.costType === "CAPEX" ? rec.capexLevel : rec.opexLevel}/5</span>
-            <span>Tamamlanınca +{rec.fullContribution.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} puan</span>
-            {rec.currentContribution > 0 && <span>Şu an +{rec.currentContribution.toLocaleString("tr-TR", { maximumFractionDigits: 2 })}</span>}
+            {/* Katkı, panodaki mevcut puanla aynı ölçekte (100 üzerinden): 1-5 farkı × 25. */}
+            <span>Tamamlanınca +{decimal(rec.fullContribution * 25)} puan</span>
+            {rec.currentContribution > 0 && <span>Şu an +{decimal(rec.currentContribution * 25)} puan</span>}
           </div>
           {rec.overdue && <p className="mt-2 t-sm text-[var(--warning-ink)]">Hedef tarih geçti: {unitDate(rec.dueDate)}</p>}
           {!rec.isActionable && !rec.isInRoadmap && <p className="mt-2 t-sm text-[var(--ink-3)]">Önce önceki basamağın önerileri tamamlanmalı.</p>}

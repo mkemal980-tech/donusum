@@ -37,15 +37,6 @@ export type GeneratedRoadmapSelection = {
   reason: string;
 };
 
-export type RoadmapGenerationResult = {
-  categoryCount: number;
-  selectedCount: number;
-  addedCount: number;
-  scheduledCount: number;
-  preservedCount: number;
-  selections: GeneratedRoadmapSelection[];
-};
-
 export function eligibleRoadmapCandidates(
   candidates: RoadmapCandidate[], existing: ExistingRoadmapPlan[],
 ): RoadmapCandidate[] {

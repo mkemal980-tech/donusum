@@ -5,10 +5,10 @@ import { prisma } from "@/lib/db";
 /**
  * Yol haritası katkısının uçtan uca denemesi (docs/GELISIM-PUANI.md).
  *
- * Parçaları birim testli; asıl soru bütünde: kademeli bir öneri yol haritası
- * sayfasından tamamlanınca (1) kilit orada da çalışıyor mu, (2) katkı kartı
+ * Parçaları birim testli; asıl soru bütünde: kademeli bir öneri panonun yol
+ * haritası sekmesinden tamamlanınca (1) kilit orada da çalışıyor mu, (2) katkı
  * sıfırdan büyük bir sayı gösteriyor mu, (3) pano ve trend grafiği aynı
- * sayıyı söylüyor mu.
+ * sayıyı söylüyor mu. Pano katkıyı 100 üzerinden gösterir: 1-5'te +0,8 = +20,0.
  *
  * Fikstürünü kendi kurar ve siler; DATABASE_URL erişilemezse test atlanır.
  */
@@ -127,15 +127,15 @@ test("kademeli öneri yol haritasından tamamlanınca katkı, pano ve trend ayn�
   });
   expect(lockedPut.status()).toBe(409);
 
-  // --- yol haritası sayfası: önce +0.00, tamamlayınca +0.80 ---
-  await page.goto("/roadmap");
-  await expect(page.getByText("Gelişim katkısı")).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText("+0.00").first()).toBeVisible();
-  await expect(page.getByText(/Basamak 1\/3 · tamamlanınca \+0\.80/)).toBeVisible();
+  // --- panonun yol haritası sekmesi: tamamlanınca +20,0 puan ---
+  await page.goto("/dashboard?tab=roadmap");
+  const card = page.getByRole("article").filter({ hasText: RUNG(1) });
+  await expect(card.getByText("Tamamlanınca +20,0 puan")).toBeVisible({ timeout: 20_000 });
+  await expect(card.getByText(/Şu an/)).toHaveCount(0);
 
-  await page.getByLabel(`${RUNG(1)} durumu`).selectOption("COMPLETED");
-  await expect(page.getByText("Durum güncellendi: Tamamlandı · puan +0.80")).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText(/şu an \+0\.80/)).toBeVisible({ timeout: 15_000 });
+  await card.getByLabel(`${RUNG(1)} durumu`).selectOption("COMPLETED");
+  await expect(page.getByText("Öneri tamamlandı · +20,0 puan")).toBeVisible({ timeout: 15_000 });
+  await expect(card.getByText("Şu an +20,0 puan")).toBeVisible({ timeout: 15_000 });
 
   // --- her yer aynı sayıyı söyler ---
   const roadmap = await (await page.request.get("/api/roadmap")).json();
@@ -149,6 +149,7 @@ test("kademeli öneri yol haritasından tamamlanınca katkı, pano ve trend ayn�
   const { history } = await (await page.request.get("/api/score-history")).json();
   expect(history[history.length - 1]).toMatchObject({ triggerType: "RECOMMENDATION_COMPLETED", overallScore: 2.6 });
 
+  // Panonun mevcut puanı: anket %20 (1,8/5) + öneriler +20,0 = %40,0.
   await page.goto("/dashboard");
-  await expect(page.getByText(/puanınızı \+0\.80 artırdı/)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(/anket %20 · öneriler \+20,0/)).toBeVisible({ timeout: 20_000 });
 });
