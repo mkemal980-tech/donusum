@@ -46,6 +46,8 @@ async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, fail
       }
     } else if (path === "/api/auth/session") {
       body = { user: { id: "esra", email: "esra@example.com", firstName: "Esra", role, unitId: null }, expires: "2099-01-01T00:00:00Z" };
+    } else if (path === "/api/dashboard/assessments" && role === "USER") {
+      body = { role: "member", units: [], assessments: [], hasAnonymousCampaigns: false };
     } else if (path === "/api/dashboard/assessments") {
       status = failed ? 500 : 200;
       body = failed ? { error: "Birim verileri yüklenemedi." } : { role: "manager",
@@ -284,7 +286,7 @@ test("toplu görünümün anket ve dönem seçimi korunur; birim detayı filtrel
 });
 
 for (const role of ["USER", "ADMIN"]) {
-  test(role + " rolü kişisel değerlendirme panosunu açar", async ({ page }) => {
+  test(role + " rolü birimi yoksa kişisel değerlendirme panosunu açar", async ({ page }) => {
     const api = await mockApis(page, { role });
     await page.goto("/dashboard");
     await expect(page.getByText("Size henüz anket atanmadı")).toBeVisible();

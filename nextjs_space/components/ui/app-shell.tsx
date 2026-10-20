@@ -104,9 +104,11 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const user = session?.user as
-    | { id?: string; firstName?: string; name?: string; email?: string; role?: string }
+    | { id?: string; firstName?: string; name?: string; email?: string; role?: string; unitId?: string | null }
     | undefined;
   const role = user?.role ?? "USER";
+  // Birim yöneticisi ve birime bağlı çalışan sonuçları, önerileri ve yol haritasını tek panoda görür.
+  const unitDashboard = role === "UNIT_MANAGER" || (role === "USER" && Boolean(user?.unitId));
   const userName = user?.firstName || user?.name || "Kullanıcı";
   const [rememberedContext, setRememberedContext] = useState("");
   const actorKey = user?.id ?? user?.email ?? "";
@@ -138,6 +140,13 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
   const appGroups = useMemo(
     () =>
       NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => i.roles.includes(role)).map(item => {
+        if (!unitDashboard) return item;
+        if (item.href === "/dashboard" || item.href === "/recommendations" || item.href === "/roadmap") {
+          const params = new URLSearchParams(unitQuery);
+          if (item.href === "/recommendations") params.set("tab", "recommendations");
+          if (item.href === "/roadmap") params.set("tab", "roadmap");
+          return { ...item, href: "/dashboard" + (params.toString() ? "?" + params.toString() : ""), label: item.href === "/recommendations" && role === "UNIT_MANAGER" ? "Birim önerileri" : item.label };
+        }
         if (role !== "UNIT_MANAGER") return item;
         if (item.href === "/unit-manager/management") {
           const params = new URLSearchParams(unitQuery);
@@ -147,17 +156,11 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
           return { ...item, href: item.href + (params.toString() ? "?" + params.toString() : "") };
         }
         if (item.href === "/survey") return { ...item, label: "Kendi anketim" };
-        if (item.href === "/dashboard" || item.href === "/recommendations" || item.href === "/roadmap") {
-          const params = new URLSearchParams(unitQuery);
-          if (item.href === "/recommendations") params.set("tab", "recommendations");
-          if (item.href === "/roadmap") params.set("tab", "roadmap");
-          return { ...item, href: "/dashboard" + (params.toString() ? "?" + params.toString() : ""), label: item.href === "/recommendations" ? "Birim önerileri" : item.label };
-        }
         return item;
       }) })).filter(
         (g) => g.items.length > 0,
       ),
-    [role, unitQuery],
+    [role, unitDashboard, unitQuery],
   );
 
   const groups: NavGroup[] = inAdmin ? adminGroups : appGroups;
@@ -167,13 +170,13 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
       const [path, query] = item.href.split("?");
       if (path === "/unit-manager" && pathname?.startsWith("/unit-manager/management")) return false;
       if (pathname !== path && !(item.prefix && pathname?.startsWith(path))) return false;
-      if (role === "UNIT_MANAGER" && path === "/dashboard") {
+      if (unitDashboard && path === "/dashboard") {
         const tab = new URLSearchParams(query).get("tab") ?? "results";
         return tab === (unitContext?.tab ?? "results");
       }
       return true;
     },
-    [pathname, role, unitContext?.tab],
+    [pathname, unitDashboard, unitContext?.tab],
   );
 
   /* Tema sunucuda bilinmiyor; düğme ancak istemcide çözüldükten sonra

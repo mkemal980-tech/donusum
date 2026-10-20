@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition, type ReactNode } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -55,7 +55,11 @@ function ComparisonNote({ data }: { data: UnitGroupComparison | null }) {
  * sayılarla. Rol yalnızca neyin görüneceğini ve neyin yapılabileceğini
  * değiştirir; ayıklama ve yetki sunucudadır (lib/assessment-view).
  */
-export default function AssessmentDashboard({ title, managersOnly = false }: { title?: string; managersOnly?: boolean }) {
+export default function AssessmentDashboard({ title, managersOnly = false, fallback }: {
+  title?: string; managersOnly?: boolean;
+  /** Birimi olmayan çalışanın panosu (birimsiz değerlendirmeler tek panoya taşınana kadar). */
+  fallback?: ReactNode;
+}) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -246,6 +250,7 @@ export default function AssessmentDashboard({ title, managersOnly = false }: { t
   };
 
   if (status !== "authenticated" || !allowed || (!index && indexLoading)) return <AssessmentDashboardLoading />;
+  if (fallback && index && !isManager && !units.length) return <>{fallback}</>;
   const tabs = TABS.map(tab => tab.id === "team" && !isManager ? { ...tab, label: "Görevlerim" } : tab);
   const surveys = [...new Map(unitRows.map(row => [row.surveyId, { id: row.surveyId, name: row.surveyName }])).values()];
   const periods = [...new Map(surveyRows.map(row => [row.periodId, { id: row.periodId, name: row.periodName }])).values()];

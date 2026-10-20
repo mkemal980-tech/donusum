@@ -52,3 +52,13 @@ export function assessmentView(detail = unitDetail(), role: ViewerRole = "manage
     viewer: { role, canManageRoadmap: manager, canDistribute: manager, canExportTeam: manager },
   };
 }
+
+/** Çalışanın görünümü: başka üyeye atanmış bölüm ayıklanmış, ekip yalnızca kendisi (bkz. redactForMember). */
+export function memberAssessmentView(): AssessmentView {
+  const detail = unitDetail();
+  const [mine, other] = detail.categories[0].sections;
+  detail.categories[0].sections = [mine, { ...other, restricted: true, assigneeId: null, assigneeName: "", answeredCount: 0, percentage: 0, missingEvidence: 0, lastActivityAt: null, questions: [] }];
+  detail.work = detail.work.filter(item => item.kind !== "UNASSIGNED");
+  detail.members = [];
+  return assessmentView(detail, "member", id => id === "rec-2");
+}

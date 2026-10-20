@@ -39,6 +39,11 @@ async function mockDashboardApis(page: Page, onRoadmapAdd: (id: string) => void)
       });
     }
 
+    // Birimi olmayan kullanıcı: tek pano boş liste alır ve kişisel panoyu açar.
+    if (url.pathname === "/api/dashboard/assessments") {
+      return json(route, { role: "member", units: [], assessments: [], hasAnonymousCampaigns: false });
+    }
+
     if (url.pathname === "/api/survey/assigned") {
       return json(route, [
         { id: SURVEY_ID, name: "E2E Sonuç Akışı Anketi", isActive: true, hasResponses: true },
