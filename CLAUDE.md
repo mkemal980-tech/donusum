@@ -16,8 +16,10 @@ hali onu koruyormuş gibi yazılmıştı.)
 ## Tasarım bağlamı
 
 - `PRODUCT.md` — kim, ne için, hangi ilkeler (impeccable register: `product`).
-- `DESIGN.md` — koyu pano görsel sistemi: token'lar, tipografi, bileşen
-  kuralları, refero sapmaları. Yeni ekran yazarken tek kaynak burasıdır.
+- `DESIGN.md` — iso2app tasarım dili (açık varsayılan, koyu seçenek):
+  token'lar, tipografi, bileşen kuralları, iso2app'ten bilinçli sapmalar.
+  Yeni ekran yazarken tek kaynak burasıdır; kanonik değerler iso2app'in
+  `client/src/design-system/tokens/tokens.css` dosyasındadır.
 - `DESIGN.md` kapsamı: giriş sonrası tüm uygulama (login, signup, dashboard
   ve devamı).
 - **Landing page'in kendi görsel dili vardır** ve `DESIGN.md`'ye bağlı

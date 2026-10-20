@@ -103,14 +103,14 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <SessionProvider>
-      {/* İki tema: koyu varsayılan, açık seçenek. Tercih cihazda saklanır
-          (next-themes localStorage) ve <html data-theme="…"> ile uygulanır;
-          token blokları globals.css'te bu seçiciye bakar. Geçişte animasyon
-          kapalı — yüzlerce öğenin aynı anda renk geçirmesi titriyordu. */}
+      {/* İki tema: açık varsayılan (iso2app), koyu seçenek. Tercih cihazda
+          saklanır (next-themes localStorage) ve <html data-theme="…"> ile
+          uygulanır; token blokları globals.css'te bu seçiciye bakar. Geçişte
+          animasyon kapalı — yüzlerce öğenin aynı anda renk geçirmesi titriyordu. */}
       <ThemeProvider
         attribute="data-theme"
-        defaultTheme="dark"
-        themes={["dark", "light"]}
+        defaultTheme="light"
+        themes={["light", "dark"]}
         enableSystem={false}
         disableTransitionOnChange
       >

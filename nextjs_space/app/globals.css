@@ -5,112 +5,120 @@
 /* Fontlar next/font ile yüklenir (app/layout.tsx); burada yalnızca kullanılır. */
 
 /* ============================================================================
-   KOYU ANALİTİK PANO — TEK KAYNAK
-   Değerler ve gerekçeler kök dizindeki DESIGN.md dosyasındadır. Buradaki her
-   token orada bir satırla karşılanır; ikisi birlikte değiştirilir.
+   UYGULAMA TOKENLARI — iso2app TASARIM DİLİ
+   Değerler iso2app'in kanonik token dosyasından alınır (iso2son:
+   client/src/design-system/tokens/tokens.css). Gerekçeler kök dizindeki
+   DESIGN.md'dedir; ikisi birlikte değiştirilir.
 
-   Koyu tema varsayılandır; açık tema aynı anlamsal token adlarını aşağıdaki
-   [data-theme="light"] bloğunda değiştirir. Tanıtım sayfası kendi kapsamlı
-   sistemini (app/landing.css, .esg-landing) kullandığı için etkilenmez.
+   Açık tema varsayılandır (iso2app `:root`); koyu tema iso2app `.dark`
+   değerleriyle [data-theme="dark"] bloğunda aynı token adlarını değiştirir.
+   Tanıtım sayfası kendi kapsamlı sistemini (app/landing.css, .esg-landing)
+   kullandığı için etkilenmez.
 
    Eski token adları (--bg-card, --primary, --text-secondary…) korunuyor:
    uygulamada 3.400'den fazla var(--…) çağrısı var, hepsi yeni palete
    kendiliğinden bağlansın diye. Yeni kod anlamsal adları kullanır.
    ========================================================================= */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* ---- Yüzeyler. Nötrler mavi tona (hue 264) boyalı; saf siyah yok. ---- */
-  --canvas:     oklch(0.185 0.012 264);   /* sayfa zemini      ~#15171E */
-  --rail:       oklch(0.155 0.012 264);   /* sidebar, topbar   ~#111319 */
-  --surface:    oklch(0.235 0.013 264);   /* kart              ~#1E212A */
-  --surface-2:  oklch(0.275 0.014 264);   /* kart içi blok     ~#262934 */
-  --surface-3:  oklch(0.315 0.014 264);   /* seçili/hover      ~#2E313D */
+  /* ---- Yüzeyler ---- */
+  --canvas:     #f6f8fb;   /* color-bg-base: sayfa zemini */
+  --rail:       #ffffff;   /* üst şerit, form alanı zemini */
+  --surface:    #ffffff;   /* color-surface-card: kart */
+  --surface-2:  #eef2f7;   /* color-bg-sunken: kart içi blok, tablo başlığı, hover */
+  --surface-3:  #e6ecf3;   /* color-bg-muted: seçili/hover, bar izi */
+
+  /* ---- Kenar çubuğu: iki temada da koyu lacivert ---- */
+  --sidebar-bg:          #0d1a2d;                    /* color-sidebar-bg */
+  --sidebar-ink:         #ffffff;
+  --sidebar-ink-2:       rgba(255, 255, 255, 0.78);  /* pasif menü */
+  --sidebar-label:       rgba(255, 255, 255, 0.62);  /* bölüm etiketi */
+  --sidebar-line:        rgba(255, 255, 255, 0.10);
+  --sidebar-hover:       rgba(255, 255, 255, 0.07);
+  --sidebar-active:      rgba(250, 84, 28, 0.18);
+  --sidebar-active-icon: #ff7a45;
+  --sidebar-mark-ink:    #1c1815;                    /* turuncu işaret üstünde 5.2:1 */
 
   /* ---- Çizgiler ---- */
-  --line:        oklch(0.315 0.013 264);
-  --line-strong: oklch(0.400 0.014 264);
+  --line:        #e1e8f0;   /* color-border-subtle */
+  --line-strong: #cdd8e4;   /* color-border-strong: input ve outline kontrol */
 
   /* ---- Mürekkep ---- */
-  --ink:   oklch(0.970 0.004 264);
-  --ink-2: oklch(0.760 0.012 264);
-  /* 0.60 idi; --surface-2 üzerinde 4.11:1 ile AA eşiğinin altında kalıyordu. */
-  --ink-3: oklch(0.625 0.014 264);
+  --ink:   #0d1a2d;   /* color-text-primary */
+  --ink-2: #46586e;   /* color-text-secondary */
+  /* iso2app text-muted (#7e8ea3) beyazda 3.2:1 kalıyor; yardımcı metin
+     --surface-2 üzerinde de AA geçsin diye bir kademe koyu: 5.1:1. */
+  --ink-3: #586779;
 
-  /* ---- Vurgu: tek eylem rengi ---- */
-  /* İki mavi, iki iş:
-     --accent koyu zemin üzerinde METİN/veri rengi (kontrast 4.5:1 üstü),
-     --accent-solid ise DOLGU rengi; üstünde beyaz metin 4.59:1 veriyor.
-     Tek maviyle ikisi birden sağlanamıyordu: parlak mavi üstünde beyaz 3.5:1,
-     koyu mavi ise metin olarak zeminde sönük kalıyor.
-     L 0.575 idi; tarayıcının gamut eşlemesiyle ölçülen gerçek değer 4.36:1
-     çıkıyordu, yani yorumun vaat ettiği eşiğin altında. 0.565'e indirildi. */
-  --accent:        oklch(0.635 0.191 258);
-  --accent-hover:  oklch(0.685 0.181 258);
-  --accent-solid:  oklch(0.565 0.200 258);
-  --accent-press:  oklch(0.520 0.185 258);
-  --accent-quiet:  oklch(0.635 0.191 258 / 0.14);
-  --accent-faint:  oklch(0.635 0.191 258 / 0.07);
-  --on-accent:     oklch(0.990 0 0);
+  /* ---- Vurgu: tek eylem rengi, turuncu ----
+     --accent dolgu, veri serisi, ikon ve odak rengidir. Beyaz zeminde METİN
+     olarak 3.3:1 kalır; metin olarak kullanılan vurgu --accent-ink'e döner
+     (aşağıdaki "Metin olarak vurgu" kuralları). Dolu düğme iso2app'teki gibi
+     turuncu zemin + beyaz metindir. */
+  --accent:        #fa541c;   /* color-brand-500 */
+  --accent-hover:  #dc4512;   /* color-brand-600 */
+  --accent-solid:  #fa541c;
+  --accent-press:  #b3380f;   /* color-brand-700 */
+  --accent-quiet:  rgba(250, 84, 28, 0.12);
+  --accent-faint:  rgba(250, 84, 28, 0.06);
+  --on-accent:     #ffffff;
+  --focus-ring:    rgba(250, 84, 28, 0.34);   /* color-ring */
 
-  /* ---- Veri serileri. 5'ten fazlası gerekiyorsa gruplama yanlıştır. ---- */
+  /* ---- Veri serileri (iso2app chart paleti). 5'ten fazlası gerekiyorsa
+     gruplama yanlıştır. ---- */
   --series-1: var(--accent);
-  --series-2: oklch(0.745 0.148 165);
-  --series-3: oklch(0.785 0.135 70);
-  --series-4: oklch(0.640 0.130 300);
-  --series-5: var(--ink-3);
+  --series-2: #1f8a5b;   /* chart-2 */
+  --series-3: #b7791f;   /* chart-3 */
+  --series-4: #46586e;   /* brand-secondary: turuncu/kırmızıdan ayrışan lacivert-gri */
+  --series-5: #8a99ad;   /* text-label */
 
-  /* ---- Durum ---- */
-  --success:    oklch(0.745 0.148 165);
-  --success-bg: oklch(0.745 0.148 165 / 0.14);
-  --warning:    oklch(0.785 0.135 70);
-  --warning-bg: oklch(0.785 0.135 70 / 0.14);
-  --error:      oklch(0.665 0.168 22);
-  --error-bg:   oklch(0.665 0.168 22 / 0.14);
-  --info:       var(--accent);
-  --info-bg:    var(--accent-quiet);
-  --series-4-bg: oklch(0.640 0.130 300 / 0.14);
+  /* ---- Durum ----
+     Durum rengi kod tabanında metin olarak da kullanıldığı için base değerler
+     iso2app'in -700 (AA) tonlarıdır; yumuşak zeminler -50 tonlarıdır. */
+  --success:    #166b45;
+  --success-bg: #ebf6f0;
+  --warning:    #8a5a14;
+  --warning-bg: #fff6e5;
+  --error:      #922f2a;
+  --error-bg:   #fdeeed;
+  --info:       var(--accent-ink);
+  --info-bg:    #fff1eb;
+  --series-4-bg: #eef2f7;
 
-  /* ---- Rozet mürekkebi ----
-     Durum rengi kendi %14 tint'i üzerinde 2.90–4.10:1 veriyordu; AA gövde
-     eşiği 4.5:1. Sorun tint değil metnin açıklığıydı: alfa 0.04'e indirilse
-     bile error/accent/mor 3.7'de tıkanıyor. Çözüm --accent/--accent-solid
-     ayrımının aynısı: aynı hue, bir kademe açık, kroma hafif kısık
-     (L arttıkça kroma azalır).
-     Kural: durum rengi METİN ise bu token, dolgu/kenarlık/grafik serisi ise
-     base token. */
-  --success-ink:  oklch(0.795 0.144 165);
-  --warning-ink:  oklch(0.830 0.132 70);
-  --error-ink:    oklch(0.790 0.156 22);
-  --accent-ink:   oklch(0.765 0.177 258);
+  /* ---- Rozet mürekkebi: durum rengi METİN ise bu token ---- */
+  --success-ink:  #166b45;
+  --warning-ink:  #8a5a14;
+  --error-ink:    #922f2a;
+  --accent-ink:   #b3380f;   /* color-accent-text: beyazda 6.0:1 */
   --info-ink:     var(--accent-ink);
-  --series-4-ink: oklch(0.755 0.122 300);
+  --series-4-ink: #46586e;
 
-  /* ---- Dolgu varyantları: üzerinde beyaz metin ≥4.5:1 ----
-     Base renkler dolgu olarak kullanılınca beyaz metin 2.34–3.52:1'de
-     kalıyordu (numara dairesi, dolu rozet). */
-  --success-solid:  oklch(0.525 0.156 165);
-  --warning-solid:  oklch(0.565 0.142 70);
-  --error-solid:    oklch(0.580 0.172 22);
-  --series-4-solid: oklch(0.570 0.132 300);
+  /* ---- Dolgu varyantları: üzerinde beyaz metin ≥4.5:1 ---- */
+  --success-solid:  #166b45;
+  --warning-solid:  #8a5a14;
+  --error-solid:    #922f2a;
+  --series-4-solid: #46586e;
 
-  /* ---- Köşe: dört token, başkası yok ---- */
-  --radius-xs:   6px;   /* input, chip, ikon kutusu */
-  --radius-sm:   6px;
-  --radius-md:   8px;   /* buton */
-  --radius-lg:  12px;   /* kart, panel */
-  --radius-xl:  12px;
+  /* ---- Köşe: iso2app ölçüleri ---- */
+  --radius-xs:   9px;    /* input, chip, ikon kutusu (radius-sm) */
+  --radius-sm:   9px;
+  --radius-md:  10px;    /* düğme */
+  --radius-lg:  14px;    /* kart, panel */
+  --radius-xl:  18px;    /* öne çıkan KPI kartı */
   --radius-pill: 999px;
   --radius: var(--radius-lg);
 
-  /* ---- Gölge yok. Tek istisna dolu buton (refero kuralı). ---- */
-  --shadow-button: 0 1px 4px rgba(0, 0, 0, 0.16);
-  --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.55);
-  --backdrop: oklch(0.13 0.01 264 / 0.72);
+  /* ---- Gölge: iso2app elevation ---- */
+  --shadow-xs: 0 1px 2px rgba(13, 26, 45, 0.04);
+  --shadow-sm: 0 1px 3px rgba(13, 26, 45, 0.08);
+  --shadow-md: 0 1px 2px rgba(13, 26, 45, 0.04), 0 8px 28px -12px rgba(13, 26, 45, 0.14);
+  --shadow-lg: 0 24px 60px -24px rgba(13, 26, 45, 0.22);
+  --shadow-button: var(--shadow-xs);
+  --shadow-overlay: var(--shadow-lg);
+  --backdrop: rgba(13, 26, 45, 0.40);
 
-  /* Koyu zeminde açık metin ince görünür; ölçüsüz bir tık nefes payı.
-     Açık temada gerek yok, orada 0'a iner. */
-  --tracking-body: 0.006em;
+  --tracking-body: 0;
 
   /* ---- Boşluk: 4px tabanlı ---- */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
@@ -118,7 +126,7 @@
   --sp-9: 48px; --sp-10: 64px;
 
   /* ---- Kabuk ölçüleri ---- */
-  --shell-sidebar: 248px;
+  --shell-sidebar: 288px;   /* iso2app sidebar-width 18rem */
   --shell-sidebar-collapsed: 72px;
   --shell-topbar: 64px;
   --shell-gutter: 24px;
@@ -138,10 +146,11 @@
   --z-toast: 500;
   --z-tooltip: 600;
 
-  /* ---- Yazı ---- */
-  --font-head: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-body: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: var(--font-inter), system-ui, sans-serif;
+  /* ---- Yazı: gövde IBM Plex Sans, başlık ve KPI Space Grotesk, etiket ve
+     tablo sayıları IBM Plex Mono (next/font ile self-host, app/layout.tsx) ---- */
+  --font-head: var(--font-space-grotesk), var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 
   --text-caption: 0.75rem;    /* 12 */
   --text-sm:      0.8125rem;  /* 13 */
@@ -149,16 +158,16 @@
   --text-subhead: 1.125rem;   /* 18 */
   --text-title:   1.375rem;   /* 22 */
   --text-metric:  1.625rem;   /* 26 */
-  --text-display: 1.9375rem;  /* 31 */
+  --text-display: 2rem;       /* 32 */
   --text-metric-lg: 2.125rem; /* 34 */
 
-  /* Olgunluk rampası: tek renkli mavi, beş kademe.
-     DESIGN.md > "seviyeyi rozet söylüyor" — kırmızı-sarı-yeşil yok. */
-  --maturity-1: oklch(0.600 0.055 258);
-  --maturity-2: oklch(0.635 0.095 258);
-  --maturity-3: oklch(0.660 0.135 258);
-  --maturity-4: oklch(0.680 0.170 258);
-  --maturity-5: oklch(0.700 0.195 258);
+  /* Olgunluk rampası: tek renkli marka rampası, seviye arttıkça KOYULAŞIR.
+     Metin olarak da kullanıldığı için her kademe beyazda ≥4.5:1. */
+  --maturity-1: #8a5a3c;
+  --maturity-2: #a24a22;
+  --maturity-3: #b3380f;
+  --maturity-4: #9a300d;
+  --maturity-5: #8a2c0e;
 
   /* ======================================================================
      GERİYE DÖNÜK TAKMA ADLAR — eski bileşenler yeni paleti kendiliğinden alır
@@ -169,13 +178,14 @@
   --bg-card-2: var(--surface-2);
   --bg: var(--canvas);
   --bg-secondary: var(--rail);
-  --bg-sidebar: var(--rail);
+  --bg-sidebar: var(--sidebar-bg);
 
   --border-soft: var(--line);
   --divider: var(--line);
   --border: var(--line);
   --border-light: var(--line);
   --border-card: var(--line);
+  --border-strong: var(--line-strong);
   --border-primary: var(--accent);
   --input: var(--line-strong);
 
@@ -193,6 +203,7 @@
   --accent-bright: var(--accent-hover);
   --accent-cyan: var(--accent-hover);
   --accent-2: var(--accent-hover);
+  --accent-text: var(--accent-ink);
   --accent-soft: var(--accent-quiet);
   --accent-tint: var(--accent-faint);
   --accent-glow: var(--accent-quiet);
@@ -202,8 +213,8 @@
   --primary-light: var(--accent-hover);
   --primary-dark: var(--accent-press);
   --secondary: var(--series-2);
-  --secondary-light: oklch(0.795 0.132 165);
-  --secondary-dark: oklch(0.680 0.145 165);
+  --secondary-light: #4fa77c;
+  --secondary-dark: #166b45;
 
   --blue-main: var(--accent);
   --blue-dark: var(--accent-press);
@@ -216,11 +227,7 @@
   --surface-3-legacy: var(--surface-3);
   --line-legacy: var(--line);
 
-  /* Eski gölge adları: pano artık gölgesiz, hepsi kenarlığa/yüzeye düşer. */
-  --shadow-sm: none;
-  --shadow-md: none;
-  --shadow-lg: var(--shadow-overlay);
-  --shadow-card: none;
+  --shadow-card: var(--shadow-sm);
   --shadow-glow: none;
 
   /* Marka gradyanı yalnızca alan grafiği dolgusunda anlamlı; düz renge indi. */
@@ -232,33 +239,34 @@
   --chart-3: var(--series-3);
   --chart-4: var(--series-4);
   --chart-5: var(--series-5);
-  --chart-gradient-start: oklch(0.635 0.191 258 / 0.22);
-  --chart-gradient-end: oklch(0.635 0.191 258 / 0);
+  --chart-gradient-start: rgba(250, 84, 28, 0.18);
+  --chart-gradient-end: rgba(250, 84, 28, 0);
   --chart-surface: var(--surface);
   --chart-quadrant: var(--surface-2);
   --chart-quadrant-hi: var(--accent-faint);
-  --chart-grid: oklch(0.315 0.013 264 / 0.8);
+  --chart-grid: var(--line);
   --chart-axis-line: var(--line-strong);
   --chart-axis-text: var(--ink-3);
   --chart-label: var(--ink-3);
-  --chart-label-hi: var(--accent);
-  --chart-ref: oklch(0.635 0.191 258 / 0.5);
-  --chart-path: oklch(0.635 0.191 258 / 0.55);
-  --chart-peer: oklch(0.745 0.148 165 / 0.6);
+  --chart-label-hi: var(--accent-ink);
+  --chart-ref: rgba(250, 84, 28, 0.45);
+  --chart-path: rgba(250, 84, 28, 0.55);
+  --chart-peer: rgba(31, 138, 91, 0.55);
   --chart-point-ring: var(--surface);
 
-  /* Kıyaslama serileri: mavi/yeşil ayrımı renk körlüğünde de ayrışır. */
+  /* Kıyaslama serileri: turuncu/yeşil ayrımına lacivert ve kehribar eşlik eder. */
   --series-current: var(--accent);
   --series-target: var(--series-2);
   --series-sector-current: var(--series-4);
   --series-sector-target: var(--series-3);
 
-  /* Olgunluk basamakları: tek renkli mavi rampa — seviye arttıkça parlar. */
-  --level-1: oklch(0.430 0.075 258);
-  --level-2: oklch(0.500 0.110 258);
-  --level-3: oklch(0.570 0.150 258);
-  --level-4: oklch(0.635 0.191 258);
-  --level-5: oklch(0.720 0.165 258);
+  /* Olgunluk basamakları (gösterge ve çubuk dolgusu): marka rampası,
+     seviye arttıkça koyulaşır. */
+  --level-1: #ffc2a8;
+  --level-2: #ff9f78;
+  --level-3: #ff7a45;
+  --level-4: #fa541c;
+  --level-5: #b3380f;
 
   /* Pano kısayol kartları: dolu vurgu, ikincil yüzey, kenarlıklı yüzey. */
   --quick-1-bg: var(--accent-solid);
@@ -274,102 +282,108 @@
 
 
 /* ============================================================================
-   AÇIK TEMA
-   Koyu temanın aynadaki karşılığı: aynı token adları, ters yüzey sırası.
-   Koyuda sidebar zeminden koyu; açıkta beyaz, zemin ise açık gri — kart
-   kontrastla ayrışsın diye (refero: "kartlar #ffffff'in #f2f2f2 üstünde
-   yükselmesiyle ayrışır").
-
-   Koyu temadaki base / -ink / -solid üçlüsü burada da geçerli ama ölçü ters
-   yönde çalışır: orada metin bir kademe AÇILIR, burada bir kademe KOYULAŞIR.
-   Ölçülen değerler her satırın yanında.
+   KOYU TEMA
+   iso2app `.dark` değerleri; aynı token adları. Kenar çubuğu zeminden de
+   koyu kalır. Koyu zeminde vurgu metin olarak yeterince açık olduğundan
+   --accent ve --accent-ink ikisi de metinde AA geçer; dolu düğmede metin
+   iso2app'teki gibi koyudur (#1c1815, 5.2:1).
    ========================================================================= */
-[data-theme="light"] {
-  /* Açık temada aynı rampa koyulaşır: beyaz üzerinde AA kontrastı için. */
-  --maturity-1: oklch(0.560 0.060 258);
-  --maturity-2: oklch(0.530 0.105 258);
-  --maturity-3: oklch(0.505 0.145 258);
-  --maturity-4: oklch(0.480 0.180 258);
-  --maturity-5: oklch(0.455 0.205 258);
+[data-theme="dark"] {
+  color-scheme: dark;
 
-  color-scheme: light;
+  --canvas:     #070d18;
+  --rail:       #0d1726;
+  --surface:    #0d1726;
+  --surface-2:  #13223a;
+  --surface-3:  #1a2c49;
 
-  /* Zemin ile kart arasındaki fark gölgenin yerini tutuyor; 0.968'de ikisi
-     neredeyse aynı griydi ve kartın kenarı yalnızca 1px çizgiden okunuyordu. */
-  --canvas:     oklch(0.952 0.005 264);   /* sayfa zemini */
-  --rail:       oklch(0.999 0.001 264);   /* beyaz — sidebar, topbar */
-  --surface:    oklch(0.992 0.002 264);   /* kart */
-  --surface-2:  oklch(0.938 0.006 264);   /* kart içi blok */
-  --surface-3:  oklch(0.900 0.008 264);   /* seçili/hover */
+  --sidebar-bg: #060b14;
+  --sidebar-line: rgba(255, 255, 255, 0.08);
 
-  --line:        oklch(0.880 0.008 264);
-  --line-strong: oklch(0.800 0.011 264);
+  --line:        #1d2f4a;
+  --line-strong: #2a4063;
 
-  --ink:   oklch(0.265 0.016 264);   /* #21252D · 14.99:1 */
-  --ink-2: oklch(0.470 0.017 264);   /* #565B65 ·  6.65:1 */
-  --ink-3: oklch(0.520 0.017 264);   /* --surface-2 üzerinde 4.7:1 */
+  --ink:   #eaf1fb;
+  --ink-2: #a7b8d1;
+  /* iso2app text-muted (#6c809e) --surface-2 üzerinde 3.9:1; AA için bir tık açık. */
+  --ink-3: #8597b3;
 
-  /* Açık zeminde tek mavi yetiyor: #245CCA hem metin olarak 5.93:1, hem de
-     üzerinde beyaz metinle dolgu olarak 6.07:1. Koyuda iki ton gerekiyordu. */
-  --accent:        oklch(0.505 0.181 262);
-  --accent-hover:  oklch(0.560 0.185 262);
-  --accent-solid:  oklch(0.505 0.181 262);
-  --accent-press:  oklch(0.445 0.165 262);
-  --accent-quiet:  oklch(0.505 0.181 262 / 0.12);
-  --accent-faint:  oklch(0.505 0.181 262 / 0.06);
-  --on-accent:     oklch(0.999 0 0);
+  --accent:        #ff7a45;
+  --accent-hover:  #ff9f78;
+  --accent-solid:  #fa541c;
+  --accent-press:  #d24a19;
+  --accent-quiet:  rgba(255, 122, 69, 0.16);
+  --accent-faint:  rgba(255, 122, 69, 0.08);
+  --on-accent:     #1c1815;
+  --focus-ring:    rgba(255, 122, 69, 0.45);
 
-  /* Veri serileri koyulaşır; koyu temadaki parlak tonlar beyazda kayboluyor. */
-  --series-2: oklch(0.545 0.130 165);   /* #00875D */
-  --series-3: oklch(0.585 0.130 70);    /* #AC6B00 */
-  --series-4: oklch(0.505 0.140 300);   /* #724EA8 */
+  --series-2: #4fc98a;
+  --series-3: #e2a94f;
+  --series-4: #a7b8d1;
+  --series-5: #6c809e;
 
-  --success:    oklch(0.545 0.130 165);
-  --success-bg: oklch(0.545 0.130 165 / 0.12);
-  --warning:    oklch(0.585 0.130 70);
-  --warning-bg: oklch(0.585 0.130 70 / 0.14);
-  --error:      oklch(0.520 0.185 27);
-  --error-bg:   oklch(0.520 0.185 27 / 0.10);
-  --series-4-bg: oklch(0.505 0.140 300 / 0.12);
+  --success:    #4fc98a;
+  --success-bg: #12291d;
+  --warning:    #e2a94f;
+  --warning-bg: #2d2311;
+  --error:      #ef8b7f;
+  --error-bg:   #351b19;
+  --info-bg:    #2b1811;
+  --series-4-bg: #1a2c49;
 
-  /* Rozet mürekkebi: tint üzerinde metin, base'ten bir kademe koyu. */
-  --success-ink:  oklch(0.470 0.115 165);   /* 6.16:1 */
-  --warning-ink:  oklch(0.490 0.115 70);    /* 6.27:1 */
-  --error-ink:    oklch(0.480 0.175 27);    /* 7.01:1 */
-  --accent-ink:   oklch(0.460 0.170 262);   /* 7.16:1 */
-  --series-4-ink: oklch(0.460 0.135 300);   /* 7.37:1 */
+  --success-ink:  #a5e8c4;
+  --warning-ink:  #f4d79a;
+  --error-ink:    #f6c6bf;
+  --accent-ink:   #ffb28f;
+  --series-4-ink: #c9d6e8;
 
-  /* Dolgu varyantları: üzerinde beyaz metin ≥4.5:1. */
-  --success-solid:  oklch(0.500 0.125 165);  /* beyaz 5.45:1 */
-  --warning-solid:  oklch(0.530 0.125 70);   /* beyaz 5.40:1 */
-  --error-solid:    oklch(0.520 0.185 27);   /* beyaz 6.05:1 */
-  --series-4-solid: oklch(0.505 0.140 300);  /* beyaz 6.23:1 */
+  --success-solid:  #166b45;
+  --warning-solid:  #8a5a14;
+  --error-solid:    #922f2a;
+  --series-4-solid: #46586e;
 
-  /* Açık zeminde koyu metin kalınlaşmaz; ek harf aralığı gereksiz. */
-  --tracking-body: 0;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 50px -20px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 30px 80px -30px rgba(0, 0, 0, 0.75);
+  --backdrop: rgba(3, 7, 14, 0.72);
 
-  /* Örtü katmanı siyah bir perde değil, kısılmış bir zemin. */
-  --backdrop: oklch(0.30 0.02 264 / 0.40);
-  --shadow-overlay: 0 16px 40px rgba(24, 28, 38, 0.16);
+  --secondary-light: #7fd9a8;
+  --secondary-dark: #2fa56b;
 
-  --secondary-light: oklch(0.620 0.120 165);
-  --secondary-dark: oklch(0.470 0.115 165);
+  --maturity-1: #c99a80;
+  --maturity-2: #e58a62;
+  --maturity-3: #ff9f78;
+  --maturity-4: #ffb28f;
+  --maturity-5: #ffc9b0;
 
-  --chart-gradient-start: oklch(0.505 0.181 262 / 0.18);
-  --chart-gradient-end: oklch(0.505 0.181 262 / 0);
-  --chart-grid: oklch(0.880 0.008 264);
-  --chart-axis-line: var(--line-strong);
-  --chart-ref: oklch(0.505 0.181 262 / 0.45);
-  --chart-path: oklch(0.635 0.191 258 / 0.55);
-  --chart-peer: oklch(0.545 0.130 165 / 0.55);
+  --chart-gradient-start: rgba(255, 122, 69, 0.22);
+  --chart-gradient-end: rgba(255, 122, 69, 0);
+  --chart-ref: rgba(255, 122, 69, 0.5);
+  --chart-path: rgba(255, 122, 69, 0.55);
+  --chart-peer: rgba(79, 201, 138, 0.6);
 
-  /* Olgunluk rampası: seviye arttıkça KOYULAŞIR (koyu temada tersi, orada
-     parlar). İki temada da tek renkli mavi kalır. */
-  --level-1: oklch(0.800 0.055 262);
-  --level-2: oklch(0.715 0.095 262);
-  --level-3: oklch(0.620 0.140 262);
-  --level-4: oklch(0.505 0.181 262);
-  --level-5: oklch(0.420 0.160 262);
+  /* Koyu zeminde rampa ters çalışır: seviye arttıkça parlar. */
+  --level-1: #8a3d1c;
+  --level-2: #d24a19;
+  --level-3: #fa541c;
+  --level-4: #ff7a45;
+  --level-5: #ffa07a;
+}
+
+/* ===== METİN OLARAK VURGU =====
+   Turuncu dolgu (#fa541c) beyazda metin için 3.3:1 kalır. Kod tabanında vurgu
+   rengi metin sınıfı olarak ~200 yerde yazılı; bunlar sınıf adından
+   yakalanıp AA geçen --accent-ink tonuna döner (iso2app color-accent-text).
+   Yeni kod doğrudan text-[var(--accent-ink)] kullanır. */
+[class~="text-[var(--accent)]"],
+[class~="text-[var(--blue-main)]"],
+[class~="text-accent"],
+[class~="text-primary"],
+[class~="hover:text-[var(--accent)]"]:hover,
+[class~="hover:text-accent"]:hover,
+[class~="hover:text-primary"]:hover {
+  color: var(--accent-ink);
 }
 
 [data-hydration-error] {
@@ -407,18 +421,42 @@ table th {
   font-variant-numeric: tabular-nums;
 }
 
+/* Kod ve etiket: IBM Plex Mono. */
+.font-mono,
+.font-numeric,
+[data-numeric],
+code,
+kbd {
+  font-family: var(--font-mono);
+}
+
+/* Başlıklar ve büyük sayılar: Space Grotesk, cümle düzeninde. */
 h1, h2, h3, h4, h5, h6, .heading {
   font-family: var(--font-head);
   font-weight: 600;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.022em;
   color: var(--ink);
   text-wrap: balance;
 }
 
-h1 { font-size: var(--text-display); line-height: 1.15; letter-spacing: -0.02em; }
+h1 { font-size: var(--text-display); line-height: 1.1; letter-spacing: -0.03em; }
 h2 { font-size: var(--text-title);   line-height: 1.25; }
 h3 { font-size: var(--text-subhead); line-height: 1.3; }
-h4, h5, h6 { font-size: var(--text-body); line-height: 1.4; letter-spacing: 0; }
+h4, h5, h6 { font-size: var(--text-body); line-height: 1.4; letter-spacing: -0.01em; }
+
+.text-metric,
+.text-display,
+.t-display,
+.t-title,
+.t-subhead,
+.t-metric,
+.t-metric-lg,
+.stat-number,
+.stat-number-accent,
+.kpi-value,
+.donut-value {
+  font-family: var(--font-head);
+}
 
 p { text-wrap: pretty; }
 
@@ -468,19 +506,31 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ===== TİPOGRAFİ YARDIMCILARI ===== */
-.t-display { font-size: var(--text-display); font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; }
-.t-title   { font-size: var(--text-title);   font-weight: 600; line-height: 1.25; letter-spacing: -0.015em; }
-.t-subhead { font-size: var(--text-subhead); font-weight: 600; line-height: 1.3;  letter-spacing: -0.01em; }
+.t-display { font-size: var(--text-display); font-weight: 600; line-height: 1.1;  letter-spacing: -0.03em; }
+.t-title   { font-size: var(--text-title);   font-weight: 600; line-height: 1.25; letter-spacing: -0.022em; }
+.t-subhead { font-size: var(--text-subhead); font-weight: 600; line-height: 1.3;  letter-spacing: -0.015em; }
 .t-body    { font-size: var(--text-body);    font-weight: 400; line-height: 1.55; }
 .t-sm      { font-size: var(--text-sm);      font-weight: 400; line-height: 1.5; }
 .t-label   { font-size: var(--text-sm);      font-weight: 500; line-height: 1.4; letter-spacing: 0; }
+/* Üst etiket ve sütun başlığı: iso2app mono etiketi. */
 .t-caption {
-  font-size: var(--text-caption);
+  font-family: var(--font-mono);
+  font-size: 0.71875rem; /* 11.5 */
   font-weight: 500;
   line-height: 1.4;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
+}
+/* Sayfa başlığı üstündeki bölüm etiketi. */
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.71875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
 }
 .t-metric {
   font-size: var(--text-metric);
@@ -531,12 +581,15 @@ a { color: inherit; text-decoration: none; }
   }
 }
 
-/* ===== KART ===== */
+/* ===== KART =====
+   iso2app kartı: beyaz yüzey, 1px ince kenar, 14px köşe, hafif gölge. */
 .theme-card {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  transition: border-color var(--dur-base) var(--ease-out-quart);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--dur-base) var(--ease-out-quart),
+              box-shadow var(--dur-base) var(--ease-out-quart);
 }
 
 .theme-card:hover {
@@ -582,7 +635,7 @@ a { color: inherit; text-decoration: none; }
   transition: background-color var(--dur-fast) var(--ease-out-quart);
 }
 
-.btn-primary:hover { background: var(--accent); }
+.btn-primary:hover { background: var(--accent-hover); }
 .btn-primary:active { background: var(--accent-press); }
 .btn-primary:disabled {
   background: var(--surface-2);
@@ -659,7 +712,7 @@ a { color: inherit; text-decoration: none; }
 .theme-select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-quiet);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .theme-input:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -723,12 +776,13 @@ input[type="range"]::-webkit-slider-thumb:hover { background: var(--accent-hover
 
 .theme-table th {
   @apply px-4 py-2.5 text-left;
-  font-size: var(--text-caption);
+  font-family: var(--font-mono);
+  font-size: 0.71875rem;
   font-weight: 500;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   background: var(--surface-2);
-  color: var(--ink-3);
+  color: var(--ink-2);
   border-bottom: 1px solid var(--line);
 }
 
@@ -785,11 +839,11 @@ input[type="range"]::-webkit-slider-thumb:hover { background: var(--accent-hover
   text-transform: none;
 }
 
-.badge-primary { background: var(--accent-quiet); color: var(--accent-hover); }
+.badge-primary { background: var(--accent-quiet); color: var(--accent-ink); }
 .badge-success { background: var(--success-bg);  color: var(--success); }
 .badge-warning { background: var(--warning-bg);  color: var(--warning); }
 .badge-error   { background: var(--error-bg);    color: var(--error); }
-.badge-info    { background: var(--info-bg);     color: var(--accent-hover); }
+.badge-info    { background: var(--info-bg);     color: var(--accent-ink); }
 .badge-neutral { background: var(--surface-2);   color: var(--ink-2); }
 
 /* ===== KABUK YERLEŞİMİ =====
@@ -822,7 +876,7 @@ body.shell-active main {
 }
 
 /* ===== ANKET YERLEŞİMİ =====
-   Anket haritası üçüncü bir sabit sütun olamaz: solda zaten kabuğun 248px'i
+   Anket haritası üçüncü bir sabit sütun olamaz: solda zaten kabuğun 288px'i
    var ve üç sabit sütun dizüstü genişliğinde soruları ezer. Bu yüzden harita
    <main> içinde yapışkan bir sütun; dar ekranda sütun kaybolur ve yerini
    "Bölümler" çekmecesi alır. */
@@ -836,7 +890,7 @@ body.shell-active main {
 .survey-outline-col { display: none; }
 
 @media (min-width: 1280px) {
-  /* 1280'de kabuğun menüsü 248px'i aldıktan sonra sorulara ~690px kalıyor;
+  /* 1280'de kabuğun menüsü 288px'i aldıktan sonra sorulara ~640px kalıyor;
      harita bu yüzden dar başlar ve yalnızca gerçekten yer varken genişler. */
   .survey-layout { grid-template-columns: 280px minmax(0, 1fr); }
 
@@ -888,53 +942,98 @@ body.shell-active main {
   .scope-layout { grid-template-columns: 320px minmax(0, 1fr); }
 }
 
-/* ===== KABUK: SIDEBAR ===== */
+/* ===== KABUK: SIDEBAR =====
+   iso2app kabuğu: iki temada da koyu lacivert kenar çubuğu, beyaz metin,
+   mono bölüm etiketleri; aktif satır turuncu tint + turuncu ikon. */
 .sidebar {
-  background: var(--rail);
-  border-right: 1px solid var(--line);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-ink);
+  border-right: 1px solid var(--sidebar-line);
+}
+
+.sidebar-brand {
+  border-bottom: 1px solid var(--sidebar-line);
+}
+
+.sidebar-mark {
+  background: var(--accent-solid);
+  color: var(--sidebar-mark-ink);
+}
+
+.sidebar-wordmark {
+  font-family: var(--font-head);
+  font-size: 1.0625rem; /* 17 */
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--sidebar-ink);
+}
+
+.sidebar-context {
+  font-family: var(--font-mono);
+  font-size: 0.625rem; /* 10 */
+  line-height: 1.2;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sidebar-label);
 }
 
 .sidebar-group {
-  font-size: var(--text-caption);
+  font-family: var(--font-mono);
+  font-size: 0.65625rem; /* 10.5 */
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ink-3);
-  padding: 0 12px;
-  margin-bottom: 8px;
+  color: var(--sidebar-label);
+  padding: 0 24px;
+  margin-bottom: 6px;
 }
 
 .sidebar-item {
-  @apply relative flex items-center gap-3 rounded-[var(--radius-md)];
-  padding: 9px 12px;
-  font-size: var(--text-sm);
+  @apply relative flex items-center gap-2.5 rounded-[var(--radius-sm)];
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 0.84375rem; /* 13.5 */
   font-weight: 500;
-  color: var(--ink-2);
+  color: var(--sidebar-ink-2);
   transition: background-color var(--dur-fast) var(--ease-out-quart),
               color var(--dur-fast) var(--ease-out-quart);
 }
 
-.sidebar-item:hover { background: var(--surface-2); color: var(--ink); }
+.sidebar-item:hover { background: var(--sidebar-hover); color: var(--sidebar-ink); }
 
 .sidebar-item.active {
-  background: var(--accent-quiet);
-  color: var(--ink);
+  background: var(--sidebar-active);
+  color: var(--sidebar-ink);
 }
 
-/* Sol gösterge yalnızca burada meşru: aktif menü satırının konum işareti. */
-.sidebar-item.active::before {
-  content: '';
-  position: absolute;
-  left: -12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 18px;
-  border-radius: 0 2px 2px 0;
-  background: var(--accent);
+.sidebar-item.active svg { color: var(--sidebar-active-icon); }
+
+.sidebar-footer {
+  border-top: 1px solid var(--sidebar-line);
 }
 
-.sidebar-item.active svg { color: var(--accent); }
+/* Koyu zemindeki düğmeler: daralt, çekmeceyi kapat. */
+.sidebar .btn-ghost,
+.sidebar .icon-btn {
+  color: var(--sidebar-ink-2);
+}
+
+.sidebar .btn-ghost:hover,
+.sidebar .icon-btn:hover {
+  background: var(--sidebar-hover);
+  color: var(--sidebar-ink);
+}
+
+.sidebar :focus-visible {
+  outline-color: var(--sidebar-active-icon);
+}
+
+/* ===== KABUK: ÜST ŞERİT ===== */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
 
 /* ===== ÖRTÜ KATMANLARI ===== */
 .modal-backdrop {
@@ -1001,6 +1100,7 @@ body.shell-active main {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   padding: var(--sp-5);
 }
 
@@ -1012,7 +1112,7 @@ body.shell-active main {
 .stat-number {
   font-weight: 600;
   font-size: var(--text-metric-lg);
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
   color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
@@ -1020,8 +1120,8 @@ body.shell-active main {
 .stat-number-accent {
   font-weight: 600;
   font-size: var(--text-metric-lg);
-  letter-spacing: -0.025em;
-  color: var(--accent);
+  letter-spacing: -0.03em;
+  color: var(--accent-ink);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1035,6 +1135,7 @@ body.shell-active main {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   padding: var(--sp-5);
   transition: border-color var(--dur-base) var(--ease-out-quart);
 }
@@ -1153,7 +1254,7 @@ select {
 select:focus {
   border-color: var(--accent) !important;
   outline: none;
-  box-shadow: 0 0 0 3px var(--accent-quiet);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 select option {
@@ -1169,7 +1270,7 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
 
 input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-quiet);
+  box-shadow: 0 0 0 3px var(--focus-ring);
   outline: none;
 }
 
@@ -1182,13 +1283,14 @@ textarea {
 
 textarea:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-quiet);
+  box-shadow: 0 0 0 3px var(--focus-ring);
   outline: none;
 }
 
 /* ===== ESKİ TAILWIND GRİ SINIFLARI =====
-   Depoda hâlâ bg-white / text-gray-600 gibi açık tema sınıfları var; hepsi
-   tek tek temizlenene kadar koyu palete çevriliyor. Yeni kodda kullanılmaz. */
+   Depoda hâlâ bg-white / text-gray-600 gibi sabit Tailwind sınıfları var;
+   hepsi tek tek temizlenene kadar token'lara bağlanıyor (koyu temada da doğru
+   çizilsinler diye). Yeni kodda kullanılmaz. */
 .bg-white { background-color: var(--surface) !important; }
 .bg-gray-50, .bg-slate-50,
 .bg-gray-100, .bg-slate-100 { background-color: var(--surface-2) !important; }

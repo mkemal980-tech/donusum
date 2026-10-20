@@ -376,7 +376,7 @@ export function CategoryDashboard({
                   },
                 }}
                 className="inline-flex shrink-0 items-center gap-1.5 t-sm font-medium underline-offset-4 hover:underline"
-                style={{ color: "var(--accent)" }}
+                style={{ color: "var(--accent-ink)" }}
               >
                 Tüm önerileri gör ({recommendationGroup.total})
                 <ArrowRight size={14} aria-hidden="true" />

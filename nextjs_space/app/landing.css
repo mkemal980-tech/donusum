@@ -47,6 +47,10 @@
 
   --font-heading: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-body: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Uygulamanın h1–h6 taban kuralı (globals.css) --font-head okur; burada
+     kendi aileye bağlanmazsa kuralı ezmeyen başlıklar (alt bilgi h5)
+     uygulamanın başlık yazı tipini alır. */
+  --font-head: var(--font-heading);
 
   --space-1: 4px;
   --space-2: 8px;

@@ -562,7 +562,7 @@ export default function RecommendationsClient() {
                     type="button"
                     onClick={() => setViewMode('list')}
                     className="underline underline-offset-4"
-                    style={{ color: "var(--accent)" }}
+                    style={{ color: "var(--accent-ink)" }}
                   >
                     liste görünümünde
                   </button>{" "}

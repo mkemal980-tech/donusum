@@ -13,8 +13,9 @@ import { cn } from "@/lib/utils"
  * ama dolgu, köşe, hover ve disabled davranışı sayfadan sayfaya kayıyordu ve
  * bir ölçüyü değiştirmek için tek bir dosya yoktu.
  *
- * Dolgu, veri mavisinden bir tık koyu olan --accent-solid'i kullanır: parlak
- * mavi üzerinde beyaz metin 3.5:1'de kalıyordu, bu tonda 4.7:1 veriyor.
+ * Dolgu iso2app'in birincil düğmesidir: turuncu --accent-solid zemin,
+ * --on-accent metin (açık temada beyaz, koyu temada koyu). Hover bir kademe
+ * koyulaşır (--accent-hover), basılıyken bir kademe daha (--accent-press).
  */
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium " +
@@ -25,14 +26,14 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[var(--accent-solid)] text-[var(--on-accent)] shadow-button hover:bg-[var(--accent)] active:bg-[var(--accent-press)]",
+          "bg-[var(--accent-solid)] text-[var(--on-accent)] shadow-button hover:bg-[var(--accent-hover)] active:bg-[var(--accent-press)]",
         destructive: "bg-[var(--error)] text-[var(--canvas)] hover:opacity-90",
         outline:
-          "border border-[var(--line-strong)] text-[var(--ink)] bg-transparent hover:bg-[var(--surface-2)] hover:border-[var(--ink-3)]",
+          "border border-[var(--line-strong)] text-[var(--ink)] bg-[var(--surface)] hover:bg-[var(--surface-2)] hover:border-[var(--ink-3)]",
         secondary:
           "bg-[var(--surface-2)] text-[var(--ink)] hover:bg-[var(--surface-3)]",
         ghost: "text-[var(--ink-2)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]",
-        link: "text-[var(--accent)] underline-offset-4 hover:underline",
+        link: "text-[var(--accent-ink)] underline-offset-4 hover:underline",
         soft: "bg-[var(--accent-quiet)] text-[var(--accent-ink)] hover:bg-[var(--accent-faint)]",
       },
       size: {

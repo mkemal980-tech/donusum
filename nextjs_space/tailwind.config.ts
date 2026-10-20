@@ -9,6 +9,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // Tailwind 3.3 `min-h-48` gibi aralık tabanlı min-height/min-width
+      // sınıflarını üretmez (3.4 ile geldi); ölçek burada açılır.
+      minHeight: ({ theme }) => ({ ...theme('spacing') }),
+      minWidth: ({ theme }) => ({ ...theme('spacing') }),
       colors: {
         // Theme Backgrounds
         'bg-main': 'var(--bg-main)',
@@ -25,7 +29,7 @@ const config: Config = {
         'text-muted': 'var(--text-muted)',
         'text-dim': 'var(--text-dim)',
         
-        // Accent Turquoise
+        // Vurgu: iso2app turuncusu
         'accent': {
           DEFAULT: 'var(--accent)',
           solid: 'var(--accent-solid)',
@@ -34,7 +38,7 @@ const config: Config = {
           cyan: 'var(--accent-cyan)',
         },
         
-        // Blue Chart Colors
+        // Eski grafik adları (vurguya bağlı)
         'blue': {
           main: 'var(--blue-main)',
           dark: 'var(--blue-dark)',
@@ -45,19 +49,19 @@ const config: Config = {
         // UI Passive
         'ui-passive': 'var(--ui-passive)',
         
-        /* Sayısal basamaklar tek mavi rampadır; eski turkuaz değerler
-           kaldırıldı, depoda kalan primary-500 gibi çağrılar da maviye iner. */
+        /* Sayısal basamaklar iso2app marka rampasıdır (color-brand-*);
+           depoda kalan primary-500 gibi çağrılar da turuncuya iner. */
         primary: {
-          50:  'oklch(0.960 0.020 258)',
-          100: 'oklch(0.900 0.045 258)',
-          200: 'oklch(0.830 0.080 258)',
-          300: 'oklch(0.760 0.120 258)',
-          400: 'oklch(0.700 0.165 258)',
+          50:  '#fff1eb',
+          100: '#ffe1d3',
+          200: '#ffc2a8',
+          300: '#ff9f78',
+          400: '#ff7a45',
           500: 'var(--accent)',
-          600: 'var(--accent-solid)',
-          700: 'oklch(0.510 0.165 258)',
-          800: 'oklch(0.430 0.130 258)',
-          900: 'oklch(0.340 0.095 258)',
+          600: 'var(--accent-hover)',
+          700: 'var(--accent-ink)',
+          800: '#8a2c0e',
+          900: '#4a180a',
           DEFAULT: 'var(--accent)',
           foreground: 'var(--on-accent)',
         },
@@ -103,21 +107,21 @@ const config: Config = {
           50: 'var(--success-bg)',
           100: 'var(--success-bg)',
           500: 'var(--success)',
-          600: 'oklch(0.680 0.145 165)',
+          600: 'var(--success-solid)',
           DEFAULT: 'var(--success)',
         },
         warning: {
           50: 'var(--warning-bg)',
           100: 'var(--warning-bg)',
           500: 'var(--warning)',
-          600: 'oklch(0.710 0.130 70)',
+          600: 'var(--warning-solid)',
           DEFAULT: 'var(--warning)',
         },
         error: {
           50: 'var(--error-bg)',
           100: 'var(--error-bg)',
           500: 'var(--error)',
-          600: 'oklch(0.600 0.170 22)',
+          600: 'var(--error-solid)',
           DEFAULT: 'var(--error)',
         },
         info: {
@@ -186,8 +190,9 @@ const config: Config = {
           '5': 'var(--chart-5)',
         },
       },
-      /* Dört token dışına çıkılmaz (bkz. DESIGN.md > Radius). Depoda kalan
-         rounded-2xl / rounded-3xl çağrıları da kart yarıçapına iner. */
+      /* Yarıçap token'ları dışına çıkılmaz (bkz. DESIGN.md > Radius): kontrol
+         9px, düğme 10px, kart 14px. Depoda kalan rounded-xl / rounded-2xl /
+         rounded-3xl çağrıları da kart yarıçapına iner. */
       borderRadius: {
         none: '0',
         sm: 'var(--radius-xs)',
@@ -199,22 +204,23 @@ const config: Config = {
         '3xl': 'var(--radius-lg)',
         full: 'var(--radius-pill)',
       },
-      /* Kart ve panelde gölge yok; ayrışma yüzey kontrastı + 1px kenarlık.
-         Tek istisna dolu buton ve üst katman (modal/dropdown/tooltip). */
+      /* iso2app elevation: kart 1px kenar + hafif gölge (shadow-sm), üst
+         katmanlar (dropdown, popover, modal) md/lg. Parlama yok. */
       boxShadow: {
         none: 'none',
-        sm: 'none',
-        DEFAULT: 'none',
-        md: 'none',
-        lg: 'none',
-        xl: 'none',
-        '2xl': 'none',
+        xs: 'var(--shadow-xs)',
+        sm: 'var(--shadow-sm)',
+        DEFAULT: 'var(--shadow-sm)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-md)',
+        xl: 'var(--shadow-lg)',
+        '2xl': 'var(--shadow-lg)',
         inner: 'none',
-        soft: 'none',
-        'soft-lg': 'none',
-        'soft-xl': 'none',
-        card: 'none',
-        'card-hover': 'none',
+        soft: 'var(--shadow-sm)',
+        'soft-lg': 'var(--shadow-md)',
+        'soft-xl': 'var(--shadow-lg)',
+        card: 'var(--shadow-sm)',
+        'card-hover': 'var(--shadow-md)',
         glow: 'none',
         'glow-accent': 'none',
         'glow-blue': 'none',
@@ -234,9 +240,13 @@ const config: Config = {
         'gradient-card': 'linear-gradient(var(--surface), var(--surface))',
         'chart-area': 'linear-gradient(180deg, var(--chart-gradient-start), var(--chart-gradient-end))',
       },
+      // iso2app yazı tipleri: gövde IBM Plex Sans, başlık ve KPI Space
+      // Grotesk, etiket/kod/tablo sayıları IBM Plex Mono (app/layout.tsx).
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
-        numeric: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-ibm-plex-sans)', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        display: ['var(--font-space-grotesk)', 'var(--font-ibm-plex-sans)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-ibm-plex-mono)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        numeric: ['var(--font-ibm-plex-mono)', 'ui-monospace', 'monospace'],
       },
       fontSize: {
         caption: ['var(--text-caption)', { lineHeight: '1.4', letterSpacing: '0.06em' }],

@@ -251,11 +251,11 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
   };
 
   const navList = (
-    <nav className="flex flex-col gap-6" aria-label="Ana gezinme">
+    <nav className="flex flex-col gap-4" aria-label="Ana gezinme">
       {inAdmin && (
-        <div className="px-3">
+        <div className="px-4">
           <Link href="/dashboard" className={`sidebar-item ${collapsed ? "justify-center" : ""}`}>
-            <ArrowLeft size={18} strokeWidth={1.9} className="shrink-0" aria-hidden="true" />
+            <ArrowLeft size={16} strokeWidth={1.75} className="shrink-0" aria-hidden="true" />
             {!collapsed && <span>Panoya dön</span>}
           </Link>
         </div>
@@ -263,7 +263,7 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
       {groups.map((group) => (
         <div key={group.title}>
           {!collapsed && <p className="sidebar-group">{group.title}</p>}
-          <ul className="flex flex-col gap-0.5 pl-3 pr-3">
+          <ul className="flex flex-col gap-0.5 px-4">
             {group.items.map((item) => {
               const Icon = item.icon;
               const active = isActive(item);
@@ -275,7 +275,7 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
                     aria-current={active ? "page" : undefined}
                     title={collapsed ? item.label : undefined}
                   >
-                    <Icon size={18} strokeWidth={1.9} className="shrink-0" />
+                    <Icon size={16} strokeWidth={1.75} className="shrink-0" aria-hidden="true" />
                     {!collapsed && <span className="truncate">{item.label}</span>}
                   </Link>
                 </li>
@@ -287,21 +287,24 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
     </nav>
   );
 
+  /* Marka bloğu iso2app kabuğundaki gibi: turuncu işaret, Space Grotesk
+     sözcük markası ve altında mono bağlam etiketi. */
   const brand = (
     <Link
       href="/dashboard"
-      className={`flex items-center gap-2.5 ${collapsed ? "justify-center" : ""}`}
+      className={`flex min-w-0 items-center gap-3 ${collapsed ? "justify-center" : ""}`}
       aria-label="Panoya git"
     >
       <span
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-xs)] text-[13px] font-semibold"
-        style={{ background: "var(--accent)", color: "var(--on-accent)" }}
+        className="sidebar-mark flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--radius-sm)] font-display text-[13px] font-semibold"
+        aria-hidden="true"
       >
         DP
       </span>
       {!collapsed && (
-        <span className="truncate text-[15px] font-semibold" style={{ color: "var(--ink)" }}>
-          {inAdmin ? "Yönetim" : "Dönüşüm Platformu"}
+        <span className="flex min-w-0 flex-col gap-1">
+          <span className="sidebar-wordmark truncate">Dönüşüm Platformu</span>
+          <span className="sidebar-context truncate">{inAdmin ? "Yönetim paneli" : "ESG Akademi"}</span>
         </span>
       )}
     </Link>
@@ -326,15 +329,15 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
         style={{ width: collapsed ? "var(--shell-sidebar-collapsed)" : "var(--shell-sidebar)" }}
       >
         <div
-          className="flex items-center px-4"
-          style={{ height: "var(--shell-topbar)", borderBottom: "1px solid var(--line)" }}
+          className={`sidebar-brand flex shrink-0 items-center ${collapsed ? "justify-center px-3" : "px-5"}`}
+          style={{ height: "var(--shell-topbar)" }}
         >
           {brand}
         </div>
 
-        <div className="flex-1 overflow-y-auto py-5">{navList}</div>
+        <div className="flex-1 overflow-y-auto py-4">{navList}</div>
 
-        <div className="p-3" style={{ borderTop: "1px solid var(--line)" }}>
+        <div className="sidebar-footer p-3">
           <button
             type="button"
             onClick={() => setCollapsed((c) => !c)}
@@ -366,28 +369,25 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
             aria-label="Gezinme"
           >
             <div
-              className="flex items-center justify-between px-4"
-              style={{ height: "var(--shell-topbar)", borderBottom: "1px solid var(--line)" }}
+              className="sidebar-brand flex shrink-0 items-center justify-between gap-2 pl-5 pr-3"
+              style={{ height: "var(--shell-topbar)" }}
             >
               {brand}
-              <button type="button" className="icon-btn" onClick={() => setDrawerOpen(false)} aria-label="Kapat">
+              <button type="button" className="icon-btn shrink-0" onClick={() => setDrawerOpen(false)} aria-label="Kapat">
                 <X size={18} />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto py-5">{navList}</div>
+            <div className="flex-1 overflow-y-auto py-4">{navList}</div>
           </aside>
         </div>
       )}
 
       {/* ---- Üst şerit ---- */}
+      {/* Sol kenar globals.css'ten gelir (masaüstünde menü genişliği kadar);
+          satır içi `left` verilirse o kuralı ezip marka bloğunun üstüne biner. */}
       <header
-        className="fixed right-0 top-0 z-[var(--z-sticky)] flex items-center gap-3 px-4"
-        style={{
-          height: "var(--shell-topbar)",
-          left: 0,
-          background: "var(--rail)",
-          borderBottom: "1px solid var(--line)",
-        }}
+        className="topbar fixed left-0 right-0 top-0 z-[var(--z-sticky)] flex items-center gap-3 px-4 lg:px-6"
+        style={{ height: "var(--shell-topbar)" }}
         data-shell-topbar
       >
         <button
@@ -444,15 +444,15 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
               açmaz — iki seçenek için açılır liste fazla. */}
           <button
             type="button"
-            onClick={() => setTheme(resolvedTheme === "light" ? "dark" : "light")}
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
             className="icon-btn"
-            aria-label={resolvedTheme === "light" ? "Koyu temaya geç" : "Açık temaya geç"}
-            title={resolvedTheme === "light" ? "Koyu tema" : "Açık tema"}
+            aria-label={resolvedTheme === "dark" ? "Açık temaya geç" : "Koyu temaya geç"}
+            title={resolvedTheme === "dark" ? "Açık tema" : "Koyu tema"}
           >
-            {themeReady && resolvedTheme === "light" ? (
-              <Moon size={17} aria-hidden="true" />
-            ) : (
+            {themeReady && resolvedTheme === "dark" ? (
               <Sun size={17} aria-hidden="true" />
+            ) : (
+              <Moon size={17} aria-hidden="true" />
             )}
           </button>
 
