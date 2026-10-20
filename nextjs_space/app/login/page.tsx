@@ -82,7 +82,7 @@ export default function LoginPage() {
       footer={
         <p className="t-sm" style={{ color: "var(--ink-2)" }}>
           Hesabınız yok mu?{" "}
-          <Link href="/signup" className="font-medium hover:underline" style={{ color: "var(--accent)" }}>
+          <Link href="/signup" className="font-medium hover:underline" style={{ color: "var(--accent-ink)" }}>
             Kayıt olun
           </Link>
         </p>
@@ -149,7 +149,7 @@ export default function LoginPage() {
             <Link
               href="/forgot-password"
               className="t-sm hover:underline"
-              style={{ color: "var(--accent)" }}
+              style={{ color: "var(--accent-ink)" }}
             >
               Şifremi unuttum
             </Link>

@@ -217,7 +217,7 @@ export default function AdminDashboard() {
               <Link
                 href="/admin/survey-assignments"
                 className="mt-3 inline-block t-sm hover:underline"
-                style={{ color: "var(--accent)" }}
+                style={{ color: "var(--accent-ink)" }}
               >
                 Tüm atamaları görüntüle
               </Link>

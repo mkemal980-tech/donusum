@@ -1,97 +1,114 @@
 # Design
 
-Görsel sistem: koyu analitik pano. Kaynaklar (a) kullanıcının verdiği koyu
-dashboard referans görseli — kompozisyon ve atmosferde son söz onda; (b)
-refero "Square" stil sistemi — yalnızca görselle çelişmeyen kuralları alındı.
-Çelişen refero kuralları ve gerekçeleri en altta "Refero sapmaları" başlığında.
+Görsel sistem: **iso2app tasarım dili.** ESG Akademi'nin üç ürünü (iso2app,
+SC360, Dönüşüm Platformu) aynı ürün ailesi olarak görünür. Kanonik değerler
+iso2app'in token dosyasındadır (iso2son deposu:
+`client/src/design-system/tokens/tokens.css`); bu depo değişken ADLARINI
+korur, DEĞERLERİNİ oradan alır. Uygulamadaki karşılığı
+`nextjs_space/app/globals.css`; ikisi birlikte değiştirilir.
+
+Kapsam: giriş sonrası tüm uygulama (login, signup, dashboard ve devamı).
+Tanıtım sayfası (`app/page.tsx` + `app/landing.css`) bu sisteme bağlı
+değildir.
 
 ## Theme
 
-İki tema: **koyu varsayılan, açık seçenek.** Geçiş üst şeritteki düğmededir;
-tercih cihazda saklanır (next-themes → `<html data-theme="…">`).
+İki tema: **açık varsayılan, koyu seçenek.** Geçiş üst şeritteki düğmede ve
+giriş ekranındaki seçicidedir; tercih cihazda saklanır (next-themes →
+`<html data-theme="…">`). Açık tema iso2app `:root`, koyu tema iso2app `.dark`
+değerleridir; ikisi aynı token adlarını kullanır.
 
-Sahne cümlesi: sürdürülebilirlik yöneticisi, kapalı bir toplantı odasında,
-projeksiyonun kısılmış ışığında, 27 inç ekranda yönetime puan sunuyor; ekran
-saatlerce açık kalıyor ve yanındaki grafikler ortamdan daha parlak olmamalı.
+Kabuk iki temada da aynıdır: koyu lacivert kenar çubuğu, kart rengindeki üst
+şerit, açık gri zemin üstünde beyaz kartlar.
 
-Koyu zemin burada estetik tercih değil: veri mürekkebi (grafik çizgileri,
-sayılar, durum renkleri) tek parlak katman olsun diye arayüz kendini geri
-çekiyor. Açık tema aynı sistemin aynadaki hâlidir — aynı token adları, ters
-yüzey sırası: koyuda sidebar zeminden koyu, açıkta beyaz ve zemin açık gri
-(kart kontrastla ayrışır, gölgeyle değil).
-
-İki temada da geçerli tek kural: `base` renk **grafik/dolgu**, `-ink` varyantı
-**metin**, `-solid` varyantı **üzerine beyaz yazılan dolgu**. Ölçü yön değiştirir
-— koyuda metin bir kademe açılır, açıkta bir kademe koyulaşır. Tuvale çizen
-grafikler renkleri `readToken()` ile okur ve `useThemeVersion()` ile tema
-değişiminde yeniden çizilir; `<canvas>` `var(--…)` anlamıyor.
+Tek kural: `base` renk **grafik/dolgu/ikon**, `-ink` varyantı **metin**,
+`-solid` varyantı **üzerine metin yazılan dolgu**. Tuvale çizen grafikler
+renkleri `readToken()` ile okur ve `useThemeVersion()` ile tema değişiminde
+yeniden çizilir; `<canvas>` `var(--…)` anlamıyor.
 
 ## Color
 
-Strateji: **Restrained**. Tek kromatik eylem rengi (mavi) + veri serisi için
-sınırlı ikinci renk (yeşil) + üç durum rengi. Dekoratif renk yok.
+Strateji: **Restrained.** Tek kromatik eylem rengi (turuncu) + soğuk gri-mavi
+nötrler + üç durum rengi. Dekoratif renk yok.
 
-Nötrler mavi tona (hue 264) doğru boyanmış; saf siyah/beyaz yasak.
+### Tokens (açık / koyu)
 
-### Tokens
-
-| Token | OKLCH | ~Hex | Kullanım |
+| Token | Açık | Koyu | iso2app karşılığı · kullanım |
 |---|---|---|---|
-| `--canvas` | `oklch(0.185 0.012 264)` | #15171E | Sayfa zemini |
-| `--rail` | `oklch(0.155 0.012 264)` | #111319 | Sidebar, topbar |
-| `--surface` | `oklch(0.235 0.013 264)` | #1E212A | Kart yüzeyi |
-| `--surface-2` | `oklch(0.275 0.014 264)` | #262934 | Kart içi ikincil blok, tablo başlığı, hover |
-| `--line` | `oklch(0.315 0.013 264)` | #2E313D | 1px kenarlık, ayırıcı |
-| `--line-strong` | `oklch(0.40 0.014 264)` | #3F4350 | Vurgulu ayırıcı, input kenarı |
-| `--ink` | `oklch(0.97 0.004 264)` | #F4F5F8 | Birincil metin, sayı |
-| `--ink-2` | `oklch(0.76 0.012 264)` | #B3B7C4 | İkincil metin, etiket |
-| `--ink-3` | `oklch(0.60 0.014 264)` | #83889A | Üçüncül, eksen etiketi, pasif ikon |
-| `--accent` | `oklch(0.635 0.191 258)` | #2E86FF | Birincil eylem, aktif nav, link, 1. veri serisi |
-| `--accent-hover` | `oklch(0.685 0.181 258)` | #4E9AFF | Hover |
-| `--accent-quiet` | `oklch(0.635 0.191 258 / 0.14)` | — | Seçili satır, aktif nav zemini, ikon kutusu |
-| `--on-accent` | `oklch(0.99 0 0)` | #FDFDFD | Mavi üstü metin |
-| `--series-2` | `oklch(0.745 0.148 165)` | #27C08A | 2. veri serisi, "tamamlandı" |
-| `--warning` | `oklch(0.785 0.135 70)` | #F0A93C | Uyarı, "beklemede" |
-| `--danger` | `oklch(0.665 0.168 22)` | #F0645F | Hata, negatif değişim, "reddedildi" |
-| `--info` | `--accent` | — | Bilgi durumu ayrı renk almaz |
+| `--canvas` | `#F6F8FB` | `#070D18` | color-bg-base · sayfa zemini |
+| `--rail` | `#FFFFFF` | `#0D1726` | üst şerit, form alanı zemini |
+| `--surface` | `#FFFFFF` | `#0D1726` | color-surface-card · kart |
+| `--surface-2` | `#EEF2F7` | `#13223A` | color-bg-sunken · kart içi blok, tablo başlığı, hover |
+| `--surface-3` | `#E6ECF3` | `#1A2C49` | color-bg-muted · seçili, bar izi |
+| `--sidebar-bg` | `#0D1A2D` | `#060B14` | color-sidebar-bg · kenar çubuğu |
+| `--line` | `#E1E8F0` | `#1D2F4A` | color-border-subtle · 1px kenar, ayırıcı |
+| `--line-strong` | `#CDD8E4` | `#2A4063` | color-border-strong · input ve outline kontrol |
+| `--ink` | `#0D1A2D` | `#EAF1FB` | color-text-primary |
+| `--ink-2` | `#46586E` | `#A7B8D1` | color-text-secondary |
+| `--ink-3` | `#586779` | `#8597B3` | yardımcı metin (bkz. sapmalar) |
+| `--accent` | `#FA541C` | `#FF7A45` | brand-500 / accent-display · dolgu, veri, ikon, odak |
+| `--accent-hover` | `#DC4512` | `#FF9F78` | brand-600 · hover |
+| `--accent-solid` | `#FA541C` | `#FA541C` | birincil düğme zemini |
+| `--on-accent` | `#FFFFFF` | `#1C1815` | birincil düğme metni |
+| `--accent-ink` | `#B3380F` | `#FFB28F` | color-accent-text · metin olarak vurgu, bağlantı |
+| `--accent-quiet` | turuncu %12 | turuncu %16 | seçili satır, ikon kutusu |
+| `--focus-ring` | turuncu %34 | turuncu %45 | color-ring · form odağı |
+| `--success` | `#166B45` | `#4FC98A` | success-700 / -500 |
+| `--warning` | `#8A5A14` | `#E2A94F` | warning-700 / -500 |
+| `--error` | `#922F2A` | `#EF8B7F` | danger-700 / -500 |
 
-Durum rozetleri: metin durum rengi, zemin aynı rengin %14 alfası, kenarlık yok.
+Durum renkleri kod tabanında metin olarak da yazıldığı için açık temada
+base değerler iso2app'in -700 (AA) tonlarıdır; yumuşak zeminler (`-bg`) -50
+tonlarıdır. Durum rozeti: metin `-ink`, zemin `-bg`, kenarlık yok.
 
-Grafik serileri sırayla: `--accent`, `--series-2`, `--warning`, `--ink-3`,
-`oklch(0.60 0.13 300)`. Beşten fazla seri gerekiyorsa gruplama yanlıştır.
+Grafik serileri sırayla: `--series-1` turuncu, `--series-2` yeşil
+(`#1F8A5B`), `--series-3` kehribar (`#B7791F`), `--series-4` lacivert-gri
+(`#46586E`), `--series-5` (`#8A99AD`). Beşten fazla seri gerekiyorsa
+gruplama yanlıştır.
+
+Olgunluk basamakları (`--level-1…5`) marka turuncusunun tek renkli
+rampasıdır: açık temada seviye arttıkça koyulaşır, koyu temada parlar.
+Kırmızı-sarı-yeşil yok; seviyeyi etiket söyler.
 
 ### Renk kuralları
 
-- Pasif/disabled durum doygun renk almaz; `--ink-3` + %40 opaklık.
+- Metin olarak vurgu her zaman `--accent-ink`'tir. Kod tabanında kalan
+  `text-[var(--accent)]`, `text-accent`, `text-primary` ve
+  `text-[var(--blue-main)]` sınıfları globals.css'teki "Metin olarak vurgu"
+  kuralıyla `--accent-ink`'e döner; yeni kod doğrudan `--accent-ink` yazar.
+- Pasif/disabled durum doygun renk almaz; `--ink-3` + %40–50 opaklık.
 - Kırmızı ve yeşil aynı grafikte tek ayırt edici olarak kullanılmaz.
-- Degrade yalnızca alan grafiğinin dolgusunda (accent %22 → %0). Butonda,
+- Degrade yalnızca alan grafiğinin dolgusunda (accent %18 → %0). Butonda,
   kartta, metinde degrade yasak.
 
 ## Typography
 
-Tek aile: **Inter** (`next/font/google`, subsets `latin` + `latin-ext`;
-latin-ext Türkçe ğ/ş/ı için zorunlu). Fallback:
-`system-ui, -apple-system, "Segoe UI", sans-serif`.
+Üç aile, iso2app ile aynı (`next/font/google`, `latin` + `latin-ext`;
+latin-ext Türkçe ğ/ş/ı için zorunlu; dosyalar derlemede indirilip kendi
+sunucumuzdan verilir):
 
-Sayılar için `font-variant-numeric: tabular-nums` — sütun halinde değişen
-metrikler zıplamasın.
+- **IBM Plex Sans** — gövde, form, düğme (`--font-body`).
+- **Space Grotesk 600** — h1–h6, KPI ve büyük sayılar (`--font-head`).
+- **IBM Plex Mono** — üst etiket, tablo sütun başlığı, kenar çubuğu bölüm
+  etiketi, kod (`--font-mono`).
 
-Ölçek: 15px taban, 1.2 (minor third), sabit rem, akışkan clamp yok.
+Başlıklar **cümle düzeninde** yazılır ("Tedarikçi portföyü", "Tedarikçi
+Portföyü" değil). Sayılar için `font-variant-numeric: tabular-nums`.
 
-| Rol | Boyut | Ağırlık | Satır | Tracking |
+| Rol | Boyut | Aile / ağırlık | Satır | Tracking |
 |---|---|---|---|---|
-| `display` | 31px | 600 | 1.15 | -0.02em |
-| `title` | 22px | 600 | 1.25 | -0.015em |
-| `subhead` | 18px | 600 | 1.3 | -0.01em |
-| `body` | 15px | 400 | 1.5 | 0 |
-| `body-sm` | 13px | 400 | 1.5 | 0 |
-| `label` | 13px | 500 | 1.4 | 0 |
-| `caption` | 12px | 500 | 1.4 | 0.02em |
-| `metric` | 26px | 600 | 1.1 | -0.02em, tabular |
-| `metric-lg` | 34px | 600 | 1.05 | -0.025em, tabular |
+| `display` (h1) | 32px | Space Grotesk 600 | 1.1 | -0.03em |
+| `title` (h2) | 22px | Space Grotesk 600 | 1.25 | -0.022em |
+| `subhead` (h3) | 18px | Space Grotesk 600 | 1.3 | -0.022em |
+| `body` | 15px | Plex Sans 400 | 1.55 | 0 |
+| `body-sm` | 13px | Plex Sans 400 | 1.5 | 0 |
+| `label` | 13px | Plex Sans 500 | 1.4 | 0 |
+| `caption` | 11.5px | Plex Mono 500, büyük harf | 1.4 | 0.08em |
+| `eyebrow` | 11.5px | Plex Mono 500, büyük harf, `--accent-ink` | 1.4 | 0.12em |
+| `metric` | 26px | Space Grotesk 600 | 1.1 | -0.02em, tabular |
+| `metric-lg` | 34px | Space Grotesk 600 | 1.05 | -0.03em, tabular |
 
-- Gövde metnine letter-spacing uygulanmaz (refero kuralı).
-- Tablo/sütun başlığı: `caption`, `--ink-3`, büyük harf.
+- Gövde metnine letter-spacing uygulanmaz.
 - Düz metin satır uzunluğu 65–75ch; tablo ve veri bundan muaf.
 
 ## Spacing & Layout
@@ -100,69 +117,64 @@ metrikler zıplamasın.
 
 | Öğe | Değer |
 |---|---|
-| Sidebar genişliği | 248px (daraltılmış 72px) |
-| Topbar yüksekliği | 64px |
+| Kenar çubuğu genişliği | 288px (daraltılmış 72px) |
+| Üst şerit yüksekliği | 64px |
 | Sayfa iç boşluğu | 24px (≥1440px: 32px) |
 | Kart iç boşluğu | 20px (geniş kartlar 24px) |
-| Grid oluk | 20px |
+| Grid oluk | 16–20px |
 | Blok arası | 24px |
-| Bölüm arası | 40px |
 
-Izgara: 12 sütun, akışkan genişlik. İçerik `max-width` ile daraltılmaz —
-pano yoğunluk ister (refero'nun 1200px limiti pano için geçersiz).
-
-Ritim: her kart aynı boşluğu almaz. Ana cevap kartı 24px, yardımcı metrik
-kartları 20px, liste satırı 12px dikey.
+İçerik akışkan genişlikte; çok geniş ekranda 1680px'te durur.
 
 ## Elevation
 
-Gölge yok. Yüzeyler kontrastla ayrışır: `--surface` üzerinde `--canvas`,
-1px `--line` kenarlık. Tek istisna: dolu birincil buton
-`0 1px 4px rgba(0,0,0,0.16)`.
-
-Cam efekti (backdrop-blur), parlama (glow), renkli gölge yasak.
+iso2app elevation: kart `0 1px 3px rgba(13,26,45,.08)` (`--shadow-sm`) +
+1px `--line` kenarlık. Açılır menü, popover ve modal `--shadow-md` /
+`--shadow-lg`. Cam efekti (backdrop-blur), parlama (glow), renkli gölge
+yasak.
 
 ## Radius
 
-Dört token, başkası yok: **6px** (input, chip, ikon kutusu), **8px** (buton),
-**12px** (kart, panel), **999px** (pill rozet, avatar).
+| Token | Değer | Kullanım |
+|---|---|---|
+| `--radius-xs` / `--radius-sm` | 9px | input, select, chip, ikon kutusu, menü satırı |
+| `--radius-md` | 10px | düğme |
+| `--radius-lg` | 14px | kart, panel, modal |
+| `--radius-xl` | 18px | öne çıkan KPI kartı |
+| `--radius-pill` | 999px | rozet, avatar |
+
+Tailwind `rounded-xl` / `-2xl` / `-3xl` kart yarıçapına (14px) iner.
 
 ## Components
 
 Her etkileşimli bileşen yedi durumu taşır: default, hover, focus-visible,
 active, disabled, loading, error.
 
-- **Button / primary**: `--accent` zemin, `--on-accent` metin, 8px radius,
-  10px×16px padding, 15px/500. Hover `--accent-hover`. Focus: 2px
-  `--accent` halka + 2px offset.
-- **Button / ghost**: şeffaf zemin, 1px `--line-strong` kenarlık, `--ink`
-  metin, aynı ölçüler. Refero'nun "her dolu butonun yanında ghost eşi"
-  kuralı, iki eylemin gerçekten eşdeğer olduğu yerlerde geçerlidir
-  (kaydet/vazgeç, onayla/geri dön). Tek işi olan ekranda ikinci bir buton
-  birincil eylemle yarışır: giriş formunda kayıt yolu bağlantı olarak altta
-  durur, buton olarak değil.
-- **Button / quiet**: zeminsiz, `--ink-2` metin, hover'da `--surface-2`.
-- **Input / select**: `--rail` zemin, 1px `--line-strong`, 6px radius,
-  10px×12px, placeholder `--ink-3`. Focus: kenarlık `--accent` + 2px halka.
-- **Card**: `--surface`, 1px `--line`, 12px radius, gölgesiz. Başlık
-  `subhead`, sağ üstte isteğe bağlı eylem. **İç içe kart yasak** — iç blok
-  gerekiyorsa `--surface-2` zeminli, kenarlıksız, 8px radius.
-- **Sidebar nav**: gruplar büyük harf `caption` `--ink-3` başlıkla ayrılır
-  (MAIN / HELP). Aktif öğe: `--accent-quiet` zemin, `--ink` metin, solda
-  3px `--accent` göstergesi (bu göstergenin tek meşru kullanımı burasıdır;
-  kart ve uyarılarda yan şerit yasaktır). Pasif öğe `--ink-2`, hover
-  `--surface-2`.
-- **Topbar**: solda arama (ikon + input), sağda bildirim (nokta rozetli),
-  avatar + ad + rol.
-- **Metric card**: etiket (`label`, `--ink-2`), değer (`metric`, `--ink`),
-  değişim rozeti (`caption`, yön oku + durum rengi), altta karşılaştırma
-  satırı (`body-sm`, `--ink-3`). Dört adet yan yana; dekoratif ikon yok.
-- **Table**: başlık satırı `--surface-2` zemin, `caption` `--ink-3`; satır
-  ayırıcı 1px `--line`; hover `--surface-2`; sayısal sütunlar sağa dayalı
-  ve tabular.
-- **Chart**: ızgara `--line` %60, eksen metni `--ink-3` 12px, tooltip
-  `--surface-2` zemin + 1px `--line` + 8px radius, seri noktası 4px.
-  Efsane (legend) grafiğin sağ üstünde, 8px nokta + `body-sm`.
+- **Button / primary**: `--accent-solid` zemin, `--on-accent` metin, 10px
+  radius, 15px/500. Hover `--accent-hover`, basılı `--accent-press`.
+- **Button / outline**: `--surface` zemin, 1px `--line-strong`, `--ink`
+  metin. Eşdeğer iki eylemde birincil düğmenin yanında durur; tek işi olan
+  ekranda ikinci yol bağlantı olarak altta kalır.
+- **Button / ghost**: zeminsiz, `--ink-2` metin, hover'da `--surface-2`.
+- **Input / select / textarea**: `--rail` zemin, 1px `--line-strong`
+  (`#CDD8E4`), 9px radius, 10px×12px. Focus: kenarlık `--accent` + 3px
+  `--focus-ring`.
+- **Card**: `--surface`, 1px `--line`, 14px radius, `--shadow-sm`. Başlık
+  `subhead`. İç içe kart yasak — iç blok `--surface-2` zeminli, kenarlıksız.
+- **Kenar çubuğu**: `--sidebar-bg` zemin. Üstte marka bloğu (turuncu işaret,
+  Space Grotesk sözcük markası, altında mono bağlam etiketi), 64px, alt
+  çizgiyle üst şeritle hizalı. Bölüm etiketleri 10.5px mono büyük harf,
+  beyaz %62. Satır 36px, 9px radius, 13.5px/500, beyaz %78; hover beyaz %7
+  zemin; aktif satır turuncu %18 zemin, beyaz metin, turuncu ikon (`#FF7A45`).
+- **Üst şerit**: 64px, `--surface` zemin, alt 1px `--line`. Solda sayfa
+  araması (⌘K), sağda tema düğmesi ve kullanıcı menüsü.
+- **Metric card**: etiket (`label`, `--ink-2`), değer (`metric`, Space
+  Grotesk), altta karşılaştırma satırı (`body-sm`, `--ink-3`).
+- **Table**: başlık satırı `--surface-2` zemin, `caption` (mono) `--ink-2`;
+  satır ayırıcı 1px `--line`; hover `--surface-2`; sayısal sütunlar sağa
+  dayalı ve tabular.
+- **Chart**: ızgara `--line`, eksen metni `--ink-3` 12px, tooltip
+  `--surface-2` zemin + 1px `--line` + 10px radius.
 - **Skeleton**: `--surface-2` blok, 1.4s nabız. İçerik ortasında spinner yok.
 - **Empty state**: tek cümle ne olduğu + tek birincil eylem. İllüstrasyon yok.
 
@@ -172,31 +184,20 @@ active, disabled, loading, error.
 - Eğri `cubic-bezier(0.25, 1, 0.5, 1)` (ease-out-quart). Zıplama/elastik yok.
 - Sadece `opacity`, `transform`, `background-color`, `border-color`, `color`
   animasyonlanır. Layout özelliği animasyonlanmaz.
-- Sayfa yüklenirken sıralı/kademeli giriş koreografisi yok.
 - `prefers-reduced-motion: reduce` tüm süreleri 0.01ms yapar.
 
 ## PDF raporu
 
-Panonun PDF çıktısı **açık zeminlidir** ve bilinçli bir sapmadır: rapor
-yazdırılıp yönetim kuruluna dağıtılıyor, koyu zemin hem mürekkep yiyor hem
-kâğıtta okunmuyor. Kimlik renkle taşınır — başlık bandı `#15171E`, vurgu
-`#1E6FE8`, olgunluk rozetleri ekrandakiyle aynı tek renkli mavi rampadır.
-Kırmızı-sarı-yeşil ilerleme çubukları kaldırıldı; seviyeyi rozet söylüyor.
+Panonun PDF çıktısı açık zeminlidir: rapor yazdırılıp yönetim kuruluna
+dağıtılıyor. Renkleri bugün `dashboard-client.tsx` içinde sabit yazılıdır ve
+henüz önceki mavi kimliği taşır; iso2app turuncusuna geçişi sabit renk
+temizliği adımında yapılacaktır.
 
-## Refero sapmaları
+## iso2app'ten bilinçli sapmalar
 
-Alınan kurallar: sınırlı radius token seti; kart ve panellerde gölge yasağı,
-tek gölge dolu butonda; yüzey kontrastıyla ayrışma; minor-third tipografi
-ölçeği ve başlıklarda negatif tracking; gövde metnine letter-spacing yok;
-her dolu butonun ghost eşi; sabit kart iç boşluğu.
-
-Reddedilen kurallar ve gerekçeleri:
-
-| Refero kuralı | Neden alınmadı |
-|---|---|
-| Açık palet (Cloud/Paper zemin, Carbon metin) | Referans görsel koyu; tema kararı koyu. |
-| "Signal Blue tek kromatik renk", "semantik yeşil/kırmızı kullanma" | Görselde iki veri serisi ve durum renkleri var; pano semantik renk olmadan okunmaz. Mavi yine tek *eylem* rengi olarak kaldı. |
-| Radius seti 4/20/24/32 | Görselin kart köşeleri belirgin biçimde daha yumuşak; 6/8/12/999 setine geçildi, "sınırlı set" ilkesi korundu. |
-| Display başlıklarda 400 ağırlık, 600–700 yasak | Görselde metrik ve başlıklar yarı kalın; pano hiyerarşisi ağırlık kontrastıyla kuruluyor. Negatif tracking kuralı korundu. |
-| 1200px sayfa genişliği, 96px bölüm aralığı | Pazarlama sayfası ölçüleri; pano akışkan genişlik ve daha sıkı ritim ister. |
-| Square Sans / Cash Sans aileleri | Lisanslı değil; Inter ile karşılandı. |
+| Konu | iso2app | Burada | Neden |
+|---|---|---|---|
+| Yardımcı metin | `#7E8EA3` | `#586779` (koyu: `#8597B3`) | iso2app tonu beyazda 3.2:1; bu depoda yardımcı metin `--surface-2` üzerinde de AA (≥4.5:1) geçmek zorunda. |
+| Durum renkleri | dolgu -500, metin -700 | base = -700 | Kod tabanında `text-[var(--error)]` gibi ~100 metin kullanımı var; base değer metin olarak AA geçsin diye. |
+| Olgunluk metin rampası | yok | `--maturity-1…5`, hepsi beyazda ≥5.8:1 | Seviye etiketi metin olarak çizilir. |
+| Birincil düğme | turuncu + beyaz metin | aynı | Ürün ailesi tutarlılığı için iso2app ile aynı tutuldu. Beyaz metin `#FA541C` üzerinde 3.3:1'dir; WCAG AA gövde metni eşiğinin (4.5:1) altında kalan bilinen açık. Koyu temada metin `#1C1815` (5.2:1). |

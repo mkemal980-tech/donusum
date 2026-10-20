@@ -155,7 +155,7 @@ function BenchmarkEmpty({
         <a
           href={action.href}
           className="mt-3 inline-block t-sm font-medium underline underline-offset-4"
-          style={{ color: "var(--accent)" }}
+          style={{ color: "var(--accent-ink)" }}
         >
           {action.label}
         </a>

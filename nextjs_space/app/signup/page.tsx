@@ -232,7 +232,7 @@ export default function SignupPage() {
       footer={
         <p className="t-sm" style={{ color: "var(--ink-2)" }}>
           Hesabınız var mı?{" "}
-          <Link href="/login" className="font-medium hover:underline" style={{ color: "var(--accent)" }}>
+          <Link href="/login" className="font-medium hover:underline" style={{ color: "var(--accent-ink)" }}>
             Giriş yapın
           </Link>
         </p>
@@ -294,14 +294,14 @@ export default function SignupPage() {
                 >
                   <li>
                     Hesap sizinse{" "}
-                    <Link href="/login" className="font-medium hover:underline" style={{ color: "var(--accent)" }}>
+                    <Link href="/login" className="font-medium hover:underline" style={{ color: "var(--accent-ink)" }}>
                       giriş yapın
                     </Link>
                     .
                   </li>
                   <li>
                     Şifrenizi hatırlamıyorsanız{" "}
-                    <Link href="/forgot-password" className="font-medium hover:underline" style={{ color: "var(--accent)" }}>
+                    <Link href="/forgot-password" className="font-medium hover:underline" style={{ color: "var(--accent-ink)" }}>
                       sıfırlayın
                     </Link>
                     .
@@ -318,7 +318,7 @@ export default function SignupPage() {
                         onClick={handleResendVerification}
                         disabled={resendState === "sending" || !formData.email}
                         className="font-medium hover:underline disabled:opacity-50"
-                        style={{ color: "var(--accent)" }}
+                        style={{ color: "var(--accent-ink)" }}
                       >
                         {resendState === "sending" ? "gönderiliyor" : "yeniden gönderin"}
                       </button>

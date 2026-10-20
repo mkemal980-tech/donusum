@@ -133,7 +133,7 @@ function VerifyEmailContent() {
       subtitle={copy.subtitle}
       footer={
         <p className="t-sm" style={{ color: "var(--ink-2)" }}>
-          <Link href="/login" className="font-medium hover:underline" style={{ color: "var(--accent)" }}>
+          <Link href="/login" className="font-medium hover:underline" style={{ color: "var(--accent-ink)" }}>
             Giriş sayfasına dön
           </Link>
         </p>

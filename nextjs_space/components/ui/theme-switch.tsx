@@ -7,17 +7,17 @@ import { Moon, Sun } from "lucide-react";
 /**
  * Tema seçici.
  *
- * İki tema var: koyu (varsayılan, platformun bugünkü görünümü) ve açık
- * "ESG LAB" teması. Seçim next-themes ile tarayıcıda saklanır, sunucuya
- * gitmez — kullanıcı hesabına bağlı bir tercih değil, cihaz tercihidir.
+ * İki tema var: açık (varsayılan, iso2app ile aynı görünüm) ve koyu.
+ * Seçim next-themes ile tarayıcıda saklanır, sunucuya gitmez — kullanıcı
+ * hesabına bağlı bir tercih değil, cihaz tercihidir.
  *
  * `mounted` beklemesi şart: sunucu hangi temanın seçili olduğunu bilmez,
  * beklemeden çizersek ilk kare yanlış temayla gelir.
  */
 
 const THEMES = [
-  { value: "dark", label: "Koyu", icon: Moon },
   { value: "light", label: "Açık", icon: Sun },
+  { value: "dark", label: "Koyu", icon: Moon },
 ] as const;
 
 export default function ThemeSwitch({ compact = false }: { compact?: boolean }) {
@@ -31,7 +31,7 @@ export default function ThemeSwitch({ compact = false }: { compact?: boolean }) 
     return <div className={compact ? "h-9 w-[76px]" : "h-10 w-[168px]"} aria-hidden />;
   }
 
-  const active = theme === "light" ? "light" : "dark";
+  const active = theme === "dark" ? "dark" : "light";
 
   return (
     <div

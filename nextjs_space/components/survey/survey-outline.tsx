@@ -325,7 +325,7 @@ export default function SurveyOutline({
                             <span
                               className="min-w-0 flex-1 truncate t-sm"
                               style={{
-                                color: "var(--accent)",
+                                color: "var(--accent-ink)",
                                 fontWeight: isCurrentSub ? 600 : 500,
                               }}
                             >

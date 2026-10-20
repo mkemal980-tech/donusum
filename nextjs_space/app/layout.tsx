@@ -1,17 +1,26 @@
 import type { Metadata } from "next";
-import { Barlow, Barlow_Condensed, Inter } from "next/font/google";
+import {
+  Barlow,
+  Barlow_Condensed,
+  IBM_Plex_Mono,
+  IBM_Plex_Sans,
+  Inter,
+  Space_Grotesk,
+} from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/providers";
 
 /**
- * Tipografi tek yerden — tek aile.
+ * Tipografi tek yerden.
  *
- * Uygulama (giriş sonrası tüm ekranlar) Inter kullanır: başlık, gövde, etiket
- * ve sayı aynı aileden gelir; hiyerarşi ağırlık ve ölçekle kurulur, ikinci bir
- * yazı ailesiyle değil (bkz. DESIGN.md > Typography).
+ * Uygulama (giriş, kayıt ve giriş sonrası tüm ekranlar) iso2app'in üç
+ * ailesini kullanır: gövde IBM Plex Sans, başlık ve KPI değerleri Space
+ * Grotesk, etiket/kod/tablo sayıları IBM Plex Mono (bkz. DESIGN.md >
+ * Typography). next/font dosyaları derlemede indirip kendi sunucumuzdan
+ * verir; tarayıcı Google'a gitmez.
  *
  * Tanıtım sayfası kendi kapsamlı sistemine (app/landing.css, .esg-landing)
- * sahip olduğu için Barlow ikilisi orada kalır.
+ * sahip olduğu için Inter ve Barlow ikilisi orada kalır.
  *
  * `latin-ext` şart: ğ, ş ve ı yalnızca o alt kümede var; latin ile Türkçe
  * metin yedek fonta düşüyordu.
@@ -19,6 +28,28 @@ import Providers from "@/components/providers";
  * Fontlar değişken olarak veriliyor — sınıf olarak verilince body'ye yazılan
  * font-family, globals.css'teki kuralı seçici gücüyle eziyordu.
  */
+const ibmPlexSans = IBM_Plex_Sans({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-ibm-plex-sans",
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin", "latin-ext"],
+  weight: ["500", "600", "700"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500"],
+  variable: "--font-ibm-plex-mono",
+  display: "swap",
+});
+
+/** Tanıtım sayfasının ailesi (bkz. app/landing.css). */
 const inter = Inter({
   subsets: ["latin", "latin-ext"],
   weight: ["400", "500", "600", "700"],
@@ -41,7 +72,7 @@ const barlowCondensed = Barlow_Condensed({
   display: "swap",
 });
 
-const fontVariables = [inter, barlow, barlowCondensed]
+const fontVariables = [ibmPlexSans, spaceGrotesk, ibmPlexMono, inter, barlow, barlowCondensed]
   .map((font) => font.variable)
   .join(" ");
 
@@ -71,10 +102,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // Koyu tema varsayılandır; data-theme'i next-themes kullanıcı tercihine
+    // Açık tema varsayılandır; data-theme'i next-themes kullanıcı tercihine
     // göre yazar ve seçimi cihazda saklar.
     // Font değişkenleri <html> üzerinde: tema token'ları :root'ta tanımlı ve
-    // orada --font-inter'ı okuyabilmeleri gerekiyor. body'ye konulduğunda
+    // orada --font-ibm-plex-sans'ı okuyabilmeleri gerekiyor. body'ye konulduğunda
     // :root'taki --font-body geçersize düşüp yazı Times'a iniyordu.
     <html lang="tr" className={fontVariables} suppressHydrationWarning>
       <body suppressHydrationWarning>

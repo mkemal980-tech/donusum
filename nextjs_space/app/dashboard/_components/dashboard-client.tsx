@@ -1439,7 +1439,9 @@ export default function DashboardClient({ showUnitDashboardLink = false, unitDas
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Dar ekranda eylemler alt satıra iner; uzun anket adı seçiciyi
+              ekranın dışına itmesin diye seçici de kısılabilir. */}
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             {unitDashboardLink}
             {surveys.length > 1 && (
               <>
@@ -1454,7 +1456,7 @@ export default function DashboardClient({ showUnitDashboardLink = false, unitDas
                     setIronmanExpanded(false);
                     setSelectedSurveyId(e.target.value);
                   }}
-                  className="theme-select w-auto"
+                  className="theme-select w-auto min-w-0 max-w-full"
                 >
                   {surveys.map((survey) => (
                     <option key={survey.id} value={survey.id}>

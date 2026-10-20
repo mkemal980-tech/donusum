@@ -98,7 +98,7 @@ export default function AuthLayout({
             <li key={step.n} className="flex gap-5 py-5" style={{ borderTop: "1px solid var(--line)" }}>
               <span
                 className="pt-0.5 text-[13px] font-medium tabular"
-                style={{ color: "var(--accent)" }}
+                style={{ color: "var(--accent-ink)" }}
                 aria-hidden="true"
               >
                 {step.n}
