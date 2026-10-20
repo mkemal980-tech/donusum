@@ -17,7 +17,7 @@ async function mockApis(page: Page, { empty = false } = {}) {
     if (path === "/api/dashboard/assessments") return route.fulfill({ json: empty ? { role: "owner", units: [], assessments: [], hasAnonymousCampaigns: false } : {
       role: "owner", hasAnonymousCampaigns: false,
       units: [{ id: "self", name: "Bora Danışmanlık", description: null, parentId: null, assessmentCount: 2 }],
-      assessments: [personalRow(), { ...personalRow("pending:self:survey-2", "survey-2", "İklim anketi"), assessmentId: null, status: "NOT_STARTED", responseCount: 0, score: null, maturityScore: null }],
+      assessments: [personalRow(), { ...personalRow("pending:self:survey-2:internal", "survey-2", "İklim anketi"), assessmentId: null, status: "NOT_STARTED", responseCount: 0, score: null, maturityScore: null }],
     } });
     if (path === "/api/dashboard/assessment") return route.fulfill({ json: personalAssessmentView() });
     if (path === "/api/dashboard/assessment/group-comparison") return route.fulfill({ json: { available: false, reason: "NO_GROUP", groupName: null } });

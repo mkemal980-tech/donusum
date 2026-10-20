@@ -111,7 +111,12 @@ export default function AssessmentDashboard() {
   const surveyRows = unitRows.filter(row => selectedSurveyId === ALL || row.surveyId === selectedSurveyId);
   const selectedPeriodId = searchParams.get("periodId") ?? ALL;
   const overviewRows = surveyRows.filter(row => selectedPeriodId === ALL || row.periodId === selectedPeriodId);
-  const selected = isOverview ? undefined : requestedId ? surveyRows.find(row => row.id === requestedId) : preferred(surveyRows);
+  // "Başlanmamış" satırın kimliği (pending:birim:anket:dönem) değerlendirme açılınca değişir; adreste
+  // ya da oturumda kalan eski kimlik aynı birim, anket ve dönemin değerlendirmesini açar.
+  const pendingKey = requestedId?.startsWith("pending:") ? requestedId.slice("pending:".length) : null;
+  const selected = isOverview ? undefined : requestedId
+    ? surveyRows.find(row => row.id === requestedId) ?? (pendingKey ? surveyRows.find(row => [row.unitId, row.surveyId, row.periodId].join(":") === pendingKey) : undefined)
+    : preferred(surveyRows);
   const assessmentId = selected?.assessmentId ?? null;
   const personal = selected?.unitId === SELF_UNIT_ID;
   const activeTab = TABS.some(tab => tab.id === searchParams.get("tab")) ? searchParams.get("tab")! : "results";

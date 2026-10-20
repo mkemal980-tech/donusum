@@ -324,3 +324,12 @@ test("eski Birim takibi, Öneriler ve Yol haritası adresleri panonun ilgili gö
   await page.goto("/recommendations");
   await expect(page).toHaveURL(/\/dashboard\?.*tab=recommendations/);
 });
+
+test("değerlendirme açılmadan önce saklanan seçim, açıldıktan sonra o değerlendirmeyi gösterir", async ({ page }) => {
+  await mockApis(page);
+  // Değerlendirme başlamadan önce kaydedilmiş adres: başlanmamış satırın kimliği.
+  await page.goto("/dashboard?unitId=managed-unit&surveyId=survey-1&selection=pending:managed-unit:survey-1:period-2026");
+  await expect(page.getByRole("heading", { name: "Bu değerlendirmeye erişilemiyor" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Esra'nın birimi", exact: true })).toBeVisible();
+  await expect(page.locator("p.t-label").getByText("Mevcut puan", { exact: true })).toBeVisible();
+});

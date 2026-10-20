@@ -216,7 +216,8 @@ test("dağıt, doldur, gönder: çok kullanıcılı değerlendirmenin tam turu",
   ).toBeVisible({ timeout: 15_000 });
 
   // --- birim panosunun satırı kişi değil değerlendirme ---
-  await open(coordinator, "/dashboard", SURVEY);
+  await open(coordinator, "/dashboard", "Birim değerlendirmeleri");
+  await expect(coordinator.getByRole("cell", { name: SURVEY, exact: true })).toBeVisible();
   await expect(coordinator.getByRole("columnheader", { name: "Değerlendirme" })).toBeVisible();
   await coordinator.getByRole("tab", { name: "Ekip ve görevler" }).click();
   await expect(
@@ -249,7 +250,8 @@ test("dağıt, doldur, gönder: çok kullanıcılı değerlendirmenin tam turu",
   await open(contributor, "/survey", "Bu değerlendirme gönderildi");
 
   // Panoda puan taslak olmaktan çıkar.
-  await open(coordinator, "/dashboard", "Gönderildi");
+  await coordinator.goto("/dashboard");
+  await expect(coordinator.locator("span.badge").filter({ hasText: /^Gönderildi$/ })).toBeVisible({ timeout: 20_000 });
 
   // --- geri alma kilidi açar ---
   await open(coordinator, "/unit-manager/assignments", "Gönderimi geri al");
