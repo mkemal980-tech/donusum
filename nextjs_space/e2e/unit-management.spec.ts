@@ -95,10 +95,10 @@ test("üyesi olmayan birim seçilince o birimin panosu açılır", async ({ page
   await page.goto("/unit-manager/management?unitId=unit-b&surveyId=survey-1");
   await expect(page).toHaveURL(/\/dashboard\?unitId=unit-b&surveyId=survey-1/);
 });
-test("ADMIN üyesi olmayan birimde birim takibi sayfasına gider", async ({ page }) => {
+test("ADMIN üyesi olmayan birimde o birimin panosuna gider", async ({ page }) => {
   await mockApis(page, { role: "ADMIN" });
   await page.goto("/unit-manager/management?unitId=unit-b");
-  await expect(page).toHaveURL(/\/unit-manager\?unitId=unit-b/);
+  await expect(page).toHaveURL(/\/dashboard\?unitId=unit-b/);
 });
 test("kampanya döneminde bekleyen üyelere hatırlatma gönderir", async ({ page }) => {
   const api = await mockApis(page);
@@ -133,7 +133,7 @@ test("admin birim listesi üyesi olan birimde yönetimi, olmayanda panoyu açar"
   await expect(page.getByRole("link", { name: "Ege Sanayi Odası birim yönetimi" })).toBeVisible();
   await page.getByRole("button", { name: "Alt birimleri göster: Ege Sanayi Odası" }).click();
   await page.getByRole("link", { name: "Akdeniz Tekstil birim panosu" }).click();
-  await expect(page).toHaveURL(/\/unit-manager\?unitId=unit-a/);
+  await expect(page).toHaveURL(/\/dashboard\?unitId=unit-a/);
 });
 test("üye panosu birim ortalamasını gösterir ve birim yönetimine üst birimle döner", async ({ page }) => {
   await mockApis(page);

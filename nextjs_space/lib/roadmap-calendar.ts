@@ -26,17 +26,3 @@ export function hasRoadmapTiming(item: {
   return Number.isInteger(item.plannedQuarter) && item.plannedQuarter! >= 1 &&
     item.plannedQuarter! <= 4 && Number.isInteger(item.plannedYear) && item.plannedYear! > 0;
 }
-
-/** Yeni planın sekiz çeyreğini ve mevcut atamaların tamamını görünür tutar. */
-export function roadmapTimelineQuarters(
-  items: { plannedQuarter?: number | null; plannedYear?: number | null }[],
-  start = currentRoadmapQuarter(),
-): RoadmapQuarter[] {
-  const indices = items.filter(hasRoadmapTiming).map((item) =>
-    roadmapQuarterIndex({ q: item.plannedQuarter!, year: item.plannedYear! })
-  );
-  const current = roadmapQuarterIndex(start);
-  const first = Math.min(current, ...indices);
-  const last = Math.max(current + 7, ...indices);
-  return Array.from({ length: last - first + 1 }, (_, offset) => roadmapQuarterAt(first + offset));
-}

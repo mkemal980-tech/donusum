@@ -1,24 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { ManagedAssessmentError } from "@/lib/managed-assessment";
-import { loadUnitAssessmentDetail, startManagedAssessment } from "@/lib/unit-dashboard";
+import { startManagedAssessment } from "@/lib/unit-dashboard";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest) {
-  const auth = await withAuth(request, { requireUnitManager: true });
-  if (!auth.success) return auth.response;
-  const id = request.nextUrl.searchParams.get("assessmentId");
-  if (!id) return NextResponse.json({ error: "Değerlendirme seçilmeli." }, { status: 400 });
-  try {
-    return NextResponse.json(await loadUnitAssessmentDetail(auth, id));
-  } catch (error) {
-    if (error instanceof ManagedAssessmentError) return NextResponse.json({ error: error.message }, { status: error.status });
-    console.error("Birim sonuçları yüklenemedi:", error);
-    return NextResponse.json({ error: "Birim sonuçları yüklenemedi." }, { status: 500 });
-  }
-}
-
+/** Atanmış ama başlanmamış birim anketini değerlendirmeye çevirir; sonuçlar /api/dashboard/assessment ucundadır. */
 export async function POST(request: NextRequest) {
   const auth = await withAuth(request, { requireUnitManager: true });
   if (!auth.success) return auth.response;

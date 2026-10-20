@@ -17,7 +17,7 @@ const ROUTES = [
   "/admin/recommendations",
   "/admin/surveys",
   "/organization",
-  "/unit-manager",
+  "/unit-manager/management",
   "/api/health/ready",
   "/api/auth/session",
 ];

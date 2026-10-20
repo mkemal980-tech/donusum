@@ -356,7 +356,7 @@ function SectionAssignmentsContent() {
 
       <main id="icerik" tabIndex={-1}>
         <button
-          onClick={() => router.push(managedAssessmentId ? "/dashboard?" + new URLSearchParams({ assessmentId: managedAssessmentId, unitId, surveyId, tab: "team" }).toString() : "/unit-manager")}
+          onClick={() => router.push(managedAssessmentId ? "/dashboard?" + new URLSearchParams({ assessmentId: managedAssessmentId, unitId, surveyId, tab: "team" }).toString() : "/dashboard")}
           className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-main)] mb-4"
         >
           <ArrowLeft size={16} />

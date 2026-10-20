@@ -56,12 +56,12 @@ export default function UnitManagementDashboard() {
   }, [status, role, query, revision]);
   // Karşılaştırılacak üyesi olmayan birim seçildiyse o birimin kendi panosu açılır.
   useEffect(() => {
-    if (data?.kind === "member") router.replace(unitDashboardHref(role, { unitId: data.unitId, surveyId: params.get("surveyId") }));
-  }, [data, role, router, params]);
+    if (data?.kind === "member") router.replace(unitDashboardHref({ unitId: data.unitId, surveyId: params.get("surveyId") }));
+  }, [data, router, params]);
 
-  const memberHref: MemberHref = useCallback((row, tab) => unitDashboardHref(role, {
+  const memberHref: MemberHref = useCallback((row, tab) => unitDashboardHref({
     unitId: row.unitId, surveyId: row.surveyId ?? (data?.kind === "group" ? data.selection.surveyId : null), assessmentId: row.assessmentId, tab: tab && tab !== "results" ? tab : null,
-  }), [role, data]);
+  }), [data]);
   const group = data?.kind === "group" ? data : null;
   const select = (key: "unitId" | "surveyId" | "periodId", value: string) => {
     if (!group) return;

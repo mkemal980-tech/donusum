@@ -24,8 +24,6 @@ type DbClient = Prisma.TransactionClient | typeof prisma;
  * olmadığına bakıyordu. Burada tek kural geçerli: alt seviye **varsa** sorular
  * oradan, yoksa alt kategoriden sayılır (puanlamayla aynı).
  */
-export type VisibleStructure = Awaited<ReturnType<typeof loadVisibleSurveyStructure>>;
-
 export async function loadVisibleSurveyStructure(
   userId: string,
   role: string,
@@ -74,24 +72,4 @@ export async function loadVisibleSurveyStructure(
   return scoped.filter(
     (category) => category.subCategories.length > 0 || category.questions.length > 0
   );
-}
-
-/** Görünür yapıdaki soru kimlikleri — kategori kırılımıyla. */
-export function countStructureQuestions(structure: NonNullable<VisibleStructure>) {
-  return structure.map((category) => {
-    const questionIds: string[] = category.questions.map((question) => question.id);
-
-    for (const subCategory of category.subCategories) {
-      // Tek kural: alt seviye varsa sorular oradan, yoksa alt kategoriden.
-      if (subCategory.subLevels.length > 0) {
-        for (const subLevel of subCategory.subLevels) {
-          questionIds.push(...subLevel.questions.map((question) => question.id));
-        }
-      } else {
-        questionIds.push(...subCategory.questions.map((question) => question.id));
-      }
-    }
-
-    return { id: category.id, name: category.name, questionIds };
-  });
 }

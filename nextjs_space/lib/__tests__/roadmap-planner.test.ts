@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentRoadmapQuarter, roadmapTimelineQuarters } from "../roadmap-calendar";
+import { currentRoadmapQuarter } from "../roadmap-calendar";
 import {
   eligibleRoadmapCandidates, validateRoadmapSelection, buildRoadmapPlanningPrompt,
   type RoadmapCandidate, type RoadmapPlanningGroup,
@@ -25,16 +25,6 @@ describe("roadmap calendar", () => {
   it("yıl ve çeyrek sınırını İstanbul saatine göre hesaplar", () => {
     expect(currentRoadmapQuarter(new Date("2026-12-31T21:01:00Z"))).toEqual({ q: 1, year: 2027, label: "Ç1 2027" });
     expect(currentRoadmapQuarter(new Date("2026-09-30T21:01:00Z"))).toEqual(start);
-  });
-
-  it("sekiz çeyreği, geçmiş atamaları ve ufuk dışındaki mevcut planı gösterir", () => {
-    expect(roadmapTimelineQuarters([], start)).toHaveLength(8);
-    const quarters = roadmapTimelineQuarters([
-      { plannedQuarter: 1, plannedYear: 2026 }, { plannedQuarter: 3, plannedYear: 2029 },
-      { plannedQuarter: null, plannedYear: null },
-    ], start);
-    expect(quarters[0].label).toBe("Ç1 2026");
-    expect(quarters.at(-1)?.label).toBe("Ç3 2029");
   });
 });
 
