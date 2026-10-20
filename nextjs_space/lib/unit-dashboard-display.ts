@@ -7,6 +7,16 @@ export const UNIT_ROADMAP_LABELS: Record<string, string> = {
   NOT_STARTED: "Başlamadı", PLANNED: "Planlandı", IN_PROGRESS: "Devam ediyor", COMPLETED: "Tamamlandı", CANCELLED: "İptal edildi",
 };
 
+/** Olgunluk seviyesi (%0-19 Başlangıç … %80+ Lider); sunucudaki maturityFromPercentage ile aynı eşikler. */
+export function maturityLabel(percentage: number | null) {
+  if (percentage === null) return "—";
+  if (percentage >= 80) return "Lider";
+  if (percentage >= 60) return "Olgun";
+  if (percentage >= 40) return "Gelişen";
+  if (percentage >= 20) return "Farkındalık";
+  return "Başlangıç";
+}
+
 /** Birim panosu: birim yöneticisinde ana pano, ADMIN'de birim takibi (ADMIN'in /dashboard'u kişisel panodur). */
 export function unitDashboardHref(role: string | undefined, params: Record<string, string | null | undefined>) {
   const query = new URLSearchParams(Object.entries(params).filter((entry): entry is [string, string] => Boolean(entry[1])));

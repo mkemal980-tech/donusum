@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import * as XLSX from "xlsx";
-import { unitDetail, unitRow } from "../test-fixtures/unit-dashboard";
+import { assessmentView, unitDetail, unitRow } from "../test-fixtures/unit-dashboard";
 import { buildUnitReportHtml, unitReportTables } from "../lib/unit-dashboard-report";
 
 async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, failed = false, pending = false, denied = false, emptyFirst = false } = {}) {
@@ -32,7 +32,7 @@ async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, fail
         details.set(row.id, unitDetail(row.id));
         body = { assessmentId: row.id };
         status = 201;
-      } else if (path === "/api/unit-manager/roadmap") {
+      } else if (path === "/api/dashboard/assessment/roadmap") {
         const detail = details.get(payload.assessmentId as string)!;
         const rec = detail.recommendations.find(row => row.id === payload.recommendationId)!;
         if (payload.status) { rec.status = payload.status as typeof rec.status; rec.isInRoadmap = true; }
@@ -46,23 +46,25 @@ async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, fail
       }
     } else if (path === "/api/auth/session") {
       body = { user: { id: "esra", email: "esra@example.com", firstName: "Esra", role, unitId: null }, expires: "2099-01-01T00:00:00Z" };
-    } else if (path === "/api/unit-manager/team") {
+    } else if (path === "/api/dashboard/assessments") {
       status = failed ? 500 : 200;
-      body = failed ? { error: "Birim verileri yüklenemedi." } : {
+      body = failed ? { error: "Birim verileri yüklenemedi." } : { role: "manager",
         units: [...(emptyFirst ? [{ id: "empty-unit", name: "ABC Tersane", description: null, parentId: "root", assessmentCount: 0 },
           { id: "root", name: "Tersane2026", description: null, parentId: null, assessmentCount: 0 }] : []),
           { id: "managed-unit", name: "Esra'nın birimi", description: null, parentId: emptyFirst ? "root" : null, assessmentCount: empty ? 0 : 2 },
           { id: "unit-2", name: "Enerji birimi", description: null, parentId: null, assessmentCount: empty ? 0 : 1 }],
         assessments: rows, hasAnonymousCampaigns: false,
       };
-    } else if (path === "/api/unit-manager/dashboard") {
+    } else if (path === "/api/dashboard/assessment") {
       const detail = details.get(url.searchParams.get("assessmentId")!);
       status = denied || !detail ? 403 : 200;
-      body = status === 403 ? { error: "Bu değerlendirmeye erişiminiz yok." } : detail;
+      body = status === 403 ? { error: "Bu değerlendirmeye erişiminiz yok." } : assessmentView(detail!);
+    } else if (path === "/api/dashboard/assessment/group-comparison") {
+      body = { available: false, reason: "NO_GROUP", groupName: null };
     } else if (path === "/api/survey/assigned") {
       assignmentRequests++;
       body = [];
-    } else if (path === "/api/unit-manager/documents") {
+    } else if (path === "/api/dashboard/assessment/documents") {
       body = [{ id: "document-1", fileName: "Birim raporu.pdf", fileType: "application/pdf", createdAt: "2026-10-01T09:00:00Z", downloadUrl: null,
         user: { id: "member-1", email: "member@example.com", firstName: "Ayşe", lastName: "Üye" }, response: null }];
     } else if (path === "/api/assessment/sections") {
@@ -75,8 +77,8 @@ async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, fail
         categories: detail.categories.map(category => ({ id: category.id, name: category.name, directQuestionCount: 0, directAnsweredCount: 0,
           sections: category.sections.map(section => ({ id: section.id, name: section.name, questionCount: section.questionCount, answeredCount: section.answeredCount, assigneeId: section.assigneeId, lastAnsweredAt: section.lastActivityAt })) })),
       };
-    } else if (path === "/api/unit-manager/export") {
-      const detail = details.get(url.searchParams.get("assessmentId")!)!;
+    } else if (path === "/api/dashboard/assessment/export") {
+      const detail = assessmentView(details.get(url.searchParams.get("assessmentId")!)!);
       if (url.searchParams.get("format") === "html") {
         await route.fulfill({ contentType: "text/html", body: buildUnitReportHtml(detail) });
         return;
@@ -101,13 +103,39 @@ test("kişisel ataması ve birim üyeliği olmayan yönetici sonuç, eksik ve be
   await expect(page.getByText("Size henüz anket atanmadı")).toHaveCount(0);
   expect(api.assignments()).toBe(0);
   await page.screenshot({ path: testInfo.outputPath("birim-panosu.png"), fullPage: true });
-  await page.getByRole("tab", { name: "Yüklenen dosyalar" }).click();
+  await page.getByRole("tab", { name: "Belgeler" }).click();
   await expect(page.getByText("Birim raporu.pdf")).toBeVisible();
   await page.getByRole("link", { name: "Kendi değerlendirmem" }).click();
   await expect(page.getByText("Size henüz anket atanmadı")).toBeVisible();
   await page.getByRole("link", { name: "Birim panosuna dön" }).click();
   await expect(page.getByRole("heading", { name: "Birim panosu" })).toBeVisible();
   await expect(page.getByLabel("Birim", { exact: true })).toHaveValue("managed-unit");
+});
+
+test("sonuçlar sekmesi puanı, kıyasları ve sonraki adımları tek yerde gösterir", async ({ page }, testInfo) => {
+  const api = await mockApis(page);
+  await page.goto("/dashboard?unitId=managed-unit&surveyId=survey-1&assessmentId=assessment-1");
+  const card = (label: string) => page.locator("p.t-label").getByText(label, { exact: true }).locator("..");
+  await expect(card("Mevcut puan")).toContainText("%40,0");
+  await expect(card("Önceki döneme göre")).toContainText("+10,0");
+  await expect(card("Önceki döneme göre")).toContainText("2025 dönemi · %30");
+  await expect(card("Sektöre göre")).toContainText("+5,0");
+  await expect(card("Sektöre göre")).toContainText("Enerji ortalaması %35,0");
+  await expect(card("Veri durumu")).toContainText("1/2 soru");
+  const row = page.getByRole("row").filter({ hasText: "Çevresel dönüşüm" });
+  for (const value of ["%40,0", "Gelişen", "+10,0", "%35,0", "1/2"]) await expect(row).toContainText(value);
+  await expect(page.getByText("Cevaplanan bütün sorular ölçeğin en üstünde; 1 soru cevapsız ve puana sıfır olarak giriyor.")).toBeVisible();
+  const roadmap = page.locator("section").filter({ has: page.getByRole("heading", { name: "Sıradaki işler" }) }).first();
+  await expect(roadmap.getByText("Hedef tarihi geçen", { exact: true }).locator("..")).toContainText("1");
+  await expect(roadmap.getByRole("listitem").filter({ hasText: "Atık azaltma projesi" })).toContainText("Gecikti");
+  const analysis = page.locator("section").filter({ has: page.getByRole("heading", { name: "Kategori analizi" }) }).first();
+  await expect(analysis.getByText("%40,0 · Gelişen · Olgun seviyesine 20,0 puan")).toBeVisible();
+  await expect(analysis.getByText("Enerji izleme planı", { exact: true })).toBeVisible();
+  await expect(page.getByText("Hız ve dayanıklılık, iki eksene bağlı sorular cevaplandığında birlikte ölçülür.")).toBeVisible();
+  await expect(page.getByRole("img", { name: "Puan geçmişi: ilk kayıt %30, son kayıt %40" })).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath("pano-sonuclar.png"), fullPage: true });
+  await analysis.getByRole("button", { name: "Yol haritasına ekle" }).click();
+  await expect.poll(() => api.actions.find(action => action.path === "/api/dashboard/assessment/roadmap")?.body).toEqual({ assessmentId: "assessment-1", recommendationId: "rec-1", status: "PLANNED" });
 });
 
 test("birim ve dönem seçimi URL'de korunur; kategori ve ekip detayları açılır", async ({ page }) => {
@@ -117,6 +145,7 @@ test("birim ve dönem seçimi URL'de korunur; kategori ve ekip detayları açıl
   await page.getByLabel("Birim", { exact: true }).selectOption("unit-2");
   await expect(page).toHaveURL(/assessmentId=assessment-2/);
   await expect(page.getByRole("heading", { name: "Enerji birimi", exact: true })).toBeVisible();
+  await page.getByRole("tab", { name: "Cevaplar" }).click();
   await page.locator("summary").filter({ hasText: "Çevresel dönüşüm" }).click();
   await page.locator("summary").filter({ hasText: "Enerji yönetimi" }).click();
   await expect(page.getByText("Enerji tüketimi izleniyor mu?", { exact: true })).toBeVisible();
@@ -130,7 +159,7 @@ test("birim ve dönem seçimi URL'de korunur; kategori ve ekip detayları açıl
   await expect(page.getByRole("link", { name: "Görevleri görüntüle", exact: true }).first()).toBeVisible();
   await page.getByRole("tab", { name: "Geçmiş ve dönemler" }).click();
   await expect(page.getByRole("heading", { name: "Dönem karşılaştırması" })).toBeVisible();
-  await expect(page.getByRole("img", { name: "Puan yüzdesinin zaman içindeki değişimi" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Puan kayıtları" })).toBeVisible();
 });
 
 test("görev dağılımı kişisel atama istemez ve seçili değerlendirmeye yazar", async ({ page }) => {

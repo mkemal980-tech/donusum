@@ -46,15 +46,47 @@ export async function resolveViewableAssessment(actor: ManagedActor, assessmentI
   return { role: "member", record: await resolveOwnUnitAssessment(actor.userId, assessmentId, db) };
 }
 
+const percent = (score: number) => score >= 1 && score <= 5 ? Math.round((score - 1) / 4 * 1000) / 10 : null;
+
+/**
+ * Birimin sektör kıyası (elle girilen kıyas kayıtları): alt sektör kaydı
+ * varsa o, yoksa sektörün genel kaydı. Puanlarla aynı 1-5 → yüzde dönüşümü.
+ */
+async function loadUnitBenchmarks(record: ResolvedAssessment, db: DbClient) {
+  const { sectorId, subSectorId } = record.unit;
+  if (!sectorId) return { sectorName: null, overall: null, categories: {} as Record<string, number>, ironman: null };
+  const [rows, ironmanRows, sector] = await Promise.all([
+    db.benchmark.findMany({ where: { surveyId: record.surveyId, sectorId }, select: { subSectorId: true, level: true, targetId: true, averageScore: true } }),
+    db.ironmanBenchmark.findMany({ where: { sectorId }, select: { subSectorId: true, velocityAverage: true, enduranceAverage: true, velocityAverageTarget: true, enduranceAverageTarget: true } }),
+    db.sector.findUnique({ where: { id: sectorId }, select: { name: true } }),
+  ]);
+  const pick = <T extends { subSectorId: string | null }>(items: T[]) =>
+    (subSectorId ? items.find(item => item.subSectorId === subSectorId) : undefined) ?? items.find(item => item.subSectorId === null);
+  const overall = pick(rows.filter(row => row.level === "OVERALL" && row.targetId === null));
+  const categories: Record<string, number> = {};
+  for (const id of new Set(rows.filter(row => row.level === "CATEGORY" && row.targetId).map(row => row.targetId!))) {
+    const value = pick(rows.filter(row => row.level === "CATEGORY" && row.targetId === id));
+    const pct = value ? percent(value.averageScore) : null;
+    if (pct !== null) categories[id] = pct;
+  }
+  const ironman = pick(ironmanRows);
+  return {
+    sectorName: sector?.name ?? null, overall: overall ? percent(overall.averageScore) : null, categories,
+    ironman: ironman ? { velocity: ironman.velocityAverage, endurance: ironman.enduranceAverage, velocityTarget: ironman.velocityAverageTarget, enduranceTarget: ironman.enduranceAverageTarget } : null,
+  };
+}
+
 export async function loadAssessmentView(actor: ManagedActor, assessmentId: string, db: DbClient = prisma) {
   const { role, record } = await resolveViewableAssessment(actor, assessmentId, db);
   const member = role === "member";
-  const [detail, access] = await Promise.all([
+  const [detail, access, benchmark] = await Promise.all([
     buildAssessmentDetail(actor, record, db, { ownUnit: member, member }),
     member ? loadRoadmapAccess(actor.userId, [record.id], db) : null,
+    loadUnitBenchmarks(record, db),
   ]);
   return {
     ...detail,
+    benchmark,
     recommendations: detail.recommendations.map(rec => ({ ...rec, canUpdateStatus: !access || (rec.isInRoadmap && access.canUpdate(rec.id)) })),
     viewer: { role, canManageRoadmap: !member, canDistribute: !member, canExportTeam: !member },
   };

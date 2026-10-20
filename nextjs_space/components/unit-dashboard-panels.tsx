@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import EmptyState from "@/components/ui/empty-state";
 import type { UnitAssessmentDetail } from "@/lib/unit-dashboard";
+import { percentage } from "@/lib/unit-management-display";
 import { UNIT_ROADMAP_LABELS, surveyAnswer, unitDate, unitScore } from "@/lib/unit-dashboard-display";
 
 export function CategoryResults({ data }: { data: UnitAssessmentDetail }) {
@@ -29,7 +30,11 @@ export function CategoryResults({ data }: { data: UnitAssessmentDetail }) {
               </div>
             </summary>
             <div className="border-t border-[var(--line)]">
-              {category.sections.map(section => (
+              {category.sections.map(section => section.restricted ? (
+                <p key={section.id ?? "direct"} className="border-b last:border-0 border-[var(--line)] p-4 t-sm text-[var(--ink-3)]">
+                  {section.name} · {percentage(section.currentPercentage === null ? null : Math.round(section.currentPercentage * 10) / 10)} · başka bir ekip üyesine atanmış; cevapları onun görünümünde
+                </p>
+              ) : (
                 <details key={section.id ?? "direct"} className="border-b last:border-0 border-[var(--line)]">
                   <summary className="cursor-pointer p-4 t-sm">
                     {section.name} · {section.assigneeName} · {section.answeredCount}/{section.questionCount} soru
@@ -81,11 +86,15 @@ export function TeamProgress({ data }: { data: UnitAssessmentDetail }) {
   );
 }
 
-type Recommendation = UnitAssessmentDetail["recommendations"][number];
+type Recommendation = UnitAssessmentDetail["recommendations"][number] & { canUpdateStatus?: boolean };
 export type RoadmapPatch = { recommendationId: string; status?: string; assigneeId?: string | null; dueDate?: string | null };
 
-function RoadmapRow({ rec, data, busy, save }: {
-  rec: Recommendation; data: UnitAssessmentDetail; busy: boolean; save: (patch: RoadmapPatch) => Promise<void>;
+/**
+ * Yönetici iş ekler, sorumlu ve tarih atar; çalışan yalnızca kendisine düşen
+ * işin durumunu değiştirir (sunucu aynı kuralı lib/roadmap-access ile uygular).
+ */
+function RoadmapRow({ rec, data, busy, save, canManage }: {
+  rec: Recommendation; data: UnitAssessmentDetail; busy: boolean; save: (patch: RoadmapPatch) => Promise<void>; canManage: boolean;
 }) {
   const [assignee, setAssignee] = useState(rec.assigneeId ?? "");
   const [dueDate, setDueDate] = useState(rec.dueDate?.slice(0, 10) ?? "");
@@ -107,21 +116,26 @@ function RoadmapRow({ rec, data, busy, save }: {
           {rec.overdue && <p className="mt-2 t-sm text-[var(--warning-ink)]">Hedef tarih geçti: {unitDate(rec.dueDate)}</p>}
           {!rec.isActionable && !rec.isInRoadmap && <p className="mt-2 t-sm text-[var(--ink-3)]">Önce önceki basamağın önerileri tamamlanmalı.</p>}
         </div>
-        {!rec.isInRoadmap ? (
+        {!rec.isInRoadmap ? canManage && (
           <Button disabled={locked || !rec.isActionable || busy} loading={busy} onClick={() => void save({ recommendationId: rec.id, status: "PLANNED" })}>
             Yol haritasına ekle
           </Button>
         ) : (
           <div>
             <label className="t-label block mb-1" htmlFor={"status-" + rec.id}>Durum</label>
-            <select id={"status-" + rec.id} aria-label={rec.title + " durumu"} className="theme-select" value={rec.status ?? "NOT_STARTED"} disabled={busy || locked}
+            <select id={"status-" + rec.id} aria-label={rec.title + " durumu"} className="theme-select" value={rec.status ?? "NOT_STARTED"} disabled={busy || locked || rec.canUpdateStatus === false}
               onChange={event => void save({ recommendationId: rec.id, status: event.target.value })}>
               {Object.entries(UNIT_ROADMAP_LABELS).map(([value, text]) => <option key={value} value={value}>{text}</option>)}
             </select>
           </div>
         )}
       </div>
-      {rec.isInRoadmap && (
+      {rec.isInRoadmap && !canManage && (
+        <p className="mt-4 border-t border-[var(--line)] pt-4 t-sm text-[var(--ink-3)]">
+          Sorumlu: {rec.assigneeName} · Hedef tarih: {unitDate(rec.dueDate)}{rec.canUpdateStatus === false ? " · Durumu işin sorumlusu günceller" : ""}
+        </p>
+      )}
+      {rec.isInRoadmap && canManage && (
         <form className="mt-4 flex flex-wrap items-end gap-3 border-t border-[var(--line)] pt-4"
           onSubmit={event => { event.preventDefault(); void save({ recommendationId: rec.id, assigneeId: assignee || null, dueDate: dueDate || null }); }}>
           <div>
@@ -143,16 +157,16 @@ function RoadmapRow({ rec, data, busy, save }: {
   );
 }
 
-export function UnitRecommendations({ data, roadmapOnly = false, limit, busyId, save }: {
-  data: UnitAssessmentDetail; roadmapOnly?: boolean; limit?: number; busyId: string | null; save: (patch: RoadmapPatch) => Promise<void>;
+export function UnitRecommendations({ data, roadmapOnly = false, limit, busyId, save, canManage = true }: {
+  data: UnitAssessmentDetail; roadmapOnly?: boolean; limit?: number; busyId: string | null; save: (patch: RoadmapPatch) => Promise<void>; canManage?: boolean;
 }) {
   const rows = data.recommendations.filter(rec => roadmapOnly ? rec.isInRoadmap : !rec.isInRoadmap);
   const shown = limit ? rows.filter(rec => rec.isActionable).slice(0, limit) : rows;
   return (
     <section aria-label={roadmapOnly ? "Birim yol haritası" : "Birim önerileri"} className="space-y-4">
-      {shown.map(rec => <RoadmapRow key={rec.id} rec={rec} data={data} busy={busyId === rec.id} save={save} />)}
+      {shown.map(rec => <RoadmapRow key={rec.id} rec={rec} data={data} busy={busyId === rec.id} save={save} canManage={canManage} />)}
       {!shown.length && <EmptyState title={roadmapOnly ? "Yol haritası henüz oluşturulmadı" : "Şu an yeni öneri yok"}
-        description={roadmapOnly ? "Birim önerilerinden bir adımı yol haritasına ekleyebilirsiniz." : "Yeni cevaplar ve tamamlanan adımlarla öneriler güncellenir."} />}
+        description={roadmapOnly ? canManage ? "Birim önerilerinden bir adımı yol haritasına ekleyebilirsiniz." : "Yol haritasını birim yöneticisi planlar." : "Yeni cevaplar ve tamamlanan adımlarla öneriler güncellenir."} />}
     </section>
   );
 }
@@ -161,12 +175,6 @@ const HISTORY_LABELS: Record<string, string> = { SUBMISSION: "Değerlendirme gö
 
 export function UnitHistory({ data }: { data: UnitAssessmentDetail }) {
   const history = data.history;
-  const firstTime = history.length ? new Date(history[0].recordedAt).getTime() : 0;
-  const lastTime = history.length ? new Date(history[history.length - 1].recordedAt).getTime() : 0;
-  const points = history.map((snapshot, index) => [
-    30 + (lastTime > firstTime ? (new Date(snapshot.recordedAt).getTime() - firstTime) / (lastTime - firstTime) * 640 : history.length > 1 ? index / (history.length - 1) * 640 : 0),
-    145 - snapshot.percentage / 100 * 120,
-  ]);
   return (
     <div className="space-y-6">
       <section className="theme-card p-5" aria-label="Dönem karşılaştırması">
@@ -179,18 +187,9 @@ export function UnitHistory({ data }: { data: UnitAssessmentDetail }) {
           </table></div>
         ) : <p className="t-sm text-[var(--ink-3)]">Karşılaştırma için aynı ankette en az iki gönderilmiş dönem gerekiyor.</p>}
       </section>
-      <section className="theme-card p-5" aria-label="Puan geçmişi">
-        <h2 className="t-subhead mb-3">Puan geçmişi</h2>
+      <section className="theme-card p-5" aria-label="Puan kayıtları">
+        <h2 className="t-subhead mb-3">Puan kayıtları</h2>
         <p className="t-sm mb-4 text-[var(--ink-2)]">Gönderim ve öneri tamamlamalarında kaydedilen puanlar; geçmiş kayıtlar değiştirilmez.</p>
-        {history.length > 1 && (
-          <svg viewBox="0 0 700 170" role="img" aria-label="Puan yüzdesinin zaman içindeki değişimi" className="mb-4 w-full max-h-64">
-            {[0, 50, 100].map(value => <g key={value}><line x1="30" x2="680" y1={145 - value / 100 * 120} y2={145 - value / 100 * 120} stroke="var(--line)" /><text x="2" y={149 - value / 100 * 120} fill="var(--ink-3)" fontSize="11">{value}</text></g>)}
-            <polyline points={points.map(point => point.join(",")).join(" ")} fill="none" stroke="var(--accent)" strokeWidth="2" />
-            {points.map(([x, y], index) => <circle key={history[index].id} cx={x} cy={y} r="4" fill="var(--accent)"><title>{unitDate(history[index].recordedAt) + " · " + unitScore(history[index].score) + "/5"}</title></circle>)}
-            <text x="30" y="167" fill="var(--ink-3)" fontSize="11">{unitDate(history[0].recordedAt)}</text>
-            <text x="670" y="167" textAnchor="end" fill="var(--ink-3)" fontSize="11">{unitDate(history[history.length - 1].recordedAt)}</text>
-          </svg>
-        )}
         <div className="overflow-x-auto"><table className="theme-table">
           <thead><tr><th>Tarih</th><th>Hareket</th><th>Puan</th><th>Tamamlanan öneri</th></tr></thead>
           <tbody>{[...history].reverse().map(row => <tr key={row.id}><td>{unitDate(row.recordedAt)}</td><td>{HISTORY_LABELS[row.triggerType] ?? "Puan kaydı"}</td><td className="tabular">{unitScore(row.score)}/5 · %{row.percentage}</td><td>{row.completedRecommendations}</td></tr>)}

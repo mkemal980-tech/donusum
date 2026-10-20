@@ -10,7 +10,7 @@ import PageHeader from "./ui/page-header";
 import EmptyState from "./ui/empty-state";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { UnitDashboardLoading } from "./unit-manager-dashboard";
+import { AssessmentDashboardLoading as UnitDashboardLoading } from "./assessment-dashboard";
 import { UnitManagementPanels } from "./unit-management-panels";
 import type { MemberHref } from "./unit-management-shared";
 import { unitDashboardHref, unitDate } from "@/lib/unit-dashboard-display";

@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import * as XLSX from "xlsx";
 import { managementDashboard, managementDetails, managementRows, managementUnits } from "../test-fixtures/unit-management";
+import { assessmentView } from "../test-fixtures/unit-dashboard";
 import { buildUnitManagementReportHtml, unitManagementReportTables } from "../lib/unit-management-report";
 
 async function mockApis(page: Page, { role = "UNIT_MANAGER", denied = false, empty = false } = {}) {
@@ -32,9 +33,9 @@ async function mockApis(page: Page, { role = "UNIT_MANAGER", denied = false, emp
       }
       return route.fulfill({ json: data });
     }
-    if (path === "/api/unit-manager/team") return route.fulfill({ json: { units: units.map(unit => ({ ...unit, assessmentCount: managementRows.filter(row => row.unitId === unit.id).length })), assessments: managementRows, hasAnonymousCampaigns: false } });
-    if (path === "/api/unit-manager/dashboard") return route.fulfill({ json: managementDetails().find(detail => detail.assessment.id === url.searchParams.get("assessmentId")) });
-    if (path === "/api/unit-manager/group-comparison") return route.fulfill({ json: { available: true, groupName: "Ege Sanayi Odası", count: 6, overall: { mine: 48, average: 55.2, difference: -7.2 },
+    if (path === "/api/dashboard/assessments") return route.fulfill({ json: { role: "manager", units: units.map(unit => ({ ...unit, assessmentCount: managementRows.filter(row => row.unitId === unit.id).length })), assessments: managementRows, hasAnonymousCampaigns: false } });
+    if (path === "/api/dashboard/assessment") return route.fulfill({ json: assessmentView(managementDetails().find(detail => detail.assessment.id === url.searchParams.get("assessmentId"))) });
+    if (path === "/api/dashboard/assessment/group-comparison") return route.fulfill({ json: { available: true, groupName: "Ege Sanayi Odası", count: 6, overall: { mine: 48, average: 55.2, difference: -7.2 },
       categories: [{ id: "category-0", name: "Çevre", mine: 30, average: 44.7, difference: -14.7 }], band: { value: 50, width: 50 } } });
     if (path === "/api/admin/units") {
       const unit = (id: string) => ({ ...units.find(unit => unit.id === id), organization: null, admins: [], users: [], subUnits: [], _count: { users: 0, subUnits: 0 } });
@@ -137,9 +138,10 @@ test("admin birim listesi üyesi olan birimde yönetimi, olmayanda panoyu açar"
 test("üye panosu birim ortalamasını gösterir ve birim yönetimine üst birimle döner", async ({ page }) => {
   await mockApis(page);
   await page.goto("/dashboard?unitId=unit-b&surveyId=survey-1&assessmentId=assessment-b");
-  const comparison = panel(page, "Ege Sanayi Odası ile kıyas");
-  await expect(comparison.getByText("Yüzdelik dilim %50")).toBeVisible();
-  await expect(comparison.getByRole("row", { name: /Genel puan/ })).toContainText("%55,2");
+  const comparison = page.getByText("Ege Sanayi Odası içinde", { exact: true }).locator("..");
+  await expect(comparison).toContainText("-7,2");
+  await expect(comparison).toContainText("Birim ortalaması %55,2 · ilk %50 dilimde");
+  await expect(panel(page, "Kategoriler").getByRole("columnheader", { name: "Ege Sanayi Odası ort." })).toBeVisible();
   // Sol menüdeki bağlantı üye seçimini taşımaz; aksi hâlde üyesi olmayan birim aynı panoya geri gönderirdi.
   await expect(page.getByLabel("Ana gezinme").getByRole("link", { name: "Birim yönetimi" })).toHaveAttribute("href", "/unit-manager/management?surveyId=survey-1");
   await page.locator("#icerik").getByRole("link", { name: "Birim yönetimi", exact: true }).click();

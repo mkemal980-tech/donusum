@@ -298,7 +298,7 @@ export async function buildAssessmentDetail(actor: ManagedActor, record: Resolve
     const ownerId = item?.assigneeId ?? (sectionId ? assignedBySection.get(sectionId) : null) ?? null;
     const contribution = contributions.contributions.get(rec.id);
     return {
-      id: rec.id, title: rec.title, description: rec.description, estimatedImpact: rec.estimatedImpact, questionId: rec.questionId ?? null,
+      id: rec.id, title: rec.title, description: rec.description, estimatedImpact: rec.estimatedImpact, questionId: rec.questionId ?? null, sectionId,
       categoryId: rec.categoryId ?? rec.subLevel?.subCategory?.categoryId ?? rec.subCategory?.categoryId ?? structure.questions.find(question => question.id === rec.questionId)?.categoryId ?? null,
       strategicType: rec.strategicType, timeframe: rec.timeframe, costType: rec.costType,
       capexLevel: rec.capexLevel, opexLevel: rec.opexLevel, order: rec.order,

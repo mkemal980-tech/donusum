@@ -23,6 +23,7 @@ const assessment = {
 const db = {
   user: { findUnique: vi.fn() }, assessment: { findFirst: vi.fn() },
   sectionAssignment: { findMany: vi.fn() }, document: { findMany: vi.fn() },
+  benchmark: { findMany: vi.fn() }, ironmanBenchmark: { findMany: vi.fn() }, sector: { findUnique: vi.fn() },
 };
 const client = db as unknown as DbClient;
 const assignments = [{ subCategoryId: "section-1", assigneeId: "member-1" }, { subCategoryId: "section-2", assigneeId: "member-2" }];
@@ -104,6 +105,29 @@ describe("rol farkındalıklı görünüm", () => {
     expect(view.viewer).toEqual({ role: "manager", canManageRoadmap: true, canDistribute: true, canExportTeam: true });
     expect(view.recommendations.every(rec => rec.canUpdateStatus)).toBe(true);
     expect(mocks.access).not.toHaveBeenCalled();
+  });
+});
+
+describe("sektör kıyası", () => {
+  it("alt sektör kaydını tercih eder, yoksa sektörün genel kaydını alır; 1-5'i yüzdeye çevirir", async () => {
+    mocks.managed.mockResolvedValue({ ...assessment, unit: { ...assessment.unit, sectorId: "sector-1", subSectorId: "sub-1" } });
+    const row = (level: string, targetId: string | null, subSectorId: string | null, averageScore: number) => ({ level, targetId, subSectorId, averageScore });
+    db.benchmark.findMany.mockResolvedValue([
+      row("OVERALL", null, null, 2), row("OVERALL", null, "sub-1", 3),
+      row("CATEGORY", "category-1", null, 4), row("CATEGORY", "category-2", null, 1), row("CATEGORY", "category-2", "sub-1", 5),
+    ]);
+    db.ironmanBenchmark.findMany.mockResolvedValue([{ subSectorId: null, velocityAverage: 2.4, enduranceAverage: 2.8, velocityAverageTarget: 3, enduranceAverageTarget: 3.2 }]);
+    db.sector.findUnique.mockResolvedValue({ name: "Gıda" });
+    const view = await loadAssessmentView(manager, "as-1", client);
+    expect(view.benchmark).toEqual({ sectorName: "Gıda", overall: 50, categories: { "category-1": 75, "category-2": 100 },
+      ironman: { velocity: 2.4, endurance: 2.8, velocityTarget: 3, enduranceTarget: 3.2 } });
+    expect(db.benchmark.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { surveyId: "s1", sectorId: "sector-1" } }));
+  });
+  it("sektörü olmayan birimde kıyas uydurmaz", async () => {
+    mocks.managed.mockResolvedValue(assessment);
+    const view = await loadAssessmentView(manager, "as-1", client);
+    expect(view.benchmark).toEqual({ sectorName: null, overall: null, categories: {}, ironman: null });
+    expect(db.benchmark.findMany).not.toHaveBeenCalled();
   });
 });
 

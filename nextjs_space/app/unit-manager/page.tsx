@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import UnitManagerDashboard, { UnitDashboardLoading } from "@/components/unit-manager-dashboard";
+import AssessmentDashboard, { AssessmentDashboardLoading } from "@/components/assessment-dashboard";
 
 export default function UnitManagerPage() {
-  return <Suspense fallback={<UnitDashboardLoading />}><UnitManagerDashboard /></Suspense>;
+  return <Suspense fallback={<AssessmentDashboardLoading />}><AssessmentDashboard title="Birim takibi" managersOnly /></Suspense>;
 }
