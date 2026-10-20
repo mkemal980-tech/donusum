@@ -2,7 +2,9 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
-import { calculateRecommendationContributions, getRecommendationsForUser } from "@/lib/scoring";
+import { calculateRecommendationContributions, getAccessibleSurveyIds, getRecommendationsForUser } from "@/lib/scoring";
+import { getAssessmentIds } from "@/lib/assessment";
+import { loadRoadmapAccess } from "@/lib/roadmap-access";
 
 export async function GET(request: NextRequest) {
   const auth = await withAuth(request);
@@ -15,16 +17,18 @@ export async function GET(request: NextRequest) {
     const recommendations = await getRecommendationsForUser(userId, { surveyId });
 
     // Kart, tamamlanınca ne kadar kazandıracağını söyler; hesap motordan gelir.
-    const { contributions } = await calculateRecommendationContributions(
-      userId,
-      recommendations,
-      { surveyId }
-    );
+    // Kart, kullanıcının bu öneride ne yapabileceğini de taşır (bkz. lib/roadmap-access).
+    const [{ contributions }, access] = await Promise.all([
+      calculateRecommendationContributions(userId, recommendations, { surveyId }),
+      getAssessmentIds(userId, surveyId ? [surveyId] : await getAccessibleSurveyIds(userId)).then(ids => loadRoadmapAccess(userId, ids)),
+    ]);
 
     return NextResponse.json(
       (recommendations ?? []).map(rec => ({
         ...rec,
-        contribution: contributions.get(rec.id) ?? null
+        contribution: contributions.get(rec.id) ?? null,
+        canManageRoadmap: access.canManage,
+        canUpdateStatus: access.canUpdate(rec.id)
       }))
     );
   } catch (error) {

@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => {
     getAccessibleSurveyIds: vi.fn(),
     getAssessmentIds: vi.fn(),
     getOrCreateAssessment: vi.fn(),
+    loadRoadmapAccess: vi.fn(),
   };
 });
 
@@ -35,6 +36,7 @@ vi.mock("../assessment", () => ({
   getAssessmentIds: mocks.getAssessmentIds,
   getOrCreateAssessment: mocks.getOrCreateAssessment,
 }));
+vi.mock("../roadmap-access", () => ({ loadRoadmapAccess: mocks.loadRoadmapAccess, ROADMAP_FORBIDDEN: "yetki yok" }));
 
 import {
   ROADMAP_STATUSES,
@@ -123,6 +125,30 @@ describe("updateRoadmapStatus", () => {
       recommendation: { id: "rec-1" },
     }));
     mocks.tx.scoreHistory.create.mockResolvedValue({});
+    mocks.loadRoadmapAccess.mockResolvedValue({ canManage: true, canUpdate: () => true });
+  });
+
+  it("çalışan kendisine düşmeyen işin durumunu değiştiremez; hiçbir şey yazılmaz", async () => {
+    mocks.loadRoadmapAccess.mockResolvedValue({ canManage: false, canUpdate: () => false });
+    const outcome = await updateRoadmapStatus("member-1", { recommendationId: "rec-1", status: "COMPLETED" });
+    expect(outcome).toEqual({ ok: false, error: { code: "FORBIDDEN", message: "yetki yok", httpStatus: 403 } });
+    expect(mocks.loadRoadmapAccess).toHaveBeenCalledWith("member-1", ["assessment-1"], expect.anything());
+    expect(mocks.tx.roadmapItem.upsert).not.toHaveBeenCalled();
+    expect(mocks.tx.scoreHistory.create).not.toHaveBeenCalled();
+  });
+
+  it("çalışan kendi işinin durumunu değiştirir ama planlama alanlarına dokunamaz", async () => {
+    mocks.loadRoadmapAccess.mockResolvedValue({ canManage: false, canUpdate: (id: string) => id === "rec-1" });
+    mocks.calculateProgressScores.mockResolvedValue(scores(0));
+    const outcome = await updateRoadmapStatus("member-1", { recommendationId: "rec-1", status: "IN_PROGRESS", plannedQuarter: 4, plannedYear: 2030, priority: 1 });
+    expect(outcome.ok).toBe(true);
+    expect(mocks.tx.roadmapItem.upsert).toHaveBeenCalledWith(expect.objectContaining({ update: { status: "IN_PROGRESS" } }));
+  });
+
+  it("yönetici yolu (değerlendirme verilmiş) yetkiyi yeniden sormaz", async () => {
+    mocks.calculateProgressScores.mockResolvedValue(scores(0));
+    await updateRoadmapStatus("manager-1", { recommendationId: "rec-1", status: "PLANNED", assessment: { id: "assessment-1", surveyId: "survey-1", sectorId: null, subSectorId: null } });
+    expect(mocks.loadRoadmapAccess).not.toHaveBeenCalled();
   });
 
   it("geçersiz durumu 400 ile reddeder, hiçbir şey yazmaz", async () => {

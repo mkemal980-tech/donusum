@@ -152,8 +152,13 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
           {strategicLabels[rec?.strategicType ?? ''] ?? rec?.strategicType ?? 'Bilinmiyor'}
         </span>
         
-        {/* Status Dropdown */}
-        <div className="relative" ref={menuRef}>
+        {/* Status Dropdown — durum değiştirme yetkisi yoksa yalnızca durum gösterilir */}
+        {!onStatusChange ? (
+          <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color}`}>
+            <StatusIcon size={14} aria-hidden="true" />
+            <span>{statusInfo.label}</span>
+          </span>
+        ) : <div className="relative" ref={menuRef}>
           <button
             onClick={() => setShowStatusMenu(!showStatusMenu)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${statusInfo.bgColor} ${statusInfo.color} hover:opacity-80`}
@@ -184,7 +189,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
               })}
             </div>
           )}
-        </div>
+        </div>}
       </div>
 
       <h3 className={`text-lg font-semibold mb-3 ${currentStatus === 'COMPLETED' ? 'text-[var(--accent)]' : 'text-[var(--text-main)]'}`}>
@@ -226,7 +231,12 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
         </a>
       )}
       
-      <button
+      {/* Yol haritasını koordinatör planlar; yetkisi olmayan yalnızca durumu görür. */}
+      {!onAddToRoadmap ? (rec?.isInRoadmap && (
+        <p className="w-full py-2 rounded-lg font-medium flex items-center justify-center gap-2 bg-[var(--accent-soft)] text-[var(--accent-ink)]">
+          <Check size={16} aria-hidden="true" /> Yol Haritasında
+        </p>
+      )) : <button
         onClick={() => onAddToRoadmap?.(rec?.id)}
         disabled={rec?.isInRoadmap || locked}
         title={locked ? "Önce bir önceki basamağı tamamlayın" : undefined}
@@ -245,7 +255,7 @@ export default function RecommendationCard({ recommendation, onAddToRoadmap, onS
         ) : (
           <><Plus size={16} /> Yol Haritasına Ekle</>
         )}
-      </button>
+      </button>}
     </motion.div>
   );
 }

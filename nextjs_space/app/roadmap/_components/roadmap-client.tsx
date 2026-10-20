@@ -46,6 +46,8 @@ interface RoadmapItem {
     points: number;
   };
   contribution?: Contribution | null;
+  /** Sunucu söyler: koordinatör her işi, çalışan yalnızca kendisine düşeni günceller. */
+  canUpdateStatus?: boolean;
 }
 
 interface RoadmapSummary {
@@ -97,6 +99,8 @@ export default function RoadmapClient() {
   const [generating, setGenerating] = useState(false);
   const [generationResult, setGenerationResult] = useState<RoadmapGenerationResult | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  /** Ekleme, kaldırma, planlama ve AI ile oluşturma yalnızca koordinatörde (bkz. lib/roadmap-access). */
+  const [canManage, setCanManage] = useState(false);
 
   const fetchRoadmap = async () => {
     try {
@@ -105,6 +109,7 @@ export default function RoadmapClient() {
       const data = await res.json();
       setRoadmapItems(data?.items ?? []);
       setSummary(data?.summary ?? null);
+      setCanManage(Boolean(data?.permissions?.canManage));
       return true;
     } catch (error) {
       console.error("Error fetching roadmap:", error);
@@ -248,17 +253,23 @@ export default function RoadmapClient() {
         <PageHeader
           title="Yol haritası"
           subtitle="Önerileri takvime bağlayın, ilerlemeyi buradan izleyin."
-          actions={
+          actions={canManage ? (
             <Button onClick={handleGenerate} loading={generating}>
               {!generating && <Sparkles size={16} aria-hidden="true" />}
               {generating ? "Yol haritası oluşturuluyor…" : "AI ile yol haritası oluştur"}
             </Button>
-          }
+          ) : undefined}
         />
 
         <p className="mb-6 t-sm" style={{ color: "var(--ink-2)" }}>
-          AI, her alt kategoriden en önemli 3 uygulanabilir öneriyi seçer ve vadesine göre takvime ekler.
-          {" "}Üçten az öneri varsa mevcut önerilerin tümü seçilir; tarih atanmış işler korunur.
+          {canManage ? (
+            <>
+              AI, her alt kategoriden en önemli 3 uygulanabilir öneriyi seçer ve vadesine göre takvime ekler.
+              {" "}Üçten az öneri varsa mevcut önerilerin tümü seçilir; tarih atanmış işler korunur.
+            </>
+          ) : (
+            "Yol haritasını birim yöneticiniz planlar. Size atanan işlerin durumunu buradan güncelleyebilirsiniz."
+          )}
         </p>
         {generating && (
           <p role="status" className="mb-6 t-sm" style={{ color: "var(--ink-2)" }}>
@@ -393,7 +404,8 @@ export default function RoadmapClient() {
                     <select
                       id={`status-${item?.id}`}
                       value={item?.status || 'NOT_STARTED'}
-                      disabled={generating}
+                      disabled={generating || !item?.canUpdateStatus}
+                      title={item?.canUpdateStatus ? undefined : "Bu işin durumunu sorumlusu veya birim yöneticisi günceller."}
                       onChange={(e) => handleUpdateStatus(item?.recommendationId, e.target.value)}
                       className="theme-select w-auto"
                     >
@@ -413,14 +425,16 @@ export default function RoadmapClient() {
           <Panel title="Zaman çizelgesi">
             <RoadmapTimeline
               items={roadmapItems}
-              onRemove={handleRemove}
-              onUpdateTiming={handleUpdateTiming}
+              onRemove={canManage ? handleRemove : undefined}
+              onUpdateTiming={canManage ? handleUpdateTiming : undefined}
             />
           </Panel>
         ) : (
           <EmptyState
             title="Yol haritası boş"
-            description="AI ile her alt kategorinin öncelikli önerilerini takvime ekleyin veya Öneriler sayfasından bir öneri seçin."
+            description={canManage
+              ? "AI ile her alt kategorinin öncelikli önerilerini takvime ekleyin veya Öneriler sayfasından bir öneri seçin."
+              : "Birim yöneticiniz önerileri takvime eklediğinde yol haritası burada görünür."}
             action={
               <Button asChild>
                 <a href="/recommendations">Önerilere git</a>

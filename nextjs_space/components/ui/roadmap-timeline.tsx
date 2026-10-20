@@ -21,8 +21,9 @@ interface RoadmapItem {
 
 interface RoadmapTimelineProps {
   items: RoadmapItem[];
-  onRemove: (recommendationId: string) => void;
-  onUpdateTiming: (recommendationId: string, quarter: number, year: number) => void;
+  /** Verilmezse kalem kaldırılamaz ve sürüklenemez (yalnızca koordinatör planlar). */
+  onRemove?: (recommendationId: string) => void;
+  onUpdateTiming?: (recommendationId: string, quarter: number, year: number) => void;
 }
 
 const strategicColors: Record<string, string> = {
@@ -34,6 +35,7 @@ const strategicColors: Record<string, string> = {
 export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: RoadmapTimelineProps) {
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const quarters = roadmapTimelineQuarters(items);
+  const editable = Boolean(onUpdateTiming);
 
   const getItemsForQuarter = (q: number, year: number) => {
     return (items ?? []).filter(item => 
@@ -58,7 +60,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
   const handleDrop = (e: React.DragEvent, quarter: number, year: number) => {
     e.preventDefault();
     if (draggedItem) {
-      onUpdateTiming(draggedItem, quarter, year);
+      onUpdateTiming?.(draggedItem, quarter, year);
       setDraggedItem(null);
     }
   };
@@ -86,17 +88,17 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
             <Calendar size={20} style={{ color: 'var(--accent)' }} />
             Planlanmamış Öğeler ({unassignedItems?.length ?? 0})
           </h3>
-          <p className="text-sm mb-4" style={{ color: 'var(--text-dim)' }}>Öğeleri sürükleyip çeyreklere bırakabilirsiniz</p>
+          {editable && <p className="text-sm mb-4" style={{ color: 'var(--text-dim)' }}>Öğeleri sürükleyip çeyreklere bırakabilirsiniz</p>}
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {unassignedItems?.map((item) => (
               <motion.div
                 key={item?.id}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                draggable
-                onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, item?.recommendationId)}
+                draggable={editable}
+                onDragStart={editable ? (e) => handleDragStart(e as unknown as React.DragEvent, item?.recommendationId) : undefined}
                 onDragEnd={handleDragEnd}
-                className="rounded-lg p-4 shadow-sm cursor-grab active:cursor-grabbing"
+                className={"rounded-lg p-4 shadow-sm" + (editable ? " cursor-grab active:cursor-grabbing" : "")}
                 style={{ 
                   backgroundColor: 'var(--bg-card)', 
                   borderLeft: `4px solid ${getBorderColor(item?.recommendation?.strategicType ?? '')}`
@@ -104,7 +106,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2 flex-1 min-w-0">
-                    <GripVertical size={16} style={{ color: 'var(--ui-passive)' }} className="mt-0.5 flex-shrink-0" />
+                    {editable && <GripVertical size={16} style={{ color: 'var(--ui-passive)' }} className="mt-0.5 flex-shrink-0" />}
                     <div className="min-w-0 flex-1">
                       <span className="font-medium text-sm block truncate" style={{ color: 'var(--text-main)' }}>{item?.recommendation?.title ?? 'Başlıksız'}</span>
                       <span className="text-xs flex items-center gap-1 mt-1" style={{ color: 'var(--success)' }}>
@@ -112,13 +114,14 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                       </span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => onRemove?.(item?.recommendationId)}
+                  {onRemove && <button
+                    onClick={() => onRemove(item?.recommendationId)}
+                    aria-label={(item?.recommendation?.title ?? 'Öneri') + ' yol haritasından kaldır'}
                     className="p-1 rounded transition-colors flex-shrink-0 hover:bg-[var(--error-bg)]"
                     style={{ color: 'var(--ui-passive)' }}
                   >
                     <X size={14} />
-                  </button>
+                  </button>}
                 </div>
               </motion.div>
             ))}
@@ -180,8 +183,8 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
               return (
                 <motion.div
                   key={`col-${quarter?.q}-${quarter?.year}`}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, quarter?.q, quarter?.year)}
+                  onDragOver={editable ? handleDragOver : undefined}
+                  onDrop={editable ? (e) => handleDrop(e, quarter?.q, quarter?.year) : undefined}
                   className="flex-1 min-h-[200px] rounded-xl p-3 border-2 border-dashed transition-all"
                   style={{ 
                     borderColor: isDropTarget ? 'var(--accent)' : 'var(--border-soft)',
@@ -195,10 +198,10 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                           key={item?.id}
                           initial={{ scale: 0.95, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
-                          draggable
-                          onDragStart={(e) => handleDragStart(e as unknown as React.DragEvent, item?.recommendationId)}
+                          draggable={editable}
+                          onDragStart={editable ? (e) => handleDragStart(e as unknown as React.DragEvent, item?.recommendationId) : undefined}
                           onDragEnd={handleDragEnd}
-                          className="rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing"
+                          className={"rounded-lg p-3 shadow-sm" + (editable ? " cursor-grab active:cursor-grabbing" : "")}
                           style={{ 
                             backgroundColor: 'var(--bg-card)', 
                             borderLeft: `4px solid ${getBorderColor(item?.recommendation?.strategicType ?? '')}`
@@ -206,7 +209,7 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                         >
                           <div className="flex items-start justify-between gap-1">
                             <div className="flex items-start gap-1 flex-1 min-w-0">
-                              <GripVertical size={14} style={{ color: 'var(--ui-passive)' }} className="mt-0.5 flex-shrink-0" />
+                              {editable && <GripVertical size={14} style={{ color: 'var(--ui-passive)' }} className="mt-0.5 flex-shrink-0" />}
                               <div className="min-w-0 flex-1">
                                 <span className="font-medium text-xs block leading-tight" style={{ color: 'var(--text-main)' }}>{item?.recommendation?.title ?? 'Başlıksız'}</span>
                                 <span className="text-xs flex items-center gap-0.5 mt-1" style={{ color: 'var(--success)' }}>
@@ -214,13 +217,14 @@ export default function RoadmapTimeline({ items, onRemove, onUpdateTiming }: Roa
                                 </span>
                               </div>
                             </div>
-                            <button
-                              onClick={() => onRemove?.(item?.recommendationId)}
+                            {onRemove && <button
+                              onClick={() => onRemove(item?.recommendationId)}
+                              aria-label={(item?.recommendation?.title ?? 'Öneri') + ' yol haritasından kaldır'}
                               className="p-0.5 rounded transition-colors flex-shrink-0 hover:bg-[var(--error-bg)]"
                               style={{ color: 'var(--ui-passive)' }}
                             >
                               <X size={12} />
-                            </button>
+                            </button>}
                           </div>
                         </motion.div>
                       ))}

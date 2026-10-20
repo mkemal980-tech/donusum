@@ -79,12 +79,15 @@ interface CategoryDashboardProps {
   surveyId?: string;
   selectedCategoryId?: string | null;
   onCategoryChange?: (categoryId: string) => void;
+  /** Yol haritasına ekleme yalnızca koordinatörde (bkz. lib/roadmap-access). */
+  canManageRoadmap?: boolean;
 }
 
 export function CategoryDashboard({
   surveyId,
   selectedCategoryId,
   onCategoryChange,
+  canManageRoadmap = false,
 }: CategoryDashboardProps) {
   const [data, setData] = useState<CategoryScores | null>(null);
   const [loading, setLoading] = useState(true);
@@ -460,7 +463,7 @@ export function CategoryDashboard({
                           Yol haritasında
                         </Link>
                       </Button>
-                    ) : (
+                    ) : canManageRoadmap && (
                       <Button
                         size="sm"
                         disabled={!recommendation.isActionable}

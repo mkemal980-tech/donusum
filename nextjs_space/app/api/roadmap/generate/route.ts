@@ -5,7 +5,8 @@ import { Prisma } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
-import { getAssessmentIds } from "@/lib/assessment";
+import { getAssessmentIds, isUserCoordinator } from "@/lib/assessment";
+import { ROADMAP_FORBIDDEN } from "@/lib/roadmap-access";
 import { getAccessibleSurveyIds, getRecommendationsForUser, getScopeResolver } from "@/lib/scoring";
 import { callLLMForJSON, isLLMConfigured } from "@/lib/llm";
 import { currentRoadmapQuarter, hasRoadmapTiming, roadmapQuarterIndex } from "@/lib/roadmap-calendar";
@@ -58,6 +59,8 @@ class StaleRoadmapPlanError extends Error {}
 export async function POST(request: NextRequest) {
   const auth = await withAuth(request, { rateLimit: "ai" });
   if (!auth.success) return auth.response;
+  // Yol haritasını planlamak koordinatörün işi (bkz. lib/roadmap-access).
+  if (!(await isUserCoordinator(auth.userId))) return NextResponse.json({ error: ROADMAP_FORBIDDEN }, { status: 403 });
   if (!isLLMConfigured()) {
     return NextResponse.json({ error: "AI hizmeti şu anda kullanılamıyor. Lütfen yöneticinizle iletişime geçin." }, { status: 503 });
   }

@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => ({
   getAssessmentIds: vi.fn(),
   resolveAssessmentForRecommendation: vi.fn(),
   updateRoadmapStatus: vi.fn(),
+  isUserCoordinator: vi.fn(),
+  loadRoadmapAccess: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({ prisma: mocks.prisma }));
@@ -26,13 +28,19 @@ vi.mock("@/lib/scoring", () => ({
   getAccessibleSurveyIds: mocks.getAccessibleSurveyIds,
   isRecommendationActionable: mocks.isRecommendationActionable,
 }));
-vi.mock("@/lib/assessment", () => ({ getAssessmentIds: mocks.getAssessmentIds }));
+vi.mock("@/lib/assessment", () => ({ getAssessmentIds: mocks.getAssessmentIds, isUserCoordinator: mocks.isUserCoordinator }));
+vi.mock("@/lib/roadmap-access", () => ({ loadRoadmapAccess: mocks.loadRoadmapAccess, ROADMAP_FORBIDDEN: "yetki yok" }));
 vi.mock("@/lib/roadmap-status", () => ({
   resolveAssessmentForRecommendation: mocks.resolveAssessmentForRecommendation,
   updateRoadmapStatus: mocks.updateRoadmapStatus,
 }));
 
-import { GET, PUT } from "./route";
+import { DELETE, GET, POST, PUT } from "./route";
+
+beforeEach(() => {
+  mocks.isUserCoordinator.mockResolvedValue(true);
+  mocks.loadRoadmapAccess.mockResolvedValue({ canManage: true, canUpdate: () => true });
+});
 
 const scores = {
   overallScore: 3.4,
@@ -148,5 +156,36 @@ describe("PUT /api/roadmap", () => {
 
   it("öneri kimliği yoksa 400", async () => {
     expect((await put({ status: "COMPLETED" })).status).toBe(400);
+  });
+});
+
+describe("yol haritası yetkileri", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.withAuth.mockResolvedValue({ success: true, userId: "member-1", user: { role: "USER" } });
+    mocks.isUserCoordinator.mockResolvedValue(false);
+    mocks.getAccessibleSurveyIds.mockResolvedValue(["survey-1"]);
+    mocks.getAssessmentIds.mockResolvedValue(["assessment-1"]);
+  });
+  const json = (method: string, body: unknown) => new NextRequest("http://localhost/api/roadmap", { method, body: JSON.stringify(body) });
+
+  it("çalışan yol haritasına iş ekleyemez, planlayamaz ve silemez", async () => {
+    expect((await POST(json("POST", { recommendationId: "r1" }))).status).toBe(403);
+    expect((await PUT(json("PUT", { recommendationId: "r1", plannedQuarter: 2, plannedYear: 2027 }))).status).toBe(403);
+    expect((await DELETE(new NextRequest("http://localhost/api/roadmap?recommendationId=r1", { method: "DELETE" }))).status).toBe(403);
+    expect(mocks.prisma.roadmapItem.upsert).not.toHaveBeenCalled();
+    expect(mocks.prisma.roadmapItem.update).not.toHaveBeenCalled();
+    expect(mocks.prisma.roadmapItem.delete).not.toHaveBeenCalled();
+  });
+  it("liste, kullanıcının ne yapabileceğini iş bazında söyler", async () => {
+    mocks.prisma.roadmapItem.findMany.mockResolvedValue([
+      { id: "i1", recommendationId: "mine", status: "PLANNED", recommendation: { id: "mine" } },
+      { id: "i2", recommendationId: "other", status: "PLANNED", recommendation: { id: "other" } },
+    ]);
+    mocks.calculateRecommendationContributions.mockResolvedValue({ scores, contributions: new Map() });
+    mocks.loadRoadmapAccess.mockResolvedValue({ canManage: false, canUpdate: (id: string) => id === "mine" });
+    const body = await (await GET(new NextRequest("http://localhost/api/roadmap"))).json();
+    expect(body.permissions).toEqual({ canManage: false });
+    expect(body.items.map((item: { recommendationId: string; canUpdateStatus: boolean }) => [item.recommendationId, item.canUpdateStatus])).toEqual([["mine", true], ["other", false]]);
   });
 });
