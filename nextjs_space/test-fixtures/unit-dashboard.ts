@@ -43,13 +43,17 @@ export function unitRow(id = "assessment-1", unitId = "managed-unit", name = "Es
 }
 
 /** Panonun /api/dashboard/assessment yanıtı: ayrıntıya sektör kıyası ve rol eklenir. */
-export function assessmentView(detail = unitDetail(), role: ViewerRole = "manager", canUpdate: (id: string) => boolean = () => true): AssessmentView {
+export function assessmentView(
+  detail = unitDetail(), role: ViewerRole = "manager", canUpdate: (id: string) => boolean = () => true,
+  targets: AssessmentView["targets"] = { overall: null, categories: {} },
+): AssessmentView {
   const member = role === "member";
   return {
     ...detail,
     benchmark: { sectorName: "Enerji", overall: 35, categories: { "category-1": 35 }, ironman: { velocity: 2.4, endurance: 2.8, velocityTarget: 3, enduranceTarget: 3.2 } },
+    targets,
     recommendations: detail.recommendations.map(rec => ({ ...rec, canUpdateStatus: !member || (rec.isInRoadmap && canUpdate(rec.id)) })),
-    viewer: { role, canManageRoadmap: !member, canDistribute: role === "manager", canExportTeam: !member },
+    viewer: { role, canManageRoadmap: !member, canDistribute: role === "manager", canExportTeam: !member, canSetTargets: !member },
   };
 }
 

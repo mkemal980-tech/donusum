@@ -196,7 +196,7 @@ export async function loadPersonalDashboardIndex(actor: ManagedActor, db: DbClie
     started.add(row.surveyId);
     const deadline = deadlineOf(row.surveyId);
     rows.push({
-      id: "pending:" + SELF_UNIT_ID + ":" + row.surveyId, assessmentId: null, unitId: unit.id, unitName: unit.name, surveyId: row.surveyId, surveyName: row.survey.name,
+      id: "pending:" + [SELF_UNIT_ID, row.surveyId, "internal"].join(":"), assessmentId: null, unitId: unit.id, unitName: unit.name, surveyId: row.surveyId, surveyName: row.survey.name,
       periodId: "internal", periodName: PERSONAL_PERIOD, campaignRecipientId: null, createdAt: iso(row.assignedAt), deadline: iso(deadline),
       deadlineLabel: "Atama son tarihi", status: "NOT_STARTED", responseCount: 0, totalQuestions: 0, completionPercentage: 0, score: null,
       maturityScore: null, maturityLabel: null, submittedAt: null, overdue: Boolean(deadline && deadline < new Date()), locked: false,

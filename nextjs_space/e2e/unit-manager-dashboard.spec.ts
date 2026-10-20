@@ -6,6 +6,7 @@ import { buildUnitReportHtml, unitReportTables } from "../lib/unit-dashboard-rep
 
 async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, failed = false, pending = false, denied = false, emptyFirst = false, personal = false } = {}) {
   let assignmentRequests = 0;
+  let targets: { overall: { percentage: number; targetDate: string | null } | null; categories: Record<string, { percentage: number; targetDate: string | null }> } = { overall: null, categories: {} };
   const actions: { path: string; body: Record<string, unknown> }[] = [];
   let rows = empty ? [] : [unitRow(), unitRow("assessment-2", "unit-2", "Enerji birimi"), { ...unitRow("assessment-old"), periodId: "period-2025", periodName: "2025 dönemi", status: "SUBMITTED" as const, locked: true }];
   if (pending) rows = [{ ...unitRow(), id: "pending:managed-unit:survey-1:internal", assessmentId: null, responseCount: 0, status: "NOT_STARTED", score: null, maturityScore: null }];
@@ -23,7 +24,16 @@ async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, fail
     const path = url.pathname;
     let body: unknown = {};
     let status = 200;
-    if (request.method() === "POST") {
+    if (request.method() === "PUT" && path === "/api/dashboard/assessment/targets") {
+      const payload = request.postDataJSON() as { overall: { percentage: number; targetDate: string | null } | null; categories: { categoryId: string; percentage: number; targetDate: string | null }[] };
+      actions.push({ path, body: payload as unknown as Record<string, unknown> });
+      const day = (value: string | null) => value ? value + "T20:59:59.999Z" : null;
+      targets = {
+        overall: payload.overall ? { percentage: payload.overall.percentage, targetDate: day(payload.overall.targetDate) } : null,
+        categories: Object.fromEntries(payload.categories.map(row => [row.categoryId, { percentage: row.percentage, targetDate: day(row.targetDate) }])),
+      };
+      body = targets;
+    } else if (request.method() === "POST") {
       const payload = request.postDataJSON() as Record<string, unknown>;
       actions.push({ path, body: payload });
       if (path === "/api/unit-manager/dashboard") {
@@ -62,7 +72,7 @@ async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, fail
     } else if (path === "/api/dashboard/assessment") {
       const detail = details.get(url.searchParams.get("assessmentId")!);
       status = denied || !detail ? 403 : 200;
-      body = status === 403 ? { error: "Bu değerlendirmeye erişiminiz yok." } : assessmentView(detail!);
+      body = status === 403 ? { error: "Bu değerlendirmeye erişiminiz yok." } : assessmentView(detail!, "manager", () => true, targets);
     } else if (path === "/api/dashboard/assessment/group-comparison") {
       body = { available: false, reason: "NO_GROUP", groupName: null };
     } else if (path === "/api/survey/assigned") {
@@ -324,3 +334,41 @@ test("eski Birim takibi, Öneriler ve Yol haritası adresleri panonun ilgili gö
   await page.goto("/recommendations");
   await expect(page).toHaveURL(/\/dashboard\?.*tab=recommendations/);
 });
+
+test("yönetici kuruluşun hedefini koyar; hedef şeritte, tabloda ve raporda görünür, yoksa uydurulmaz", async ({ page }) => {
+  const api = await mockApis(page);
+  await page.goto("/dashboard?unitId=managed-unit&surveyId=survey-1&assessmentId=assessment-1");
+  await expect(page.locator("p.t-label").getByText("Mevcut puan", { exact: true })).toBeVisible();
+  await expect(page.locator("p.t-label").getByText("Hedefe göre", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("columnheader", { name: "Hedef", exact: true })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Hedef belirle" }).click();
+  const dialog = page.getByRole("dialog", { name: "Hedefler" });
+  await dialog.getByLabel("Genel puan hedef puanı").fill("70");
+  await dialog.getByLabel("Genel puan hedef tarihi").fill("2027-12-31");
+  await dialog.getByLabel("Çevresel dönüşüm hedef puanı").fill("60");
+  await dialog.getByRole("button", { name: "Kaydet" }).click();
+  await expect.poll(() => api.actions.find(action => action.path === "/api/dashboard/assessment/targets")?.body).toEqual({
+    assessmentId: "assessment-1", overall: { percentage: 70, targetDate: "2027-12-31" }, categories: [{ categoryId: "category-1", percentage: 60, targetDate: null }],
+  });
+  await expect(page.getByText("Hedefler kaydedildi.")).toBeVisible();
+  await expect(dialog).toHaveCount(0);
+
+  const card = page.locator("p.t-label").getByText("Hedefe göre", { exact: true }).locator("..");
+  await expect(card).toContainText("-30,0");
+  await expect(card).toContainText("Hedef %70,0 · 31 Ara 2027");
+  await expect(page.getByRole("row").filter({ hasText: "Çevresel dönüşüm" })).toContainText("%60,0-20,0");
+  await page.getByRole("button", { name: "Hedefleri düzenle" }).click();
+  await expect(page.getByRole("dialog", { name: "Hedefler" }).getByLabel("Genel puan hedef puanı")).toHaveValue("70");
+  await expect(page.getByRole("dialog", { name: "Hedefler" }).getByLabel("Genel puan hedef tarihi")).toHaveValue("2027-12-31");
+});
+
+test("değerlendirme açılmadan önce saklanan seçim, açıldıktan sonra o değerlendirmeyi gösterir", async ({ page }) => {
+  await mockApis(page);
+  // Değerlendirme başlamadan önce kaydedilmiş adres: başlanmamış satırın kimliği.
+  await page.goto("/dashboard?unitId=managed-unit&surveyId=survey-1&selection=pending:managed-unit:survey-1:period-2026");
+  await expect(page.getByRole("heading", { name: "Bu değerlendirmeye erişilemiyor" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Esra'nın birimi", exact: true })).toBeVisible();
+  await expect(page.locator("p.t-label").getByText("Mevcut puan", { exact: true })).toBeVisible();
+});
+

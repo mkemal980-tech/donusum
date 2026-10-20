@@ -10,6 +10,7 @@ import {
 } from "./unit-dashboard";
 import { loadRoadmapAccess } from "./roadmap-access";
 import { buildSectionVisibility } from "./section-assignment";
+import { loadAssessmentTargets } from "./score-targets";
 
 /**
  * Tek pano için rol farkındalıklı değerlendirme görünümü.
@@ -99,16 +100,18 @@ async function loadUnitBenchmarks(record: ResolvedAssessment, db: DbClient) {
 export async function loadAssessmentView(actor: ManagedActor, assessmentId: string, db: DbClient = prisma) {
   const { role, record } = await resolveViewableAssessment(actor, assessmentId, db);
   const member = role === "member";
-  const [detail, access, benchmark] = await Promise.all([
+  const [detail, access, benchmark, targets] = await Promise.all([
     buildAssessmentDetail(actor, record, db, { ownUnit: role !== "manager", member }),
     member ? loadRoadmapAccess(actor.userId, [record.id], db) : null,
     loadUnitBenchmarks(record, db),
+    loadAssessmentTargets(record, db),
   ]);
   return {
     ...detail,
     benchmark,
+    targets,
     recommendations: detail.recommendations.map(rec => ({ ...rec, canUpdateStatus: !access || (rec.isInRoadmap && access.canUpdate(rec.id)) })),
-    viewer: { role, canManageRoadmap: !member, canDistribute: role === "manager", canExportTeam: !member },
+    viewer: { role, canManageRoadmap: !member, canDistribute: role === "manager", canExportTeam: !member, canSetTargets: !member },
   };
 }
 export type AssessmentView = Awaited<ReturnType<typeof loadAssessmentView>>;

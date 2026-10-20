@@ -39,7 +39,7 @@ describe("kişisel pano listesi", () => {
     expect(index?.unit).toEqual({ id: "self", name: "Bora Danışmanlık", description: null, parentId: null, assessmentCount: 2 });
     expect(index?.assessments.map(row => [row.id, row.assessmentId, row.unitId, row.surveyId, row.periodName])).toEqual([
       ["p1", "p1", "self", "s1", "Kişisel değerlendirme"],
-      ["pending:self:s2", null, "self", "s2", "Kişisel değerlendirme"],
+      ["pending:self:s2:internal", null, "self", "s2", "Kişisel değerlendirme"],
     ]);
     expect(index?.assessments[0].deadline).toBe("2026-12-31T20:59:59.000Z");
     // Puan, sahibin sektör kapsamıyla hesaplanır.

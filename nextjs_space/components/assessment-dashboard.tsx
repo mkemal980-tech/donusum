@@ -13,6 +13,7 @@ import EmptyState from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { CategoryResults, TeamProgress, UnitHistory, UnitRecommendations, type RoadmapPatch } from "./unit-dashboard-panels";
 import { AnswerStrip, CategoryAnalysis, CategoryTable, LowestQuestions, RoadmapSummary, ScoreTrend, UnitIronman } from "./assessment-results";
+import { TargetsDialog } from "./assessment-targets";
 import { SELF_UNIT_ID, UNIT_RESULT_LABELS, unitDate, unitScore } from "@/lib/unit-dashboard-display";
 import { decimal } from "@/lib/unit-management-display";
 import type { UnitAssessmentRow, UnitDashboardIndex } from "@/lib/unit-dashboard";
@@ -79,6 +80,8 @@ export default function AssessmentDashboard() {
   const [planning, setPlanning] = useState(false);
   const [confirmingSubmit, setConfirmingSubmit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [targetsOpen, setTargetsOpen] = useState(false);
+  const [savingTargets, setSavingTargets] = useState(false);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const actorKey = (session?.user as { id?: string })?.id ?? session?.user?.email ?? "";
 
@@ -111,7 +114,12 @@ export default function AssessmentDashboard() {
   const surveyRows = unitRows.filter(row => selectedSurveyId === ALL || row.surveyId === selectedSurveyId);
   const selectedPeriodId = searchParams.get("periodId") ?? ALL;
   const overviewRows = surveyRows.filter(row => selectedPeriodId === ALL || row.periodId === selectedPeriodId);
-  const selected = isOverview ? undefined : requestedId ? surveyRows.find(row => row.id === requestedId) : preferred(surveyRows);
+  // "Başlanmamış" satırın kimliği (pending:birim:anket:dönem) değerlendirme açılınca değişir; adreste
+  // ya da oturumda kalan eski kimlik aynı birim, anket ve dönemin değerlendirmesini açar.
+  const pendingKey = requestedId?.startsWith("pending:") ? requestedId.slice("pending:".length) : null;
+  const selected = isOverview ? undefined : requestedId
+    ? surveyRows.find(row => row.id === requestedId) ?? (pendingKey ? surveyRows.find(row => [row.unitId, row.surveyId, row.periodId].join(":") === pendingKey) : undefined)
+    : preferred(surveyRows);
   const assessmentId = selected?.assessmentId ?? null;
   const personal = selected?.unitId === SELF_UNIT_ID;
   const activeTab = TABS.some(tab => tab.id === searchParams.get("tab")) ? searchParams.get("tab")! : "results";
@@ -237,6 +245,18 @@ export default function AssessmentDashboard() {
       setRevision(value => value + 1);
     } catch (error) { toast.error(error instanceof Error ? error.message : "Yol haritası oluşturulamadı."); }
     finally { setPlanning(false); }
+  };
+
+  const saveTargets = async (targets: object) => {
+    if (!assessmentId) return;
+    setSavingTargets(true);
+    try {
+      await readJson(await fetch("/api/dashboard/assessment/targets", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...targets, assessmentId }) }));
+      setTargetsOpen(false);
+      toast.success("Hedefler kaydedildi.");
+      setRevision(value => value + 1);
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Hedef kaydedilemedi."); }
+    finally { setSavingTargets(false); }
   };
 
   /** Kişisel değerlendirmenin gönderimi: sahibi koordinatördür. Birimde gönderim görev dağılımı ekranındadır. */
@@ -393,7 +413,7 @@ export default function AssessmentDashboard() {
                     </div>
                     <div id="unit-panel" role="tabpanel" aria-labelledby={"tab-" + activeTab}>
                       {activeTab === "results" && <div className="space-y-6">
-                        <div><CategoryTable view={current} comparison={groupComparison?.available ? groupComparison : null} /><ComparisonNote data={groupComparison} /></div>
+                        <div><CategoryTable view={current} comparison={groupComparison?.available ? groupComparison : null} onEditTargets={current.viewer.canSetTargets ? () => setTargetsOpen(true) : undefined} /><ComparisonNote data={groupComparison} /></div>
                         <div className="grid gap-6 xl:grid-cols-2"><LowestQuestions view={current} onOpen={openTab} /><RoadmapSummary view={current} onOpen={openTab} /></div>
                         <CategoryAnalysis key={current.assessment.id} view={current} canManage={canManage} busyId={busyId} onAdd={recommendationId => void saveRoadmap({ recommendationId, status: "PLANNED" })} />
                         <UnitIronman view={current} />
@@ -410,6 +430,7 @@ export default function AssessmentDashboard() {
                         <UnitRecommendations data={current} roadmapOnly busyId={busyId} save={saveRoadmap} canManage={canManage} />
                       </>}
                       {activeTab === "history" && <UnitHistory data={current} />}
+                      {current.viewer.canSetTargets && <TargetsDialog view={current} open={targetsOpen} saving={savingTargets} onOpenChange={setTargetsOpen} onSave={targets => void saveTargets(targets)} />}
                       {activeTab === "documents" && (documentsLoading ? <div className="skeleton h-48" /> : documentsError ? <EmptyState title="Belgeler yüklenemedi" description={documentsError} /> :
                         !documents.length ? <EmptyState title="Yüklenmiş dosya yok" description={isManager ? "Seçili değerlendirmeye bağlı belgeler burada listelenir." : "Görebildiğiniz bölümlere yüklenen belgeler burada listelenir."} /> :
                         <div className="theme-card p-0 overflow-x-auto"><table className="theme-table"><thead><tr><th>Belge</th><th>Yükleyen</th><th>Tarih</th><th>İndir</th></tr></thead><tbody>{documents.map(doc => <tr key={doc.id}><td>{doc.fileName}</td><td>{[doc.user.firstName, doc.user.lastName].filter(Boolean).join(" ") || doc.user.email}</td><td>{unitDate(doc.createdAt)}</td><td>{doc.downloadUrl && <Button asChild variant="link"><a href={doc.downloadUrl} target="_blank" rel="noopener noreferrer">İndir</a></Button>}</td></tr>)}</tbody></table></div>)}
