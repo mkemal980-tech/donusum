@@ -12,20 +12,23 @@ import StatCard from "@/components/ui/stat-card";
 import EmptyState from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { CategoryResults, TeamProgress, UnitHistory, UnitRecommendations, type RoadmapPatch } from "./unit-dashboard-panels";
-import { UnitGroupComparison } from "./unit-group-comparison";
+import { AnswerStrip, CategoryAnalysis, CategoryTable, LowestQuestions, RoadmapSummary, ScoreTrend, UnitIronman } from "./assessment-results";
 import { UNIT_RESULT_LABELS, unitDate, unitScore } from "@/lib/unit-dashboard-display";
-import type { UnitAssessmentDetail, UnitAssessmentRow, UnitDashboardIndex } from "@/lib/unit-dashboard";
+import type { UnitAssessmentRow, UnitDashboardIndex } from "@/lib/unit-dashboard";
+import type { AssessmentView, ViewerRole } from "@/lib/assessment-view";
+import type { UnitGroupComparison } from "@/lib/unit-group-comparison";
 
 const TABS = [
-  { id: "results", label: "Kategori sonuçları" }, { id: "team", label: "Ekip ve görevler" },
-  { id: "recommendations", label: "Birim önerileri" }, { id: "roadmap", label: "Yol haritası" },
-  { id: "documents", label: "Yüklenen dosyalar" }, { id: "history", label: "Geçmiş ve dönemler" },
+  { id: "results", label: "Sonuçlar" }, { id: "answers", label: "Cevaplar" }, { id: "team", label: "Ekip ve görevler" },
+  { id: "recommendations", label: "Öneriler" }, { id: "roadmap", label: "Yol haritası" },
+  { id: "documents", label: "Belgeler" }, { id: "history", label: "Geçmiş ve dönemler" },
 ];
 const ALL = "all";
+type Index = UnitDashboardIndex & { role: ViewerRole };
 type Document = { id: string; fileName: string; fileType: string; createdAt: string; downloadUrl: string | null; user: { firstName: string | null; lastName: string | null; email: string } };
 
-export function UnitDashboardLoading() {
-  return <><AppShell /><main id="icerik" tabIndex={-1} aria-busy="true"><span className="sr-only">Birim panosu yükleniyor</span><div className="skeleton mb-6 h-8 w-72" /><div className="skeleton h-64" /></main></>;
+export function AssessmentDashboardLoading() {
+  return <><AppShell /><main id="icerik" tabIndex={-1} aria-busy="true"><span className="sr-only">Pano yükleniyor</span><div className="skeleton mb-6 h-8 w-72" /><div className="skeleton h-64" /></main></>;
 }
 
 function preferred(rows: UnitAssessmentRow[]) {
@@ -38,18 +41,33 @@ async function readJson(response: Response) {
   return data;
 }
 
-export default function UnitManagerDashboard({ title = "Birim takibi" }: { title?: string }) {
+function ComparisonNote({ data }: { data: UnitGroupComparison | null }) {
+  if (!data) return null;
+  if (data.available) return <p className="mt-3 t-sm text-[var(--ink-3)]">{data.groupName} ortalaması aynı anket ve dönemde gönderen {data.count} üyeden hesaplanır; diğer üyelerin tekil puanı gösterilmez. Yüzdelik dilim (ilk %{data.band.value}) en az %{data.band.width} genişliğindedir ve sırayı göstermez.</p>;
+  if (data.reason === "NO_GROUP") return null;
+  return <p className="mt-3 t-sm text-[var(--ink-3)]">{data.reason === "NOT_SUBMITTED"
+    ? `${data.groupName} ortalamasıyla kıyas, değerlendirme gönderildiğinde görünür.`
+    : `${data.groupName} ortalaması en az ${data.required} üye gönderdiğinde görünür; şu an ${data.count} üye gönderdi.`}</p>;
+}
+
+/**
+ * Tek pano: bir değerlendirmenin sonucu, yönetici ve çalışan için aynı
+ * sayılarla. Rol yalnızca neyin görüneceğini ve neyin yapılabileceğini
+ * değiştirir; ayıklama ve yetki sunucudadır (lib/assessment-view).
+ */
+export default function AssessmentDashboard({ title, managersOnly = false }: { title?: string; managersOnly?: boolean }) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [navigating, startNavigation] = useTransition();
-  const [index, setIndex] = useState<UnitDashboardIndex | null>(null);
+  const [index, setIndex] = useState<Index | null>(null);
   const [indexLoading, setIndexLoading] = useState(true);
   const [indexError, setIndexError] = useState<string | null>(null);
-  const [detail, setDetail] = useState<UnitAssessmentDetail | null>(null);
+  const [detail, setDetail] = useState<AssessmentView | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [comparison, setComparison] = useState<{ id: string; data: UnitGroupComparison | null } | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [documentsError, setDocumentsError] = useState<string | null>(null);
@@ -60,23 +78,25 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
   const [statusFilter, setStatusFilter] = useState("ALL");
   const role = (session?.user as { role?: string })?.role;
   const actorKey = (session?.user as { id?: string })?.id ?? session?.user?.email ?? "";
+  const allowed = !managersOnly || role === "ADMIN" || role === "UNIT_MANAGER";
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
-    else if (status === "authenticated" && role !== "ADMIN" && role !== "UNIT_MANAGER") router.replace("/dashboard");
-  }, [status, role, router]);
+    else if (status === "authenticated" && !allowed) router.replace("/dashboard");
+  }, [status, allowed, router]);
 
   useEffect(() => {
-    if (status !== "authenticated" || (role !== "ADMIN" && role !== "UNIT_MANAGER")) return;
+    if (status !== "authenticated" || !allowed) return;
     const abort = new AbortController();
     setIndexLoading(true);
-    fetch("/api/unit-manager/team", { cache: "no-store", signal: abort.signal }).then(readJson).then(data => {
+    fetch("/api/dashboard/assessments", { cache: "no-store", signal: abort.signal }).then(readJson).then(data => {
       if (!abort.signal.aborted) { setIndex(data); setIndexError(null); }
     }).catch(error => { if (!abort.signal.aborted) setIndexError(error.message); })
       .finally(() => { if (!abort.signal.aborted) setIndexLoading(false); });
     return () => abort.abort();
-  }, [status, role, revision]);
+  }, [status, allowed, revision]);
 
+  const isManager = index?.role === "manager";
   const units = index?.units ?? [];
   const requestedId = searchParams.get("assessmentId") ?? searchParams.get("selection");
   const unitId = searchParams.get("unitId") ?? index?.assessments.find(row => row.id === requestedId)?.unitId ?? (units.length > 1 ? ALL : units[0]?.id ?? "");
@@ -91,6 +111,8 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
   const assessmentId = selected?.assessmentId ?? null;
   const activeTab = TABS.some(tab => tab.id === searchParams.get("tab")) ? searchParams.get("tab")! : "results";
   const current = detail?.assessment.id === assessmentId ? detail : null;
+  const canManage = current?.viewer.canManageRoadmap ?? false;
+  const groupComparison = comparison?.id === assessmentId ? comparison.data : null;
   const context = { unitId, surveyId: selectedSurveyId === ALL ? "" : selectedSurveyId, periodId: isOverview && selectedPeriodId !== ALL ? selectedPeriodId : undefined, assessmentId, selection: assessmentId ? null : selected?.id ?? null, tab: activeTab };
   const contextParams = new URLSearchParams();
   if (unitId) contextParams.set("unitId", unitId);
@@ -128,6 +150,7 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
     if (nextTab !== "results") params.set("tab", nextTab);
     startNavigation(() => router.replace(pathname + "?" + params.toString(), { scroll: false }));
   }, [unitId, activeTab, pathname, router, startNavigation]);
+  const openTab = (tab: string) => navigate(selected, undefined, tab);
 
   const showOverview = (surveyId = ALL, periodId = ALL) => {
     const params = new URLSearchParams({ unitId: ALL });
@@ -142,10 +165,20 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
     if (!assessmentId) { setDetailLoading(false); return; }
     const abort = new AbortController();
     setDetailLoading(true);
-    fetch("/api/unit-manager/dashboard?assessmentId=" + encodeURIComponent(assessmentId), { cache: "no-store", signal: abort.signal })
+    fetch("/api/dashboard/assessment?assessmentId=" + encodeURIComponent(assessmentId), { cache: "no-store", signal: abort.signal })
       .then(readJson).then(data => { if (!abort.signal.aborted) setDetail(data); })
       .catch(error => { if (!abort.signal.aborted) setDetailError(error.message); })
       .finally(() => { if (!abort.signal.aborted) setDetailLoading(false); });
+    return () => abort.abort();
+  }, [assessmentId, revision]);
+
+  // Birim ortalaması yalnızca toplu sayı döner; yüklenemezse pano kıyassız açılır.
+  useEffect(() => {
+    if (!assessmentId) return;
+    const abort = new AbortController();
+    fetch("/api/dashboard/assessment/group-comparison?assessmentId=" + encodeURIComponent(assessmentId), { cache: "no-store", signal: abort.signal })
+      .then(readJson).then(data => { if (!abort.signal.aborted) setComparison({ id: assessmentId, data }); })
+      .catch(() => { if (!abort.signal.aborted) setComparison({ id: assessmentId, data: null }); });
     return () => abort.abort();
   }, [assessmentId, revision]);
 
@@ -155,7 +188,7 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
     if (activeTab !== "documents" || !assessmentId) return;
     const abort = new AbortController();
     setDocumentsLoading(true);
-    fetch("/api/unit-manager/documents?assessmentId=" + encodeURIComponent(assessmentId), { cache: "no-store", signal: abort.signal })
+    fetch("/api/dashboard/assessment/documents?assessmentId=" + encodeURIComponent(assessmentId), { cache: "no-store", signal: abort.signal })
       .then(readJson).then(data => { if (!abort.signal.aborted) setDocuments(data); })
       .catch(error => { if (!abort.signal.aborted) setDocumentsError(error.message); })
       .finally(() => { if (!abort.signal.aborted) setDocumentsLoading(false); });
@@ -181,7 +214,7 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
     if (!assessmentId) return;
     setBusyId(patch.recommendationId);
     try {
-      const result = await readJson(await fetch("/api/unit-manager/roadmap", { method: "POST", headers: { "Content-Type": "application/json" },
+      const result = await readJson(await fetch("/api/dashboard/assessment/roadmap", { method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...patch, assessmentId }) }));
       toast.success(result.earned > 0 ? "Öneri tamamlandı · puan +" + result.earned.toLocaleString("tr-TR") : "Yol haritası kaydedildi.");
       setRevision(value => value + 1);
@@ -193,7 +226,7 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
     if (!assessmentId) return;
     setExporting(format);
     try {
-      const report = await fetch("/api/unit-manager/export?assessmentId=" + encodeURIComponent(assessmentId) + "&format=" + (format === "pdf" ? "html" : "xlsx"));
+      const report = await fetch("/api/dashboard/assessment/export?assessmentId=" + encodeURIComponent(assessmentId) + "&format=" + (format === "pdf" ? "html" : "xlsx"));
       if (!report.ok) await readJson(report);
       let blob: Blob;
       if (format === "pdf") {
@@ -205,47 +238,50 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = "birim-raporu-" + assessmentId + "." + format;
+      anchor.download = "degerlendirme-raporu-" + assessmentId + "." + format;
       anchor.click();
       URL.revokeObjectURL(url);
     } catch (error) { toast.error(error instanceof Error ? error.message : "Rapor hazırlanamadı."); }
     finally { setExporting(null); }
   };
 
-  if (status !== "authenticated" || (!index && indexLoading)) return <UnitDashboardLoading />;
+  if (status !== "authenticated" || !allowed || (!index && indexLoading)) return <AssessmentDashboardLoading />;
+  const tabs = TABS.map(tab => tab.id === "team" && !isManager ? { ...tab, label: "Görevlerim" } : tab);
   const surveys = [...new Map(unitRows.map(row => [row.surveyId, { id: row.surveyId, name: row.surveyName }])).values()];
   const periods = [...new Map(surveyRows.map(row => [row.periodId, { id: row.periodId, name: row.periodName }])).values()];
   const filteredRows = (isOverview ? overviewRows : unitRows).filter(row => statusFilter === "ALL" || (statusFilter === "OVERDUE" ? row.overdue : row.status === statusFilter));
   const startedCount = overviewRows.filter(row => row.assessmentId).length;
   const submittedCount = overviewRows.filter(row => row.status === "SUBMITTED").length;
   const assessedUnitCount = new Set(overviewRows.map(row => row.unitId)).size;
-  const taskHref = assessmentId ? "/unit-manager/assignments?assessmentId=" + encodeURIComponent(assessmentId) + "&surveyId=" + encodeURIComponent(selectedSurveyId) + "&unitId=" + encodeURIComponent(unitId) : null;
+  const taskHref = isManager && assessmentId ? "/unit-manager/assignments?assessmentId=" + encodeURIComponent(assessmentId) + "&surveyId=" + encodeURIComponent(selectedSurveyId) + "&unitId=" + encodeURIComponent(unitId) : null;
   // Birim yönetimi bir birimi hemen altındaki üyelerle karşılaştırır: seçili birimin üyesi yoksa üst birimi açılır.
   const hasMembers = (id: string) => units.some(row => row.parentId === id);
-  const canCompare = units.some(row => hasMembers(row.id)) || units.filter(row => !row.parentId || !units.some(parent => parent.id === row.parentId)).length > 1;
+  const canCompare = isManager && (units.some(row => hasMembers(row.id)) || units.filter(row => !row.parentId || !units.some(parent => parent.id === row.parentId)).length > 1);
   const managementUnit = unit && hasMembers(unit.id) ? unit.id : unit?.parentId && units.some(row => row.id === unit.parentId) ? unit.parentId : null;
   const managementParams = new URLSearchParams();
   if (managementUnit) managementParams.set("unitId", managementUnit);
   if (selectedSurveyId && selectedSurveyId !== ALL) managementParams.set("surveyId", selectedSurveyId);
   const managementPeriod = selected?.periodId ?? (isOverview && selectedPeriodId !== ALL ? selectedPeriodId : null);
   if (managementPeriod) managementParams.set("periodId", managementPeriod);
+  const showWork = current && (current.work.length > 0 || current.assessment.status !== "SUBMITTED");
 
   return (
     <>
       <AppShell unitContext={context} />
       <main id="icerik" tabIndex={-1}>
-        <PageHeader title={title} subtitle="Birim sonuçlarını inceleyin, eksikleri ve sonraki adımları takip edin."
+        <PageHeader title={title ?? (isManager ? "Birim panosu" : "Değerlendirme sonucu")}
+          subtitle={isManager ? "Birim sonuçlarını inceleyin, eksikleri ve sonraki adımları takip edin." : "Biriminizin sonucu, size düşen işler ve sonraki adımlar."}
           actions={<>
             {canCompare && <Button asChild variant="outline"><Link href={"/unit-manager/management" + (managementParams.toString() ? "?" + managementParams.toString() : "")}>Birim yönetimi</Link></Button>}
-            {units.length > 1 && !isOverview && <Button variant="outline" onClick={() => showOverview()}>Tüm birimler</Button>}
-            <Button asChild variant="outline"><Link href={"/dashboard?view=assessment&" + contextQuery}>Kendi değerlendirmem</Link></Button>
-            <Button variant="ghost" aria-label="Birim verilerini yenile" disabled={indexLoading || detailLoading} onClick={() => setRevision(value => value + 1)}><RefreshCw size={16} aria-hidden="true" />Yenile</Button>
+            {isManager && units.length > 1 && !isOverview && <Button variant="outline" onClick={() => showOverview()}>Tüm birimler</Button>}
+            {role === "UNIT_MANAGER" && <Button asChild variant="outline"><Link href={"/dashboard?view=assessment&" + contextQuery}>Kendi değerlendirmem</Link></Button>}
+            <Button variant="ghost" aria-label="Pano verilerini yenile" disabled={indexLoading || detailLoading} onClick={() => setRevision(value => value + 1)}><RefreshCw size={16} aria-hidden="true" />Yenile</Button>
           </>} />
         {indexError ? <EmptyState title="Veriler yüklenemedi" description={indexError} action={<Button onClick={() => setRevision(value => value + 1)}>Tekrar dene</Button>} /> :
-          !units.length ? <EmptyState title="Yönettiğiniz birim yok" description="Birime yönetici olarak atandığınızda o birimin değerlendirmeleri burada görünür." /> :
+          !units.length ? <EmptyState title={isManager ? "Yönettiğiniz birim yok" : "Henüz bir birime bağlı değilsiniz"} description={isManager ? "Birime yönetici olarak atandığınızda o birimin değerlendirmeleri burada görünür." : "Bir birime eklendiğinizde biriminizin değerlendirmesi burada görünür."} /> :
           <>
             <div className="mb-6 grid gap-4 md:grid-cols-3" aria-busy={navigating}>
-              <div><label htmlFor="unit-select" className="t-label block mb-1">Birim</label><select id="unit-select" className="theme-select w-full" value={unitId} disabled={navigating}
+              <div><label htmlFor="unit-select" className="t-label block mb-1">Birim</label><select id="unit-select" className="theme-select w-full" value={unitId} disabled={navigating || units.length < 2}
                 onChange={event => event.target.value === ALL ? showOverview() : navigate(preferred(index?.assessments.filter(row => row.unitId === event.target.value) ?? []), event.target.value)}>
                 {(units.length > 1 || isOverview) && <option value={ALL}>Tüm yönetilen birimler</option>}
                 {units.map(row => <option key={row.id} value={row.id}>{row.name}{row.assessmentCount ? " · " + row.assessmentCount + " değerlendirme" : " · Değerlendirme yok"}</option>)}
@@ -263,8 +299,8 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
                 {isOverview ? periods.map(row => <option key={row.id} value={row.id}>{row.name}</option>) : surveyRows.map(row => <option key={row.id} value={row.id}>{row.periodName} · {UNIT_RESULT_LABELS[row.status]}</option>)}
               </select></div>
             </div>
-            {index?.hasAnonymousCampaigns && <p className="mb-4 t-sm text-[var(--ink-2)]">Anonim kampanyaların toplu sonuçları <Link href="/organization" className="underline">Üye sonuçları</Link> ekranında gösterilir.</p>}
-            {(!unit && !isOverview) || (requestedId && !selected && !indexLoading) ? <EmptyState title="Bu değerlendirmeye erişilemiyor" description="Seçili birim, anket veya dönem yönetim kapsamınızda olmayabilir." action={<Button onClick={() => units.length > 1 ? showOverview() : navigate(preferred(unitRows))}>Birim seçimine dön</Button>} /> :
+            {isManager && index?.hasAnonymousCampaigns && <p className="mb-4 t-sm text-[var(--ink-2)]">Anonim kampanyaların toplu sonuçları <Link href="/organization" className="underline">Üye sonuçları</Link> ekranında gösterilir.</p>}
+            {(!unit && !isOverview) || (requestedId && !selected && !indexLoading) ? <EmptyState title="Bu değerlendirmeye erişilemiyor" description={isManager ? "Seçili birim, anket veya dönem yönetim kapsamınızda olmayabilir." : "Seçili değerlendirme biriminize ait olmayabilir."} action={<Button onClick={() => units.length > 1 ? showOverview() : navigate(preferred(unitRows))}>Değerlendirme seçimine dön</Button>} /> :
               indexLoading && requestedId && !selected ? <div className="skeleton h-64" /> : isOverview ? <section aria-label="Yönetim kapsamı özeti">
                 <h2 className="t-subhead mb-2">Tüm yönetilen birimler</h2>
                 <p className="t-sm mb-5 text-[var(--ink-2)]">Yönettiğiniz birimler ve alt birimlerin değerlendirmeleri birlikte listelenir. Bir satırı açarak sonuçları, görevleri ve yol haritasını inceleyebilirsiniz.</p>
@@ -275,63 +311,70 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
                   <StatCard label="Başlanmamış anket" value={overviewRows.length - startedCount} note="Atanmış, henüz cevap girilmemiş" />
                 </div>
                 {!unitRows.length && <p className="mt-5 t-sm text-[var(--ink-2)]">Yönettiğiniz birimlerde henüz değerlendirme başlatılmadı ve aktif anket ataması yok.</p>}
-              </section> : !selected ? <EmptyState title={unit!.name} description="Bu birimde henüz değerlendirme başlatılmadı ve aktif anket ataması yok." action={units.length > 1 && index!.assessments.length ? <Button variant="outline" onClick={() => showOverview()}>Diğer birimlerin değerlendirmelerini göster</Button> : <Button asChild variant="outline"><Link href="/admin/surveys">Anketleri incele</Link></Button>} /> :
+              </section> : !selected ? <EmptyState title={unit!.name} description="Bu birimde henüz değerlendirme başlatılmadı ve aktif anket ataması yok." action={isManager ? units.length > 1 && index!.assessments.length ? <Button variant="outline" onClick={() => showOverview()}>Diğer birimlerin değerlendirmelerini göster</Button> : <Button asChild variant="outline"><Link href="/admin/surveys">Anketleri incele</Link></Button> : undefined} /> :
               <>
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
                   <div><h2 className="t-subhead">{selected.unitName}</h2><p className="t-sm text-[var(--ink-2)]">{selected.surveyName} · {selected.periodName}</p></div>
                   <div className="flex flex-wrap items-center gap-2">
                     <span className={"badge " + (selected.status === "SUBMITTED" ? "badge-success" : selected.overdue ? "badge-warning" : "badge-neutral")}>{UNIT_RESULT_LABELS[selected.status]}</span>
                     {selected.deadline && <span className="t-sm text-[var(--ink-2)]">{selected.deadlineLabel}: {unitDate(selected.deadline)}{selected.overdue ? " · Süre geçti" : ""}</span>}
-                    {taskHref && <Button asChild><Link href={taskHref}><ListChecks size={16} aria-hidden="true" />{current?.assessment.locked ? "Görevleri görüntüle" : "Görev dağılımı"}</Link></Button>}
+                    {taskHref ? <Button asChild><Link href={taskHref}><ListChecks size={16} aria-hidden="true" />{current?.assessment.locked ? "Görevleri görüntüle" : "Görev dağılımı"}</Link></Button>
+                      : !isManager && assessmentId && !current?.assessment.locked && <Button asChild><Link href="/survey"><ListChecks size={16} aria-hidden="true" />Ankete git</Link></Button>}
                     <Button variant="outline" disabled={!current || exporting !== null} loading={exporting === "pdf"} onClick={() => void exportReport("pdf")}><FileText size={16} aria-hidden="true" />PDF raporu</Button>
-                    <Button variant="outline" disabled={!current || exporting !== null} loading={exporting === "xlsx"} onClick={() => void exportReport("xlsx")}><Download size={16} aria-hidden="true" />Excel</Button>
+                    {current?.viewer.canExportTeam && <Button variant="outline" disabled={exporting !== null} loading={exporting === "xlsx"} onClick={() => void exportReport("xlsx")}><Download size={16} aria-hidden="true" />Excel</Button>}
                   </div>
                 </div>
-                {!assessmentId ? <EmptyState title="Anket birime atanmış, henüz başlanmamış" description="Birim değerlendirmesini başlatarak bölümleri ekibe dağıtabilirsiniz." action={<Button loading={starting} onClick={() => void start()}>Değerlendirmeyi başlat</Button>} /> :
+                {!assessmentId ? isManager
+                  ? <EmptyState title="Anket birime atanmış, henüz başlanmamış" description="Birim değerlendirmesini başlatarak bölümleri ekibe dağıtabilirsiniz." action={<Button loading={starting} onClick={() => void start()}>Değerlendirmeyi başlat</Button>} />
+                  : <EmptyState title="Değerlendirme henüz başlatılmadı" description="Birim yöneticisi değerlendirmeyi başlatıp bölümleri dağıttığında size düşen sorular ankette görünür." /> :
                   detailError ? <EmptyState title="Sonuçlar yüklenemedi" description={detailError} action={<Button onClick={() => setRevision(value => value + 1)}>Tekrar dene</Button>} /> :
                   !current || detailLoading ? <div className="skeleton h-64" aria-label="Sonuçlar yükleniyor" /> :
                   <>
-                    <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                      <StatCard label="Mevcut puan" value={current.answeredQuestions ? unitScore(current.scores.overallScore) + "/5" : "—"} note={current.answeredQuestions ? "%" + current.scores.overallPercentage + " · taban " + unitScore(current.scores.baselineOverallScore) + " · gelişim +" + current.scores.delta.toLocaleString("tr-TR", { maximumFractionDigits: 2 }) : "Henüz cevap yok"} />
-                      <StatCard label="Tamamlanma" value={"%" + current.completionPercentage} note={current.answeredQuestions + "/" + current.totalQuestions + " soru · " + (current.assessment.status === "SUBMITTED" ? "gönderilmiş" : "taslak değerlendirme")} />
-                      <StatCard label="Bekleyen bölüm" value={current.summary.incompleteCount} note={current.summary.unassignedCount + " atanmamış · " + current.summary.missingEvidenceCount + " belge eksik"} />
-                      <StatCard label="Yol haritası" value={current.summary.activeRoadmapCount + " açık iş"} note={current.summary.completedRoadmapCount + " tamamlandı · " + current.summary.overdueRoadmapCount + " hedef tarihi geçti"} />
-                    </div>
-                    <section className="theme-card mb-6 p-5" aria-label="Bekleyen işler">
-                      <div className="mb-3 flex flex-wrap justify-between gap-3"><h2 className="t-subhead">Bekleyen işler</h2><Button asChild variant="link"><Link href={taskHref!}>{current.assessment.locked ? "Görevleri görüntüle" : "Görevleri aç"}</Link></Button></div>
-                      {current.assessment.locked && <p className="mb-3 t-sm text-[var(--ink-2)]">Cevaplar ve görev dağılımı kilitli. Eksiklerle gönderilmiş bir değerlendirmeyi düzeltmek için önce gönderimi geri alın.</p>}
-                      {current.work.length ? <ul className="divide-y divide-[var(--line)]">{current.work.slice(0, 5).map((item, i) => <li key={item.kind + ":" + item.sectionId + ":" + i} className="flex flex-wrap justify-between gap-2 py-3 t-sm"><span>{item.title}</span><span className="text-[var(--ink-2)]">{item.assigneeName} · {item.count} {item.kind === "EVIDENCE" ? "belge" : "soru"}</span></li>)}</ul> : <p className="t-sm text-[var(--ink-2)]">{current.assessment.status === "READY_TO_SUBMIT" ? "Bütün sorular tamamlandı. Görev dağılımından değerlendirmeyi gönderebilirsiniz." : "Eksik cevap veya belge yok."}</p>}
-                      {current.summary.overdueRoadmapCount > 0 && <Button variant="link" onClick={() => navigate(selected, undefined, "roadmap")}>{current.summary.overdueRoadmapCount} geciken yol haritası işini incele</Button>}
-                    </section>
-                    <div className="theme-tabs mb-6 overflow-x-auto" role="tablist" aria-label="Birim görünümü">
-                      {TABS.map(tab => <button type="button" key={tab.id} id={"tab-" + tab.id} role="tab" aria-selected={activeTab === tab.id} aria-controls="unit-panel" tabIndex={activeTab === tab.id ? 0 : -1} className={"theme-tab whitespace-nowrap " + (activeTab === tab.id ? "active" : "")} onKeyDown={event => {
+                    <div className="mb-6"><AnswerStrip view={current} comparison={groupComparison?.available ? groupComparison : null} /></div>
+                    {showWork && <section className="theme-card mb-6 p-5" aria-label={isManager ? "Bekleyen işler" : "Size düşen işler"}>
+                      <div className="mb-3 flex flex-wrap justify-between gap-3"><h2 className="t-subhead">{isManager ? "Bekleyen işler" : "Size düşen işler"}</h2>
+                        {taskHref ? <Button asChild variant="link"><Link href={taskHref}>{current.assessment.locked ? "Görevleri görüntüle" : "Görevleri aç"}</Link></Button>
+                          : !current.assessment.locked && current.work.length > 0 && <Button asChild variant="link"><Link href="/survey">Ankete git</Link></Button>}</div>
+                      {current.assessment.locked && <p className="mb-3 t-sm text-[var(--ink-2)]">Cevaplar ve görev dağılımı kilitli.{isManager ? " Eksiklerle gönderilmiş bir değerlendirmeyi düzeltmek için önce gönderimi geri alın." : ""}</p>}
+                      {current.work.length ? <ul className="divide-y divide-[var(--line)]">{current.work.slice(0, 5).map((item, i) => <li key={item.kind + ":" + item.sectionId + ":" + i} className="flex flex-wrap justify-between gap-2 py-3 t-sm"><span>{item.title}</span><span className="text-[var(--ink-2)]">{item.assigneeName} · {item.count} {item.kind === "EVIDENCE" ? "belge" : "soru"}</span></li>)}</ul>
+                        : <p className="t-sm text-[var(--ink-2)]">{current.assessment.status === "READY_TO_SUBMIT" ? isManager ? "Bütün sorular tamamlandı. Görev dağılımından değerlendirmeyi gönderebilirsiniz." : "Bütün sorular tamamlandı; gönderimi birim yöneticisi yapar." : isManager ? "Eksik cevap veya belge yok." : "Size düşen eksik cevap veya belge yok."}</p>}
+                    </section>}
+                    <div className="theme-tabs mb-6 overflow-x-auto" role="tablist" aria-label="Pano görünümü">
+                      {tabs.map(tab => <button type="button" key={tab.id} id={"tab-" + tab.id} role="tab" aria-selected={activeTab === tab.id} aria-controls="unit-panel" tabIndex={activeTab === tab.id ? 0 : -1} className={"theme-tab whitespace-nowrap " + (activeTab === tab.id ? "active" : "")} onKeyDown={event => {
                         if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
                         event.preventDefault();
-                        const index = TABS.findIndex(item => item.id === tab.id);
-                        const next = event.key === "Home" ? 0 : event.key === "End" ? TABS.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + TABS.length) % TABS.length;
-                        navigate(selected, undefined, TABS[next].id);
-                        document.getElementById("tab-" + TABS[next].id)?.focus();
-                      }} onClick={() => navigate(selected, undefined, tab.id)}>{tab.label}</button>)}
+                        const index = tabs.findIndex(item => item.id === tab.id);
+                        const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+                        openTab(tabs[next].id);
+                        document.getElementById("tab-" + tabs[next].id)?.focus();
+                      }} onClick={() => openTab(tab.id)}>{tab.label}</button>)}
                     </div>
                     <div id="unit-panel" role="tabpanel" aria-labelledby={"tab-" + activeTab}>
-                      {activeTab === "results" && <><UnitGroupComparison assessmentId={current.assessment.id} revision={revision} /><CategoryResults data={current} /><div className="mt-6 mb-3 flex justify-between gap-3"><h2 className="t-subhead">Öncelikli adımlar</h2><Button variant="link" onClick={() => navigate(selected, undefined, "recommendations")}>Tüm birim önerileri</Button></div><UnitRecommendations data={current} limit={3} busyId={busyId} save={saveRoadmap} /></>}
+                      {activeTab === "results" && <div className="space-y-6">
+                        <div><CategoryTable view={current} comparison={groupComparison?.available ? groupComparison : null} /><ComparisonNote data={groupComparison} /></div>
+                        <div className="grid gap-6 xl:grid-cols-2"><LowestQuestions view={current} onOpen={openTab} /><RoadmapSummary view={current} onOpen={openTab} /></div>
+                        <CategoryAnalysis key={current.assessment.id} view={current} canManage={canManage} busyId={busyId} onAdd={recommendationId => void saveRoadmap({ recommendationId, status: "PLANNED" })} />
+                        <UnitIronman view={current} />
+                        <ScoreTrend view={current} />
+                      </div>}
+                      {activeTab === "answers" && <CategoryResults data={current} />}
                       {activeTab === "team" && <TeamProgress data={current} />}
-                      {activeTab === "recommendations" && <UnitRecommendations data={current} busyId={busyId} save={saveRoadmap} />}
-                      {activeTab === "roadmap" && <UnitRecommendations data={current} roadmapOnly busyId={busyId} save={saveRoadmap} />}
+                      {activeTab === "recommendations" && <UnitRecommendations data={current} busyId={busyId} save={saveRoadmap} canManage={canManage} />}
+                      {activeTab === "roadmap" && <UnitRecommendations data={current} roadmapOnly busyId={busyId} save={saveRoadmap} canManage={canManage} />}
                       {activeTab === "history" && <UnitHistory data={current} />}
                       {activeTab === "documents" && (documentsLoading ? <div className="skeleton h-48" /> : documentsError ? <EmptyState title="Belgeler yüklenemedi" description={documentsError} /> :
-                        !documents.length ? <EmptyState title="Yüklenmiş dosya yok" description="Seçili değerlendirmeye bağlı belgeler burada listelenir." /> :
+                        !documents.length ? <EmptyState title="Yüklenmiş dosya yok" description={isManager ? "Seçili değerlendirmeye bağlı belgeler burada listelenir." : "Görebildiğiniz bölümlere yüklenen belgeler burada listelenir."} /> :
                         <div className="theme-card p-0 overflow-x-auto"><table className="theme-table"><thead><tr><th>Belge</th><th>Yükleyen</th><th>Tarih</th><th>İndir</th></tr></thead><tbody>{documents.map(doc => <tr key={doc.id}><td>{doc.fileName}</td><td>{[doc.user.firstName, doc.user.lastName].filter(Boolean).join(" ") || doc.user.email}</td><td>{unitDate(doc.createdAt)}</td><td>{doc.downloadUrl && <Button asChild variant="link"><a href={doc.downloadUrl} target="_blank" rel="noopener noreferrer">İndir</a></Button>}</td></tr>)}</tbody></table></div>)}
                     </div>
                   </>}
               </>}
-            <section className="mt-8" aria-label="Birim değerlendirmeleri">
+            {isManager && <section className="mt-8" aria-label="Birim değerlendirmeleri">
               <div className="mb-4 flex flex-wrap justify-between gap-3"><h2 className="t-subhead">Birim değerlendirmeleri</h2><div><label htmlFor="assessment-status" className="sr-only">Değerlendirme durumuna göre filtrele</label><select id="assessment-status" className="theme-select" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}><option value="ALL">Bütün durumlar</option>{Object.entries(UNIT_RESULT_LABELS).filter(([key]) => key !== "AWAITING_SUBMISSION").map(([key, text]) => <option key={key} value={key}>{text}</option>)}<option value="OVERDUE">Süresi geçenler</option></select></div></div>
               <div className="theme-card p-0 overflow-x-auto"><table className="theme-table"><thead><tr><th>Birim</th><th>Değerlendirme</th><th>Dönem</th><th>Durum</th><th>Tamamlanma</th><th>Puan</th><th>İşlem</th></tr></thead><tbody>
                 {filteredRows.map(row => <tr key={row.id}><td>{row.unitName}</td><td>{row.surveyName}</td><td>{row.periodName}</td><td>{UNIT_RESULT_LABELS[row.status]}{row.overdue ? " · Süre geçti" : ""}</td><td className="tabular">{row.assessmentId ? row.responseCount + "/" + row.totalQuestions + " · %" + row.completionPercentage : "Henüz başlamadı"}</td><td className="tabular">{row.score == null ? "—" : "%" + row.score + " · " + unitScore(row.maturityScore) + "/5"}</td><td><Button variant="link" onClick={() => navigate(row, undefined, "results")}>{row.assessmentId ? "Sonucu görüntüle" : "Değerlendirmeyi aç"}</Button>{row.assessmentId && <Button asChild variant="link"><Link href={"/unit-manager/assignments?assessmentId=" + encodeURIComponent(row.assessmentId) + "&surveyId=" + encodeURIComponent(row.surveyId) + "&unitId=" + encodeURIComponent(row.unitId)}>Görevleri aç</Link></Button>}</td></tr>)}
                 {!filteredRows.length && <tr><td colSpan={7}>Bu filtreye uygun değerlendirme yok.</td></tr>}
               </tbody></table></div>
-            </section>
+            </section>}
           </>}
       </main>
     </>

@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AppShell from "@/components/ui/app-shell";
-import UnitManagerDashboard from "@/components/unit-manager-dashboard";
+import AssessmentDashboard from "@/components/assessment-dashboard";
 import DashboardClient from "./dashboard-client";
 
 export function DashboardLoading() {
@@ -35,7 +35,7 @@ export default function DashboardHome() {
   if (status !== "authenticated") return <DashboardLoading />;
 
   if (role === "UNIT_MANAGER" && searchParams.get("view") !== "assessment") {
-    return <UnitManagerDashboard title="Birim panosu" />;
+    return <AssessmentDashboard title="Birim panosu" />;
   }
 
   const unitParams = new URLSearchParams(searchParams.toString());
