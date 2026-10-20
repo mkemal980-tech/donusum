@@ -12,6 +12,7 @@ import StatCard from "@/components/ui/stat-card";
 import EmptyState from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { CategoryResults, TeamProgress, UnitHistory, UnitRecommendations, type RoadmapPatch } from "./unit-dashboard-panels";
+import { UnitGroupComparison } from "./unit-group-comparison";
 import { UNIT_RESULT_LABELS, unitDate, unitScore } from "@/lib/unit-dashboard-display";
 import type { UnitAssessmentDetail, UnitAssessmentRow, UnitDashboardIndex } from "@/lib/unit-dashboard";
 
@@ -219,7 +220,12 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
   const submittedCount = overviewRows.filter(row => row.status === "SUBMITTED").length;
   const assessedUnitCount = new Set(overviewRows.map(row => row.unitId)).size;
   const taskHref = assessmentId ? "/unit-manager/assignments?assessmentId=" + encodeURIComponent(assessmentId) + "&surveyId=" + encodeURIComponent(selectedSurveyId) + "&unitId=" + encodeURIComponent(unitId) : null;
-  const managementParams = new URLSearchParams({ unitId: unitId || "all" });
+  // Birim yönetimi bir birimi hemen altındaki üyelerle karşılaştırır: seçili birimin üyesi yoksa üst birimi açılır.
+  const hasMembers = (id: string) => units.some(row => row.parentId === id);
+  const canCompare = units.some(row => hasMembers(row.id)) || units.filter(row => !row.parentId || !units.some(parent => parent.id === row.parentId)).length > 1;
+  const managementUnit = unit && hasMembers(unit.id) ? unit.id : unit?.parentId && units.some(row => row.id === unit.parentId) ? unit.parentId : null;
+  const managementParams = new URLSearchParams();
+  if (managementUnit) managementParams.set("unitId", managementUnit);
   if (selectedSurveyId && selectedSurveyId !== ALL) managementParams.set("surveyId", selectedSurveyId);
   const managementPeriod = selected?.periodId ?? (isOverview && selectedPeriodId !== ALL ? selectedPeriodId : null);
   if (managementPeriod) managementParams.set("periodId", managementPeriod);
@@ -230,7 +236,7 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
       <main id="icerik" tabIndex={-1}>
         <PageHeader title={title} subtitle="Birim sonuçlarını inceleyin, eksikleri ve sonraki adımları takip edin."
           actions={<>
-            {units.length > 0 && <Button asChild variant="outline"><Link href={"/unit-manager/management?" + managementParams.toString()}>Yönetici alanı</Link></Button>}
+            {canCompare && <Button asChild variant="outline"><Link href={"/unit-manager/management" + (managementParams.toString() ? "?" + managementParams.toString() : "")}>Birim yönetimi</Link></Button>}
             {units.length > 1 && !isOverview && <Button variant="outline" onClick={() => showOverview()}>Tüm birimler</Button>}
             <Button asChild variant="outline"><Link href={"/dashboard?view=assessment&" + contextQuery}>Kendi değerlendirmem</Link></Button>
             <Button variant="ghost" aria-label="Birim verilerini yenile" disabled={indexLoading || detailLoading} onClick={() => setRevision(value => value + 1)}><RefreshCw size={16} aria-hidden="true" />Yenile</Button>
@@ -308,7 +314,7 @@ export default function UnitManagerDashboard({ title = "Birim takibi" }: { title
                       }} onClick={() => navigate(selected, undefined, tab.id)}>{tab.label}</button>)}
                     </div>
                     <div id="unit-panel" role="tabpanel" aria-labelledby={"tab-" + activeTab}>
-                      {activeTab === "results" && <><CategoryResults data={current} /><div className="mt-6 mb-3 flex justify-between gap-3"><h2 className="t-subhead">Öncelikli adımlar</h2><Button variant="link" onClick={() => navigate(selected, undefined, "recommendations")}>Tüm birim önerileri</Button></div><UnitRecommendations data={current} limit={3} busyId={busyId} save={saveRoadmap} /></>}
+                      {activeTab === "results" && <><UnitGroupComparison assessmentId={current.assessment.id} revision={revision} /><CategoryResults data={current} /><div className="mt-6 mb-3 flex justify-between gap-3"><h2 className="t-subhead">Öncelikli adımlar</h2><Button variant="link" onClick={() => navigate(selected, undefined, "recommendations")}>Tüm birim önerileri</Button></div><UnitRecommendations data={current} limit={3} busyId={busyId} save={saveRoadmap} /></>}
                       {activeTab === "team" && <TeamProgress data={current} />}
                       {activeTab === "recommendations" && <UnitRecommendations data={current} busyId={busyId} save={saveRoadmap} />}
                       {activeTab === "roadmap" && <UnitRecommendations data={current} roadmapOnly busyId={busyId} save={saveRoadmap} />}

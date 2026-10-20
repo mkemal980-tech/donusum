@@ -2,8 +2,8 @@ import type { Benchmark, IronmanBenchmark } from "@prisma/client";
 import type { UnitAssessmentDetail, UnitAssessmentRow } from "./unit-dashboard";
 import { classifyQuadrant, QUADRANT_THRESHOLD } from "./scoring";
 import { maturityFromPercentage, median } from "./organization-campaign";
+import { buildRoadmapAnalytics } from "./unit-management-roadmap";
 
-export type ManagementBasis = "answered" | "submitted";
 export type ManagementUnit = {
   id: string; name: string; parentId: string | null; description: string | null;
   sectorId: string | null; subSectorId: string | null; sectorName: string | null;
@@ -11,12 +11,24 @@ export type ManagementUnit = {
 };
 export type ManagementBenchmark = Pick<Benchmark, "sectorId" | "subSectorId" | "level" | "targetId" | "averageScore">;
 export type ManagementIronmanBenchmark = Pick<IronmanBenchmark, "sectorId" | "subSectorId" | "velocityAverage" | "enduranceAverage" | "velocityAverageTarget" | "enduranceAverageTarget">;
+/** Birimin altında üye olmadığında seçilen sanal grup: yetki kapsamındaki en üst birimler. */
+export const ROOT_GROUP = "all";
+export const MATURITY_LEVELS = ["Başlangıç", "Farkındalık", "Gelişen", "Olgun", "Lider"] as const;
+/** Ortak gelişim alanı: cevap, sorunun puan ölçeğinin alt yarısında. */
+export const LOW_ANSWER_RATIO = 0.5;
+/** "Gelişen" seviyesinin alt sınırı. */
+const DEVELOPING = 40;
 const round = (value: number) => Math.round(value * 10) / 10;
+const raw = (values: number[]) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
 export const mean = (values: (number | null | undefined)[]) => {
-  const valid = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
-  return valid.length ? round(valid.reduce((sum, value) => sum + value, 0) / valid.length) : null;
+  const valid = raw(values.filter((value): value is number => typeof value === "number" && Number.isFinite(value)));
+  return valid === null ? null : round(valid);
 };
+/** İki grubun ortalama farkı; yuvarlanmış ortalamalardan çıkarma yapılmaz. */
+const difference = (pairs: { current: number; previous: number }[]) =>
+  pairs.length ? round(raw(pairs.map(pair => pair.current))! - raw(pairs.map(pair => pair.previous))!) : null;
 const percent = (score: number) => score >= 1 && score <= 5 ? (score - 1) / 4 * 100 : null;
+const levelCounts = (values: number[]) => MATURITY_LEVELS.map(label => ({ label, count: values.filter(value => maturityFromPercentage(value) === label).length }));
 
 export function unitSizeLabel(employeeCount: number | null) {
   if (employeeCount === null) return "Belirtilmedi";
@@ -27,21 +39,31 @@ export function unitSizeLabel(employeeCount: number | null) {
   return "Büyük (250+)";
 }
 
-/** Hiyerarşiyi yalnızca önceden yetkilendirilmiş birim listesi içinde genişletir. */
-export function managementScopeIds(units: Pick<ManagementUnit, "id" | "parentId">[], unitId: string, descendants = true) {
-  if (unitId === "all") return units.map(unit => unit.id);
-  if (!units.some(unit => unit.id === unitId)) return [];
+export type ManagementGroup = { id: string; name: string; memberIds: string[] };
+/**
+ * Karşılaştırılan küme her zaman "birim → hemen altındaki üyeler"dir; oda,
+ * holding ya da şirket olması fark etmez. Daha alt seviyeler üyenin kendi
+ * grubunda görünür, tek listede düzleştirilmez. Yetki kapsamında birden çok
+ * en üst birim varsa onlar da sanal bir grup olarak karşılaştırılabilir.
+ */
+export function managementGroups(units: Pick<ManagementUnit, "id" | "name" | "parentId">[]): ManagementGroup[] {
+  const byId = new Map(units.map(unit => [unit.id, unit]));
   const children = new Map<string, string[]>();
-  for (const unit of units) if (unit.parentId) children.set(unit.parentId, [...children.get(unit.parentId) ?? [], unit.id]);
-  const selected = new Set<string>();
-  const queue = [unitId];
-  while (queue.length) {
-    const id = queue.pop()!;
-    if (selected.has(id)) continue;
-    selected.add(id);
-    if (descendants) queue.push(...children.get(id) ?? []);
-  }
-  return [...selected];
+  for (const unit of units) if (unit.parentId && byId.has(unit.parentId) && unit.parentId !== unit.id) children.set(unit.parentId, [...children.get(unit.parentId) ?? [], unit.id]);
+  const path = (unit: Pick<ManagementUnit, "id" | "name" | "parentId">) => {
+    const names: string[] = [];
+    const seen = new Set<string>();
+    for (let current: typeof unit | undefined = unit; current && !seen.has(current.id); current = current.parentId ? byId.get(current.parentId) : undefined) {
+      seen.add(current.id); names.unshift(current.name);
+    }
+    return names;
+  };
+  const groups = units.filter(unit => children.has(unit.id)).map(unit => ({ id: unit.id, path: path(unit), memberIds: children.get(unit.id)! }))
+    .sort((a, b) => a.path.length - b.path.length || a.path.join(" › ").localeCompare(b.path.join(" › "), "tr"))
+    .map(group => ({ id: group.id, name: group.path.join(" › "), memberIds: group.memberIds }));
+  const roots = units.filter(unit => !unit.parentId || !byId.has(unit.parentId));
+  if (roots.length > 1) groups.push({ id: ROOT_GROUP, name: "Yönetilen en üst birimler", memberIds: roots.map(unit => unit.id) });
+  return groups;
 }
 
 function benchmarkFor(unit: ManagementUnit | undefined, benchmarks: ManagementBenchmark[], categoryId?: string) {
@@ -58,157 +80,214 @@ function ironmanFor(unit: ManagementUnit | undefined, benchmarks: ManagementIron
   return (unit.subSectorId ? choices.find(row => row.subSectorId === unit.subSectorId) : undefined) ?? choices.find(row => row.subSectorId === null);
 }
 
-function responseTrend(rows: UnitAssessmentRow[], now: Date) {
-  const events = new Map<string, { started: number; submitted: number }>();
-  const date = (value: string) => new Date(value).toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
-  for (const row of rows) {
-    for (const [kind, value] of [["started", row.assessmentId ? row.createdAt : null], ["submitted", row.status === "SUBMITTED" ? row.submittedAt : null]] as const) {
-      if (!value || !Number.isFinite(new Date(value).getTime())) continue;
-      const key = date(value);
-      const counts = events.get(key) ?? { started: 0, submitted: 0 };
-      counts[kind]++;
-      events.set(key, counts);
-    }
-  }
-  if (!events.size) return [];
-  const today = date(now.toISOString());
-  if (today > [...events.keys()].sort().at(-1)!) events.set(today, { started: 0, submitted: 0 });
-  let started = 0, submitted = 0;
-  return [...events].sort(([a], [b]) => a.localeCompare(b)).map(([date, counts]) => {
-    started += counts.started; submitted += counts.submitted;
-    return { date, started, submitted };
-  });
+const questionsOf = (detail: UnitAssessmentDetail) => detail.categories.flatMap(category => category.sections.flatMap(section =>
+  section.questions.map(question => ({ ...question, categoryId: category.id, categoryName: category.name, sectionName: section.name }))));
+
+function evidenceOf(detail: UnitAssessmentDetail) {
+  const required = questionsOf(detail).filter(question => question.requiresEvidence && question.value);
+  return { required: required.length, documented: required.filter(question => question.evidenceCount > 0).length };
 }
 
-/** Puanları yeniden üretmez; ortak puan motorunun değerlendirme sonuçlarını toplulaştırır. */
+function lastActivity(detail: UnitAssessmentDetail) {
+  return [...detail.team.flatMap(member => member.lastActivityAt ? [member.lastActivityAt] : []), ...detail.history.map(item => item.recordedAt)].sort().at(-1) ?? null;
+}
+
+/**
+ * Yönetim panosunun bütün sayıları. Puanları yeniden üretmez; ortak puan
+ * motorunun değerlendirme sonuçlarını toplar. Sonuçlar yalnızca gönderilmiş
+ * değerlendirmelerden gelir: cevaplanmamış soru en düşük seviye sayıldığı
+ * için taslak, olgunluğu değil doluluğu ölçer. Taslaklar katılımda görünür.
+ */
 export function buildUnitManagementAnalytics(input: {
-  units: ManagementUnit[]; rows: UnitAssessmentRow[]; details: UnitAssessmentDetail[];
-  benchmarks?: ManagementBenchmark[]; ironmanBenchmarks?: ManagementIronmanBenchmark[];
-  basis: ManagementBasis; now?: Date;
+  members: ManagementUnit[]; rows: UnitAssessmentRow[]; details: UnitAssessmentDetail[];
+  benchmarks?: ManagementBenchmark[]; ironmanBenchmarks?: ManagementIronmanBenchmark[]; now?: Date;
 }) {
-  const { units, rows, basis } = input;
+  const { members, rows } = input;
+  const now = input.now ?? new Date();
   const benchmarks = input.benchmarks ?? [];
   const ironmanBenchmarks = input.ironmanBenchmarks ?? [];
-  const unitById = new Map(units.map(unit => [unit.id, unit]));
-  const rowById = new Map(rows.map(row => [row.assessmentId, row]));
-  const eligibleDetails = input.details.filter(detail => {
-    const row = rowById.get(detail.assessment.id);
-    return row && row.unitId === detail.assessment.unitId && unitById.has(row.unitId);
+  const memberById = new Map(members.map(unit => [unit.id, unit]));
+  const rowByAssessment = new Map(rows.flatMap(row => row.assessmentId ? [[row.assessmentId, row] as const] : []));
+  const rowByUnit = new Map(rows.map(row => [row.unitId, row]));
+  const started = input.details.filter(detail => {
+    const row = rowByAssessment.get(detail.assessment.id);
+    return row && row.unitId === detail.assessment.unitId && memberById.has(row.unitId);
   });
-  const analyzed = eligibleDetails.filter(detail => detail.answeredQuestions > 0 && (basis === "answered" || rowById.get(detail.assessment.id)?.status === "SUBMITTED"));
-  const scoreValues = analyzed.map(detail => detail.scores.overallPercentage);
-  const average = mean(scoreValues);
-  const overallPairs = analyzed.flatMap(detail => {
-    const benchmark = benchmarkFor(unitById.get(detail.assessment.unitId), benchmarks);
-    return benchmark === null ? [] : [{ benchmark, difference: detail.scores.overallPercentage - benchmark }];
+  const submitted = started.filter(detail => rowByAssessment.get(detail.assessment.id)!.status === "SUBMITTED" && detail.answeredQuestions > 0);
+  const detailByUnit = new Map(started.map(detail => [detail.assessment.unitId, detail]));
+  const resultByUnit = new Map(submitted.map(detail => [detail.assessment.unitId, detail]));
+
+  // Sonuçlar
+  const scores = submitted.map(detail => detail.scores.overallPercentage);
+  const overallPairs = submitted.flatMap(detail => {
+    const benchmark = benchmarkFor(memberById.get(detail.assessment.unitId), benchmarks);
+    return benchmark === null ? [] : [{ current: detail.scores.overallPercentage, previous: benchmark }];
   });
-  const categories = [...new Map(eligibleDetails.flatMap(detail => detail.categories.map(category => [category.id, category] as const))).values()].map(category => {
-    const values = analyzed.flatMap(detail => {
+  const withPrevious = submitted.filter(detail => detail.previous);
+  const results = {
+    count: submitted.length, average: mean(scores), median: scores.length ? median(scores) : null, levels: levelCounts(scores),
+    benchmark: mean(overallPairs.map(pair => pair.previous)), benchmarkCount: overallPairs.length, difference: difference(overallPairs),
+    previousAverage: mean(withPrevious.map(detail => detail.previous!.percentage)), pairedCount: withPrevious.length,
+    change: difference(withPrevious.map(detail => ({ current: detail.scores.overallPercentage, previous: detail.previous!.percentage }))),
+  };
+
+  // Soru düzeyi: birden çok üyenin ölçeğin alt yarısında kaldığı sorular
+  type QuestionStat = { id: string; text: string; categoryId: string; categoryName: string; sectionName: string; answered: number; low: number; ratioSum: number };
+  const questionStats = new Map<string, QuestionStat>();
+  for (const detail of submitted) for (const question of questionsOf(detail)) {
+    if (question.ratio === null) continue;
+    const stat = questionStats.get(question.id) ?? { id: question.id, text: question.text, categoryId: question.categoryId, categoryName: question.categoryName, sectionName: question.sectionName, answered: 0, low: 0, ratioSum: 0 };
+    stat.answered++; stat.ratioSum += question.ratio;
+    if (question.ratio < LOW_ANSWER_RATIO) stat.low++;
+    questionStats.set(question.id, stat);
+  }
+  const recommendationByQuestion = new Map<string, { id: string; title: string; impact: number }>();
+  for (const detail of submitted) for (const rec of detail.recommendations) {
+    if (!rec.questionId) continue;
+    const known = recommendationByQuestion.get(rec.questionId);
+    if (!known || rec.estimatedImpact > known.impact) recommendationByQuestion.set(rec.questionId, { id: rec.id, title: rec.title, impact: rec.estimatedImpact });
+  }
+  const byGap = (a: QuestionStat, b: QuestionStat) =>
+    b.low - a.low || b.low / b.answered - a.low / a.answered || a.ratioSum / a.answered - b.ratioSum / b.answered || a.text.localeCompare(b.text, "tr");
+  const toGap = (stat: QuestionStat) => {
+    const rec = recommendationByQuestion.get(stat.id);
+    return { id: stat.id, text: stat.text, categoryId: stat.categoryId, categoryName: stat.categoryName, sectionName: stat.sectionName,
+      answered: stat.answered, low: stat.low, share: Math.round(stat.low / stat.answered * 100), recommendation: rec ? { id: rec.id, title: rec.title } : null };
+  };
+  const commonGaps = [...questionStats.values()].filter(stat => stat.low >= 2).sort(byGap).slice(0, 10).map(toGap);
+
+  // Kategoriler
+  const categoryList = [...new Map(started.flatMap(detail => detail.categories.map(category => [category.id, category.name] as const))).entries()].map(([id, name]) => ({ id, name }));
+  const categories = categoryList.map(category => {
+    const entries = submitted.flatMap(detail => {
       const item = detail.categories.find(row => row.id === category.id && row.answeredQuestions > 0);
-      if (!item) return [];
-      const benchmark = benchmarkFor(unitById.get(detail.assessment.unitId), benchmarks, category.id);
-      return [{ item, benchmark }];
+      return item ? [{ detail, item, value: round(item.currentPercentage) }] : [];
     });
-    const paired = values.filter(value => value.benchmark !== null);
-    const sections = [...new Map(values.flatMap(value => value.item.sections.map(section => [section.id ?? "direct", section] as const))).values()].map(section => ({
-      id: section.id, name: section.name,
-      average: mean(values.map(value => value.item.sections.find(row => row.id === section.id)?.currentPercentage)),
-      answered: values.reduce((sum, value) => sum + (value.item.sections.find(row => row.id === section.id)?.answeredCount ?? 0), 0),
-      total: values.reduce((sum, value) => sum + (value.item.sections.find(row => row.id === section.id)?.questionCount ?? 0), 0),
-    }));
+    const points = entries.map(({ detail, value }) => ({ unitId: detail.assessment.unitId, unitName: detail.assessment.unitName, value }))
+      .sort((a, b) => b.value - a.value || a.unitName.localeCompare(b.unitName, "tr"));
+    const average = mean(points.map(point => point.value));
+    const paired = entries.flatMap(({ detail, item }) => {
+      const benchmark = benchmarkFor(memberById.get(detail.assessment.unitId), benchmarks, category.id);
+      return benchmark === null ? [] : [{ current: item.currentPercentage, previous: benchmark }];
+    });
+    const previous = entries.flatMap(({ detail, item }) => {
+      const value = detail.previous?.categories.find(row => row.id === category.id)?.currentPercentage;
+      return value == null ? [] : [{ current: item.currentPercentage, previous: value }];
+    });
+    const lowest = [...questionStats.values()].filter(stat => stat.categoryId === category.id && stat.low > 0).sort(byGap)[0];
     return {
-      id: category.id, name: category.name, count: values.length,
-      average: mean(values.map(value => value.item.currentPercentage)),
-      baseline: mean(values.map(value => value.item.basePercentage)),
-      gain: mean(values.map(value => (value.item.currentScore - value.item.baseScore) * 25)),
-      weight: mean(values.map(value => value.item.weightPercentage)),
-      benchmark: mean(paired.map(value => value.benchmark)), benchmarkCount: paired.length,
-      difference: mean(paired.map(value => value.item.currentPercentage - value.benchmark!)), sections,
+      id: category.id, name: category.name, count: points.length, average, median: points.length ? median(points.map(point => point.value)) : null,
+      highest: points[0] ?? null, lowest: points.at(-1) ?? null,
+      above: average === null ? 0 : points.filter(point => point.value > average).length,
+      below: average === null ? 0 : points.filter(point => point.value < average).length,
+      belowDeveloping: points.filter(point => point.value < DEVELOPING).length,
+      levels: levelCounts(points.map(point => point.value)),
+      benchmark: mean(paired.map(pair => pair.previous)), benchmarkCount: paired.length,
+      change: difference(previous), pairedCount: previous.length,
+      points, lowestQuestion: lowest ? toGap(lowest) : null,
     };
   });
-  const distribution = ["Başlangıç", "Farkındalık", "Gelişen", "Olgun", "Lider"].map(label => ({ label, count: scoreValues.filter(value => maturityFromPercentage(value) === label).length }));
-  const leading = [...distribution].sort((a, b) => b.count - a.count)[0];
-  const axes = analyzed.filter(detail => detail.scores.velocityWeight > 0 && detail.scores.enduranceWeight > 0);
+
+  // Üye tablosu: atanmış olsun olmasın bütün üyeler
+  const memberRows = members.map(unit => {
+    const row = rowByUnit.get(unit.id) ?? null;
+    const detail = detailByUnit.get(unit.id) ?? null;
+    const result = resultByUnit.get(unit.id) ?? null;
+    const score = result ? result.scores.overallPercentage : null;
+    const benchmark = result ? benchmarkFor(unit, benchmarks) : null;
+    return {
+      unitId: unit.id, unitName: unit.name, sectorName: unit.sectorName, employeeCount: unit.employeeCount, sizeLabel: unitSizeLabel(unit.employeeCount),
+      rowId: row?.id ?? null, assessmentId: row?.assessmentId ?? null, surveyId: row?.surveyId ?? null,
+      status: row?.status ?? null, overdue: row?.overdue ?? false, deadline: row?.deadline ?? null, completion: row ? row.completionPercentage : null,
+      score, level: score === null ? null : maturityFromPercentage(score),
+      categories: Object.fromEntries(categoryList.map(category => {
+        const item = result?.categories.find(row => row.id === category.id && row.answeredQuestions > 0);
+        return [category.id, item ? round(item.currentPercentage) : null];
+      })) as Record<string, number | null>,
+      previous: result?.previous?.percentage ?? null,
+      change: result?.previous ? result.scores.overallPercentage - result.previous.percentage : null,
+      benchmarkDifference: score === null || benchmark === null ? null : round(score - benchmark),
+      evidence: detail ? evidenceOf(detail) : { required: 0, documented: 0 },
+      contributorCount: detail?.summary.contributorCount ?? 0,
+      lastActivityAt: detail ? lastActivity(detail) : null,
+      nextGap: detail?.work[0] ? { title: detail.work[0].title, assigneeName: detail.work[0].assigneeName } : null,
+    };
+  });
+
+  // Katılım
+  const submittedCount = rows.filter(row => row.status === "SUBMITTED").length;
+  const notStarted = rows.filter(row => row.status === "NOT_STARTED").length;
+  const participation = {
+    members: members.length, assigned: rows.length, unassigned: members.filter(unit => !rowByUnit.has(unit.id)).length,
+    submitted: submittedCount, notStarted, inProgress: rows.length - submittedCount - notStarted,
+    readyToSubmit: rows.filter(row => row.status === "READY_TO_SUBMIT").length, overdue: rows.filter(row => row.overdue).length,
+    completionRate: rows.length ? round(submittedCount / rows.length * 100) : 0,
+    pending: memberRows.filter(row => row.status && row.status !== "SUBMITTED")
+      .sort((a, b) => Number(b.overdue) - Number(a.overdue) || (a.completion ?? 0) - (b.completion ?? 0) || a.unitName.localeCompare(b.unitName, "tr")),
+  };
+
+  // Dönemler arası: anketle ölçülen değişim ve önceki dönemde beyan edilen gelişim
+  const changeRows = withPrevious.map(detail => {
+    const previous = detail.previous!;
+    const measured = detail.scores.baselineOverallPercentage - previous.baselinePercentage;
+    return {
+      unitId: detail.assessment.unitId, unitName: detail.assessment.unitName, assessmentId: detail.assessment.id, surveyId: detail.assessment.surveyId,
+      previousPeriod: previous.period, previousSurvey: previous.baselinePercentage, currentSurvey: detail.scores.baselineOverallPercentage,
+      measured: round(measured), declared: previous.deltaPercentage, gap: round(previous.deltaPercentage - measured),
+    };
+  }).sort((a, b) => b.gap - a.gap || a.unitName.localeCompare(b.unitName, "tr"));
+  const change = {
+    pairedCount: changeRows.length, measured: mean(changeRows.map(row => row.measured)), declared: mean(changeRows.map(row => row.declared)), rows: changeRows,
+  };
+
+  // Ironman: iki ekseni birlikte ölçülen gönderimler
+  const axes = submitted.filter(detail => detail.scores.velocityWeight > 0 && detail.scores.enduranceWeight > 0);
   const velocity = mean(axes.map(detail => detail.scores.velocityScore));
   const endurance = mean(axes.map(detail => detail.scores.enduranceScore));
   const axisBenchmarks = axes.flatMap(detail => {
-    const benchmark = ironmanFor(unitById.get(detail.assessment.unitId), ironmanBenchmarks);
+    const benchmark = ironmanFor(memberById.get(detail.assessment.unitId), ironmanBenchmarks);
     return benchmark ? [benchmark] : [];
   });
-  const sectors = [...new Map(units.map(unit => [unit.sectorId ?? "none", { id: unit.sectorId ?? "none", name: unit.sectorName ?? "Sektör belirtilmedi" }])).values()].map(sector => {
-    const sectorUnits = units.filter(unit => (unit.sectorId ?? "none") === sector.id);
-    const ids = new Set(sectorUnits.map(unit => unit.id));
-    const assigned = rows.filter(row => ids.has(row.unitId));
-    const details = analyzed.filter(detail => ids.has(detail.assessment.unitId));
-    const paired = details.flatMap(detail => {
-      const benchmark = benchmarkFor(unitById.get(detail.assessment.unitId), benchmarks);
-      return benchmark === null ? [] : [{ benchmark, difference: detail.scores.overallPercentage - benchmark }];
-    });
-    return { ...sector, unitCount: sectorUnits.length, assigned: assigned.length, count: details.length, submitted: assigned.filter(row => row.status === "SUBMITTED").length,
-      average: mean(details.map(detail => detail.scores.overallPercentage)), benchmark: mean(paired.map(value => value.benchmark)), difference: mean(paired.map(value => value.difference)) };
-  });
-  const companySizes = ["Mikro (1–9)", "Küçük (10–49)", "Orta (50–249)", "Büyük (250+)", "Çalışan yok", "Belirtilmedi"].map(label => {
-    const matching = units.filter(unit => unitSizeLabel(unit.employeeCount) === label);
-    const ids = new Set(matching.map(unit => unit.id));
-    const values = analyzed.filter(detail => ids.has(detail.assessment.unitId));
-    return { label, unitCount: matching.length, count: values.length, average: mean(values.map(detail => detail.scores.overallPercentage)) };
-  });
-  type Recommendation = UnitAssessmentDetail["recommendations"][number];
-  const recommendations = new Map<string, Pick<Recommendation, "id" | "title" | "description" | "strategicType" | "timeframe" | "estimatedImpact" | "costType" | "capexLevel" | "opexLevel" | "categoryId"> & {
-    categoryName: string | null; units: { unitId: string; unitName: string; assessmentId: string; status: string; ready: boolean }[];
-  }>();
-  for (const detail of analyzed) for (const rec of detail.recommendations) {
-    if (!rec.isInRoadmap && (!rec.isActionable || rec.stepDistance > 0)) continue;
-    let item = recommendations.get(rec.id);
-    if (!item) {
-      item = { id: rec.id, title: rec.title, description: rec.description, strategicType: rec.strategicType, timeframe: rec.timeframe,
-        estimatedImpact: rec.estimatedImpact, costType: rec.costType, capexLevel: rec.capexLevel, opexLevel: rec.opexLevel, categoryId: rec.categoryId,
-        categoryName: detail.categories.find(category => category.id === rec.categoryId)?.name ?? null, units: [] };
-      recommendations.set(rec.id, item);
-    }
-    item.units.push({ unitId: detail.assessment.unitId, unitName: detail.assessment.unitName, assessmentId: detail.assessment.id,
-      status: rec.status ?? "READY", ready: rec.isActionable && rec.stepDistance === 0 && rec.status !== "COMPLETED" && rec.status !== "CANCELLED" });
+  const ironman = {
+    count: axes.length, velocity, endurance, threshold: QUADRANT_THRESHOLD, benchmarkCount: axisBenchmarks.length,
+    benchmarkVelocity: mean(axisBenchmarks.map(value => value.velocityAverage)), benchmarkEndurance: mean(axisBenchmarks.map(value => value.enduranceAverage)),
+    targetVelocity: mean(axisBenchmarks.map(value => value.velocityAverageTarget)), targetEndurance: mean(axisBenchmarks.map(value => value.enduranceAverageTarget)),
+    quadrant: velocity === null || endurance === null ? null : classifyQuadrant(velocity, endurance),
+    distribution: ["IRONMAN", "SPRINTER", "MARATHON_RUNNER", "WALKER"].map(key => ({ key, count: axes.filter(detail => detail.scores.quadrant === key).length })),
+    points: axes.map(detail => ({ unitId: detail.assessment.unitId, unitName: detail.assessment.unitName, velocity: detail.scores.velocityScore, endurance: detail.scores.enduranceScore, quadrant: detail.scores.quadrant })),
+  };
+
+  const roadmap = buildRoadmapAnalytics({ details: submitted, categories: categories.map(({ id, name, average }) => ({ id, name, average })), now });
+
+  // Cevap şeridi ve yazılı özet
+  const ranked = categories.filter(category => category.average !== null).sort((a, b) => a.average! - b.average! || a.name.localeCompare(b.name, "tr"));
+  const lowestCategory = ranked[0] ?? null;
+  const evidence = submitted.map(evidenceOf).reduce((sum, row) => ({ required: sum.required + row.required, documented: sum.documented + row.documented }), { required: 0, documented: 0 });
+  const answer = {
+    score: results.average, change: results.change, pairedCount: results.pairedCount, benchmarkDifference: results.difference,
+    lowestCategory: lowestCategory ? { id: lowestCategory.id, name: lowestCategory.name, average: lowestCategory.average!, belowDeveloping: lowestCategory.belowDeveloping, count: lowestCategory.count } : null,
+    nextAction: roadmap.nextAction,
+    data: { members: members.length, assigned: rows.length, submitted: submittedCount, evidenceRequired: evidence.required, evidenceDocumented: evidence.documented,
+      evidenceRate: evidence.required ? Math.round(evidence.documented / evidence.required * 100) : null },
+  };
+  const n = (value: number) => value.toLocaleString("tr-TR");
+  const signed = (value: number) => (value > 0 ? "+" : "") + value.toLocaleString("tr-TR");
+  const summary: string[] = [];
+  if (results.average !== null) {
+    summary.push(`Birim puanı %${n(results.average)}, gönderilen ${results.count} değerlendirmeden hesaplandı` +
+      (results.change !== null ? `; aynı ${results.pairedCount} üyede önceki döneme göre ${signed(results.change)} puan` : "") +
+      (results.difference !== null ? `; sektör kıyasına göre ${signed(results.difference)} puan` : "") + ".");
   }
-  const portfolioRows = [...recommendations.values()].sort((a, b) => b.estimatedImpact - a.estimatedImpact || b.units.length - a.units.length || a.title.localeCompare(b.title, "tr"));
-  const statusLabels = ["READY", "NOT_STARTED", "PLANNED", "IN_PROGRESS", "COMPLETED", "CANCELLED"];
-  const gain = mean(analyzed.map(detail => {
-    const options = detail.recommendations.filter(rec => rec.isActionable && rec.stepDistance === 0 && rec.status !== "COMPLETED" && rec.status !== "CANCELLED");
-    return Math.min(5 - detail.scores.overallScore, Math.max(0, ...options.map(rec => rec.fullContribution))) * 25;
-  }));
-  const submitted = rows.filter(row => row.status === "SUBMITTED").length;
-  const notStarted = rows.filter(row => row.status === "NOT_STARTED").length;
-  const strongest = [...categories].filter(category => category.average !== null).sort((a, b) => b.average! - a.average!)[0];
-  const weakest = [...categories].filter(category => category.average !== null).sort((a, b) => a.average! - b.average!)[0];
-  const ready = rows.filter(row => row.status === "READY_TO_SUBMIT").length;
-  const overdueRoadmap = analyzed.reduce((sum, detail) => sum + detail.summary.overdueRoadmapCount, 0);
-  const insights: { title: string; description: string; tone: "success" | "warning" | "accent" }[] = [];
-  if (strongest) insights.push({ title: "En güçlü başlık", description: `${strongest.name}, %${strongest.average!.toLocaleString("tr-TR")} ile seçili kapsamın en yüksek kategori puanına sahip.`, tone: "success" });
-  if (weakest && weakest.id !== strongest?.id) insights.push({ title: "Gelişim alanı", description: `${weakest.name}, %${weakest.average!.toLocaleString("tr-TR")} ile en düşük kategori puanına sahip; bu başlığın önerileri önceliklendirilebilir.`, tone: "warning" });
-  if (ready) insights.push({ title: "Gönderime hazır değerlendirmeler", description: `${ready} değerlendirmede tüm sorular cevaplanmış; henüz kesinleşmiş gönderim yapılmamış.`, tone: "accent" });
-  if (notStarted) insights.push({ title: "Katılımı artırın", description: `Atanmış ${notStarted} değerlendirmede henüz cevap yok. Birim listesinden değerlendirmeleri başlatabilirsiniz.`, tone: "warning" });
-  if (overdueRoadmap) insights.push({ title: "Geciken yol haritası işleri", description: `${overdueRoadmap} işin hedef tarihi geçmiş. İlgili birimlerin yol haritasından sorumlu ve tarihleri takip edin.`, tone: "warning" });
-  if (portfolioRows[0]) insights.push({ title: "Öncelikli öneri", description: `${portfolioRows[0].title}: ${portfolioRows[0].units.length} birimi ilgilendiriyor; tahmini etki ${portfolioRows[0].estimatedImpact}/10.`, tone: "accent" });
-  const activity = input.details.flatMap(detail => [...detail.team.flatMap(member => member.lastActivityAt ? [member.lastActivityAt] : []), ...detail.history.map(item => item.recordedAt)]).sort().at(-1) ?? null;
+  if (ranked.length > 1) summary.push(`En yüksek kategori ortalaması ${ranked.at(-1)!.name} (%${n(ranked.at(-1)!.average!)}), en düşük ${ranked[0].name} (%${n(ranked[0].average!)}).`);
+  if (rows.length && submittedCount < rows.length) summary.push(`Atanan ${rows.length} üyenin ${submittedCount} tanesi gönderdi; gönderilmeyen değerlendirmeler sonuçlara katılmaz.`);
+  if (roadmap.totals.overdue) summary.push(`${roadmap.totals.overdue} yol haritası işinin hedef tarihi geçti.`);
+  if (roadmap.untouched[0]) summary.push(`“${roadmap.untouched[0].title}” önerisi ${roadmap.untouched[0].eligible} üyeye uygulanabilir; henüz hiçbir üyenin yol haritasında değil.`);
+  if (evidence.required) summary.push(`Belge gerektiren ${evidence.required} cevabın ${evidence.documented} tanesi belgeli.`);
+
+  const activity = started.map(lastActivity).filter((value): value is string => Boolean(value)).sort().at(-1) ?? null;
   return {
-    scope: { unitCount: units.length, activeUserCount: units.reduce((sum, unit) => sum + unit.activeUserCount, 0), lastActivityAt: activity },
-    participation: { total: rows.length, submitted, notStarted, inProgress: rows.length - submitted - notStarted, readyToSubmit: ready,
-      overdue: rows.filter(row => row.overdue).length, completionRate: rows.length ? round(submitted / rows.length * 100) : 0 },
-    results: { count: analyzed.length, average, median: scoreValues.length ? median(scoreValues) : null,
-      baseline: mean(analyzed.map(detail => detail.scores.baselineOverallPercentage)), gain: mean(analyzed.map(detail => detail.scores.deltaPercentage)),
-      leadingMaturity: analyzed.length ? leading.label : null, leadingCount: analyzed.length ? leading.count : 0,
-      benchmark: mean(overallPairs.map(value => value.benchmark)), benchmarkCount: overallPairs.length, difference: mean(overallPairs.map(value => value.difference)), categories, distribution },
-    ironman: { count: axes.length, velocity, endurance, threshold: QUADRANT_THRESHOLD,
-      questionMix: { velocity: mean(analyzed.map(detail => detail.questionMix.velocity)), endurance: mean(analyzed.map(detail => detail.questionMix.endurance)) }, benchmarkCount: axisBenchmarks.length,
-      benchmarkVelocity: mean(axisBenchmarks.map(value => value.velocityAverage)), benchmarkEndurance: mean(axisBenchmarks.map(value => value.enduranceAverage)),
-      targetVelocity: mean(axisBenchmarks.map(value => value.velocityAverageTarget)), targetEndurance: mean(axisBenchmarks.map(value => value.enduranceAverageTarget)),
-      quadrant: velocity === null || endurance === null ? null : classifyQuadrant(velocity, endurance),
-      distribution: ["IRONMAN", "SPRINTER", "MARATHON_RUNNER", "WALKER"].map(key => ({ key, count: axes.filter(detail => detail.scores.quadrant === key).length })) },
-    trend: responseTrend(rows, input.now ?? new Date()), companySizes, sectors,
-    portfolio: { total: portfolioRows.length, highPriority: portfolioRows.filter(rec => rec.estimatedImpact >= 8 && rec.units.some(unit => unit.ready)).length,
-      memberReach: new Set(portfolioRows.flatMap(rec => rec.units.filter(unit => unit.ready).map(unit => unit.unitId))).size, potentialGain: gain,
-      byStrategy: ["QUICK_WIN", "PROJECT", "BIG_BET"].map(key => ({ key, count: portfolioRows.filter(rec => rec.strategicType === key).length })),
-      byStatus: statusLabels.map(key => ({ key, count: portfolioRows.reduce((sum, rec) => sum + rec.units.filter(unit => unit.status === key).length, 0) })), rows: portfolioRows },
-    insights, members: rows.map(row => ({ ...row, sectorName: unitById.get(row.unitId)?.sectorName ?? null, employeeCount: unitById.get(row.unitId)?.employeeCount ?? null })),
+    scope: { memberCount: members.length, activeUserCount: members.reduce((sum, unit) => sum + unit.activeUserCount, 0), lastActivityAt: activity },
+    answer, summary, participation, results, categories, members: memberRows, commonGaps, roadmap, change, ironman,
   };
 }
 export type UnitManagementAnalytics = ReturnType<typeof buildUnitManagementAnalytics>;

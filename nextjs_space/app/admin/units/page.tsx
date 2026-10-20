@@ -288,7 +288,10 @@ export default function UnitsPage() {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <Button asChild variant="outline" size="sm"><Link href={"/unit-manager/management?unitId=" + encodeURIComponent(unit.id)} aria-label={unit.name + " yönetici alanı"}>Yönetici alanı</Link></Button>
+              {/* Üyesi olan birim üyeleriyle karşılaştırılır; olmayanın kendi panosu açılır. */}
+              {hasSubUnits
+                ? <Button asChild variant="outline" size="sm"><Link href={"/unit-manager/management?unitId=" + encodeURIComponent(unit.id)} aria-label={unit.name + " birim yönetimi"}>Birim yönetimi</Link></Button>
+                : <Button asChild variant="outline" size="sm"><Link href={"/unit-manager?unitId=" + encodeURIComponent(unit.id)} aria-label={unit.name + " birim panosu"}>Birim panosu</Link></Button>}
               <Button
                 onClick={() => openCreateModal(unit.id)}
                 title="Alt Birim Ekle"

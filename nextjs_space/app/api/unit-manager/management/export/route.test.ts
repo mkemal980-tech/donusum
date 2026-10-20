@@ -17,11 +17,15 @@ describe("yönetici raporu erişimi", () => {
     mocks.load.mockRejectedValue(new ManagedAssessmentError("Bu birime erişiminiz yok."));
     expect((await GET(new NextRequest("http://localhost/api/unit-manager/management/export?unitId=outside&format=xlsx"))).status).toBe(403);
   });
-  it("seçili sonuç kapsamını raporda korur", async () => {
-    const response = await GET(new NextRequest("http://localhost/api/unit-manager/management/export?unitId=root&surveyId=survey-1&periodId=period-2026&basis=submitted&format=html"));
+  it("seçili birim, anket ve dönemi raporda korur", async () => {
+    const response = await GET(new NextRequest("http://localhost/api/unit-manager/management/export?unitId=root&surveyId=survey-1&periodId=period-2026&format=html"));
     expect(response.status).toBe(200); expect(response.headers.get("content-type")).toContain("text/html");
-    expect(mocks.load).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ unitId: "root", periodId: "period-2026", basis: "submitted" }));
+    expect(mocks.load).toHaveBeenCalledWith(expect.anything(), { unitId: "root", surveyId: "survey-1", periodId: "period-2026" });
     expect(await response.text()).toContain("Öneri durumları");
+  });
+  it("üyesi olmayan birim için grup raporu üretmez", async () => {
+    mocks.load.mockResolvedValue({ kind: "member", unitId: "unit-b" });
+    expect((await GET(new NextRequest("http://localhost/api/unit-manager/management/export?unitId=unit-b&format=xlsx"))).status).toBe(404);
   });
   it("tanınmayan biçimde veri yüklemez", async () => {
     expect((await GET(new NextRequest("http://localhost/api/unit-manager/management/export?format=csv"))).status).toBe(400);

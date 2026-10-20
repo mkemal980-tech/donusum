@@ -12,10 +12,10 @@ const base: IronmanSummary = {
 describe("Ironman yorumu", () => {
   it("kadranı, sektör farkını, hedefi ve önceliği ölçülen değerlerden anlatır", () => {
     const { headline, points } = ironmanInsight(base);
-    expect(headline).toBe("6 değerlendirmenin ortalaması Demir Adam kadranında: birimler hem hızlı aksiyon alıyor hem de bunu politika ve süreçlerle kalıcı hâle getiriyor.");
+    expect(headline).toBe("6 değerlendirmenin ortalaması Demir Adam kadranında: üyeler hem hızlı aksiyon alıyor hem de bunu politika ve süreçlerle kalıcı hâle getiriyor.");
     expect(points).toContain("Sektör ortalamasına (hız 2,5 · dayanıklılık 2,5) göre hızda 1,5 puan önde, dayanıklılıkta 1,1 puan önde.");
     expect(points).toContain("Sektörün gelecek yıl için beklenen ortalaması (hız 3,0 · dayanıklılık 3,0) iki eksende de şimdiden aşılmış.");
-    expect(points).toContain("Öncelik konumu korumak. Görece zayıf eksen dayanıklılık (3,6); ilerleme en çok burada kazanılır.");
+    expect(points).toContain("Öncelik konumu korumak. Görece düşük eksen dayanıklılık (3,6); ilerleme en çok burada kazanılır.");
     expect(points.some(point => point.startsWith("Ortalama dağılımı gizler"))).toBe(false);
   });
 
@@ -33,7 +33,7 @@ describe("Ironman yorumu", () => {
 
   it("Yaya kadranında eşiğe en yakın ekseni ve varılacak kadranı gösterir", () => {
     const { points } = ironmanInsight({ ...base, quadrant: "WALKER", velocity: 2.1, endurance: 2.6 });
-    expect(points).toContain("Öncelik eşiğe en yakın eksen olan dayanıklılık (2,6): 0,4 puanlık artış birimleri Maraton Koşucusu kadranına taşır.");
+    expect(points).toContain("Öncelik eşiğe en yakın eksen olan dayanıklılık (2,6): 0,4 puanlık artış üyeleri Maraton Koşucusu kadranına taşır.");
   });
 
   it("ortalamanın gizlediği dağılımı ve az veriyi belirtir", () => {
@@ -42,8 +42,8 @@ describe("Ironman yorumu", () => {
       distribution: [{ key: "IRONMAN", count: 1 }, { key: "SPRINTER", count: 0 }, { key: "MARATHON_RUNNER", count: 0 }, { key: "WALKER", count: 1 }],
     });
     expect(headline.startsWith("2 değerlendirmenin ortalaması")).toBe(true);
-    expect(points).toContain("Ortalama dağılımı gizler: Demir Adam 1 · Yaya 1 değerlendirme. Yaya kadranındaki birimler ayrıca ele alınmalı.");
-    expect(points).toContain("Yorum yalnızca 2 değerlendirmeye dayanıyor; daha çok birim gönderdikçe netleşir.");
+    expect(points).toContain("Ortalama dağılımı gizler: Demir Adam 1 · Yaya 1 değerlendirme. Yaya kadranındaki üyeler ayrıca ele alınmalı.");
+    expect(points).toContain("Yorum yalnızca 2 değerlendirmeye dayanıyor; daha çok üye gönderdikçe netleşir.");
   });
 
   it("iki eksen ölçülmemişse boş durumu açıklar", () => {

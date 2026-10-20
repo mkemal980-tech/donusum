@@ -141,7 +141,9 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
         if (role !== "UNIT_MANAGER") return item;
         if (item.href === "/unit-manager/management") {
           const params = new URLSearchParams(unitQuery);
-          for (const key of ["assessmentId", "selection", "tab"]) params.delete(key);
+          // Birim yönetimi bir birimi üyeleriyle karşılaştırır; panodaki üye seçimi taşınırsa
+          // üyesi olmayan birim kullanıcıyı aynı panoya geri gönderir. Birimi pano seçer.
+          for (const key of ["unitId", "assessmentId", "selection", "tab"]) params.delete(key);
           return { ...item, href: item.href + (params.toString() ? "?" + params.toString() : "") };
         }
         if (item.href === "/survey") return { ...item, label: "Kendi anketim" };

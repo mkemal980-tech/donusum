@@ -51,22 +51,24 @@ export async function loadManagedStructure(scope: ScoringAssessment, db: DbClien
   return { categories, questions, scoring: { ...scope, questionIds: questions.map(question => question.id) } };
 }
 
-export async function loadUnitDashboardIndex(actor: ManagedActor, db: DbClient = prisma, unitIds?: readonly string[]) {
+/** `surveyId` verilirse yalnızca o anketin değerlendirmeleri puanlanır; yönetim panosu diğer anketleri hiç hesaplamaz. */
+export async function loadUnitDashboardIndex(actor: ManagedActor, db: DbClient = prisma, unitIds?: readonly string[], filter: { surveyId?: string | null } = {}) {
   const authorized = await managedUnitScope(actor, db);
   const scope = unitIds ? { in: unitIds.filter(id => !("in" in authorized) || authorized.in.includes(id)) } : authorized;
   const unitWhere = "in" in scope ? { id: { in: scope.in } } : {};
+  const surveyWhere = filter.surveyId ? { surveyId: filter.surveyId } : {};
   const [units, records, assignments, recipients, direct] = await Promise.all([
     db.unit.findMany({ where: unitWhere, select: { id: true, name: true, description: true, parentId: true }, orderBy: { name: "asc" } }),
     db.assessment.findMany({
-      where: { unitId: scope, survey: { isDemo: false } }, include: MANAGED_ASSESSMENT_INCLUDE,
+      where: { unitId: scope, ...surveyWhere, survey: { isDemo: false } }, include: MANAGED_ASSESSMENT_INCLUDE,
       orderBy: { createdAt: "desc" },
     }),
     db.userSurveyAssignment.findMany({
-      where: { isActive: true, user: { unitId: scope, isActive: true }, survey: { isActive: true, archivedAt: null, isDemo: false } },
+      where: { isActive: true, ...surveyWhere, user: { unitId: scope, isActive: true }, survey: { isActive: true, archivedAt: null, isDemo: false } },
       select: { surveyId: true, assignedAt: true, deadline: true, hasDeadline: true, user: { select: { unitId: true } }, survey: { select: { name: true } } },
     }),
     db.campaignRecipient.findMany({
-      where: { ...("in" in scope ? { memberUnitId: { in: scope.in } } : {}), campaign: { survey: { isDemo: false, archivedAt: null } } },
+      where: { ...("in" in scope ? { memberUnitId: { in: scope.in } } : {}), campaign: { ...surveyWhere, survey: { isDemo: false, archivedAt: null } } },
       include: { campaign: { include: { survey: { select: { name: true, isActive: true } } } }, assessment: { select: { id: true } } },
       orderBy: { assignedAt: "desc" },
     }),
@@ -203,7 +205,13 @@ export async function loadUnitAssessmentDetail(actor: ManagedActor, assessmentId
     contributions: computeRecommendationContributions(progressInputs, allCandidates.map(rec => rec.id)),
   };
   const breakdown = computeProgressBreakdown(progressInputs, structure.categories);
+  const progressById = new Map(progressInputs.responses.map(row => [row.questionId, row]));
   const responseById = new Map(responses.filter(response => response.value.trim()).map(response => [response.questionId, response]));
+  /** Cevabın kendi ölçeğindeki yeri (0–1); kapsam dışı veya cevapsız soruda null. */
+  const ratioOf = (questionId: string) => {
+    const row = progressById.get(questionId);
+    return responseById.has(questionId) && row?.applicable && row.maxScore > 0 ? Math.min(1, Math.max(0, row.score / row.maxScore)) : null;
+  };
   const memberById = new Map(members.map(member => [member.id, member]));
   const assignedBySection = new Map(assignments.map(assignment => [assignment.subCategoryId, assignment.assigneeId]));
   const categories = structure.categories.map(category => {
@@ -243,7 +251,7 @@ export async function loadUnitAssessmentDetail(actor: ManagedActor, assessmentId
             const response = responseById.get(question.id);
             return {
               id: question.id, text: question.text, type: question.type, options: question.options,
-              conditionalOptions: question.conditionalOptions, value: response?.value ?? null,
+              conditionalOptions: question.conditionalOptions, value: response?.value ?? null, ratio: ratioOf(question.id),
               evidenceCount: response?._count.documents ?? 0, requiresEvidence: question.requiresEvidence,
               answeredBy: response?.answeredById && memberById.has(response.answeredById) ? label(memberById.get(response.answeredById)!) : null,
             };
@@ -269,7 +277,7 @@ export async function loadUnitAssessmentDetail(actor: ManagedActor, assessmentId
     const ownerId = item?.assigneeId ?? (sectionId ? assignedBySection.get(sectionId) : null) ?? null;
     const contribution = contributions.contributions.get(rec.id);
     return {
-      id: rec.id, title: rec.title, description: rec.description, estimatedImpact: rec.estimatedImpact,
+      id: rec.id, title: rec.title, description: rec.description, estimatedImpact: rec.estimatedImpact, questionId: rec.questionId ?? null,
       categoryId: rec.categoryId ?? rec.subLevel?.subCategory?.categoryId ?? rec.subCategory?.categoryId ?? structure.questions.find(question => question.id === rec.questionId)?.categoryId ?? null,
       strategicType: rec.strategicType, timeframe: rec.timeframe, costType: rec.costType,
       capexLevel: rec.capexLevel, opexLevel: rec.opexLevel, order: rec.order,
@@ -288,12 +296,31 @@ export async function loadUnitAssessmentDetail(actor: ManagedActor, assessmentId
     include: MANAGED_ASSESSMENT_INCLUDE, orderBy: { submittedAt: "desc" },
   });
   const comparisons = [];
-  for (const previous of comparisonRecords) {
-    if (!(await canReadManagedCampaign(actor, record.unitId!, previous.campaignRecipient?.campaign.privacyMode, db))) continue;
-    const scores = previous.id === record.id ? contributions.scores : await calculateProgressScores(actor.userId, { assessment: { ...scoring, id: previous.id }, db });
+  /**
+   * Bir önceki gönderim: bu değerlendirmeden önce kesinleşmiş en yeni sonuç.
+   * Kategori kırılımı da aynı ilerleme motorundan gelir; gönderim kaydındaki
+   * kategori puanları eski motorun ham oranıdır ve bu ölçekle karşılaştırılamaz.
+   */
+  let previous: PreviousResult | null = null;
+  for (const item of comparisonRecords) {
+    if (!(await canReadManagedCampaign(actor, record.unitId!, item.campaignRecipient?.campaign.privacyMode, db))) continue;
+    const isPrevious = !previous && item.id !== record.id && (!record.submittedAt || (item.submittedAt !== null && item.submittedAt < record.submittedAt));
+    let scores = contributions.scores;
+    if (isPrevious) {
+      const inputs = await loadProgressInputs(actor.userId, { assessment: { ...scoring, id: item.id }, db });
+      scores = summarizeProgress(inputs);
+      previous = {
+        id: item.id, period: item.campaignRecipient?.campaign.name ?? "Kuruluş içi", submittedAt: iso(item.submittedAt),
+        percentage: scores.overallPercentage, baselinePercentage: scores.baselineOverallPercentage, deltaPercentage: scores.deltaPercentage,
+        categories: computeProgressBreakdown(inputs, structure.categories).map(row => ({
+          id: row.id, currentPercentage: row.totalScore ? Math.max(0, (row.totalScore - 1) / 4 * 100) : null,
+          basePercentage: row.baseScore ? Math.max(0, (row.baseScore - 1) / 4 * 100) : null,
+        })),
+      };
+    } else if (item.id !== record.id) scores = await calculateProgressScores(actor.userId, { assessment: { ...scoring, id: item.id }, db });
     comparisons.push({
-      id: previous.id, period: previous.campaignRecipient?.campaign.name ?? "Kuruluş içi",
-      submittedAt: iso(previous.submittedAt), score: scores.overallScore, percentage: scores.overallPercentage,
+      id: item.id, period: item.campaignRecipient?.campaign.name ?? "Kuruluş içi",
+      submittedAt: iso(item.submittedAt), score: scores.overallScore, percentage: scores.overallPercentage,
       completionPercentage: structure.questions.length ? Math.round(scores.completedQuestions / structure.questions.length * 100) : 0,
     });
   }
@@ -338,10 +365,22 @@ export async function loadUnitAssessmentDetail(actor: ManagedActor, assessmentId
     history: history.map(snapshot => ({
       id: snapshot.id, recordedAt: snapshot.recordedAt.toISOString(), score: snapshot.overallScore,
       percentage: snapshot.overallPercentage, triggerType: snapshot.triggerType, completedRecommendations: snapshot.completedRecommendations,
+      recommendationId: snapshot.triggerEntityId,
     })),
-    comparisons,
+    comparisons, previous,
   };
 }
+
+export type PreviousResult = {
+  id: string; period: string; submittedAt: string | null;
+  /** Mevcut puan, tamamlanan öneriler dahil. */
+  percentage: number;
+  /** Yalnızca anket cevaplarından hesaplanan puan. */
+  baselinePercentage: number;
+  /** O dönemde tamamlanan önerilerin puana kattığı fark (yüzde puan). */
+  deltaPercentage: number;
+  categories: { id: string; currentPercentage: number | null; basePercentage: number | null }[];
+};
 
 export type UnitDashboardIndex = Awaited<ReturnType<typeof loadUnitDashboardIndex>>;
 export type UnitAssessmentDetail = Awaited<ReturnType<typeof loadUnitAssessmentDetail>>;

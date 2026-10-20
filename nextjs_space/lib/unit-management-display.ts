@@ -2,6 +2,8 @@ export const QUADRANT_LABELS: Record<string, string> = { IRONMAN: "Demir Adam", 
 export const STRATEGY_LABELS: Record<string, string> = { QUICK_WIN: "Hızlı kazanım", PROJECT: "Proje", BIG_BET: "Büyük yatırım" };
 export const PORTFOLIO_STATUS_LABELS: Record<string, string> = { READY: "Hazır", NOT_STARTED: "Başlamadı", PLANNED: "Planlandı", IN_PROGRESS: "Devam ediyor", COMPLETED: "Tamamlandı", CANCELLED: "İptal edildi" };
 export const TIMEFRAME_LABELS: Record<string, string> = { SHORT_TERM: "0–6 ay", MEDIUM_TERM: "6–18 ay", LONG_TERM: "18+ ay" };
+/** Olgunluk seviyeleri tek renkli mavi rampa: seviye, renkle iyi/kötü diye yargılanmaz. */
+export const LEVEL_COLORS = [34, 50, 66, 83, 100].map(share => share === 100 ? "var(--accent)" : `color-mix(in oklch, var(--accent) ${share}%, var(--surface-2))`);
 export const decimal = (value: number | null | undefined) => value == null ? "—" : value.toLocaleString("tr-TR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 export const percentage = (value: number | null | undefined) => value == null ? "—" : "%" + decimal(value);
 export const signed = (value: number | null | undefined) => value == null ? "—" : (value >= 0 ? "+" : "") + decimal(value);
@@ -20,10 +22,10 @@ export type IronmanSummary = {
   quadrant: string | null; distribution: { key: string; count: number }[];
 };
 const QUADRANT_MEANINGS: Record<string, string> = {
-  IRONMAN: "birimler hem hızlı aksiyon alıyor hem de bunu politika ve süreçlerle kalıcı hâle getiriyor.",
-  SPRINTER: "birimler hızlı aksiyon alıyor ama politika, süreç ve dokümantasyon geride; kazanımlar kalıcı olmayabilir.",
+  IRONMAN: "üyeler hem hızlı aksiyon alıyor hem de bunu politika ve süreçlerle kalıcı hâle getiriyor.",
+  SPRINTER: "üyeler hızlı aksiyon alıyor ama politika, süreç ve dokümantasyon geride; kazanımlar kalıcı olmayabilir.",
   MARATHON_RUNNER: "politika ve süreçler sağlam ama aksiyonlar yavaş ilerliyor.",
-  WALKER: "iki eksen de henüz eşiğin altında; birimler iç veya dış bir sarsıntıya karşı kırılgan.",
+  WALKER: "iki eksen de henüz eşiğin altında; üyeler iç veya dış bir sarsıntıya karşı kırılgan.",
 };
 const versus = (axis: string, diff: number) =>
   Math.abs(diff) < 0.05 ? `${axis} aynı seviyede` : `${axis} ${decimal(Math.abs(diff))} puan ${diff > 0 ? "önde" : "geride"}`;
@@ -68,22 +70,22 @@ export function ironmanInsight(data: IronmanSummary): { headline: string; points
 
   const weaker = v <= e ? ["hız", v] as const : ["dayanıklılık", e] as const;
   if (data.quadrant === "IRONMAN") {
-    points.push(`Öncelik konumu korumak. Görece zayıf eksen ${weaker[0]} (${decimal(weaker[1])}); ilerleme en çok burada kazanılır.`);
+    points.push(`Öncelik konumu korumak. Görece düşük eksen ${weaker[0]} (${decimal(weaker[1])}); ilerleme en çok burada kazanılır.`);
   } else if (data.quadrant === "SPRINTER") {
     points.push("Öncelik dayanıklılık: yapılan işleri yazılı politika, süreç ve ölçümle kalıcı hâle getirmek.");
   } else if (data.quadrant === "MARATHON_RUNNER") {
     points.push("Öncelik hız: hazır politikaları takvimli, sorumlusu belli aksiyonlara dönüştürmek.");
   } else {
     const closer = v >= e ? ["hız", v, "SPRINTER"] as const : ["dayanıklılık", e, "MARATHON_RUNNER"] as const;
-    points.push(`Öncelik eşiğe en yakın eksen olan ${closer[0]} (${decimal(closer[1])}): ${decimal(t - closer[1])} puanlık artış birimleri ${QUADRANT_LABELS[closer[2]]} kadranına taşır.`);
+    points.push(`Öncelik eşiğe en yakın eksen olan ${closer[0]} (${decimal(closer[1])}): ${decimal(t - closer[1])} puanlık artış üyeleri ${QUADRANT_LABELS[closer[2]]} kadranına taşır.`);
   }
 
   const occupied = data.distribution.filter(item => item.count > 0);
   if (occupied.length > 1) {
     const walkers = data.distribution.find(item => item.key === "WALKER")?.count ?? 0;
-    points.push(`Ortalama dağılımı gizler: ${occupied.map(item => `${QUADRANT_LABELS[item.key]} ${item.count}`).join(" · ")} değerlendirme.${walkers && data.quadrant !== "WALKER" ? " Yaya kadranındaki birimler ayrıca ele alınmalı." : ""}`);
+    points.push(`Ortalama dağılımı gizler: ${occupied.map(item => `${QUADRANT_LABELS[item.key]} ${item.count}`).join(" · ")} değerlendirme.${walkers && data.quadrant !== "WALKER" ? " Yaya kadranındaki üyeler ayrıca ele alınmalı." : ""}`);
   }
-  if (data.count < 3) points.push(`Yorum yalnızca ${data.count} değerlendirmeye dayanıyor; daha çok birim gönderdikçe netleşir.`);
+  if (data.count < 3) points.push(`Yorum yalnızca ${data.count} değerlendirmeye dayanıyor; daha çok üye gönderdikçe netleşir.`);
 
   return { headline: `${subject} ${QUADRANT_LABELS[data.quadrant]} kadranında: ${QUADRANT_MEANINGS[data.quadrant]}`, points };
 }

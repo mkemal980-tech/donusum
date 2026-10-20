@@ -11,12 +11,11 @@ export async function GET(request: NextRequest) {
   try {
     return NextResponse.json(await loadUnitManagementDashboard(auth, {
       unitId: params.get("unitId"), surveyId: params.get("surveyId"), periodId: params.get("periodId"),
-      basis: params.get("basis"), includeDescendants: params.get("includeDescendants") !== "false",
     }));
   } catch (error) {
     if (error instanceof ManagedAssessmentError) return NextResponse.json({ error: error.message }, { status: error.status });
-    console.error("Birim yönetici alanı yüklenemedi:", error);
-    return NextResponse.json({ error: "Birim yönetici alanı yüklenemedi." }, { status: 500 });
+    console.error("Birim yönetimi yüklenemedi:", error);
+    return NextResponse.json({ error: "Birim yönetimi yüklenemedi." }, { status: 500 });
   }
 }
 export async function PATCH(request: NextRequest) {

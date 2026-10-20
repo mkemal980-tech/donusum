@@ -18,10 +18,10 @@ describe("birim yönetim API'si", () => {
     expect(mocks.auth).toHaveBeenCalledWith(expect.anything(), { requireUnitManager: true });
     expect(mocks.load).not.toHaveBeenCalled(); expect(mocks.update).not.toHaveBeenCalled();
   });
-  it("birim, anket, dönem ve sonuç kapsamını doğrulanan servise geçirir", async () => {
-    const response = await GET(new NextRequest("http://localhost/api/unit-manager/management?unitId=unit-a&surveyId=s1&periodId=p1&basis=submitted&includeDescendants=false"));
+  it("birim, anket ve dönemi doğrulanan servise geçirir", async () => {
+    const response = await GET(new NextRequest("http://localhost/api/unit-manager/management?unitId=unit-a&surveyId=s1&periodId=p1"));
     expect(response.status).toBe(200);
-    expect(mocks.load).toHaveBeenCalledWith(expect.objectContaining({ userId: "manager" }), { unitId: "unit-a", surveyId: "s1", periodId: "p1", basis: "submitted", includeDescendants: false });
+    expect(mocks.load).toHaveBeenCalledWith(expect.objectContaining({ userId: "manager" }), { unitId: "unit-a", surveyId: "s1", periodId: "p1" });
   });
   it("kapsam dışı birimi boş veri gibi göstermeden 403 döner", async () => {
     mocks.load.mockRejectedValue(new ManagedAssessmentError("Bu birime erişiminiz yok."));

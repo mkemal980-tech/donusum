@@ -7,6 +7,12 @@ export const UNIT_ROADMAP_LABELS: Record<string, string> = {
   NOT_STARTED: "Başlamadı", PLANNED: "Planlandı", IN_PROGRESS: "Devam ediyor", COMPLETED: "Tamamlandı", CANCELLED: "İptal edildi",
 };
 
+/** Birim panosu: birim yöneticisinde ana pano, ADMIN'de birim takibi (ADMIN'in /dashboard'u kişisel panodur). */
+export function unitDashboardHref(role: string | undefined, params: Record<string, string | null | undefined>) {
+  const query = new URLSearchParams(Object.entries(params).filter((entry): entry is [string, string] => Boolean(entry[1])));
+  return (role === "UNIT_MANAGER" ? "/dashboard" : "/unit-manager") + (query.toString() ? "?" + query.toString() : "");
+}
+
 export function unitDate(value: string | null) {
   return value ? new Date(value).toLocaleDateString("tr-TR", { timeZone: "Europe/Istanbul", day: "2-digit", month: "short", year: "numeric" }) : "—";
 }
