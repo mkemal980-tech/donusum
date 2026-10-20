@@ -37,6 +37,8 @@ export default function DashboardHome() {
   if (role === "UNIT_MANAGER" && searchParams.get("view") !== "assessment") {
     return <AssessmentDashboard title="Birim panosu" />;
   }
+  // Birime bağlı çalışan biriminin değerlendirmesini tek panoda görür; birimi yoksa kişisel pano.
+  if (role === "USER") return <AssessmentDashboard fallback={<DashboardClient />} />;
 
   const unitParams = new URLSearchParams(searchParams.toString());
   unitParams.delete("view");
