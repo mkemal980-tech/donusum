@@ -1,6 +1,7 @@
 import { prisma } from "./db";
 import type { DbClient } from "./assessment";
-import { resolveManagedAssessment, type ManagedActor } from "./managed-assessment";
+import type { ManagedActor } from "./managed-assessment";
+import { resolveViewableAssessment } from "./assessment-view";
 import { loadManagedStructure } from "./unit-dashboard";
 import { loadProgressInputs, summarizeProgress, computeProgressBreakdown } from "./scoring";
 
@@ -31,7 +32,8 @@ export function percentileBand(rank: number, count: number) {
  * motordan gelir.
  */
 export async function loadUnitGroupComparison(actor: ManagedActor, assessmentId: string, db: DbClient = prisma) {
-  const record = await resolveManagedAssessment(actor, assessmentId, db);
+  // Yönetici kapsamındaki ya da kişinin kendi birimindeki değerlendirme; çıktı yalnızca toplu sayı.
+  const { record } = await resolveViewableAssessment(actor, assessmentId, db);
   const unit = await db.unit.findUnique({ where: { id: record.unitId! }, select: { parentId: true, parent: { select: { name: true } } } });
   if (!unit?.parentId || !unit.parent) return { available: false as const, reason: "NO_GROUP" as const, groupName: null };
   const groupName = unit.parent.name;
