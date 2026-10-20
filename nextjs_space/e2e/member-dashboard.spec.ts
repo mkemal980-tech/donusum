@@ -32,7 +32,7 @@ test("birime bağlı çalışan biriminin sonucunu görür; planlama ve ekip ayr
   await expect(page.getByRole("heading", { name: "Değerlendirme sonucu" })).toBeVisible();
   await expect(page.locator("p.t-label").getByText("Ege Sanayi Odası içinde", { exact: true }).locator("..")).toContainText("Birim ortalaması %45,5");
   await expect(page.getByRole("link", { name: "Ankete git" }).first()).toBeVisible();
-  for (const name of ["Excel", "Görev dağılımı", "Birim yönetimi", "Kendi değerlendirmem", "Yol haritasına ekle"]) await expect(page.getByRole("button", { name, exact: true }).or(page.getByRole("link", { name, exact: true }))).toHaveCount(0);
+  for (const name of ["Excel", "Görev dağılımı", "Birim yönetimi", "Kendi değerlendirmem", "Yol haritasına ekle", "Hedef belirle"]) await expect(page.getByRole("button", { name, exact: true }).or(page.getByRole("link", { name, exact: true }))).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Birim değerlendirmeleri" })).toHaveCount(0);
   const work = page.getByRole("region", { name: "Size düşen işler" });
   await expect(work).toContainText("Enerji yönetimi bölümünde belge eksik");

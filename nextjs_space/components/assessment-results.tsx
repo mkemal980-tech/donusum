@@ -19,17 +19,23 @@ const OPEN = new Set(["NOT_STARTED", "PLANNED", "IN_PROGRESS"]);
 const nextLevel = (pct: number) => [20, 40, 60, 80].find(limit => pct < limit) ?? null;
 const contribution = (rec: Pick<Recommendation, "fullContribution">) => "tamamlanınca +" + decimal(rec.fullContribution * 25) + " puan";
 
+const targetNote = (target: { percentage: number; targetDate: string | null }) => `Hedef ${percentage(target.percentage)}${target.targetDate ? " · " + unitDate(target.targetDate) : ""}`;
+
 /**
- * Panonun ilk cevabı: mevcut puan ve üç kıyas. Sayılar ilerleme motorundan
- * (mevcut puan: anket + tamamlanan öneriler); kıyaslar aynı ölçekte.
+ * Panonun ilk cevabı: mevcut puan, kuruluşun hedefi (koyduysa) ve kıyaslar.
+ * Sayılar ilerleme motorundan (mevcut puan: anket + tamamlanan öneriler);
+ * kıyaslar ve hedef aynı ölçekte (100 üzerinden).
  */
 export function AnswerStrip({ view, comparison }: { view: AssessmentView; comparison: Comparison }) {
   const s = view.scores;
   const score = view.answeredQuestions ? s.overallPercentage : null;
   const bench = view.benchmark.overall;
-  return <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  const target = view.targets.overall;
+  return <div className={"grid gap-4 sm:grid-cols-2 " + (target ? "xl:grid-cols-5" : "xl:grid-cols-4")}>
     <StatCard label="Mevcut puan" value={percentage(score)}
       note={score === null ? "Henüz cevap yok" : s.deltaPercentage > 0 ? `${maturityLabel(score)} · anket %${s.baselineOverallPercentage} · öneriler +${decimal(s.deltaPercentage)}` : maturityLabel(score)} />
+    {target && <StatCard label="Hedefe göre" value={score !== null ? signed(round1(score - target.percentage)) : "—"}
+      note={score !== null && score >= target.percentage ? targetNote(target) + " · ulaşıldı" : targetNote(target)} />}
     <StatCard label="Önceki döneme göre" value={view.previous && score !== null ? signed(score - view.previous.percentage) : "—"}
       note={view.previous ? `${view.previous.period} · %${view.previous.percentage}` : "Önceki gönderim yok"} />
     <StatCard label="Sektöre göre" value={bench !== null && score !== null ? signed(round1(score - bench)) : "—"}
@@ -40,14 +46,17 @@ export function AnswerStrip({ view, comparison }: { view: AssessmentView; compar
   </div>;
 }
 
-/** Kategoriler: mevcut, taban ve üç kıyas aynı satırda. */
-export function CategoryTable({ view, comparison }: { view: AssessmentView; comparison: Comparison }) {
+/** Kategoriler: mevcut, taban, kuruluşun hedefi ve kıyaslar aynı satırda. */
+export function CategoryTable({ view, comparison, onEditTargets }: { view: AssessmentView; comparison: Comparison; onEditTargets?: () => void }) {
   const prev = new Map(view.previous?.categories.map(row => [row.id, row.currentPercentage]) ?? []);
   const group = new Map(comparison?.categories.map(row => [row.id, row.average]) ?? []);
-  return <Panel title="Kategoriler" description="Mevcut puan tamamlanan önerileri içerir; taban yalnızca anket cevaplarıdır · 100 üzerinden" padding="none">
+  const hasTargets = Object.keys(view.targets.categories).length > 0;
+  const hasAnyTarget = hasTargets || Boolean(view.targets.overall);
+  return <Panel title="Kategoriler" description="Mevcut puan tamamlanan önerileri içerir; taban yalnızca anket cevaplarıdır · 100 üzerinden" padding="none"
+    actions={onEditTargets && <Button variant="outline" size="sm" onClick={onEditTargets}>{hasAnyTarget ? "Hedefleri düzenle" : "Hedef belirle"}</Button>}>
     {!view.categories.length ? <div className="px-6 pb-6">{empty("Kapsamda soru yok.")}</div> :
       <div className="overflow-x-auto"><table className="theme-table"><thead><tr>
-        <th>Kategori</th><th className="!text-right">Mevcut</th><th>Seviye</th><th className="!text-right">Taban</th><th className="!text-right">Önceki döneme göre</th>
+        <th>Kategori</th><th className="!text-right">Mevcut</th><th>Seviye</th><th className="!text-right">Taban</th>{hasTargets && <th className="!text-right">Hedef</th>}<th className="!text-right">Önceki döneme göre</th>
         <th className="!text-right">Sektör</th>{comparison && <th className="!text-right">{comparison.groupName} ort.</th>}<th className="!text-right">Cevaplanan</th>
       </tr></thead><tbody>
         {view.categories.map(category => {
@@ -59,6 +68,11 @@ export function CategoryTable({ view, comparison }: { view: AssessmentView; comp
             <td className="text-right tabular text-[var(--ink)]">{percentage(current)}</td>
             <td>{answered ? maturityLabel(current) : "—"}</td>
             <td className="text-right tabular">{answered ? percentage(round1(category.basePercentage)) : "—"}</td>
+            {hasTargets && <td className="text-right tabular">{(() => {
+              const target = view.targets.categories[category.id];
+              if (!target) return "—";
+              return <>{percentage(target.percentage)}{current !== null && <span className="ml-2 text-[var(--ink-3)]">{signed(round1(current - target.percentage))}</span>}</>;
+            })()}</td>}
             <td className="text-right tabular">{current !== null && before != null ? signed(round1(current - before)) : "—"}</td>
             <td className="text-right tabular">{percentage(view.benchmark.categories[category.id] ?? null)}</td>
             {comparison && <td className="text-right tabular">{percentage(group.get(category.id) ?? null)}</td>}
@@ -142,12 +156,16 @@ export function CategoryAnalysis({ view, canManage, busyId, onAdd }: { view: Ass
   const category = view.categories.find(row => row.id === selected) ?? view.categories[0];
   if (!category) return null;
   const sections = category.sections.filter(section => section.id && section.currentPercentage !== null);
+  const categoryTarget = view.targets.categories[category.id];
   return <Panel title="Kategori analizi" description="Seviye, bölümlerin üst seviyeyle farkı ve bölüm başına öncelikli adımlar"
     actions={view.categories.length > 1 && <Toggle label="Kategori" value={category.id} options={view.categories.map(row => [row.id, row.name] as [string, string])} onChange={setSelected} />}>
     <div className="grid gap-6 lg:grid-cols-2">
       <div className="min-w-0"><MaturityGauge score={category.answeredQuestions ? category.currentScore : 1} title={category.name} /></div>
       {sections.length >= 3
-        ? <GapRadarChart title="Bölümler ve üst seviye farkı" targetLabel="Üst seviye (5/5)" data={sections.map(section => ({ name: section.name, score: 1 + section.currentPercentage! / 25, target: 5 }))} />
+        // Kategori hedefi varsa bölümler ona göre; yoksa ölçeğin üstüne göre çizilir (hedef uydurulmaz).
+        ? <GapRadarChart title={categoryTarget ? "Bölümler ve hedef" : "Bölümler ve üst seviye farkı"}
+            targetLabel={categoryTarget ? `Hedef (${percentage(categoryTarget.percentage)})` : "Üst seviye (5/5)"}
+            data={sections.map(section => ({ name: section.name, score: 1 + section.currentPercentage! / 25, target: categoryTarget ? 1 + categoryTarget.percentage / 25 : 5 }))} />
         : <div className="self-center">{empty("Fark grafiği en az üç puanlanmış bölümde çizilir.")}</div>}
     </div>
     <ul className="mt-6 divide-y divide-[var(--line)]">{category.sections.map(section => {

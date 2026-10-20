@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as XLSX from "xlsx";
-import { unitDetail } from "../../test-fixtures/unit-dashboard";
+import { assessmentView, unitDetail } from "../../test-fixtures/unit-dashboard";
 import { buildUnitReportHtml, unitReportTables } from "../unit-dashboard-report";
 import { surveyAnswer } from "../unit-dashboard-display";
 
@@ -31,5 +31,17 @@ describe("birim raporu", () => {
     const sheet = XLSX.utils.aoa_to_sheet(unitReportTables(fixture)["Özet"]);
     expect(sheet.B2.t).toBe("s");
     expect(sheet.B2.f).toBeUndefined();
+  });
+  it("kuruluşun hedefini ve 100 üzerinden puanı panodaki gibi rapora koyar; hedef yoksa uydurmaz", () => {
+    const view = assessmentView(unitDetail(), "manager", () => true, {
+      overall: { percentage: 70, targetDate: "2027-12-31T20:59:59.999Z" }, categories: { "category-1": { percentage: 60, targetDate: null } },
+    });
+    const tables = unitReportTables(view);
+    expect(tables["Özet"]).toContainEqual(["Mevcut puan (100 üzerinden)", 40]);
+    expect(tables["Özet"]).toContainEqual(["Hedef (100 üzerinden)", 70]);
+    expect(tables["Kategoriler"][1].slice(-2)).toEqual([40, 60]);
+    const none = unitReportTables(assessmentView());
+    expect(none["Özet"].some(row => row[0] === "Hedef (100 üzerinden)")).toBe(false);
+    expect(none["Kategoriler"][1].at(-1)).toBe("");
   });
 });

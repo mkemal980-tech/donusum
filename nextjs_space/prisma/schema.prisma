@@ -39,6 +39,7 @@ model Unit {
   campaignRecipients CampaignRecipient[] @relation("CampaignMemberUnit")
   ownedSurveys       Survey[]            @relation("SurveyOwnerUnit")
   joinCodes          UnitJoinCode[]
+  scoreTargets       ScoreTarget[]
 }
 
 model UnitAdmin {
@@ -98,6 +99,8 @@ model User {
   createdSurveys           Survey[]               @relation("SurveyCreator")
   createdJoinCodes         UnitJoinCode[]         @relation("JoinCodeCreator")
   joinCodeUses             UnitJoinCodeUse[]      @relation("JoinCodeUser")
+  scoreTargets             ScoreTarget[]          @relation("ScoreTargetOwner")
+  setScoreTargets          ScoreTarget[]          @relation("ScoreTargetSetter")
 }
 
 model Sector {
@@ -208,6 +211,7 @@ model Survey {
   aiRecommendationCache AIRecommendationCache[]
   campaigns             SurveyCampaign[]
   joinCodes             UnitJoinCode[]
+  scoreTargets          ScoreTarget[]
 
   @@index([ownerUnitId, archivedAt])
   @@index([sourceSurveyId])
@@ -334,6 +338,7 @@ model Category {
   survey        Survey?       @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   subCategories SubCategory[]
   questions     Question[]    @relation("CategoryQuestions")
+  scoreTargets  ScoreTarget[]
 }
 
 model SubCategory {
@@ -597,6 +602,33 @@ model RoadmapItem {
 
   @@unique([assessmentId, recommendationId])
   @@index([assigneeId, dueDate])
+}
+
+/// Kuruluşun kendi koyduğu hedef: anketin geneli (categoryId null) ya da bir
+/// kategori için, 100 üzerinden puan ve isteğe bağlı tarih. Dönemden bağımsızdır;
+/// birim değerlendirmesinde birime, kişisel değerlendirmede sahibine aittir.
+/// Hedef yoksa panoda hedef gösterilmez (uydurma varsayılan yok).
+/// Tekillik (anket, sahip, kategori) ve sahiplik kısıtı veritabanında
+/// tanımlıdır (bkz. migration 000020); Prisma şema dilinde ifade edilemiyor.
+model ScoreTarget {
+  id          String    @id @default(cuid())
+  surveyId    String
+  unitId      String?
+  ownerUserId String?
+  categoryId  String?
+  percentage  Float
+  targetDate  DateTime?
+  setById     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  survey      Survey    @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  unit        Unit?     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  owner       User?     @relation("ScoreTargetOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  setBy       User?     @relation("ScoreTargetSetter", fields: [setById], references: [id], onDelete: SetNull)
+
+  @@index([surveyId, unitId])
+  @@index([surveyId, ownerUserId])
 }
 
 enum UserRole {

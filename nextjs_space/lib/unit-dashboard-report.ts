@@ -1,8 +1,15 @@
 import type { UnitAssessmentDetail } from "./unit-dashboard";
+import type { AssessmentTargets } from "./score-targets";
 import { escapeReportText } from "./report-html";
 import { surveyAnswer, unitDate, unitScore, UNIT_RESULT_LABELS, UNIT_ROADMAP_LABELS } from "./unit-dashboard-display";
 
-export function unitReportTables(data: UnitAssessmentDetail) {
+/** Rapor panonun görünümünden üretilir; kuruluşun hedefi varsa (yalnızca panoda) rapora da girer. */
+type ReportData = UnitAssessmentDetail & { targets?: AssessmentTargets };
+const pct = (value: number) => Math.round(value * 10) / 10;
+
+export function unitReportTables(data: ReportData) {
+  const overallTarget = data.targets?.overall;
+  const categoryTargets = data.targets?.categories ?? {};
   return {
     "Özet": [
       ["Alan", "Değer"],
@@ -12,10 +19,13 @@ export function unitReportTables(data: UnitAssessmentDetail) {
       ["Taban puan", data.answeredQuestions ? unitScore(data.scores.baselineOverallScore) : "Cevap yok"],
       ["Gelişim katkısı", data.scores.delta], ["Tamamlanma (%)", data.completionPercentage],
       ["Cevaplanan soru", data.answeredQuestions], ["Kapsamdaki soru", data.totalQuestions],
+      ["Mevcut puan (100 üzerinden)", data.answeredQuestions ? data.scores.overallPercentage : "Cevap yok"],
+      ...(overallTarget ? [["Hedef (100 üzerinden)", overallTarget.percentage], ["Hedef tarihi", unitDate(overallTarget.targetDate)]] : []),
     ],
     "Kategoriler": [
-      ["Kategori", "Taban puan", "Mevcut puan", "Gelişim katkısı", "Cevaplanan", "Toplam soru"],
-      ...data.categories.map(row => [row.name, row.baseScore, row.currentScore, row.delta, row.answeredQuestions, row.totalQuestions]),
+      ["Kategori", "Taban puan", "Mevcut puan", "Gelişim katkısı", "Cevaplanan", "Toplam soru", "Mevcut (100 üzerinden)", "Hedef (100 üzerinden)"],
+      ...data.categories.map(row => [row.name, row.baseScore, row.currentScore, row.delta, row.answeredQuestions, row.totalQuestions,
+        row.answeredQuestions ? pct(row.currentPercentage) : "", categoryTargets[row.id]?.percentage ?? ""]),
     ],
     "Cevaplar": [
       ["Kategori", "Bölüm", "Sorumlu", "Soru", "Cevap", "Cevaplayan", "Belge gerekli", "Belge sayısı"],
@@ -44,7 +54,7 @@ export function unitReportTables(data: UnitAssessmentDetail) {
   };
 }
 
-export function buildUnitReportHtml(data: UnitAssessmentDetail) {
+export function buildUnitReportHtml(data: ReportData) {
   const text = escapeReportText;
   const tables = unitReportTables(data);
   const body = Object.entries(tables).map(([name, rows]) =>

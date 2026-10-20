@@ -25,6 +25,7 @@ const db = {
   user: { findUnique: vi.fn() }, assessment: { findFirst: vi.fn() },
   sectionAssignment: { findMany: vi.fn() }, document: { findMany: vi.fn() },
   benchmark: { findMany: vi.fn() }, ironmanBenchmark: { findMany: vi.fn() }, sector: { findUnique: vi.fn() },
+  scoreTarget: { findMany: vi.fn() },
 };
 const client = db as unknown as DbClient;
 const assignments = [{ subCategoryId: "section-1", assigneeId: "member-1" }, { subCategoryId: "section-2", assigneeId: "member-2" }];
@@ -37,6 +38,7 @@ beforeEach(() => {
   db.sectionAssignment.findMany.mockResolvedValue(assignments);
   mocks.build.mockResolvedValue(unitDetail("as-1", "unit-b", "Bora Gıda"));
   mocks.personalIndex.mockResolvedValue(null);
+  db.scoreTarget.findMany.mockResolvedValue([]);
 });
 
 describe("çalışan ayıklaması", () => {
@@ -115,7 +117,9 @@ describe("kişisel değerlendirme", () => {
     const view = await loadAssessmentView(member, "p1", client);
     expect(view.benchmark).toEqual({ sectorName: "Danışmanlık", overall: null, categories: {}, ironman: null });
     expect(mocks.build).toHaveBeenCalledWith(member, expect.anything(), client, { ownUnit: true, member: false });
-    expect(view.viewer).toEqual({ role: "owner", canManageRoadmap: true, canDistribute: false, canExportTeam: true });
+    expect(view.viewer).toEqual({ role: "owner", canManageRoadmap: true, canDistribute: false, canExportTeam: true, canSetTargets: true });
+    // Kişisel değerlendirmenin hedefi sahibine aittir.
+    expect(db.scoreTarget.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { surveyId: "s1", ownerUserId: "member-1" } }));
     expect(mocks.access).not.toHaveBeenCalled();
   });
 });
@@ -125,7 +129,7 @@ describe("rol farkındalıklı görünüm", () => {
     mocks.access.mockResolvedValue({ canManage: false, canUpdate: (id: string) => id === "rec-2" });
     const view = await loadAssessmentView(member, "as-1", client);
     expect(mocks.build).toHaveBeenCalledWith(member, expect.anything(), client, { ownUnit: true, member: true });
-    expect(view.viewer).toEqual({ role: "member", canManageRoadmap: false, canDistribute: false, canExportTeam: false });
+    expect(view.viewer).toEqual({ role: "member", canManageRoadmap: false, canDistribute: false, canExportTeam: false, canSetTargets: false });
     // rec-1 yol haritasında değil; rec-2 yol haritasında ve kendisine düşüyor.
     expect(view.recommendations.map(rec => [rec.id, rec.canUpdateStatus])).toEqual([["rec-1", false], ["rec-2", true]]);
   });
@@ -133,9 +137,16 @@ describe("rol farkındalıklı görünüm", () => {
     mocks.managed.mockResolvedValue(assessment);
     const view = await loadAssessmentView(manager, "as-1", client);
     expect(mocks.build).toHaveBeenCalledWith(manager, expect.anything(), client, { ownUnit: false, member: false });
-    expect(view.viewer).toEqual({ role: "manager", canManageRoadmap: true, canDistribute: true, canExportTeam: true });
+    expect(view.viewer).toEqual({ role: "manager", canManageRoadmap: true, canDistribute: true, canExportTeam: true, canSetTargets: true });
     expect(view.recommendations.every(rec => rec.canUpdateStatus)).toBe(true);
     expect(mocks.access).not.toHaveBeenCalled();
+  });
+  it("birimin hedefini görünüme ekler; çalışan da görür", async () => {
+    db.scoreTarget.findMany.mockResolvedValue([{ categoryId: null, percentage: 70, targetDate: null }]);
+    mocks.access.mockResolvedValue({ canManage: false, canUpdate: () => false });
+    const view = await loadAssessmentView(member, "as-1", client);
+    expect(view.targets).toEqual({ overall: { percentage: 70, targetDate: null }, categories: {} });
+    expect(db.scoreTarget.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { surveyId: "s1", unitId: "unit-b" } }));
   });
 });
 
