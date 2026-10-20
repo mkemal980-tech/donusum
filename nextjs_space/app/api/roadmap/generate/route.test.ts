@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   isUserCoordinator: vi.fn(async () => true),
   withAuth: vi.fn(), isLLMConfigured: vi.fn(), callLLMForJSON: vi.fn(),
   getAccessibleSurveyIds: vi.fn(), getAssessmentIds: vi.fn(), getRecommendationsForUser: vi.fn(), getScopeResolver: vi.fn(),
+  getScopeResolverForProfile: vi.fn(), resolveViewableAssessment: vi.fn(), loadManagedStructure: vi.fn(),
   prisma: {
     roadmapItem: { findMany: vi.fn() }, assessment: { findMany: vi.fn() },
     subCategory: { findMany: vi.fn() }, $transaction: vi.fn(),
@@ -18,7 +19,10 @@ vi.mock("@/lib/assessment", () => ({ getAssessmentIds: mocks.getAssessmentIds, i
 vi.mock("@/lib/scoring", () => ({
   getAccessibleSurveyIds: mocks.getAccessibleSurveyIds,
   getRecommendationsForUser: mocks.getRecommendationsForUser, getScopeResolver: mocks.getScopeResolver,
+  getScopeResolverForProfile: mocks.getScopeResolverForProfile,
 }));
+vi.mock("@/lib/assessment-view", () => ({ resolveViewableAssessment: mocks.resolveViewableAssessment }));
+vi.mock("@/lib/unit-dashboard", () => ({ loadManagedStructure: mocks.loadManagedStructure }));
 vi.mock("@/lib/llm", () => ({ isLLMConfigured: mocks.isLLMConfigured, callLLMForJSON: mocks.callLLMForJSON }));
 import { POST } from "./route";
 
@@ -197,5 +201,45 @@ describe("yol haritası oluşturma yetkisi", () => {
     const response = await POST(new NextRequest("http://localhost/api/roadmap/generate", { method: "POST" }));
     expect(response.status).toBe(403);
     expect(mocks.callLLMForJSON).not.toHaveBeenCalled();
+  });
+});
+
+describe("panodan, açık değerlendirme için plan", () => {
+  const scoring = { id: "unit-assessment", surveyId: "survey-1", sectorId: "sector-1", subSectorId: null, questionIds: ["q1"] };
+  const record = (survey = { isActive: true, archivedAt: null }) => ({ scoring: { id: "unit-assessment" }, survey, campaignRecipient: null });
+  const postFor = (assessmentId: string) => POST(new NextRequest("http://localhost/api/roadmap/generate", { method: "POST", body: JSON.stringify({ assessmentId }) }));
+  beforeEach(() => {
+    mocks.loadManagedStructure.mockResolvedValue({ scoring });
+    mocks.getScopeResolverForProfile.mockResolvedValue(() => ({ applicable: true }));
+    mocks.prisma.assessment.findMany.mockResolvedValue([{ id: "unit-assessment", surveyId: "survey-1" }]);
+  });
+
+  it("yönetici seçtiği birimin değerlendirmesine yazar; kendi değerlendirmelerine bakmaz", async () => {
+    mocks.resolveViewableAssessment.mockResolvedValue({ role: "manager", record: record() });
+    const response = await postFor("unit-assessment");
+    expect(response.status).toBe(200);
+    expect(mocks.resolveViewableAssessment).toHaveBeenCalledWith(expect.objectContaining({ userId: "user-1" }), "unit-assessment");
+    expect(mocks.getRecommendationsForUser).toHaveBeenCalledWith("user-1", { assessment: scoring });
+    expect(mocks.getAssessmentIds).not.toHaveBeenCalled();
+    expect(mocks.isUserCoordinator).not.toHaveBeenCalled();
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every(item => item.assessmentId === "unit-assessment")).toBe(true);
+  });
+
+  it("çalışan plan oluşturamaz; kapalı dönemde plan yazılmaz", async () => {
+    mocks.resolveViewableAssessment.mockResolvedValue({ role: "member", record: record() });
+    expect((await postFor("unit-assessment")).status).toBe(403);
+    mocks.resolveViewableAssessment.mockResolvedValue({ role: "owner", record: record({ isActive: false, archivedAt: null }) });
+    expect((await postFor("unit-assessment")).status).toBe(409);
+    expect(mocks.callLLMForJSON).not.toHaveBeenCalled();
+    expect(rows).toHaveLength(0);
+  });
+
+  it("erişilemeyen değerlendirmede yetki hatasını döndürür", async () => {
+    const { ManagedAssessmentError } = await import("@/lib/managed-assessment");
+    mocks.resolveViewableAssessment.mockRejectedValue(new ManagedAssessmentError("Bu değerlendirmeye erişiminiz yok."));
+    const response = await postFor("other");
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: "Bu değerlendirmeye erişiminiz yok." });
   });
 });

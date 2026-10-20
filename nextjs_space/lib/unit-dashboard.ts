@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { type DbClient, getContributorCandidates } from "./assessment";
 import {
@@ -12,6 +13,7 @@ import {
 } from "./scoring";
 import { getDashboardResultState } from "./dashboard-result";
 import { maturityFromPercentage } from "./organization-campaign";
+import { SELF_UNIT_ID } from "./unit-dashboard-display";
 import { rankStartingRecommendations, recommendationReasons } from "./recommendation-priority";
 
 const iso = (date: Date | null | undefined) => date?.toISOString() ?? null;
@@ -91,33 +93,10 @@ async function indexForScope(actor: ManagedActor, scope: { in: string[] } | { no
     const dates = assignments.filter(row => row.user.unitId === unitId && row.surveyId === surveyId && row.hasDeadline && row.deadline).map(row => row.deadline!);
     return dates.length ? new Date(Math.min(...dates.map(date => date.getTime()))) : null;
   };
-  const rows: UnitAssessmentRow[] = [];
-  // Sorgu eşzamanlılığı sınırlı tutulur: geniş bir kuruluş DB havuzunu tüketmez.
-  for (let offset = 0; offset < records.length; offset += 4) {
-    const batch = await Promise.all(records.slice(offset, offset + 4).map(async record => {
-      if (!record.unitId || !record.unit || !readable(record.unitId, record.campaignRecipient?.campaign.privacyMode)) return null;
-      const campaign = record.campaignRecipient?.campaign;
-      const structure = await loadManagedStructure({ id: record.id, surveyId: record.surveyId, sectorId: record.unit.sectorId, subSectorId: record.unit.subSectorId }, db);
-      const scores = await calculateProgressScores(actor.userId, { assessment: structure.scoring, db });
-      const answered = scores.completedQuestions;
-      const total = structure.questions.length;
-      const deadline = campaign?.deadline ?? deadlineOf(record.unitId, record.surveyId);
-      return {
-        id: record.id, assessmentId: record.id, unitId: record.unitId, unitName: record.unit.name,
-        surveyId: record.surveyId, surveyName: record.survey.name,
-        periodId: campaign?.id ?? "internal", periodName: campaign?.name ?? "Kuruluş içi",
-        campaignRecipientId: record.campaignRecipientId, createdAt: iso(record.createdAt),
-        deadline: iso(deadline), deadlineLabel: campaign ? "Kampanya son tarihi" : "En yakın atama son tarihi",
-        status: getDashboardResultState({ answeredQuestions: answered, totalQuestions: total, submitted: record.status === "SUBMITTED", isCoordinator: true }),
-        responseCount: answered, totalQuestions: total, completionPercentage: total ? Math.round(answered / total * 100) : 0,
-        score: answered ? scores.overallPercentage : null, maturityScore: answered ? scores.overallScore : null,
-        maturityLabel: answered ? maturityFromPercentage(scores.overallPercentage) : null,
-        submittedAt: iso(record.submittedAt), overdue: record.status !== "SUBMITTED" && Boolean(deadline && deadline < new Date()),
-        locked: record.status === "SUBMITTED" || !record.survey.isActive || Boolean(record.survey.archivedAt) || campaign?.status === "CLOSED",
-      } satisfies UnitAssessmentRow;
-    }));
-    rows.push(...batch.filter((row): row is NonNullable<typeof row> => row !== null));
-  }
+  const readableRecords = records.filter(record => record.unitId && record.unit && readable(record.unitId, record.campaignRecipient?.campaign.privacyMode));
+  const rows = await indexRows(actor, readableRecords.map(record => ({
+    record, unit: record.unit!, deadline: record.campaignRecipient?.campaign.deadline ?? deadlineOf(record.unitId!, record.surveyId),
+  })), db);
   const existing = new Set(rows.map(row => row.unitId + ":" + row.surveyId + ":" + row.periodId));
   const campaignPairs = new Set(recipients.map(row => row.memberUnitId + ":" + row.campaign.surveyId));
   const pending = (unitId: string, surveyId: string, surveyName: string, periodId: string, periodName: string, recipientId: string | null, assignedAt: Date, deadline: Date | null) => {
@@ -146,6 +125,85 @@ async function indexForScope(actor: ManagedActor, scope: { in: string[] } | { no
     assessments: rows,
     hasAnonymousCampaigns: recipients.some(row => !readable(row.memberUnitId, row.campaign.privacyMode)),
   };
+}
+
+type IndexRecord = Prisma.AssessmentGetPayload<{ include: typeof MANAGED_ASSESSMENT_INCLUDE }>;
+
+/** Liste satırı: puan ve tamamlanma panodaki ilerleme motorundan. Sorgu eşzamanlılığı sınırlı: geniş bir kuruluş DB havuzunu tüketmez. */
+async function indexRows(actor: ManagedActor, items: { record: IndexRecord; unit: { id: string; name: string; sectorId: string | null; subSectorId: string | null }; deadline: Date | null }[], db: DbClient) {
+  const rows: UnitAssessmentRow[] = [];
+  for (let offset = 0; offset < items.length; offset += 4) {
+    rows.push(...await Promise.all(items.slice(offset, offset + 4).map(async ({ record, unit, deadline }) => {
+      const campaign = record.campaignRecipient?.campaign;
+      const structure = await loadManagedStructure({ id: record.id, surveyId: record.surveyId, sectorId: unit.sectorId, subSectorId: unit.subSectorId }, db);
+      const scores = await calculateProgressScores(actor.userId, { assessment: structure.scoring, db });
+      const answered = scores.completedQuestions;
+      const total = structure.questions.length;
+      return {
+        id: record.id, assessmentId: record.id, unitId: unit.id, unitName: unit.name,
+        surveyId: record.surveyId, surveyName: record.survey.name,
+        periodId: campaign?.id ?? "internal", periodName: campaign?.name ?? (unit.id === SELF_UNIT_ID ? PERSONAL_PERIOD : "Kuruluş içi"),
+        campaignRecipientId: record.campaignRecipientId, createdAt: iso(record.createdAt),
+        deadline: iso(deadline), deadlineLabel: campaign ? "Kampanya son tarihi" : "En yakın atama son tarihi",
+        status: getDashboardResultState({ answeredQuestions: answered, totalQuestions: total, submitted: record.status === "SUBMITTED", isCoordinator: true }),
+        responseCount: answered, totalQuestions: total, completionPercentage: total ? Math.round(answered / total * 100) : 0,
+        score: answered ? scores.overallPercentage : null, maturityScore: answered ? scores.overallScore : null,
+        maturityLabel: answered ? maturityFromPercentage(scores.overallPercentage) : null,
+        submittedAt: iso(record.submittedAt), overdue: record.status !== "SUBMITTED" && Boolean(deadline && deadline < new Date()),
+        locked: record.status === "SUBMITTED" || !record.survey.isActive || Boolean(record.survey.archivedAt) || campaign?.status === "CLOSED",
+      } satisfies UnitAssessmentRow;
+    })));
+  }
+  return rows;
+}
+
+const PERSONAL_PERIOD = "Kişisel değerlendirme";
+const personLabel = (user: { firstName: string | null; lastName: string | null; email: string; organization: string | null }) => user.organization?.trim() || label(user);
+
+/** Kişisel değerlendirmenin "birimi": sahibinin kuruluş adı (yoksa adı) ve sektörü. */
+export function personalUnit(owner: { firstName: string | null; lastName: string | null; email: string; organization: string | null; sectorId: string | null; subSectorId: string | null }) {
+  return { id: SELF_UNIT_ID, name: personLabel(owner), sectorId: owner.sectorId, subSectorId: owner.subSectorId };
+}
+export const PERSONAL_OWNER_SELECT = { firstName: true, lastName: true, email: true, organization: true, sectorId: true, subSectorId: true, unitId: true } as const;
+
+/**
+ * Birimsiz kullanıcının kendi değerlendirmeleri ve henüz başlamadığı atanmış
+ * anketleri. Birime bağlı kullanıcının değerlendirmesi biriminkidir (bkz.
+ * getAssessmentIds); onda kişisel liste yoktur.
+ */
+export async function loadPersonalDashboardIndex(actor: ManagedActor, db: DbClient = prisma) {
+  const owner = await db.user.findUnique({ where: { id: actor.userId }, select: PERSONAL_OWNER_SELECT });
+  if (!owner || owner.unitId) return null;
+  const [records, assignments] = await Promise.all([
+    db.assessment.findMany({
+      where: { ownerUserId: actor.userId, unitId: null, campaignRecipientId: null, survey: { isDemo: false } },
+      include: MANAGED_ASSESSMENT_INCLUDE, orderBy: { createdAt: "desc" },
+    }),
+    db.userSurveyAssignment.findMany({
+      where: { userId: actor.userId, isActive: true, survey: { isActive: true, archivedAt: null, isDemo: false } },
+      select: { surveyId: true, assignedAt: true, deadline: true, hasDeadline: true, survey: { select: { name: true } } },
+    }),
+  ]);
+  const unit = personalUnit(owner);
+  const deadlineOf = (surveyId: string) => {
+    const row = assignments.find(item => item.surveyId === surveyId && item.hasDeadline && item.deadline);
+    return row?.deadline ?? null;
+  };
+  const rows = await indexRows(actor, records.map(record => ({ record, unit, deadline: deadlineOf(record.surveyId) })), db);
+  const started = new Set(rows.map(row => row.surveyId));
+  for (const row of assignments) {
+    if (started.has(row.surveyId)) continue;
+    started.add(row.surveyId);
+    const deadline = deadlineOf(row.surveyId);
+    rows.push({
+      id: "pending:" + SELF_UNIT_ID + ":" + row.surveyId, assessmentId: null, unitId: unit.id, unitName: unit.name, surveyId: row.surveyId, surveyName: row.survey.name,
+      periodId: "internal", periodName: PERSONAL_PERIOD, campaignRecipientId: null, createdAt: iso(row.assignedAt), deadline: iso(deadline),
+      deadlineLabel: "Atama son tarihi", status: "NOT_STARTED", responseCount: 0, totalQuestions: 0, completionPercentage: 0, score: null,
+      maturityScore: null, maturityLabel: null, submittedAt: null, overdue: Boolean(deadline && deadline < new Date()), locked: false,
+    });
+  }
+  if (!rows.length) return null;
+  return { unit: { id: unit.id, name: unit.name, description: null as string | null, parentId: null as string | null, assessmentCount: rows.length }, assessments: rows };
 }
 
 export type UnitAssessmentRow = {
@@ -208,7 +266,7 @@ export async function buildAssessmentDetail(actor: ManagedActor, record: Resolve
       select: { id: true, questionId: true, value: true, score: true, answeredById: true, updatedAt: true, _count: { select: { documents: true } } },
     }),
     db.sectionAssignment.findMany({ where: { assessmentId }, select: { subCategoryId: true, assigneeId: true } }),
-    getContributorCandidates({ unitId: record.unitId }, db),
+    getContributorCandidates({ unitId: record.unitId, ownerUserId: record.ownerUserId }, db),
     db.roadmapItem.findMany({
       where: { assessmentId }, orderBy: { priority: "asc" },
       include: { recommendation: { include: { subLevel: { include: { subCategory: { include: { category: true } } } }, subCategory: { include: { category: true } } } } },
@@ -235,6 +293,9 @@ export async function buildAssessmentDetail(actor: ManagedActor, record: Resolve
   };
   const memberById = new Map(members.map(member => [member.id, member]));
   const assignedBySection = new Map(assignments.map(assignment => [assignment.subCategoryId, assignment.assigneeId]));
+  // Kişisel değerlendirmede dağıtım yoktur: her bölüm sahibinindir.
+  const defaultAssignee = record.unitId ? null : record.ownerUserId;
+  const periodOf = (item: { campaignRecipient: { campaign: { name: string } } | null }) => item.campaignRecipient?.campaign.name ?? (record.unitId ? "Kuruluş içi" : PERSONAL_PERIOD);
   const categories = structure.categories.map(category => {
     const progress = breakdown.find(row => row.id === category.id)!;
     const questions = structure.questions.filter(question => question.categoryId === category.id);
@@ -250,8 +311,8 @@ export async function buildAssessmentDetail(actor: ManagedActor, record: Resolve
       delta: progress.bonusPoints, answeredQuestions: questions.filter(question => responseById.has(question.id)).length,
       totalQuestions: questions.length,
       sections: [
-        ...(category.questions.length ? [{ id: null as string | null, name: "Kategori soruları", assigneeId: null as string | null }] : []),
-        ...category.subCategories.map(section => ({ id: section.id as string | null, name: section.name, assigneeId: assignedBySection.get(section.id) ?? null })),
+        ...(category.questions.length ? [{ id: null as string | null, name: "Kategori soruları", assigneeId: defaultAssignee }] : []),
+        ...category.subCategories.map(section => ({ id: section.id as string | null, name: section.name, assigneeId: assignedBySection.get(section.id) ?? defaultAssignee })),
       ].map(section => {
         const rows = questions.filter(question => question.sectionId === section.id);
         const answered = rows.filter(question => responseById.has(question.id));
@@ -295,7 +356,7 @@ export async function buildAssessmentDetail(actor: ManagedActor, record: Resolve
     const shown = recById.get(rec.id);
     const item = itemsByRec.get(rec.id);
     const sectionId = rec.subLevel?.subCategoryId ?? rec.subCategoryId ?? shown?.resolvedSubCategoryId ?? null;
-    const ownerId = item?.assigneeId ?? (sectionId ? assignedBySection.get(sectionId) : null) ?? null;
+    const ownerId = item?.assigneeId ?? (sectionId ? assignedBySection.get(sectionId) : null) ?? defaultAssignee;
     const contribution = contributions.contributions.get(rec.id);
     return {
       id: rec.id, title: rec.title, description: rec.description, estimatedImpact: rec.estimatedImpact, questionId: rec.questionId ?? null, sectionId,
@@ -313,7 +374,7 @@ export async function buildAssessmentDetail(actor: ManagedActor, record: Resolve
     };
   }));
   const comparisonRecords = await db.assessment.findMany({
-    where: { unitId: record.unitId, surveyId: record.surveyId, status: "SUBMITTED" },
+    where: { ...(record.unitId ? { unitId: record.unitId } : { unitId: null, ownerUserId: record.ownerUserId }), surveyId: record.surveyId, status: "SUBMITTED" },
     include: MANAGED_ASSESSMENT_INCLUDE, orderBy: { submittedAt: "desc" },
   });
   const comparisons = [];
@@ -324,14 +385,14 @@ export async function buildAssessmentDetail(actor: ManagedActor, record: Resolve
    */
   let previous: PreviousResult | null = null;
   for (const item of comparisonRecords) {
-    if (!options.ownUnit && !(await canReadManagedCampaign(actor, record.unitId!, item.campaignRecipient?.campaign.privacyMode, db))) continue;
+    if (!options.ownUnit && record.unitId && !(await canReadManagedCampaign(actor, record.unitId, item.campaignRecipient?.campaign.privacyMode, db))) continue;
     const isPrevious = !previous && item.id !== record.id && (!record.submittedAt || (item.submittedAt !== null && item.submittedAt < record.submittedAt));
     let scores = contributions.scores;
     if (isPrevious) {
       const inputs = await loadProgressInputs(actor.userId, { assessment: { ...scoring, id: item.id }, db });
       scores = summarizeProgress(inputs);
       previous = {
-        id: item.id, period: item.campaignRecipient?.campaign.name ?? "Kuruluş içi", submittedAt: iso(item.submittedAt),
+        id: item.id, period: periodOf(item), submittedAt: iso(item.submittedAt),
         percentage: scores.overallPercentage, baselinePercentage: scores.baselineOverallPercentage, deltaPercentage: scores.deltaPercentage,
         categories: computeProgressBreakdown(inputs, structure.categories).map(row => ({
           id: row.id, currentPercentage: row.totalScore ? Math.max(0, (row.totalScore - 1) / 4 * 100) : null,
@@ -340,15 +401,15 @@ export async function buildAssessmentDetail(actor: ManagedActor, record: Resolve
       };
     } else if (item.id !== record.id) scores = await calculateProgressScores(actor.userId, { assessment: { ...scoring, id: item.id }, db });
     comparisons.push({
-      id: item.id, period: item.campaignRecipient?.campaign.name ?? "Kuruluş içi",
+      id: item.id, period: periodOf(item),
       submittedAt: iso(item.submittedAt), score: scores.overallScore, percentage: scores.overallPercentage,
       completionPercentage: structure.questions.length ? Math.round(scores.completedQuestions / structure.questions.length * 100) : 0,
     });
   }
   const detail = {
     assessment: {
-      id: record.id, unitId: record.unitId!, unitName: record.unit!.name, surveyId: record.surveyId, surveyName: record.survey.name,
-      periodName: record.campaignRecipient?.campaign.name ?? "Kuruluş içi", submittedAt: iso(record.submittedAt),
+      id: record.id, unitId: record.unitId ?? SELF_UNIT_ID, unitName: record.unit.name, surveyId: record.surveyId, surveyName: record.survey.name,
+      periodName: periodOf(record), submittedAt: iso(record.submittedAt),
       status: getDashboardResultState({ answeredQuestions: responseById.size, totalQuestions: structure.questions.length, submitted: record.status === "SUBMITTED", isCoordinator: true }),
       locked: record.context.locked,
       roadmapLocked: !record.survey.isActive || Boolean(record.survey.archivedAt) || record.campaignRecipient?.campaign.status === "CLOSED",

@@ -2,10 +2,9 @@
 
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import AppShell from "@/components/ui/app-shell";
 import AssessmentDashboard from "@/components/assessment-dashboard";
-import DashboardClient from "./dashboard-client";
 
 export function DashboardLoading() {
   return (
@@ -20,27 +19,19 @@ export function DashboardLoading() {
   );
 }
 
+/**
+ * Tek pano: herkes aynı değerlendirmeyi aynı sayılarla görür. Yönetici
+ * yönettiği birimleri, çalışan kendi birimini, birimi olmayan kullanıcı
+ * kendi değerlendirmesini açar (bkz. lib/assessment-view).
+ */
 export default function DashboardHome() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const role = (session?.user as { role?: string } | undefined)?.role;
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
   }, [status, router]);
 
-  // Oturum çözülmeden kişisel anket isteği başlatılmaz. Yöneticinin
-  // sonuçları, anket atamasından ve kendi birim üyeliğinden bağımsızdır.
   if (status !== "authenticated") return <DashboardLoading />;
-
-  if (role === "UNIT_MANAGER" && searchParams.get("view") !== "assessment") {
-    return <AssessmentDashboard title="Birim panosu" />;
-  }
-  // Birime bağlı çalışan biriminin değerlendirmesini tek panoda görür; birimi yoksa kişisel pano.
-  if (role === "USER") return <AssessmentDashboard fallback={<DashboardClient />} />;
-
-  const unitParams = new URLSearchParams(searchParams.toString());
-  unitParams.delete("view");
-  return <DashboardClient showUnitDashboardLink={role === "UNIT_MANAGER"} unitDashboardHref={"/dashboard" + (unitParams.toString() ? "?" + unitParams.toString() : "")} />;
+  return <AssessmentDashboard />;
 }

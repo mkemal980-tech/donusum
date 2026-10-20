@@ -7,7 +7,12 @@ import { withAuth } from "@/lib/api-utils";
 import { prisma } from "@/lib/db";
 import { getAssessmentIds, isUserCoordinator } from "@/lib/assessment";
 import { ROADMAP_FORBIDDEN } from "@/lib/roadmap-access";
-import { getAccessibleSurveyIds, getRecommendationsForUser, getScopeResolver } from "@/lib/scoring";
+import { ManagedAssessmentError } from "@/lib/managed-assessment";
+import { resolveViewableAssessment } from "@/lib/assessment-view";
+import { loadManagedStructure } from "@/lib/unit-dashboard";
+import {
+  getAccessibleSurveyIds, getRecommendationsForUser, getScopeResolver, getScopeResolverForProfile, type ScoringAssessment,
+} from "@/lib/scoring";
 import { callLLMForJSON, isLLMConfigured } from "@/lib/llm";
 import { currentRoadmapQuarter, hasRoadmapTiming, roadmapQuarterIndex } from "@/lib/roadmap-calendar";
 import {
@@ -15,11 +20,17 @@ import {
   validateRoadmapSelection, type GeneratedRoadmapSelection, type RoadmapPlanningGroup,
 } from "@/lib/roadmap-planner";
 
-async function loadPlanningContext(userId: string) {
-  const surveyIds = await getAccessibleSurveyIds(userId);
+/**
+ * Planlanacak öneriler. `assessment` verilirse panoda açık olan değerlendirme
+ * (yöneticinin seçtiği birim dahil), verilmezse kullanıcının kendi
+ * değerlendirmeleri.
+ */
+async function loadPlanningContext(userId: string, assessment?: ScoringAssessment) {
+  const surveyIds = assessment ? [assessment.surveyId] : await getAccessibleSurveyIds(userId);
   const [recommendations, assessmentIds, scopeOf] = await Promise.all([
-    getRecommendationsForUser(userId), getAssessmentIds(userId, surveyIds),
-    getScopeResolver(userId, undefined),
+    getRecommendationsForUser(userId, assessment ? { assessment } : undefined),
+    assessment ? [assessment.id] : getAssessmentIds(userId, surveyIds),
+    assessment ? getScopeResolverForProfile(assessment, assessment.surveyId) : getScopeResolver(userId, undefined),
   ]);
   const [existing, assessments, subCategories] = await Promise.all([
     prisma.roadmapItem.findMany({ where: { assessmentId: { in: assessmentIds } } }),
@@ -59,14 +70,28 @@ class StaleRoadmapPlanError extends Error {}
 export async function POST(request: NextRequest) {
   const auth = await withAuth(request, { rateLimit: "ai" });
   if (!auth.success) return auth.response;
+  const body = await request.json().catch(() => null) as { assessmentId?: unknown } | null;
+  let assessment: ScoringAssessment | undefined;
   // Yol haritasını planlamak koordinatörün işi (bkz. lib/roadmap-access).
-  if (!(await isUserCoordinator(auth.userId))) return NextResponse.json({ error: ROADMAP_FORBIDDEN }, { status: 403 });
+  if (typeof body?.assessmentId === "string") {
+    try {
+      const { role, record } = await resolveViewableAssessment(auth, body.assessmentId);
+      if (role === "member") return NextResponse.json({ error: ROADMAP_FORBIDDEN }, { status: 403 });
+      if (!record.survey.isActive || record.survey.archivedAt || record.campaignRecipient?.campaign.status === "CLOSED") {
+        return NextResponse.json({ error: "Bu değerlendirme dönemi kapalı." }, { status: 409 });
+      }
+      assessment = (await loadManagedStructure(record.scoring)).scoring;
+    } catch (error) {
+      if (error instanceof ManagedAssessmentError) return NextResponse.json({ error: error.message }, { status: error.status });
+      throw error;
+    }
+  } else if (!(await isUserCoordinator(auth.userId))) return NextResponse.json({ error: ROADMAP_FORBIDDEN }, { status: 403 });
   if (!isLLMConfigured()) {
     return NextResponse.json({ error: "AI hizmeti şu anda kullanılamıyor. Lütfen yöneticinizle iletişime geçin." }, { status: 503 });
   }
 
   try {
-    const context = await loadPlanningContext(auth.userId);
+    const context = await loadPlanningContext(auth.userId, assessment);
     if (context.groups.length === 0) {
       return NextResponse.json({
         error: "Yol haritasına eklenebilecek öneri yok. Anket yanıtlarınızı ve önerilerin basamak durumlarını kontrol edin.",
@@ -95,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
 
     // AI beklenirken cevaplar, kademe veya erişim değişmiş olabilir.
-    const latest = await loadPlanningContext(auth.userId);
+    const latest = await loadPlanningContext(auth.userId, assessment);
     for (const selection of selections) {
       const group = latest.groups.find((item) => item.subCategoryId === selection.subCategoryId);
       if (group?.assessmentId !== selection.assessmentId || !group.candidates.some((item) => item.id === selection.recommendationId)) {

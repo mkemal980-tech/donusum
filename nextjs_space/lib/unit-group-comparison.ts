@@ -34,7 +34,8 @@ export function percentileBand(rank: number, count: number) {
 export async function loadUnitGroupComparison(actor: ManagedActor, assessmentId: string, db: DbClient = prisma) {
   // Yönetici kapsamındaki ya da kişinin kendi birimindeki değerlendirme; çıktı yalnızca toplu sayı.
   const { record } = await resolveViewableAssessment(actor, assessmentId, db);
-  const unit = await db.unit.findUnique({ where: { id: record.unitId! }, select: { parentId: true, parent: { select: { name: true } } } });
+  if (!record.unitId) return { available: false as const, reason: "NO_GROUP" as const, groupName: null };
+  const unit = await db.unit.findUnique({ where: { id: record.unitId }, select: { parentId: true, parent: { select: { name: true } } } });
   if (!unit?.parentId || !unit.parent) return { available: false as const, reason: "NO_GROUP" as const, groupName: null };
   const groupName = unit.parent.name;
   if (record.status !== "SUBMITTED") return { available: false as const, reason: "NOT_SUBMITTED" as const, groupName };

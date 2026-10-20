@@ -1,10 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import * as XLSX from "xlsx";
-import { assessmentView, unitDetail, unitRow } from "../test-fixtures/unit-dashboard";
+import { assessmentView, personalAssessmentView, personalRow, unitDetail, unitRow } from "../test-fixtures/unit-dashboard";
 import { buildUnitReportHtml, unitReportTables } from "../lib/unit-dashboard-report";
 
-async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, failed = false, pending = false, denied = false, emptyFirst = false } = {}) {
+async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, failed = false, pending = false, denied = false, emptyFirst = false, personal = false } = {}) {
   let assignmentRequests = 0;
   const actions: { path: string; body: Record<string, unknown> }[] = [];
   let rows = empty ? [] : [unitRow(), unitRow("assessment-2", "unit-2", "Enerji birimi"), { ...unitRow("assessment-old"), periodId: "period-2025", periodName: "2025 dönemi", status: "SUBMITTED" as const, locked: true }];
@@ -47,16 +47,18 @@ async function mockApis(page: Page, { role = "UNIT_MANAGER", empty = false, fail
     } else if (path === "/api/auth/session") {
       body = { user: { id: "esra", email: "esra@example.com", firstName: "Esra", role, unitId: null }, expires: "2099-01-01T00:00:00Z" };
     } else if (path === "/api/dashboard/assessments" && role === "USER") {
-      body = { role: "member", units: [], assessments: [], hasAnonymousCampaigns: false };
+      body = { role: "owner", units: [], assessments: [], hasAnonymousCampaigns: false };
     } else if (path === "/api/dashboard/assessments") {
       status = failed ? 500 : 200;
       body = failed ? { error: "Birim verileri yüklenemedi." } : { role: "manager",
-        units: [...(emptyFirst ? [{ id: "empty-unit", name: "ABC Tersane", description: null, parentId: "root", assessmentCount: 0 },
+        units: [...(personal ? [{ id: "self", name: "Bora Danışmanlık", description: null, parentId: null, assessmentCount: 1 }] : []), ...(emptyFirst ? [{ id: "empty-unit", name: "ABC Tersane", description: null, parentId: "root", assessmentCount: 0 },
           { id: "root", name: "Tersane2026", description: null, parentId: null, assessmentCount: 0 }] : []),
           { id: "managed-unit", name: "Esra'nın birimi", description: null, parentId: emptyFirst ? "root" : null, assessmentCount: empty ? 0 : 2 },
           { id: "unit-2", name: "Enerji birimi", description: null, parentId: null, assessmentCount: empty ? 0 : 1 }],
-        assessments: rows, hasAnonymousCampaigns: false,
+        assessments: [...(personal ? [personalRow()] : []), ...rows], hasAnonymousCampaigns: false,
       };
+    } else if (path === "/api/dashboard/assessment" && url.searchParams.get("assessmentId") === "personal-1") {
+      body = personalAssessmentView();
     } else if (path === "/api/dashboard/assessment") {
       const detail = details.get(url.searchParams.get("assessmentId")!);
       status = denied || !detail ? 403 : 200;
@@ -107,11 +109,22 @@ test("kişisel ataması ve birim üyeliği olmayan yönetici sonuç, eksik ve be
   await page.screenshot({ path: testInfo.outputPath("birim-panosu.png"), fullPage: true });
   await page.getByRole("tab", { name: "Belgeler" }).click();
   await expect(page.getByText("Birim raporu.pdf")).toBeVisible();
-  await page.getByRole("link", { name: "Kendi değerlendirmem" }).click();
-  await expect(page.getByText("Size henüz anket atanmadı")).toBeVisible();
-  await page.getByRole("link", { name: "Birim panosuna dön" }).click();
-  await expect(page.getByRole("heading", { name: "Birim panosu" })).toBeVisible();
-  await expect(page.getByLabel("Birim", { exact: true })).toHaveValue("managed-unit");
+  // Kişisel değerlendirmesi olmayan yöneticide "Kendi değerlendirmem" yoktur.
+  await expect(page.getByRole("button", { name: "Kendi değerlendirmem" })).toHaveCount(0);
+});
+
+test("birimi olmayan yönetici kendi değerlendirmesini aynı panoda açar", async ({ page }) => {
+  await mockApis(page, { personal: true });
+  await page.goto("/dashboard");
+  // Yönetici panosu kişisel değerlendirmeyle değil, yönetilen birimlerle açılır.
+  await expect(page.getByLabel("Birim", { exact: true })).toHaveValue("all");
+  await expect(page.getByRole("cell", { name: "Bora Danışmanlık" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Kendi değerlendirmem" }).click();
+  await expect(page).toHaveURL(/unitId=self.*assessmentId=personal-1/);
+  await expect(page.getByRole("heading", { name: "Bora Danışmanlık", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Görev dağılımı" })).toHaveCount(0);
+  await expect(page.getByRole("tab", { name: "Ekip ve görevler" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Değerlendirmeyi gönder" })).toBeVisible();
 });
 
 test("sonuçlar sekmesi puanı, kıyasları ve sonraki adımları tek yerde gösterir", async ({ page }, testInfo) => {
@@ -285,12 +298,17 @@ test("toplu görünümün anket ve dönem seçimi korunur; birim detayı filtrel
   await expect(table.getByRole("row")).toHaveCount(4);
 });
 
-for (const role of ["USER", "ADMIN"]) {
-  test(role + " rolü birimi yoksa kişisel değerlendirme panosunu açar", async ({ page }) => {
-    const api = await mockApis(page, { role });
-    await page.goto("/dashboard");
-    await expect(page.getByText("Size henüz anket atanmadı")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Birim panosu" })).toHaveCount(0);
-    expect(api.assignments()).toBeGreaterThan(0);
-  });
-}
+test("birimi ve anketi olmayan kullanıcı tek panoda boş durumu görür", async ({ page }) => {
+  const api = await mockApis(page, { role: "USER" });
+  await page.goto("/dashboard");
+  await expect(page.getByText("Size henüz anket atanmadı")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Birim panosu" })).toHaveCount(0);
+  expect(api.assignments()).toBe(0);
+});
+
+test("ADMIN /dashboard'da bütün birimlerin panosunu açar", async ({ page }) => {
+  await mockApis(page, { role: "ADMIN" });
+  await page.goto("/dashboard");
+  await expect(page.getByRole("heading", { name: "Birim panosu" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Tüm yönetilen birimler" })).toBeVisible();
+});
