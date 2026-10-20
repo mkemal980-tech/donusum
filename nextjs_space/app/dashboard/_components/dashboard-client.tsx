@@ -83,7 +83,12 @@ interface CategoryScore {
 }
 
 interface ScoreData {
+  /** Mevcut puan: anket cevapları ve tamamlanan öneriler (docs/GELISIM-PUANI.md). */
   totalScore: number;
+  /** Yalnızca anket cevaplarından hesaplanan taban puan. */
+  baselinePercentage?: number;
+  /** Tamamlanan önerilerin kattığı yüzde puan. */
+  deltaPercentage?: number;
   categoryScores: Record<string, CategoryScore>;
 }
 
@@ -268,6 +273,8 @@ export default function DashboardClient({ showUnitDashboardLink = false, unitDas
         setUserProfile(data.userProfile);
         setScoreData({
           totalScore: data.score.totalScore,
+          baselinePercentage: data.score.baselinePercentage,
+          deltaPercentage: data.score.deltaPercentage,
           categoryScores: toCategoryScoreMap(data.categoryScores),
         });
         setCompletedQuestions(data.score.answeredQuestions ?? data.responses?.length ?? 0);
@@ -319,6 +326,8 @@ export default function DashboardClient({ showUnitDashboardLink = false, unitDas
 
         setScoreData({
           totalScore: data.score.totalScore,
+          baselinePercentage: data.score.baselinePercentage,
+          deltaPercentage: data.score.deltaPercentage,
           categoryScores: toCategoryScoreMap(data.categoryScores),
         });
         setCompletedQuestions(data.score.answeredQuestions ?? data.responses?.length ?? 0);
@@ -1482,7 +1491,9 @@ export default function DashboardClient({ showUnitDashboardLink = false, unitDas
           <MetricCard
             label="Olgunluk puanı"
             value={`${Math.round(scoreData?.totalScore ?? 0)}%`}
-            note={maturity.label}
+            note={(scoreData?.deltaPercentage ?? 0) > 0
+              ? `${maturity.label} · anket %${scoreData?.baselinePercentage} · öneriler +${scoreData?.deltaPercentage?.toLocaleString("tr-TR")}`
+              : maturity.label}
             /* Seviyenin kendi rengi halkada; buradaki metin rozet mürekkebini
                kullanır — olgunluk rampasının uçları metin olarak iki temada da
                eşiği geçmiyor (koyuda level-1, açıkta level-3 sönük kalıyor). */

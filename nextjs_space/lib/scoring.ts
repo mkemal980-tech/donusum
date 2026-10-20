@@ -388,18 +388,31 @@ export async function buildRecommendationSurveyWhere(
  * Kapsam dışı bölümlerin soruları hem alınan puana hem de tavana hiç
  * girmez — sorulmayan soru kullanıcıyı cezalandırmamalı.
  */
+/**
+ * Puanlamanın kullandığı sektör profili: birime bağlı kullanıcıda birimin,
+ * değilse kullanıcının kendi profili. Soru kapsamı, sektör kıyası ve Ironman
+ * kıyası aynı profili kullanır; aksi hâlde sorular bir sektöre göre puanlanıp
+ * başka bir sektörle kıyaslanır.
+ */
+export async function getScoringProfile(userId: string, db: DbClient = prisma) {
+  const profile = {
+    sectorId: true, subSectorId: true,
+    sector: { select: { id: true, name: true } }, subSector: { select: { id: true, name: true } },
+  } as const;
+  const user = await db.user.findUnique({ where: { id: userId }, select: { ...profile, unit: { select: profile } } });
+  return user?.unit ?? user ?? null;
+}
+
 export async function getScopeResolver(
   userId: string,
   surveyId: string | undefined,
   db: DbClient = prisma
 ): Promise<(subCategoryId: string | null | undefined) => ResolvedScope> {
-  const user = await db.user.findUnique({
-    where: { id: userId },
-    select: { sectorId: true, subSectorId: true, unit: { select: { sectorId: true, subSectorId: true } } },
-  });
-
-  return getScopeResolverForProfile(user?.unit ?? user, surveyId, db);
+  return getScopeResolverForProfile(await getScoringProfile(userId, db), surveyId, db);
 }
+
+/** Kırılım düğümünün 1-5 puanını ekrandaki yüzdeye çevirir; cevapsız düğüm 0. */
+export const breakdownPercentage = (score: number) => score ? Math.min(100, Math.max(0, (score - 1) / 4 * 100)) : 0;
 
 export async function getScopeResolverForProfile(
   profile: { sectorId: string | null; subSectorId: string | null } | null,
@@ -1115,6 +1128,8 @@ export type ProgressResponseInput = {
   maxScore: number;
   categoryId: string | null;
   subCategoryId: string | null;
+  /** Bölüm basamaklara ayrılmışsa sorunun basamağı; kırılım için. */
+  subLevelId?: string | null;
   /** Boş sorular paydada kalır, tamamlanmış soru sayılmaz. */
   answered?: boolean;
 };
@@ -1127,6 +1142,7 @@ export type ProgressRecommendationInput = {
   axisType: ProgressAxis;
   categoryId: string | null;
   subCategoryId: string | null;
+  subLevelId?: string | null;
 };
 
 export type ProgressInputs = {
@@ -1408,16 +1424,18 @@ export type ProgressBreakdownNode = {
   bonusPoints: number;
   completedCount: number;
   responseCount: number;
+  /** Kapsamdaki soru sayısı (cevapsızlar dahil); 0 ise düğüm bu profile sorulmaz. */
+  questionCount: number;
 };
 
 export type ProgressBreakdownCategory = ProgressBreakdownNode & {
-  subCategories: ProgressBreakdownNode[];
+  subCategories: (ProgressBreakdownNode & { subLevels: ProgressBreakdownNode[] })[];
 };
 
 type BreakdownTree = Array<{
   id: string;
   name: string;
-  subCategories: Array<{ id: string; name: string }>;
+  subCategories: Array<{ id: string; name: string; subLevels?: Array<{ id: string; name: string }> }>;
 }>;
 
 /**
@@ -1438,11 +1456,12 @@ export function computeProgressBreakdown(
   const node = (
     id: string,
     name: string,
-    inNode: (item: { categoryId: string | null; subCategoryId: string | null }) => boolean
+    inNode: (item: { categoryId: string | null; subCategoryId: string | null; subLevelId?: string | null }) => boolean
   ): ProgressBreakdownNode => {
-    let sumBase = 0, sumCurrent = 0, weight = 0, responseCount = 0;
+    let sumBase = 0, sumCurrent = 0, weight = 0, responseCount = 0, questionCount = 0;
     for (const response of inputs.responses) {
       if (!response.applicable || !inNode(response)) continue;
+      questionCount++;
       if (response.answered !== false) responseCount++;
       const effective = effectiveQuestionScore(
         response.score,
@@ -1475,15 +1494,19 @@ export function computeProgressBreakdown(
       totalScore: round2(totalScore),
       bonusPoints: round2(totalScore - baseScore),
       completedCount,
-      responseCount
+      responseCount,
+      questionCount
     };
   };
 
+  // Basamak düğümü: basamağa bağlı öneri puanı yalnızca kendi basamağına düşer;
+  // basamağı olmayan bölüm önerisi bölümde sayılır, basamaklarda sayılmaz.
   return tree.map(category => ({
     ...node(category.id, category.name, item => item.categoryId === category.id),
-    subCategories: category.subCategories.map(sub =>
-      node(sub.id, sub.name, item => item.subCategoryId === sub.id)
-    )
+    subCategories: category.subCategories.map(sub => ({
+      ...node(sub.id, sub.name, item => item.subCategoryId === sub.id),
+      subLevels: (sub.subLevels ?? []).map(level => node(level.id, level.name, item => item.subLevelId === level.id)),
+    }))
   }));
 }
 
@@ -1498,6 +1521,7 @@ type RecommendationRow = {
   points?: number | null;
   categoryId?: string | null;
   subCategoryId?: string | null;
+  subLevelId?: string | null;
   subLevel?: {
     axisType?: string | null;
     subCategoryId?: string | null;
@@ -1522,7 +1546,8 @@ export function toProgressRecommendationInput(
       rec.subCategory?.categoryId ??
       rec.subLevel?.subCategory?.categoryId ??
       null,
-    subCategoryId: rec.subCategoryId ?? rec.subLevel?.subCategoryId ?? null
+    subCategoryId: rec.subCategoryId ?? rec.subLevel?.subCategoryId ?? null,
+    subLevelId: rec.subLevelId ?? null
   };
 }
 
@@ -1533,6 +1558,7 @@ const RECOMMENDATION_INPUT_SELECT = {
   points: true,
   categoryId: true,
   subCategoryId: true,
+  subLevelId: true,
   subLevel: { select: { axisType: true, subCategoryId: true, subCategory: { select: { categoryId: true } } } },
   subCategory: { select: { categoryId: true } }
 } as const;
@@ -1585,6 +1611,7 @@ export async function loadProgressInputs(
           // Sektör kapsamı bölüm düzeyinde tanımlı; kırılım için kategori de.
           categoryId: true,
           subCategoryId: true,
+          subLevelId: true,
           subCategory: { select: { categoryId: true } },
           subLevel: { select: { subCategoryId: true, subCategory: { select: { categoryId: true } } } }
         }
@@ -1623,7 +1650,7 @@ export async function loadProgressInputs(
     where: questionWhere,
     select: {
       id: true, type: true, weight: true, axisType: true, options: true, conditionalOptions: true,
-      categoryId: true, subCategoryId: true, subCategory: { select: { categoryId: true } },
+      categoryId: true, subCategoryId: true, subLevelId: true, subCategory: { select: { categoryId: true } },
       subLevel: { select: { subCategoryId: true, subCategory: { select: { categoryId: true } } } },
     }
   });
@@ -1633,6 +1660,7 @@ export async function loadProgressInputs(
       id?: string;
       categoryId?: string | null;
       subCategoryId?: string | null;
+      subLevelId?: string | null;
       subCategory?: { categoryId?: string | null } | null;
       subLevel?: { subCategoryId?: string | null; subCategory?: { categoryId?: string | null } | null } | null;
     };
@@ -1651,7 +1679,8 @@ export async function loadProgressInputs(
         question.subCategory?.categoryId ??
         question.subLevel?.subCategory?.categoryId ??
         null,
-      subCategoryId
+      subCategoryId,
+      subLevelId: question.subLevelId ?? null
     };
   });
   const answeredIds = new Set(responseInputs.map(response => response.questionId));
@@ -1664,7 +1693,7 @@ export async function loadProgressInputs(
       weight: (question.weight || 1) * scope.weight, applicable: scope.applicable,
       axisType: question.axisType === "ENDURANCE" ? "ENDURANCE" : "VELOCITY", maxScore: maxScoreForQuestion(question),
       categoryId: question.categoryId ?? question.subCategory?.categoryId ?? question.subLevel?.subCategory?.categoryId ?? null,
-      subCategoryId,
+      subCategoryId, subLevelId: question.subLevelId ?? null,
     });
   }
 
@@ -1758,7 +1787,11 @@ export async function calculateProgressBreakdown(
         subCategories: {
           where: { archivedAt: null },
           orderBy: { order: "asc" },
-          select: { id: true, name: true }
+          select: {
+            id: true,
+            name: true,
+            subLevels: { where: { archivedAt: null }, orderBy: { order: "asc" }, select: { id: true, name: true } }
+          }
         }
       },
       orderBy: { order: "asc" }

@@ -84,7 +84,7 @@ export function BenchmarkSection({ surveyId }: { surveyId?: string }) {
   if (!currentBenchmark || !hasAnyBenchmark) {
     return (
       <BenchmarkEmpty
-        message={`${data.sector?.name} sektörü için henüz kıyaslama verisi girilmemiş. Kıyaslama, yeterli sayıda kuruluş değerlendirmesini gönderdiğinde açılır.`}
+        message={`${data.sector?.name} sektörü için henüz kıyaslama verisi yok. Kıyas değerleri platform yöneticisi tarafından girildiğinde burada görünür.`}
       />
     );
   }
