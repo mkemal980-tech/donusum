@@ -1,0 +1,127 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { DbClient } from "../assessment";
+import { unitDetail } from "../../test-fixtures/unit-dashboard";
+import { ManagedAssessmentError } from "../managed-assessment";
+
+const mocks = vi.hoisted(() => ({ managed: vi.fn(), build: vi.fn(), index: vi.fn(), ownIndex: vi.fn(), access: vi.fn() }));
+vi.mock("../managed-assessment", async original => ({ ...(await original<typeof import("../managed-assessment")>()), resolveManagedAssessment: mocks.managed }));
+vi.mock("../unit-dashboard", async original => ({
+  ...(await original<typeof import("../unit-dashboard")>()),
+  buildAssessmentDetail: mocks.build, loadUnitDashboardIndex: mocks.index, loadOwnUnitDashboardIndex: mocks.ownIndex,
+}));
+vi.mock("../roadmap-access", () => ({ loadRoadmapAccess: mocks.access }));
+import { loadAssessmentDocuments, loadAssessmentIndex, loadAssessmentView, resolveViewableAssessment } from "../assessment-view";
+import { redactForMember } from "../unit-dashboard";
+
+const manager = { userId: "manager", user: { role: "UNIT_MANAGER" } };
+const member = { userId: "member-1", user: { role: "USER" } };
+const assessment = {
+  id: "as-1", unitId: "unit-b", surveyId: "s1", status: "SUBMITTED", submittedAt: null,
+  unit: { id: "unit-b", name: "Bora Gıda", sectorId: null, subSectorId: null },
+  survey: { id: "s1", name: "Anket", isActive: true, archivedAt: null, isDemo: false }, campaignRecipient: null,
+};
+const db = {
+  user: { findUnique: vi.fn() }, assessment: { findFirst: vi.fn() },
+  sectionAssignment: { findMany: vi.fn() }, document: { findMany: vi.fn() },
+};
+const client = db as unknown as DbClient;
+const assignments = [{ subCategoryId: "section-1", assigneeId: "member-1" }, { subCategoryId: "section-2", assigneeId: "member-2" }];
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.managed.mockRejectedValue(new ManagedAssessmentError("Bu değerlendirmeye erişiminiz yok."));
+  db.user.findUnique.mockResolvedValue({ unitId: "unit-b" });
+  db.assessment.findFirst.mockResolvedValue(assessment);
+  db.sectionAssignment.findMany.mockResolvedValue(assignments);
+  mocks.build.mockResolvedValue(unitDetail("as-1", "unit-b", "Bora Gıda"));
+});
+
+describe("çalışan ayıklaması", () => {
+  it("başkasına atanmış bölümün cevaplarını, sorumlusunu ve ilerlemesini çıkarır; puanı bırakır", () => {
+    const detail = redactForMember(unitDetail(), "member-1", assignments);
+    const [mine, other] = detail.categories[0].sections;
+    expect(mine).toMatchObject({ id: "section-1", restricted: false, assigneeName: "Ayşe Üye" });
+    expect(mine.questions).toHaveLength(1);
+    expect(other).toMatchObject({ id: "section-2", restricted: true, assigneeId: null, assigneeName: "", answeredCount: 0, percentage: 0, questions: [] });
+    expect(other.currentPercentage).toBe(unitDetail().categories[0].sections[1].currentPercentage);
+  });
+  it("kişi bazlı ekip ilerlemesini, üye listesini ve sorumlu atama işlerini çıkarır", () => {
+    const detail = redactForMember(unitDetail(), "member-1", assignments);
+    expect(detail.team.map(row => row.id)).toEqual(["member-1"]);
+    expect(detail.members).toEqual([]);
+    expect(detail.work.map(item => [item.kind, item.sectionId])).toEqual([["EVIDENCE", "section-1"]]);
+    // Birimin sonucu aynı kalır.
+    expect(detail.scores).toEqual(unitDetail().scores);
+    expect(detail.recommendations).toEqual(unitDetail().recommendations);
+  });
+  it("dağıtım yoksa her bölüm açıktır; sorumlu seçme işi yine koordinatörde kalır", () => {
+    const detail = redactForMember(unitDetail(), "member-1", []);
+    expect(detail.categories[0].sections.every(section => !section.restricted)).toBe(true);
+    expect(detail.work.some(item => item.kind === "UNASSIGNED")).toBe(false);
+  });
+});
+
+describe("değerlendirmeyi açma", () => {
+  it("yönetim kapsamındaysa yönetici olarak açar", async () => {
+    mocks.managed.mockResolvedValue({ id: "as-1" });
+    expect(await resolveViewableAssessment(manager, "as-1", client)).toEqual({ role: "manager", record: { id: "as-1" } });
+    expect(db.assessment.findFirst).not.toHaveBeenCalled();
+  });
+  it("yönetim kapsamında değilse kişinin kendi birimiyse çalışan olarak açar", async () => {
+    const { role, record } = await resolveViewableAssessment(manager, "as-1", client);
+    expect(role).toBe("member");
+    expect(record.context.isCoordinator).toBe(false);
+    expect(db.assessment.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "as-1", unitId: "unit-b", survey: { isDemo: false } } }));
+  });
+  it("normal kullanıcı yönetici yolunu hiç denemez; başka birimin değerlendirmesini açamaz", async () => {
+    db.assessment.findFirst.mockResolvedValue(null);
+    await expect(resolveViewableAssessment(member, "other", client)).rejects.toMatchObject({ status: 403 });
+    expect(mocks.managed).not.toHaveBeenCalled();
+  });
+  it("birimi olmayan kullanıcı birim değerlendirmesi açamaz", async () => {
+    db.user.findUnique.mockResolvedValue({ unitId: null });
+    await expect(resolveViewableAssessment(member, "as-1", client)).rejects.toMatchObject({ status: 403 });
+  });
+  it("yetki dışı olmayan hatayı yutmaz", async () => {
+    mocks.managed.mockRejectedValue(new ManagedAssessmentError("Geçersiz", 400));
+    await expect(resolveViewableAssessment(manager, "", client)).rejects.toMatchObject({ status: 400 });
+  });
+});
+
+describe("rol farkındalıklı görünüm", () => {
+  it("çalışana ayıklanmış detayı ve yalnızca kendi işinde durum yetkisini verir", async () => {
+    mocks.access.mockResolvedValue({ canManage: false, canUpdate: (id: string) => id === "rec-2" });
+    const view = await loadAssessmentView(member, "as-1", client);
+    expect(mocks.build).toHaveBeenCalledWith(member, expect.anything(), client, { ownUnit: true, member: true });
+    expect(view.viewer).toEqual({ role: "member", canManageRoadmap: false, canDistribute: false, canExportTeam: false });
+    // rec-1 yol haritasında değil; rec-2 yol haritasında ve kendisine düşüyor.
+    expect(view.recommendations.map(rec => [rec.id, rec.canUpdateStatus])).toEqual([["rec-1", false], ["rec-2", true]]);
+  });
+  it("yöneticiye tam detay ve bütün yetkileri verir", async () => {
+    mocks.managed.mockResolvedValue(assessment);
+    const view = await loadAssessmentView(manager, "as-1", client);
+    expect(mocks.build).toHaveBeenCalledWith(manager, expect.anything(), client, { ownUnit: false, member: false });
+    expect(view.viewer).toEqual({ role: "manager", canManageRoadmap: true, canDistribute: true, canExportTeam: true });
+    expect(view.recommendations.every(rec => rec.canUpdateStatus)).toBe(true);
+    expect(mocks.access).not.toHaveBeenCalled();
+  });
+});
+
+describe("pano listesi ve belgeler", () => {
+  it("yöneticide yönetilen birimleri, çalışanda yalnızca kendi birimini listeler", async () => {
+    mocks.index.mockResolvedValue({ units: [{ id: "x" }], assessments: [], hasAnonymousCampaigns: false });
+    mocks.ownIndex.mockResolvedValue({ units: [{ id: "unit-b" }], assessments: [], hasAnonymousCampaigns: false });
+    expect(await loadAssessmentIndex(manager, client)).toMatchObject({ role: "manager", units: [{ id: "x" }] });
+    expect(await loadAssessmentIndex(member, client)).toMatchObject({ role: "member", units: [{ id: "unit-b" }] });
+    expect(mocks.ownIndex).toHaveBeenCalledWith(member, "unit-b", client);
+    db.user.findUnique.mockResolvedValue({ unitId: null });
+    expect(await loadAssessmentIndex(member, client)).toEqual({ role: "member", units: [], assessments: [], hasAnonymousCampaigns: false });
+  });
+  it("çalışana yalnızca görebildiği bölümlerin belgelerini verir", async () => {
+    const doc = (id: string, section: string | null) => ({ id, response: { question: { text: "Soru", subCategoryId: section, subLevel: null } } });
+    db.document.findMany.mockResolvedValue([doc("mine", "section-1"), doc("other", "section-2"), doc("direct", null)]);
+    expect((await loadAssessmentDocuments(member, "as-1", client)).map(row => row.id)).toEqual(["mine"]);
+    mocks.managed.mockResolvedValue(assessment);
+    expect((await loadAssessmentDocuments(manager, "as-1", client)).map(row => row.id)).toEqual(["mine", "other", "direct"]);
+  });
+});

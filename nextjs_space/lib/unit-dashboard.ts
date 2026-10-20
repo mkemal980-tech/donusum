@@ -2,8 +2,9 @@ import { prisma } from "./db";
 import { type DbClient, getContributorCandidates } from "./assessment";
 import {
   MANAGED_ASSESSMENT_INCLUDE, ManagedAssessmentError, managedUnitScope,
-  resolveManagedAssessment, canReadManagedCampaign, type ManagedActor,
+  resolveManagedAssessment, canReadManagedCampaign, type ManagedActor, type ResolvedAssessment,
 } from "./managed-assessment";
+import { buildSectionVisibility, type SectionAssignment } from "./section-assignment";
 import {
   calculateProgressScores, calculateUserScore,
   summarizeProgress, computeRecommendationContributions, computeProgressBreakdown, loadProgressInputs,
@@ -55,6 +56,15 @@ export async function loadManagedStructure(scope: ScoringAssessment, db: DbClien
 export async function loadUnitDashboardIndex(actor: ManagedActor, db: DbClient = prisma, unitIds?: readonly string[], filter: { surveyId?: string | null } = {}) {
   const authorized = await managedUnitScope(actor, db);
   const scope = unitIds ? { in: unitIds.filter(id => !("in" in authorized) || authorized.in.includes(id)) } : authorized;
+  return indexForScope(actor, scope, db, filter, false);
+}
+
+/** Çalışanın kendi birimi: yetki üyelikten gelir; anonim kampanya gizliliği üyeyi kendi sonucundan ayırmaz. */
+export async function loadOwnUnitDashboardIndex(actor: ManagedActor, unitId: string, db: DbClient = prisma, filter: { surveyId?: string | null } = {}) {
+  return indexForScope(actor, { in: [unitId] }, db, filter, true);
+}
+
+async function indexForScope(actor: ManagedActor, scope: { in: string[] } | { not: null }, db: DbClient, filter: { surveyId?: string | null }, ownUnit: boolean) {
   const unitWhere = "in" in scope ? { id: { in: scope.in } } : {};
   const surveyWhere = filter.surveyId ? { surveyId: filter.surveyId } : {};
   const [units, records, assignments, recipients, direct] = await Promise.all([
@@ -72,11 +82,11 @@ export async function loadUnitDashboardIndex(actor: ManagedActor, db: DbClient =
       include: { campaign: { include: { survey: { select: { name: true, isActive: true } } } }, assessment: { select: { id: true } } },
       orderBy: { assignedAt: "desc" },
     }),
-    actor.user.role === "ADMIN" ? Promise.resolve([]) : db.unitAdmin.findMany({ where: { userId: actor.userId }, select: { unitId: true } }),
+    actor.user.role === "ADMIN" || ownUnit ? Promise.resolve([]) : db.unitAdmin.findMany({ where: { userId: actor.userId }, select: { unitId: true } }),
   ]);
   const directIds = new Set(direct.map(row => row.unitId));
   const unitById = new Map(units.map(unit => [unit.id, unit]));
-  const readable = (unitId: string, privacy?: string) => actor.user.role === "ADMIN" || privacy !== "ANONYMOUS" || directIds.has(unitId);
+  const readable = (unitId: string, privacy?: string) => ownUnit || actor.user.role === "ADMIN" || privacy !== "ANONYMOUS" || directIds.has(unitId);
   const deadlineOf = (unitId: string, surveyId: string) => {
     const dates = assignments.filter(row => row.user.unitId === unitId && row.surveyId === surveyId && row.hasDeadline && row.deadline).map(row => row.deadline!);
     return dates.length ? new Date(Math.min(...dates.map(date => date.getTime()))) : null;
@@ -178,7 +188,18 @@ export async function startManagedAssessment(actor: ManagedActor, input: { unitI
 }
 
 export async function loadUnitAssessmentDetail(actor: ManagedActor, assessmentId: string, db: DbClient = prisma) {
-  const record = await resolveManagedAssessment(actor, assessmentId, db);
+  return buildAssessmentDetail(actor, await resolveManagedAssessment(actor, assessmentId, db), db);
+}
+
+/**
+ * Yetkisi çözülmüş değerlendirmenin detayı.
+ *
+ * `ownUnit`: kişi kendi biriminin sonucuna bakıyor; anonim kampanya gizliliği
+ * üst kuruluşu üyeden korur, üyeyi kendi sonucundan değil.
+ * `member`: çalışan görünümü (bkz. dönüşteki ayıklama).
+ */
+export async function buildAssessmentDetail(actor: ManagedActor, record: ResolvedAssessment, db: DbClient = prisma, options: { ownUnit?: boolean; member?: boolean } = {}) {
+  const assessmentId = record.id;
   const structure = await loadManagedStructure(record.scoring, db);
   const scoring = structure.scoring;
   const [responses, assignments, members, roadmap, history, rawScores] = await Promise.all([
@@ -237,7 +258,7 @@ export async function loadUnitAssessmentDetail(actor: ManagedActor, assessmentId
         const dates = answered.map(question => responseById.get(question.id)!.updatedAt.getTime());
         const activeAssigneeId = section.assigneeId && memberById.has(section.assigneeId) ? section.assigneeId : null;
         return {
-          ...section, assigneeId: activeAssigneeId,
+          ...section, assigneeId: activeAssigneeId, restricted: false,
           currentPercentage: section.id && answered.length ? (() => {
             const score = progress.subCategories.find(row => row.id === section.id)?.totalScore;
             return score ? Math.max(0, (score - 1) / 4 * 100) : null;
@@ -303,7 +324,7 @@ export async function loadUnitAssessmentDetail(actor: ManagedActor, assessmentId
    */
   let previous: PreviousResult | null = null;
   for (const item of comparisonRecords) {
-    if (!(await canReadManagedCampaign(actor, record.unitId!, item.campaignRecipient?.campaign.privacyMode, db))) continue;
+    if (!options.ownUnit && !(await canReadManagedCampaign(actor, record.unitId!, item.campaignRecipient?.campaign.privacyMode, db))) continue;
     const isPrevious = !previous && item.id !== record.id && (!record.submittedAt || (item.submittedAt !== null && item.submittedAt < record.submittedAt));
     let scores = contributions.scores;
     if (isPrevious) {
@@ -324,7 +345,7 @@ export async function loadUnitAssessmentDetail(actor: ManagedActor, assessmentId
       completionPercentage: structure.questions.length ? Math.round(scores.completedQuestions / structure.questions.length * 100) : 0,
     });
   }
-  return {
+  const detail = {
     assessment: {
       id: record.id, unitId: record.unitId!, unitName: record.unit!.name, surveyId: record.surveyId, surveyName: record.survey.name,
       periodName: record.campaignRecipient?.campaign.name ?? "Kuruluş içi", submittedAt: iso(record.submittedAt),
@@ -368,6 +389,38 @@ export async function loadUnitAssessmentDetail(actor: ManagedActor, assessmentId
       recommendationId: snapshot.triggerEntityId,
     })),
     comparisons, previous,
+  };
+  return options.member ? redactForMember(detail, actor.userId, assignments) : detail;
+}
+
+type RedactableDetail = {
+  categories: { sections: { id: string | null; restricted: boolean }[] }[];
+  work: { kind: string; sectionId: string | null }[];
+  team: { id: string }[];
+  members: unknown[];
+};
+
+/**
+ * Çalışan görünümü: birimin sonucu (puanlar, kategoriler, öneriler, geçmiş)
+ * aynı kalır; kişi bazlı ekip ilerlemesi, üye listesi ve başkasına atanmış
+ * bölümlerin cevapları ile ilerlemesi çıkarılır. Görünürlük anket ekranıyla
+ * aynı kuraldan gelir (lib/section-assignment): dağıtım yoksa her şey açık.
+ */
+export function redactForMember<D extends RedactableDetail>(detail: D, userId: string, assignments: SectionAssignment[]): D {
+  const visibility = buildSectionVisibility(assignments, { userId, isCoordinator: false });
+  const canSee = (sectionId: string | null) => sectionId ? visibility.canSee(sectionId) : visibility.canSeeDirect;
+  return {
+    ...detail,
+    categories: detail.categories.map(category => ({
+      ...category,
+      sections: category.sections.map(section => canSee(section.id) ? section : {
+        ...section, restricted: true, assigneeId: null, assigneeName: "", answeredCount: 0, percentage: 0,
+        missingEvidence: 0, lastActivityAt: null, questions: [],
+      }),
+    })),
+    work: detail.work.filter(item => item.kind !== "UNASSIGNED" && canSee(item.sectionId)),
+    members: [],
+    team: detail.team.filter(member => member.id === userId),
   };
 }
 

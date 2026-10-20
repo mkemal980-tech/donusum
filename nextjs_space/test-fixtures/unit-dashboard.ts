@@ -8,9 +8,9 @@ export function unitDetail(id = "assessment-1", unitId = "managed-unit", name = 
     questionMix: { velocity: 2, endurance: 0 },
     categories: [{ id: "category-1", name: "Çevresel dönüşüm", weightPercentage: 100, baseScore: 2.6, currentScore: 2.6, basePercentage: 40, currentPercentage: 40, delta: 0, answeredQuestions: 1, totalQuestions: 2,
       sections: [
-        { id: "section-1", name: "Enerji yönetimi", currentPercentage: 40, assigneeId: "member-1", assigneeName: "Ayşe Üye", questionCount: 1, answeredCount: 1, percentage: 100, missingEvidence: 1, lastActivityAt: "2026-10-01T09:00:00Z",
+        { id: "section-1", name: "Enerji yönetimi", restricted: false, currentPercentage: 40, assigneeId: "member-1", assigneeName: "Ayşe Üye", questionCount: 1, answeredCount: 1, percentage: 100, missingEvidence: 1, lastActivityAt: "2026-10-01T09:00:00Z",
           questions: [{ id: "q1", text: "Enerji tüketimi izleniyor mu?", type: "YES_NO", options: [{ value: "yes", label: "Evet", score: 5 }], conditionalOptions: null, value: "yes", ratio: 1, evidenceCount: 0, requiresEvidence: true, answeredBy: "Ayşe Üye" }] },
-        { id: "section-2", name: "Atık yönetimi", currentPercentage: null, assigneeId: null, assigneeName: "Atanmamış", questionCount: 1, answeredCount: 0, percentage: 0, missingEvidence: 0, lastActivityAt: null,
+        { id: "section-2", name: "Atık yönetimi", restricted: false, currentPercentage: null, assigneeId: null, assigneeName: "Atanmamış", questionCount: 1, answeredCount: 0, percentage: 0, missingEvidence: 0, lastActivityAt: null,
           questions: [{ id: "q2", text: "Atık miktarı izleniyor mu?", type: "SCALE", options: null, conditionalOptions: null, value: null, ratio: null, evidenceCount: 0, requiresEvidence: false, answeredBy: null }] },
       ] }],
     work: [

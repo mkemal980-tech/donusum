@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { getManagedUnitIds, type DbClient } from "./assessment";
 import { isLocked } from "./submission";
@@ -49,6 +50,13 @@ export async function resolveManagedAssessment(actor: ManagedActor, assessmentId
   if (!(await canReadManagedCampaign(actor, assessment.unitId, assessment.campaignRecipient?.campaign.privacyMode, db))) {
     throw new ManagedAssessmentError("Anonim kampanyanın tekil sonuçları görüntülenemez.");
   }
+  return toResolvedAssessment({ ...assessment, unitId: assessment.unitId, unit: assessment.unit });
+}
+
+type ManagedAssessmentRecord = Prisma.AssessmentGetPayload<{ include: typeof MANAGED_ASSESSMENT_INCLUDE }> & { unitId: string; unit: NonNullable<Prisma.AssessmentGetPayload<{ include: typeof MANAGED_ASSESSMENT_INCLUDE }>["unit"]> };
+
+/** Yetkisi doğrulanmış kaydı puanlama ve kilit bağlamıyla birlikte döndürür. */
+export function toResolvedAssessment(assessment: ManagedAssessmentRecord, isCoordinator = true) {
   return {
     ...assessment,
     scoring: {
@@ -60,10 +68,12 @@ export async function resolveManagedAssessment(actor: ManagedActor, assessmentId
     context: {
       assessmentId: assessment.id,
       unitId: assessment.unitId,
-      isCoordinator: true,
+      isCoordinator,
       status: assessment.status,
       submittedAt: assessment.submittedAt,
       locked: isLocked(assessment.status) || !assessment.survey.isActive || Boolean(assessment.survey.archivedAt) || assessment.campaignRecipient?.campaign.status === "CLOSED",
     },
   };
 }
+
+export type ResolvedAssessment = ReturnType<typeof toResolvedAssessment>;
