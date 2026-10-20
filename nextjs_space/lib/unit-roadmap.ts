@@ -11,8 +11,8 @@ type Outcome = { status: number; body: Record<string, unknown> };
 const fail = (status: number, error: string): Outcome => ({ status, body: { error } });
 
 /**
- * Panodan yol haritası kaydı. Yönetici iş ekler, planlar, sorumlu ve tarih
- * atar; çalışan yalnızca kendisine düşen işin durumunu değiştirir (bkz.
+ * Panodan yol haritası kaydı. Yönetici (ve kişisel değerlendirmenin sahibi)
+ * iş ekler, planlar, sorumlu ve tarih atar; çalışan yalnızca kendisine düşen işin durumunu değiştirir (bkz.
  * lib/roadmap-access). Kayıt her zaman ekranda açık olan değerlendirmeye
  * yazılır — çalışan geçmiş bir döneme bakarken güncel döneme yazılmaz.
  */
@@ -40,7 +40,8 @@ export async function saveAssessmentRoadmap(
   const metadata: { assigneeId?: string | null; dueDate?: Date | null } = {};
   if ("assigneeId" in body) {
     if (body.assigneeId !== null && typeof body.assigneeId !== "string") return fail(400, "Geçersiz sorumlu.");
-    if (body.assigneeId) {
+    if (body.assigneeId && !record.unitId && body.assigneeId !== record.ownerUserId) return fail(400, "Kişisel değerlendirmede sorumlu yalnızca değerlendirmenin sahibi olabilir.");
+    if (body.assigneeId && record.unitId) {
       const member = await db.user.findFirst({ where: { id: body.assigneeId, unitId: record.unitId, isActive: true }, select: { id: true } });
       if (!member) return fail(400, "Sorumlu bu birimin aktif üyesi olmalı.");
     }

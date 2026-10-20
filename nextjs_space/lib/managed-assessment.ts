@@ -53,7 +53,9 @@ export async function resolveManagedAssessment(actor: ManagedActor, assessmentId
   return toResolvedAssessment({ ...assessment, unitId: assessment.unitId, unit: assessment.unit });
 }
 
-type ManagedAssessmentRecord = Prisma.AssessmentGetPayload<{ include: typeof MANAGED_ASSESSMENT_INCLUDE }> & { unitId: string; unit: NonNullable<Prisma.AssessmentGetPayload<{ include: typeof MANAGED_ASSESSMENT_INCLUDE }>["unit"]> };
+type AssessmentPayload = Prisma.AssessmentGetPayload<{ include: typeof MANAGED_ASSESSMENT_INCLUDE }>;
+/** Birim değerlendirmesinde `unit` birimin kendisi; kişisel değerlendirmede (unitId null) sahibinin adı ve sektörü. */
+type ManagedAssessmentRecord = AssessmentPayload & { unit: NonNullable<AssessmentPayload["unit"]> };
 
 /** Yetkisi doğrulanmış kaydı puanlama ve kilit bağlamıyla birlikte döndürür. */
 export function toResolvedAssessment(assessment: ManagedAssessmentRecord, isCoordinator = true) {

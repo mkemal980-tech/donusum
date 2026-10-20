@@ -4,7 +4,10 @@ import {
   MANAGED_ASSESSMENT_INCLUDE, ManagedAssessmentError, resolveManagedAssessment, toResolvedAssessment,
   type ManagedActor, type ResolvedAssessment,
 } from "./managed-assessment";
-import { buildAssessmentDetail, loadOwnUnitDashboardIndex, loadUnitDashboardIndex } from "./unit-dashboard";
+import {
+  buildAssessmentDetail, loadOwnUnitDashboardIndex, loadPersonalDashboardIndex, loadUnitDashboardIndex,
+  PERSONAL_OWNER_SELECT, personalUnit,
+} from "./unit-dashboard";
 import { loadRoadmapAccess } from "./roadmap-access";
 import { buildSectionVisibility } from "./section-assignment";
 
@@ -15,9 +18,11 @@ import { buildSectionVisibility } from "./section-assignment";
  * görüneceğini ve neyin yapılabileceğini değiştirir:
  * - yönetici: değerlendirme yönetim kapsamında (birim yöneticisi, ADMIN);
  * - çalışan: kişinin kendi biriminin değerlendirmesi. Kişi bazlı ekip
- *   ilerlemesi ve başkasına atanmış bölümlerin cevapları sunucuda çıkarılır.
+ *   ilerlemesi ve başkasına atanmış bölümlerin cevapları sunucuda çıkarılır;
+ * - sahip: birimsiz kullanıcının kendi (kişisel) değerlendirmesi. Ekip ve
+ *   dağıtım yoktur; yol haritasını kendisi planlar.
  */
-export type ViewerRole = "manager" | "member";
+export type ViewerRole = "manager" | "member" | "owner";
 
 const isManagerRole = (actor: ManagedActor) => actor.user.role === "ADMIN" || actor.user.role === "UNIT_MANAGER";
 
@@ -34,8 +39,21 @@ export async function resolveOwnUnitAssessment(userId: string, assessmentId: str
   return toResolvedAssessment({ ...assessment, unitId: assessment.unitId, unit: assessment.unit }, false);
 }
 
-/** Yönetim kapsamındaysa yönetici, değilse kişinin kendi birimiyse çalışan olarak açar. */
+/** Birimsiz kullanıcının kendi değerlendirmesi; birim yerine sahibinin adı ve sektörü kullanılır. Sahibi değilse null. */
+export async function resolvePersonalAssessment(userId: string, assessmentId: string, db: DbClient = prisma) {
+  const assessment = await db.assessment.findFirst({
+    where: { id: assessmentId, ownerUserId: userId, unitId: null, survey: { isDemo: false } },
+    include: { ...MANAGED_ASSESSMENT_INCLUDE, owner: { select: PERSONAL_OWNER_SELECT } },
+  });
+  // Sorgu koşulu kaydın kendisinde de doğrulanır: sahiplik tek yetki kaynağıdır.
+  if (!assessment?.owner || assessment.ownerUserId !== userId || assessment.unitId) return null;
+  const { owner, ...record } = assessment;
+  return toResolvedAssessment({ ...record, unit: personalUnit(owner) });
+}
+
+/** Yönetim kapsamındaysa yönetici, kişinin kendi değerlendirmesiyse sahip, kendi birimininse çalışan olarak açar. */
 export async function resolveViewableAssessment(actor: ManagedActor, assessmentId: string, db: DbClient = prisma): Promise<{ role: ViewerRole; record: ResolvedAssessment }> {
+  if (typeof assessmentId !== "string" || !assessmentId.trim()) throw new ManagedAssessmentError("Geçerli değerlendirme kimliği gerekli.", 400);
   if (isManagerRole(actor)) {
     try {
       return { role: "manager", record: await resolveManagedAssessment(actor, assessmentId, db) };
@@ -43,6 +61,8 @@ export async function resolveViewableAssessment(actor: ManagedActor, assessmentI
       if (!(error instanceof ManagedAssessmentError) || error.status !== 403) throw error;
     }
   }
+  const personal = await resolvePersonalAssessment(actor.userId, assessmentId, db);
+  if (personal) return { role: "owner", record: personal };
   return { role: "member", record: await resolveOwnUnitAssessment(actor.userId, assessmentId, db) };
 }
 
@@ -80,7 +100,7 @@ export async function loadAssessmentView(actor: ManagedActor, assessmentId: stri
   const { role, record } = await resolveViewableAssessment(actor, assessmentId, db);
   const member = role === "member";
   const [detail, access, benchmark] = await Promise.all([
-    buildAssessmentDetail(actor, record, db, { ownUnit: member, member }),
+    buildAssessmentDetail(actor, record, db, { ownUnit: role !== "manager", member }),
     member ? loadRoadmapAccess(actor.userId, [record.id], db) : null,
     loadUnitBenchmarks(record, db),
   ]);
@@ -88,16 +108,23 @@ export async function loadAssessmentView(actor: ManagedActor, assessmentId: stri
     ...detail,
     benchmark,
     recommendations: detail.recommendations.map(rec => ({ ...rec, canUpdateStatus: !access || (rec.isInRoadmap && access.canUpdate(rec.id)) })),
-    viewer: { role, canManageRoadmap: !member, canDistribute: !member, canExportTeam: !member },
+    viewer: { role, canManageRoadmap: !member, canDistribute: role === "manager", canExportTeam: !member },
   };
 }
 export type AssessmentView = Awaited<ReturnType<typeof loadAssessmentView>>;
 
-/** Panodaki birim, anket ve dönem seçicilerinin listesi. */
+/**
+ * Panodaki birim, anket ve dönem seçicilerinin listesi. Birimi olmayan
+ * kullanıcının (yönetici dahil) kişisel değerlendirmeleri "kişisel" sahte
+ * biriminin altında listelenir.
+ */
 export async function loadAssessmentIndex(actor: ManagedActor, db: DbClient = prisma) {
-  if (isManagerRole(actor)) return { role: "manager" as ViewerRole, ...(await loadUnitDashboardIndex(actor, db)) };
+  const personal = await loadPersonalDashboardIndex(actor, db);
+  const withPersonal = <T extends { units: unknown[]; assessments: unknown[] }>(index: T) => personal
+    ? { ...index, units: [personal.unit, ...index.units], assessments: [...personal.assessments, ...index.assessments] } : index;
+  if (isManagerRole(actor)) return { role: "manager" as ViewerRole, ...withPersonal(await loadUnitDashboardIndex(actor, db)) };
   const user = await db.user.findUnique({ where: { id: actor.userId }, select: { unitId: true } });
-  if (!user?.unitId) return { role: "member" as ViewerRole, units: [], assessments: [], hasAnonymousCampaigns: false };
+  if (!user?.unitId) return { role: "owner" as ViewerRole, ...withPersonal({ units: [], assessments: [], hasAnonymousCampaigns: false }) };
   return { role: "member" as ViewerRole, ...(await loadOwnUnitDashboardIndex(actor, user.unitId, db)) };
 }
 
@@ -119,7 +146,7 @@ export async function loadAssessmentDocuments(actor: ManagedActor, assessmentId:
     }),
     role === "member" ? db.sectionAssignment.findMany({ where: { assessmentId: record.id }, select: { subCategoryId: true, assigneeId: true } }) : [],
   ]);
-  if (role === "manager") return documents;
+  if (role !== "member") return documents;
   const visibility = buildSectionVisibility(assignments, { userId: actor.userId, isCoordinator: false });
   return documents.filter(doc => {
     const question = doc.response?.question;

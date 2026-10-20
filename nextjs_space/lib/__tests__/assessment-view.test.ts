@@ -3,11 +3,12 @@ import type { DbClient } from "../assessment";
 import { unitDetail } from "../../test-fixtures/unit-dashboard";
 import { ManagedAssessmentError } from "../managed-assessment";
 
-const mocks = vi.hoisted(() => ({ managed: vi.fn(), build: vi.fn(), index: vi.fn(), ownIndex: vi.fn(), access: vi.fn() }));
+const mocks = vi.hoisted(() => ({ managed: vi.fn(), build: vi.fn(), index: vi.fn(), ownIndex: vi.fn(), personalIndex: vi.fn(), access: vi.fn() }));
 vi.mock("../managed-assessment", async original => ({ ...(await original<typeof import("../managed-assessment")>()), resolveManagedAssessment: mocks.managed }));
 vi.mock("../unit-dashboard", async original => ({
   ...(await original<typeof import("../unit-dashboard")>()),
   buildAssessmentDetail: mocks.build, loadUnitDashboardIndex: mocks.index, loadOwnUnitDashboardIndex: mocks.ownIndex,
+  loadPersonalDashboardIndex: mocks.personalIndex,
 }));
 vi.mock("../roadmap-access", () => ({ loadRoadmapAccess: mocks.access }));
 import { loadAssessmentDocuments, loadAssessmentIndex, loadAssessmentView, resolveViewableAssessment } from "../assessment-view";
@@ -35,6 +36,7 @@ beforeEach(() => {
   db.assessment.findFirst.mockResolvedValue(assessment);
   db.sectionAssignment.findMany.mockResolvedValue(assignments);
   mocks.build.mockResolvedValue(unitDetail("as-1", "unit-b", "Bora Gıda"));
+  mocks.personalIndex.mockResolvedValue(null);
 });
 
 describe("çalışan ayıklaması", () => {
@@ -89,6 +91,35 @@ describe("değerlendirmeyi açma", () => {
   });
 });
 
+describe("kişisel değerlendirme", () => {
+  const owner = { firstName: "Bora", lastName: "Er", email: "bora@example.com", organization: "Bora Danışmanlık", sectorId: "sector-1", subSectorId: null, unitId: null };
+  const personal = { ...assessment, id: "p1", unitId: null, unit: null, ownerUserId: "member-1", owner };
+  it("birimsiz kullanıcının kendi değerlendirmesini sahip olarak açar; birim yerine sahibinin adı ve sektörü", async () => {
+    db.assessment.findFirst.mockResolvedValueOnce(personal);
+    const { role, record } = await resolveViewableAssessment(member, "p1", client);
+    expect(role).toBe("owner");
+    expect(record.unit).toEqual({ id: "self", name: "Bora Danışmanlık", sectorId: "sector-1", subSectorId: null });
+    expect(record.scoring).toMatchObject({ id: "p1", sectorId: "sector-1" });
+    expect(db.assessment.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "p1", ownerUserId: "member-1", unitId: null, survey: { isDemo: false } } }));
+  });
+  it("başkasının kişisel değerlendirmesini açmaz", async () => {
+    db.assessment.findFirst.mockResolvedValueOnce({ ...personal, ownerUserId: "other" });
+    db.user.findUnique.mockResolvedValue({ unitId: null });
+    await expect(resolveViewableAssessment(member, "p1", client)).rejects.toMatchObject({ status: 403 });
+  });
+  it("sahibe planlama ve Excel yetkisi verir; dağıtım ve ayıklama yoktur", async () => {
+    db.assessment.findFirst.mockResolvedValueOnce(personal);
+    db.benchmark.findMany.mockResolvedValue([]);
+    db.ironmanBenchmark.findMany.mockResolvedValue([]);
+    db.sector.findUnique.mockResolvedValue({ name: "Danışmanlık" });
+    const view = await loadAssessmentView(member, "p1", client);
+    expect(view.benchmark).toEqual({ sectorName: "Danışmanlık", overall: null, categories: {}, ironman: null });
+    expect(mocks.build).toHaveBeenCalledWith(member, expect.anything(), client, { ownUnit: true, member: false });
+    expect(view.viewer).toEqual({ role: "owner", canManageRoadmap: true, canDistribute: false, canExportTeam: true });
+    expect(mocks.access).not.toHaveBeenCalled();
+  });
+});
+
 describe("rol farkındalıklı görünüm", () => {
   it("çalışana ayıklanmış detayı ve yalnızca kendi işinde durum yetkisini verir", async () => {
     mocks.access.mockResolvedValue({ canManage: false, canUpdate: (id: string) => id === "rec-2" });
@@ -139,7 +170,16 @@ describe("pano listesi ve belgeler", () => {
     expect(await loadAssessmentIndex(member, client)).toMatchObject({ role: "member", units: [{ id: "unit-b" }] });
     expect(mocks.ownIndex).toHaveBeenCalledWith(member, "unit-b", client);
     db.user.findUnique.mockResolvedValue({ unitId: null });
-    expect(await loadAssessmentIndex(member, client)).toEqual({ role: "member", units: [], assessments: [], hasAnonymousCampaigns: false });
+    expect(await loadAssessmentIndex(member, client)).toEqual({ role: "owner", units: [], assessments: [], hasAnonymousCampaigns: false });
+  });
+  it("birimi olmayan kullanıcının kişisel değerlendirmelerini kişisel birimin altında listeler", async () => {
+    const personal = { unit: { id: "self", name: "Bora Danışmanlık", description: null, parentId: null, assessmentCount: 1 }, assessments: [{ id: "p1", unitId: "self" }] };
+    mocks.personalIndex.mockResolvedValue(personal);
+    db.user.findUnique.mockResolvedValue({ unitId: null });
+    expect(await loadAssessmentIndex(member, client)).toEqual({ role: "owner", units: [personal.unit], assessments: personal.assessments, hasAnonymousCampaigns: false });
+    // Birimi olmayan yönetici de kendi değerlendirmesini yönettiği birimlerin yanında görür.
+    mocks.index.mockResolvedValue({ units: [{ id: "x" }], assessments: [{ id: "a1", unitId: "x" }], hasAnonymousCampaigns: false });
+    expect(await loadAssessmentIndex(manager, client)).toMatchObject({ role: "manager", units: [{ id: "self" }, { id: "x" }], assessments: [{ id: "p1" }, { id: "a1" }] });
   });
   it("çalışana yalnızca görebildiği bölümlerin belgelerini verir", async () => {
     const doc = (id: string, section: string | null) => ({ id, response: { question: { text: "Soru", subCategoryId: section, subLevel: null } } });

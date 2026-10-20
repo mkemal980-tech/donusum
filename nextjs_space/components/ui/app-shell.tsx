@@ -104,11 +104,9 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const user = session?.user as
-    | { id?: string; firstName?: string; name?: string; email?: string; role?: string; unitId?: string | null }
+    | { id?: string; firstName?: string; name?: string; email?: string; role?: string }
     | undefined;
   const role = user?.role ?? "USER";
-  // Birim yöneticisi ve birime bağlı çalışan sonuçları, önerileri ve yol haritasını tek panoda görür.
-  const unitDashboard = role === "UNIT_MANAGER" || (role === "USER" && Boolean(user?.unitId));
   const userName = user?.firstName || user?.name || "Kullanıcı";
   const [rememberedContext, setRememberedContext] = useState("");
   const actorKey = user?.id ?? user?.email ?? "";
@@ -140,7 +138,7 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
   const appGroups = useMemo(
     () =>
       NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => i.roles.includes(role)).map(item => {
-        if (!unitDashboard) return item;
+        // Sonuçlar, öneriler ve yol haritası tek panonun sekmeleridir (bkz. components/assessment-dashboard).
         if (item.href === "/dashboard" || item.href === "/recommendations" || item.href === "/roadmap") {
           const params = new URLSearchParams(unitQuery);
           if (item.href === "/recommendations") params.set("tab", "recommendations");
@@ -160,7 +158,7 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
       }) })).filter(
         (g) => g.items.length > 0,
       ),
-    [role, unitDashboard, unitQuery],
+    [role, unitQuery],
   );
 
   const groups: NavGroup[] = inAdmin ? adminGroups : appGroups;
@@ -170,13 +168,13 @@ export default function AppShell({ unitContext }: { unitContext?: UnitShellConte
       const [path, query] = item.href.split("?");
       if (path === "/unit-manager" && pathname?.startsWith("/unit-manager/management")) return false;
       if (pathname !== path && !(item.prefix && pathname?.startsWith(path))) return false;
-      if (unitDashboard && path === "/dashboard") {
+      if (path === "/dashboard") {
         const tab = new URLSearchParams(query).get("tab") ?? "results";
         return tab === (unitContext?.tab ?? "results");
       }
       return true;
     },
-    [pathname, unitDashboard, unitContext?.tab],
+    [pathname, unitContext?.tab],
   );
 
   /* Tema sunucuda bilinmiyor; düğme ancak istemcide çözüldükten sonra

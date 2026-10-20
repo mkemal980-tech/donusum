@@ -3,6 +3,9 @@ export const UNIT_RESULT_LABELS: Record<string, string> = {
   AWAITING_SUBMISSION: "Gönderim bekliyor", SUBMITTED: "Gönderildi",
 };
 
+/** Birimsiz kullanıcının kendi değerlendirmeleri panoda bu sahte birimin altında listelenir. */
+export const SELF_UNIT_ID = "self";
+
 export const UNIT_ROADMAP_LABELS: Record<string, string> = {
   NOT_STARTED: "Başlamadı", PLANNED: "Planlandı", IN_PROGRESS: "Devam ediyor", COMPLETED: "Tamamlandı", CANCELLED: "İptal edildi",
 };

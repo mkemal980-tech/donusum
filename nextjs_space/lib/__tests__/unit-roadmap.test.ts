@@ -47,4 +47,13 @@ describe("panodan yol haritası kaydı", () => {
     expect(outcome).toEqual({ status: 400, body: { error: "Sorumlu bu birimin aktif üyesi olmalı." } });
     expect(db.user.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "outsider", unitId: "unit-b", isActive: true } }));
   });
+  it("kişisel değerlendirmede sorumlu yalnızca sahibi olabilir; başka birimsiz kullanıcı seçilemez", async () => {
+    const owner = { userId: "owner-1", user: { role: "USER" } };
+    const personal = record({ unitId: null, ownerUserId: "owner-1" });
+    const outcome = await saveAssessmentRoadmap(owner, "owner", personal, { recommendationId: "mine", assigneeId: "someone-else" }, client);
+    expect(outcome).toEqual({ status: 400, body: { error: "Kişisel değerlendirmede sorumlu yalnızca değerlendirmenin sahibi olabilir." } });
+    expect(db.user.findFirst).not.toHaveBeenCalled();
+    expect((await saveAssessmentRoadmap(owner, "owner", personal, { recommendationId: "mine", assigneeId: "owner-1", dueDate: null }, client)).status).toBe(200);
+    expect(db.roadmapItem.update).toHaveBeenCalledWith({ where: { id: "item-1" }, data: { assigneeId: "owner-1", dueDate: null } });
+  });
 });

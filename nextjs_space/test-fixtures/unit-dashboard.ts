@@ -44,13 +44,28 @@ export function unitRow(id = "assessment-1", unitId = "managed-unit", name = "Es
 
 /** Panonun /api/dashboard/assessment yanıtı: ayrıntıya sektör kıyası ve rol eklenir. */
 export function assessmentView(detail = unitDetail(), role: ViewerRole = "manager", canUpdate: (id: string) => boolean = () => true): AssessmentView {
-  const manager = role === "manager";
+  const member = role === "member";
   return {
     ...detail,
     benchmark: { sectorName: "Enerji", overall: 35, categories: { "category-1": 35 }, ironman: { velocity: 2.4, endurance: 2.8, velocityTarget: 3, enduranceTarget: 3.2 } },
-    recommendations: detail.recommendations.map(rec => ({ ...rec, canUpdateStatus: manager || (rec.isInRoadmap && canUpdate(rec.id)) })),
-    viewer: { role, canManageRoadmap: manager, canDistribute: manager, canExportTeam: manager },
+    recommendations: detail.recommendations.map(rec => ({ ...rec, canUpdateStatus: !member || (rec.isInRoadmap && canUpdate(rec.id)) })),
+    viewer: { role, canManageRoadmap: !member, canDistribute: role === "manager", canExportTeam: !member },
   };
+}
+
+/** Birimsiz kullanıcının kendi değerlendirmesi: "kişisel" birim, ekip yok, bütün bölümler sahibinin. */
+export function personalAssessmentView(id = "personal-1"): AssessmentView {
+  const detail = unitDetail(id, "self", "Bora Danışmanlık");
+  detail.assessment.periodName = "Kişisel değerlendirme";
+  detail.assessment.status = "READY_TO_SUBMIT";
+  detail.work = [];
+  detail.members = [{ id: "owner-1", name: "Bora Er", email: "bora@example.com" }];
+  detail.team = [];
+  return assessmentView(detail, "owner");
+}
+
+export function personalRow(id = "personal-1", surveyId = "survey-1", surveyName = "Birim olgunluk değerlendirmesi"): UnitAssessmentRow {
+  return { ...unitRow(id, "self", "Bora Danışmanlık"), surveyId, surveyName, periodName: "Kişisel değerlendirme", deadlineLabel: "Atama son tarihi", status: "READY_TO_SUBMIT" };
 }
 
 /** Çalışanın görünümü: başka üyeye atanmış bölüm ayıklanmış, ekip yalnızca kendisi (bkz. redactForMember). */

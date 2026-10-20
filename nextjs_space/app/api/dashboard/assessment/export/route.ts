@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * Panonun raporu. Rapor ekrandaki görünümden üretilir; çalışanın raporu da
- * ayıklanmıştır (bkz. lib/assessment-view). Ayrıntılı Excel yalnızca yöneticide.
+ * ayıklanmıştır (bkz. lib/assessment-view). Ayrıntılı Excel yalnızca yöneticide
+ * ve kişisel değerlendirmenin sahibinde.
  */
 export async function GET(request: NextRequest) {
   const auth = await withAuth(request);
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
   try {
     const data = await loadAssessmentView(auth, id);
     if (format === "html") return new NextResponse(buildUnitReportHtml(data), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
-    if (data.viewer.role !== "manager") return NextResponse.json({ error: "Ayrıntılı Excel raporu birim yöneticisine açıktır." }, { status: 403 });
+    if (!data.viewer.canExportTeam) return NextResponse.json({ error: "Ayrıntılı Excel raporu birim yöneticisine açıktır." }, { status: 403 });
     const workbook = XLSX.utils.book_new();
     for (const [name, rows] of Object.entries(unitReportTables(data))) {
       const sheet = XLSX.utils.aoa_to_sheet(rows);
