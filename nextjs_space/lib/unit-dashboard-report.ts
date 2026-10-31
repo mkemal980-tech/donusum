@@ -1,11 +1,24 @@
 import type { UnitAssessmentDetail } from "./unit-dashboard";
 import type { AssessmentTargets } from "./score-targets";
 import { escapeReportText } from "./report-html";
-import { surveyAnswer, unitDate, unitScore, UNIT_RESULT_LABELS, UNIT_ROADMAP_LABELS } from "./unit-dashboard-display";
+import { maturityLabel, nextMaturityLevel, surveyAnswer, unitDate, unitScore, UNIT_RESULT_LABELS, UNIT_ROADMAP_LABELS } from "./unit-dashboard-display";
 
 /** Rapor panonun görünümünden üretilir; kuruluşun hedefi varsa (yalnızca panoda) rapora da girer. */
 type ReportData = UnitAssessmentDetail & { targets?: AssessmentTargets };
 const pct = (value: number) => Math.round(value * 10) / 10;
+
+/**
+ * Alt kategori satırı: panodaki "Kategori analizi" ile aynı yüzde, seviye ve
+ * üst seviyeye kalan fark. Başka üyeye atanmış bölümün puanı görünür, cevap
+ * sayısı görünmez (bkz. redactForMember).
+ */
+function sectionRow(categoryName: string, section: ReportData["categories"][number]["sections"][number]) {
+  const current = section.currentPercentage === null ? null : pct(section.currentPercentage);
+  const next = current === null ? null : nextMaturityLevel(current);
+  return [categoryName, section.name, current ?? "", current === null ? "Cevap yok" : maturityLabel(current),
+    current === null ? "" : next === null ? "En üst seviye" : maturityLabel(next), next === null ? "" : pct(next - current!),
+    section.restricted ? "" : section.answeredCount, section.questionCount];
+}
 
 export function unitReportTables(data: ReportData) {
   const overallTarget = data.targets?.overall;
@@ -20,12 +33,19 @@ export function unitReportTables(data: ReportData) {
       ["Gelişim katkısı", data.scores.delta], ["Tamamlanma (%)", data.completionPercentage],
       ["Cevaplanan soru", data.answeredQuestions], ["Kapsamdaki soru", data.totalQuestions],
       ["Mevcut puan (100 üzerinden)", data.answeredQuestions ? data.scores.overallPercentage : "Cevap yok"],
+      ["Seviye", data.answeredQuestions ? maturityLabel(data.scores.overallPercentage) : "Cevap yok"],
       ...(overallTarget ? [["Hedef (100 üzerinden)", overallTarget.percentage], ["Hedef tarihi", unitDate(overallTarget.targetDate)]] : []),
     ],
     "Kategoriler": [
-      ["Kategori", "Taban puan", "Mevcut puan", "Gelişim katkısı", "Cevaplanan", "Toplam soru", "Mevcut (100 üzerinden)", "Hedef (100 üzerinden)"],
+      ["Kategori", "Taban puan", "Mevcut puan", "Gelişim katkısı", "Cevaplanan", "Toplam soru", "Mevcut (100 üzerinden)", "Seviye", "Hedef (100 üzerinden)"],
       ...data.categories.map(row => [row.name, row.baseScore, row.currentScore, row.delta, row.answeredQuestions, row.totalQuestions,
-        row.answeredQuestions ? pct(row.currentPercentage) : "", categoryTargets[row.id]?.percentage ?? ""]),
+        row.answeredQuestions ? pct(row.currentPercentage) : "", row.answeredQuestions ? maturityLabel(pct(row.currentPercentage)) : "",
+        categoryTargets[row.id]?.percentage ?? ""]),
+    ],
+    "Alt kategoriler": [
+      ["Kategori", "Alt kategori", "Mevcut (100 üzerinden)", "Seviye", "Sonraki seviye", "Sonraki seviyeye kalan", "Cevaplanan", "Toplam soru"],
+      // Kategoriye doğrudan bağlı sorular alt kategori değildir; onların puanı kategori satırındadır.
+      ...data.categories.flatMap(category => category.sections.filter(section => section.id).map(section => sectionRow(category.name, section))),
     ],
     "Cevaplar": [
       ["Kategori", "Bölüm", "Sorumlu", "Soru", "Cevap", "Cevaplayan", "Belge gerekli", "Belge sayısı"],
@@ -71,5 +91,6 @@ export function buildUnitReportHtml(data: ReportData) {
     '</style></head><body><header><h1>' + text(data.assessment.unitName) + '</h1><p>' +
     text(data.assessment.surveyName) + " · " + text(data.assessment.periodName) + '</p></header>' +
     '<p>Durum: ' + text(UNIT_RESULT_LABELS[data.assessment.status]) + '. Mevcut puan, tamamlanan önerilerin katkısını içerir.</p>' +
+    '<p>Seviyeler (100 üzerinden): Başlangıç 0-19 · Farkındalık 20-39 · Gelişen 40-59 · Olgun 60-79 · Lider 80-100.</p>' +
     body + '<footer>Dönem karşılaştırmaları güncel soru ve sektör kapsamıyla hesaplanır. Puan geçmişi kayıt anındaki değerleri gösterir.</footer></body></html>';
 }

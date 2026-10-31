@@ -9,14 +9,12 @@ import { empty, Metric, Toggle } from "./unit-management-shared";
 import type { AssessmentView } from "@/lib/assessment-view";
 import type { UnitGroupComparison } from "@/lib/unit-group-comparison";
 import { decimal, percentage, signed, QUADRANT_LABELS } from "@/lib/unit-management-display";
-import { maturityLabel, surveyAnswer, unitDate, UNIT_ROADMAP_LABELS } from "@/lib/unit-dashboard-display";
+import { maturityLabel, nextMaturityLevel, surveyAnswer, unitDate, UNIT_ROADMAP_LABELS } from "@/lib/unit-dashboard-display";
 
 type Comparison = Extract<UnitGroupComparison, { available: true }> | null;
 type Recommendation = AssessmentView["recommendations"][number];
 const round1 = (value: number) => Math.round(value * 10) / 10;
 const OPEN = new Set(["NOT_STARTED", "PLANNED", "IN_PROGRESS"]);
-/** Bir üst seviyenin alt sınırı (%20, %40, %60, %80); en üstteyse null. */
-const nextLevel = (pct: number) => [20, 40, 60, 80].find(limit => pct < limit) ?? null;
 const contribution = (rec: Pick<Recommendation, "fullContribution">) => "tamamlanınca +" + decimal(rec.fullContribution * 25) + " puan";
 
 const targetNote = (target: { percentage: number; targetDate: string | null }) => `Hedef ${percentage(target.percentage)}${target.targetDate ? " · " + unitDate(target.targetDate) : ""}`;
@@ -170,7 +168,7 @@ export function CategoryAnalysis({ view, canManage, busyId, onAdd }: { view: Ass
     </div>
     <ul className="mt-6 divide-y divide-[var(--line)]">{category.sections.map(section => {
       const pct = section.currentPercentage === null ? null : round1(section.currentPercentage);
-      const target = pct === null ? null : nextLevel(pct);
+      const target = pct === null ? null : nextMaturityLevel(pct);
       const recs = view.recommendations.filter(rec => rec.sectionId === section.id && rec.status !== "COMPLETED" && (rec.isActionable || rec.isInRoadmap)).slice(0, 2);
       return <li key={section.id ?? "direct"} className="py-4">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
