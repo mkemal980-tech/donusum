@@ -20,6 +20,9 @@ export function maturityLabel(percentage: number | null) {
   return "Başlangıç";
 }
 
+/** Bir üst seviyenin alt sınırı (%20, %40, %60, %80); en üstteyse null. */
+export const nextMaturityLevel = (percentage: number) => [20, 40, 60, 80].find(limit => percentage < limit) ?? null;
+
 /** Bir birimin panosu: herkes için tek pano. */
 export function unitDashboardHref(params: Record<string, string | null | undefined>) {
   const query = new URLSearchParams(Object.entries(params).filter((entry): entry is [string, string] => Boolean(entry[1])));
